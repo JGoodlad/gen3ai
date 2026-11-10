@@ -4557,6 +4557,14 @@
    "contention": 1.12,
    "detail": ""
   },
+  "src/main/offpool_belief/finetune_test.py::test_a_run_trains_picks_on_validation_and_exports_only_the_trained_tensors": {
+   "status": "pass",
+   "commit": "13a8b58e9fe846e5dfe30c11c756070d0345ea7d",
+   "at": "2026-11-10T03:03:38Z",
+   "duration_s": 9.87,
+   "contention": 1.74,
+   "detail": ""
+  },
   "src/main/ops/canary_dump_replay_test.py::test_the_eager_arms_and_the_canary_check_run_on_the_real_learner_cpu": {
    "status": "pass",
    "commit": "35b30bd9fb246c61b0de9e4a13f2478e54b1207b",
@@ -5758,5 +5766,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-10T01:37:56Z"
+ "last_written": "2026-11-10T03:03:38Z"
 }

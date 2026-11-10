@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,904-line file. **The ledger itself is append-only and is never edited by this**;
+30,975-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1000 headings · 945 dated · 2026-08-01 → 2026-11-09 · ledger 30,904 lines.**
+**1001 headings · 946 dated · 2026-08-01 → 2026-11-09 · ledger 30,975 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1020,3 +1020,4 @@ rename.
   - `L30770` · `2026-11-07` · MEASUREMENT · **X60-T LOOK 1 reads CONTINUE: P\* + 20M with human-built ladder TEAMS in the pool (H-TEAMS, `--human-data teams:hr_spec_v1.r3@0.5`) scores F (forum72, Kakuna ckpt 34, greedy vs greedy) 0.5147 against the shared control C0's 0.5083, Δ_F +0.64 pp [−2.17, +3.45] on 3,600 games an arm; the look-1 class is NOT-RESOLVED with Δ̂ > 0, so the read is not ended and look 2 (8 v 8) decides; the determinism guard and every VOID gate PASS**
   - `L30800` · `2026-11-09` · ADDENDUM · **S′-HONEST clustered on teams (REPORTED; the registered GO-HONEST + GOAL-B-REACHED is unchanged): the search GAIN survives every dependence model (+1.98 pp, LB ≥ +0.31), the searched score's 0.50 clearance survives none but independent deals ([0.4942, 0.5353] on our team, [0.4908, 0.5382] two-way), and the gain is detected on the procedural panel P72 alone**
   - `L30856` · `2026-11-09` · MEASUREMENT (DESCRIPTIVE) · **ARCHITECTURE DIAGNOSIS of P\* (REPORTED, no verdict): the policy tower's first tanh layer is 0.897 saturated ON and OFF the pool and cuts the policy gradient 15–18×, but the tower is not dead; the critic head has a hidden layer it does not use; its error on unfamiliar teams is a level, not a ranking — nothing here supports a critic or activation change in BOUNDARY-1's shared base**
+  - `L30905` · `2026-11-09` · MEASUREMENT (DESCRIPTIVE) · **OFF-POOL BELIEF BASELINE (REPORTED, no verdict): P\*'s belief about the opponent's unseen species is 3.0 / 4.0 / 7.7 nats WORSE than its own Smogon prior on held-out teams (H / F / P72, team-clustered) and 1.2 nats better in the pool; team breadth in the training loop brings it to the prior with the head unchanged, no arm beats the prior off the pool, and the move leg is not repaired by breadth — the belief needs no reshape, it needs other labels**

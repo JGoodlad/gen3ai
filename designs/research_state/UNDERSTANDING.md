@@ -351,6 +351,16 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   hypothesis) is not killed: its interval is too wide. The memorisation is real and invisible in Kakuna games at ±5 pp; the belief-anchoring levers have no
   game-level case. [`f299a7243`, `71c76dfbb`; ledger 2026-10-26 · *H3 … BANKED ON CALIBRATION*, *THE BELIEF PRIOR
   MIX* ×2; `measurements/belief_prior_mix_2026-10-26/`; `../model/generalisation_review_2026-10-26.md`]
+- **The off-pool belief baseline (2026-11-09, REPORTED).** Team-clustered and against each checkpoint's own Smogon
+  prior, the true unseen species' log-presence is **P\* −3.00 [−4.23, −1.86] on H, −3.97 [−5.34, −2.79] on F, −7.66
+  [−8.84, −6.51] on P72** (nats, belief − prior; +1.22 in the pool), and a pool-only continuation keeps it. Broad
+  teams in the loop bring it to the prior with the head unchanged: N1-P +0.04 / −0.07 / −0.13, X60-T −0.05 / −0.29 /
+  −0.84. A 0.25 prior floor on P\* stays WORSE (−0.17 / −0.30 / −0.79). No arm beats the prior off the pool, and the
+  unshown-move leg is WORSE than its prior for every arm on H and P72 (cause UNVERIFIED). Every belief leg is already
+  prior + a zero-initialised residual, so the defect is the label population, not the head: no head reshape for
+  BOUNDARY-1 (`../endstate/design_offpool_belief.md`). Still no strength claim: the two game reads above are NOT
+  DETECTED. [MEASURED · DESCRIPTIVE · `python -m main.offpool_belief`; ledger 2026-11-09 · *OFF-POOL BELIEF
+  BASELINE*; `measurements/offpool_belief_baseline_2026-11-09/`]
 - **Breadth at 10⁴ teams (N1-P / X61P) at the plateau: NULL (final), at a resolved in-pool cost.** Every system
   that generalises across teams trained on 10⁴–10⁵ of them; every breadth test here ran at 10³. A fork of P\* with half
   its teams from 12,000 procedural teams (`n1_proc_v1`), 5 seeds, read on F alone by D1's rule against C0 on one

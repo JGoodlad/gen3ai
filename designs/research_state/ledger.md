@@ -30901,3 +30901,74 @@ panel; the powered calibration read has no observations. (5) This read's turn-10
 View: `UNDERSTANDING.md` (§4.4, after the plasticity check), `measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md` (§10, a pointer).
 
 Tag: **ARCHITECTURE DIAGNOSIS · P\* · REPORTED · DESCRIPTIVE · tanh-1 0.897 saturated on and off pool · policy gradient cut 15–18×, tower not dead · critic head 98.9 % linear, 36 % of hidden units dead · U − home bias +0.054 [+0.003, +0.108] vs Kakuna, AUC 0.813 vs 0.781 · no base change for BOUNDARY-1**
+
+### 2026-11-09 · MEASUREMENT (DESCRIPTIVE) · **OFF-POOL BELIEF BASELINE (REPORTED, no verdict): P\*'s belief about the opponent's unseen species is 3.0 / 4.0 / 7.7 nats WORSE than its own Smogon prior on held-out teams (H / F / P72, team-clustered) and 1.2 nats better in the pool; team breadth in the training loop brings it to the prior with the head unchanged, no arm beats the prior off the pool, and the move leg is not repaired by breadth — the belief needs no reshape, it needs other labels**
+
+**Question.** MF-3 step (a): how far is each leg of the opponent belief (unseen species, a revealed mon's unshown moves, its unstated item) from the
+Smogon prior it is built on, on teams outside the pool, for P\* and for the finals that trained on broader teams? Measured with the new tool
+`python -m main.offpool_belief` (`designs/tools/offpool_belief.md`), CPU only. No pre-registration; no verdict; nothing here is a strength claim.
+
+**Method.** Four banks of 144 games each (72 teams × 2): P\* (`pstar_plateau`) plays itself greedily with seat 1 on a panel team and seat 2 on a
+home72 team; the scored rows are seat 2's decisions, the seat FACING the panel team (rows scored: home72 6,785, H 6,636, F 6,475, P72 6,643). Panels:
+`home72` (in the pool, the reference), H = `heldout72_hpfix` (ladder teams), F = `forum72` (forum teams), P72 = `p72` (procedural teams), each
+re-resolved through the registry with `held_out_from: training` and its digest. Each checkpoint is run on the same banked rows twice: its belief
+(λ = 0 of `agents.model.belief_prior_mix`) and its prior alone (λ = 1). `species_logp` is the mean log presence of each species really hidden;
+`moves_logp` the mean log probability of each unshown true move; `items_logp` the log probability of the true unstated item. Every number is the mean
+over the 72 teams of team means; the interval is a paired bootstrap over teams (10,000 draws, seed 20261109, 95 %); BETTER / WORSE only when the
+whole interval is on one side of zero. Arms: P\* (1 checkpoint); C0 = five pool-only 20M continuations of P\* (`rb_x35_c0_s3501`–`5`); N1-P = five
+continuations with half of both sides' teams from 12,000 procedural teams (`rb_x35_n1p_s3501`–`5`); X60-T = six continuations with human ladder
+teams at share 0.5 on both sides (`rb_x60t_s3501`–`6`; its registered look 2 is pending and s3507 is live: this is a REPORTED belief read, no game).
+
+**(1) Unseen species, belief − prior (nats).** Prior level: home72 −1.84, H −2.08, F −2.25, P72 −3.03.
+
+| arm | home72 | H | F | P72 |
+|---|---|---|---|---|
+| P\* | +1.22 [+1.07, +1.36] BETTER | −3.00 [−4.23, −1.86] WORSE | −3.97 [−5.34, −2.79] WORSE | −7.66 [−8.84, −6.51] WORSE |
+| C0 | +1.23 [+1.08, +1.38] BETTER | −3.01 [−4.24, −1.87] WORSE | −4.02 [−5.40, −2.85] WORSE | −7.80 [−9.01, −6.63] WORSE |
+| N1-P | +0.59 [+0.47, +0.72] BETTER | +0.04 [−0.06, +0.14] NOT DETECTED | −0.07 [−0.17, +0.02] NOT DETECTED | −0.13 [−0.21, −0.07] WORSE |
+| X60-T | +0.89 [+0.77, +1.01] BETTER | −0.05 [−0.21, +0.10] NOT DETECTED | −0.29 [−0.48, −0.12] WORSE | −0.84 [−1.01, −0.67] WORSE |
+| P\* floored at λ = 0.25 | +1.09 [+0.96, +1.22] BETTER | −0.17 [−0.31, −0.03] WORSE | −0.30 [−0.44, −0.17] WORSE | −0.79 [−0.88, −0.70] WORSE |
+
+Against C0 on the same rows: N1-P +3.05 [+1.96, +4.23] / +3.95 [+2.83, +5.27] / +7.67 [+6.52, +8.85] on H / F / P72 and −0.64 [−0.74, −0.54] on
+home72; X60-T +2.96 [+1.92, +4.09] / +3.73 [+2.66, +4.99] / +6.96 [+5.91, +8.05] and −0.34 [−0.42, −0.27]. The damage is in the tail, not the
+ranking: P\*'s share of true species in its top k is 0.363 / 0.293 / 0.136 against the prior's 0.388 / 0.319 / 0.180 (NOT DETECTED on H and F,
+WORSE on P72), so the belief ranks about as well as the prior and gives near-zero presence to the species it misses.
+
+**(2) Unshown moves, belief − prior.** P\* +0.14 [+0.07, +0.22] / −0.33 [−0.42, −0.26] / −0.05 [−0.11, +0.02] / −0.34 [−0.40, −0.28] on home72 / H /
+F / P72; C0 the same to 0.01; N1-P +0.08 / −0.30 [−0.39, −0.23] / −0.13 [−0.19, −0.07] / −0.37 [−0.42, −0.31]; X60-T +0.16 / −0.20 [−0.27, −0.13] /
+−0.00 [−0.06, +0.05] / −0.25 [−0.30, −0.20]. Breadth does not repair this leg: N1-P is WORSE than its prior on all three held-out panels, P72
+(its own generator family) included. `moves_logp` scores only the true moves and is not a proper score; the rank metric agrees in sign, and a
+768-row check of the full Bernoulli log-likelihood on P72 reads prior −5.66, P\* −7.83, N1-P −7.52 a unit.
+
+**(3) Unstated item, belief − prior.** P\* +0.18 [+0.11, +0.26] / +0.00 [−0.09, +0.08] / −0.01 [−0.22, +0.18] / −0.39 [−0.63, −0.17]; C0 the same;
+N1-P +0.14 / +0.03 [−0.03, +0.10] / +0.15 [+0.06, +0.24] / +0.09 [+0.03, +0.16]; X60-T +0.16 / +0.06 [−0.00, +0.12] / +0.15 [+0.06, +0.24] / +0.09
+[+0.03, +0.16].
+
+**What it licenses.** "P\*'s species belief is WORSE than its Smogon prior on all three held-out panels, team-clustered" (H3 of 2026-10-26, now
+with intervals and a reusable meter); "a pool-only continuation keeps the defect"; "20M steps with broad teams in the loop bring the species leg to
+the prior with the head unchanged, at about half of the in-pool advantage"; "a 0.25 prior floor on P\* is still WORSE than the prior"; "no arm
+BEATS the prior off the pool on the species leg"; "the move leg is WORSE than its prior off the pool for every arm on H and P72". It does NOT
+license any strength claim (the two prior-mix game reads are NOT DETECTED), "the belief is why games are lost off the pool", a cause for the move
+leg (UNVERIFIED: a linear head on a pool-shaped token, too few steps, or a generator difference), or any ordering of N1-P against X60-T (different
+corpora, each with a panel of its own family: P72 for N1-P, H for X60-T; F is the only panel neither is adjacent to).
+
+**What follows.** All three legs are already "Smogon prior + a zero-initialised residual" in the code, so the defect is the label population, not
+the parameterisation: **no head reshape for BOUNDARY-1's base** (`designs/endstate/design_offpool_belief.md`). Its breadth arms repair their own
+species belief; its pool-only arms will carry P\*'s defect; this meter reads its finals as a REPORTED guard. MF-3 step (b) becomes the CPU-only
+light screen X68 (P\*'s three residuals retrained on procedural-team labels, trunk frozen), registered separately.
+
+**FINDINGs.** (1) The checkpoints (config v158 / v161) are read at the head's observation semantics through six warn-level `obs_gap` rows (162, 163,
+165–168), the same for every arm. (2) The rows are P\*'s greedy self-play states, not each checkpoint's own games: the beliefs are compared on the
+same decisions, and none is read on the states it would itself reach. (3) P72 is generator-adjacent to N1-P's corpus and H is the ladder family of
+X60-T's corpus; the meter trusts the registry's `held_out_from: training` and digests and does not re-derive each run's team sources. (4) Hidden
+Power is excluded from the move metrics; near ties are counted, not excluded (no decision boundary is read here). (5) The `λ = 0.25` column is
+exact for species (the model's own mix) and a post-hoc floor for moves and items. (6) Banks and scores were built from the tool's tree before it was
+committed (stamped `3b1733f50`, dirty); after the rebase onto config v169, P\* re-scored on the F bank reproduces the banked score block byte
+for byte (1 of the 68 checkpoint × panel blocks re-checked). (7) P\* piloting P72 teams wins 0.31 of its bank games against P\* on home72 teams
+(descriptive; the states of that bank are mostly losing ones for the panel seat).
+
+**Record:** `measurements/offpool_belief_baseline_2026-11-09/` (`README.md`, `table.md`, `table.json`); banks and per-checkpoint scores in
+`~/gen3ai_archive/offpool_belief_2026-11-09/` (bank rows sha256 `5207d8c100df`, `21545e87b1fb`, `0caf6037fee3`, `af668a3f65fb`).
+View: `UNDERSTANDING.md` (§4, after the belief prior mix), `designs/endstate/design_offpool_belief.md` (§3), `EXPERIMENT_BACKLOG.md` (MF-3).
+
+Tag: **OFF-POOL BELIEF BASELINE · REPORTED · DESCRIPTIVE · species log-presence − prior: P\* −3.00 / −3.97 / −7.66 (H / F / P72), N1-P +0.04 / −0.07 / −0.13, X60-T −0.05 / −0.29 / −0.84, P\* at λ = 0.25 −0.17 / −0.30 / −0.79 · move leg WORSE off the pool for every arm · no head reshape for BOUNDARY-1 · X68 registered**

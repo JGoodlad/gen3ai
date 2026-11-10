@@ -93,9 +93,11 @@ its GO.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh pair, no GPU
   of its own.
-- **MF-3 step (b), queued second:** the opponent belief retrained on the ladder population (P\*'s species posterior is
-  worse than the Smogon prior on unfamiliar opponents, ledger 2026-10-26 H3), read first by its CPU-minute meter P5
-  (≈ 1–2 GPU-h).
+- **MF-3:** the opponent belief off the pool. Its meter is built (`python -m main.offpool_belief`) and the baseline
+  REPORTED (ledger 2026-11-09): P\*'s species belief is 3 to 8 nats worse than its Smogon prior on held-out teams,
+  team breadth in the loop brings it to the prior with the head unchanged, no arm beats the prior. Decision: no head
+  reshape for BOUNDARY-1 (`endstate/design_offpool_belief.md`). Step (b) is the CPU-only light screen X68 (P\*'s
+  belief residuals retrained on procedural-team labels; REGISTERED, not run, ≈ 2 CPU lane-h).
 - **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
 - **MF-5: the scale bet** (production width and 2× `D_MODEL` from scratch at BOUNDARY-1), the one lever whose point
   reaches goal (b)'s gap without search; it waits on the owner (§6.5). Its DRAFT design sizes it at four seeds an arm,
