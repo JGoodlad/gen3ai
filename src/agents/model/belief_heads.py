@@ -54,11 +54,11 @@ class BeliefHead(torch.nn.Module):
     species_prior_log_lift: torch.Tensor
 
     def __init__(self, n_species: int, n_moves: int,
-                 species_prior_fusion: bool = False):
+                 species_prior_fusion: bool = False, d_model: int = D_MODEL):
         super().__init__()
-        self.norm = torch.nn.LayerNorm(D_MODEL)
-        self.species_head = torch.nn.Linear(D_MODEL, n_species)
-        self.moves_head = torch.nn.Linear(D_MODEL, n_moves)
+        self.norm = torch.nn.LayerNorm(d_model)
+        self.species_head = torch.nn.Linear(d_model, n_species)
+        self.moves_head = torch.nn.Linear(d_model, n_moves)
         self.species_prior_fusion = species_prior_fusion
         if species_prior_fusion:
             from agents.model.damage_tables import build_species_cooccur_prior
@@ -253,13 +253,13 @@ class MoveBelief(torch.nn.Module):
 
     def __init__(self, n_moves: int, move_emb_dim: int,
                  prior_fusion: bool = False, n_species: int = 0,
-                 move_candidate_floor: float = _PRIOR_FLOOR):
+                 move_candidate_floor: float = _PRIOR_FLOOR, d_model: int = D_MODEL):
         super().__init__()
-        self.move_head = torch.nn.Linear(D_MODEL, n_moves)
-        self.reinject = torch.nn.Linear(move_emb_dim, D_MODEL)
+        self.move_head = torch.nn.Linear(d_model, n_moves)
+        self.reinject = torch.nn.Linear(move_emb_dim, d_model)
         torch.nn.init.normal_(self.reinject.weight, std=0.02)   # start the enrichment ≈0
         torch.nn.init.zeros_(self.reinject.bias)
-        self.norm = torch.nn.LayerNorm(D_MODEL)
+        self.norm = torch.nn.LayerNorm(d_model)
         self.prior_fusion = prior_fusion
         if prior_fusion:
             from agents.model.damage_tables import build_move_prior_logits
@@ -424,29 +424,29 @@ class SpreadBelief(torch.nn.Module):
     nature_mult: torch.Tensor
     base_nonhp: torch.Tensor
 
-    def __init__(self, n_species: int, nature: bool = False):
+    def __init__(self, n_species: int, nature: bool = False, d_model: int = D_MODEL):
         super().__init__()
         from agents.model.damage_tables import build_opp_spread_prior, N_SPREAD_STATS
         self.n_stats = N_SPREAD_STATS
         self.nature = nature
-        self.reinject = torch.nn.Linear(N_SPREAD_STATS, D_MODEL)
+        self.reinject = torch.nn.Linear(N_SPREAD_STATS, d_model)
         torch.nn.init.normal_(self.reinject.weight, std=0.02)       # start the enrichment ≈0
         torch.nn.init.zeros_(self.reinject.bias)
-        self.norm = torch.nn.LayerNorm(D_MODEL)
+        self.norm = torch.nn.LayerNorm(d_model)
         # [n_species, 5, 2] (mean, std) usage prior — non-persistent (recomputable from data/).
         self.register_buffer("spread_prior", build_opp_spread_prior(n_species), persistent=False)
         if not nature:
-            self.stat_head = torch.nn.Linear(D_MODEL, N_SPREAD_STATS)   # learned delta in std-units
+            self.stat_head = torch.nn.Linear(d_model, N_SPREAD_STATS)   # learned delta in std-units
             torch.nn.init.zeros_(self.stat_head.weight)                 # cold-start delta == 0 → believed == prior
             torch.nn.init.zeros_(self.stat_head.bias)
         else:
             from agents.model.damage_tables import (build_species_nature_prior, build_species_ev_prior,
                                                     build_nature_mult, build_species_base_stats, N_NATURES)
             self.n_natures = N_NATURES
-            self.nature_head = torch.nn.Linear(D_MODEL, N_NATURES)      # logit DELTA on the nature log-prior
+            self.nature_head = torch.nn.Linear(d_model, N_NATURES)      # logit DELTA on the nature log-prior
             torch.nn.init.zeros_(self.nature_head.weight)               # cold-start delta 0 → posterior == prior
             torch.nn.init.zeros_(self.nature_head.bias)
-            self.ev_head = torch.nn.Linear(D_MODEL, N_SPREAD_STATS)     # EV DELTA on the EV prior (×_EV_DELTA_SCALE)
+            self.ev_head = torch.nn.Linear(d_model, N_SPREAD_STATS)     # EV DELTA on the EV prior (×_EV_DELTA_SCALE)
             torch.nn.init.zeros_(self.ev_head.weight)
             torch.nn.init.zeros_(self.ev_head.bias)
             self.register_buffer("nature_logprior", build_species_nature_prior(n_species), persistent=False)  # [n,25]
@@ -510,11 +510,11 @@ class ItemBelief(torch.nn.Module):
     #: INFERENCE-ONLY anchor of the posterior to its prior (`agents.model.belief_prior_mix`); 0.0 = off.
     belief_prior_mix: float = 0.0
 
-    def __init__(self, n_species: int, n_items: int):
+    def __init__(self, n_species: int, n_items: int, d_model: int = D_MODEL):
         super().__init__()
         self.n_items = n_items
-        self.norm = torch.nn.LayerNorm(D_MODEL)
-        self.item_head = torch.nn.Linear(D_MODEL, n_items)
+        self.norm = torch.nn.LayerNorm(d_model)
+        self.item_head = torch.nn.Linear(d_model, n_items)
         torch.nn.init.zeros_(self.item_head.weight)        # cold start: posterior == prior
         torch.nn.init.zeros_(self.item_head.bias)
         from agents.model.damage_tables import build_item_prior
@@ -566,10 +566,10 @@ class HPTypeBelief(torch.nn.Module):
     HP_TYPED_NUMS: torch.Tensor
     hp_prior: torch.Tensor
 
-    def __init__(self, n_species: int, type_emb_dim: int, n_hp: int = 16):
+    def __init__(self, n_species: int, type_emb_dim: int, n_hp: int = 16, d_model: int = D_MODEL):
         super().__init__()
-        self.norm = torch.nn.LayerNorm(D_MODEL)
-        self.type_head = torch.nn.Linear(D_MODEL, n_hp)
+        self.norm = torch.nn.LayerNorm(d_model)
+        self.type_head = torch.nn.Linear(d_model, n_hp)
         # gen3_typed_hp_belief_v1: the 16 typed-HP dex nums (355-370) in HP_TYPE_ORDER order — the
         # destination of the presence×type composition. Non-persistent (data-derived, recomputable).
         from agents.model.damage_tables import _hp_typed_nums
@@ -580,10 +580,10 @@ class HPTypeBelief(torch.nn.Module):
         # gen3_opp_hp_type_belief_v2: the token reinjection of the presence-gated expected typed-HP embedding
         # (the expected type emb = embeddings.hp_soft_type(posterior)). Small-init so the enrichment starts
         # ≈0 (no harm before the belief sharpens), mirroring MoveBelief.reinject / SpreadBelief.reinject.
-        self.reinject_proj = torch.nn.Linear(type_emb_dim, D_MODEL)
+        self.reinject_proj = torch.nn.Linear(type_emb_dim, d_model)
         torch.nn.init.normal_(self.reinject_proj.weight, std=0.02)
         torch.nn.init.zeros_(self.reinject_proj.bias)
-        self.reinject_norm = torch.nn.LayerNorm(D_MODEL)
+        self.reinject_norm = torch.nn.LayerNorm(d_model)
         from agents.model.damage_tables import build_hp_type_prior
         # [n_species, 16] prob prior (sums to 1) — the log-odds fusion base; non-persistent (data-derived).
         self.register_buffer("hp_prior", build_hp_type_prior(n_species), persistent=False)

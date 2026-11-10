@@ -11,11 +11,11 @@ from agents.observation.constants import (
     POKEMON_FULL_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
-from agents.model.arch_constants import (ROLE_TOKEN_SIZE,
+from agents.model.arch_constants import (D_MODEL,
     MOVE_NET_HIDDEN,
     MOVE_LATENT_HIDDEN,
     MOVE_LATENT_DIM,
-    ROLE_ENCODER_HIDDEN,
+    role_encoder_hidden,
 )
 
 
@@ -67,13 +67,13 @@ class MoveLatentEncoder(torch.nn.Module):
 
 class PokemonEncoder(torch.nn.Module):
     """Per-Pokémon encoding: embed + stitch the enriched vector, run the shared move
-    processor + within-mon move self-attention, then the role encoder → 12×128 role tokens.
+    processor + within-mon move self-attention, then the role encoder → 12×d_model role tokens.
 
     When ``move_latent`` is on (gen3_unified_move_system_v1), a context-free `MoveLatentEncoder` latent
     is concatenated into the move-network input — a mechanics-grounded move identity (widens
     move_input_dim by MOVE_LATENT_DIM; OFF leaves the move network byte-identical)."""
 
-    def __init__(self, layout: Dict[str, Any], move_latent: bool = False):
+    def __init__(self, layout: Dict[str, Any], move_latent: bool = False, d_model: int = D_MODEL):
         super().__init__()
         # gen3_pointer_native_v1: `forward` ALWAYS stashes the per-(mon, move-slot) tokens — they are
         # the pointer action head's move-scorer input, and the pointer head is THE action head in this
@@ -148,15 +148,17 @@ class PokemonEncoder(torch.nn.Module):
             + self._active_ctx_dim                      # E2: own side's active ctx (active slot only)
             + _global_ctx_dim                           # broadcasted global context
         )
-        self.role_token_size = ROLE_TOKEN_SIZE
+        # gen3_d_model_width_v1: the role token IS the run's trunk width (`arch_constants.role_encoder_hidden`).
+        _role_hidden = role_encoder_hidden(d_model)
+        self.role_token_size = _role_hidden[1]
         self.role_encoder = torch.nn.Sequential(
-            torch.nn.Linear(role_input_dim, ROLE_ENCODER_HIDDEN[0]),
+            torch.nn.Linear(role_input_dim, _role_hidden[0]),
             torch.nn.ReLU(),
-            torch.nn.Linear(ROLE_ENCODER_HIDDEN[0], ROLE_ENCODER_HIDDEN[1])
+            torch.nn.Linear(_role_hidden[0], _role_hidden[1])
         )
 
     def forward(self, ctx: ExtractorContext, embeddings: Embeddings) -> torch.Tensor:
-        """Encode the 12 Pokémon → role tokens [B, 12, ROLE_TOKEN_SIZE]. Also stashes the per-(mon,
+        """Encode the 12 Pokémon → role tokens [B, 12, d_model]. Also stashes the per-(mon,
         move-slot) tokens at `self.last_move_tokens` for the pointer head (SORTED-BY-ID slot order)."""
         layout = self.layout
         batch_size = ctx.batch_size
@@ -354,4 +356,4 @@ class PokemonEncoder(torch.nn.Module):
         role_tokens = self.role_encoder(
             pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1])
         )
-        return role_tokens.reshape(batch_size, n_poke, self.role_token_size)  # type: ignore[no-any-return]  # [B, 12, 128]
+        return role_tokens.reshape(batch_size, n_poke, self.role_token_size)  # type: ignore[no-any-return]  # [B, 12, d_model]

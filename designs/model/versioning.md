@@ -305,6 +305,20 @@ top-two gap ≥ 0.05), against 54 at v167 (the census is in the CHANGELOG entry)
 premise of a near-neutral stamp does not: read an older checkpoint at its own strength from a pin before v168; new
 training starts from v168.
 
+**v169 (`gen3_d_model_width_v1`, 2026-11-09; MF-5's scale bet)** added one STRUCTURAL field, `d_model` (int, default 128;
+`--d-model N`, a multiple of 32, at least 128): the run's trunk width. `arch_constants`' width block is the one statement
+of what follows it and what stays fixed; a module reads its width from its constructor's `d_model`. The recorded
+weight fields `role_token_size` / `role_encoder_hidden` follow it (`construct.py`), and `check_compatible` gates it with
+its own text naming `--d-model`. A pre-v169 config migrates to its recorded `role_token_size` (128, the only width ever
+built). It is NOT growable (`growth.GROWABLE` has no row: a trained width has no identity-preserving widening), so a fork
+inherits it and a typed mismatch is refused; a `--grow trunk_ffn_dim` on a non-default-width parent is a typed refusal
+too (the step's `validate` sees two ints, judged against the default width's base), while depth and per-kind growths
+build their new modules at the parent's width (`growth.d_model_of`). The base trunk FFN is `ffn_base(d_model)` = 2 · d,
+so `trunk_ffn_dim` (the recorded total width) must be at least that (`trunk_ffn_dim_below_the_width_base`, a
+combination check, and the extractor). No `ARCH_SIGNATURE` bump: 128 builds the same modules in the same order, every
+existing state dict and forward unchanged (pinned by `d_model_width_test.py` against 2551befed's signature); another
+width is gated by the field (the trunk_layers / trunk_ffn_dim precedent). No OBS_SEMANTICS or floor change.
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

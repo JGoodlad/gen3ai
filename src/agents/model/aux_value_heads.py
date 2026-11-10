@@ -27,15 +27,15 @@ class WinProbHead(torch.nn.Module):
     win-prediction objective also shapes the shared trunk). `none` = this module is not built (the chain
     is byte-for-byte the baseline)."""
 
-    def __init__(self) -> None:
+    def __init__(self, d_model: int = D_MODEL) -> None:
         super().__init__()
         # Small MLP off the value pool: LayerNorm → Linear → ReLU → Linear(→1). A bottleneck (not a bare
         # linear) so `read_only` reports "decodable by a small head" — fairer to the nonlinear trunk.
         self.net = torch.nn.Sequential(
-            torch.nn.LayerNorm(D_MODEL),
-            torch.nn.Linear(D_MODEL, D_MODEL),
+            torch.nn.LayerNorm(d_model),
+            torch.nn.Linear(d_model, d_model),
             torch.nn.ReLU(),
-            torch.nn.Linear(D_MODEL, 1),
+            torch.nn.Linear(d_model, 1),
         )
 
     def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:

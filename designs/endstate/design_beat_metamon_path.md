@@ -524,7 +524,8 @@ at 10³ teams.
   inside ±3 pp. P −3.28 pp [−4.14, −2.43]. Reported: H +4.14 [−1.08, +9.34], P72 +2.86 [−2.37, +8.07], home72 vs
   Kakuna −1.86 [−7.05, +3.35], U +2.52 [−0.02, +5.05] (M4), Δ_H − Δ_F +3.59. Every VOID guard PASS; the compile canary
   logged UNCONFIRMED on s3505 u100 and s3501 u200 (no registered guard; AM-N1P-2 FINDING 13).
-- **Not built:** the human-derived arm `n1_hrep_v1` (X61 PREREG §10). (N4's width flag was built and read NO-GO on the toy, 2026-11-04; `D_MODEL` is still a constant.)
+- **Not built:** the human-derived arm `n1_hrep_v1` (X61 PREREG §10). (N4's width flag was built and read NO-GO on the toy, 2026-11-04; the trunk width became a per-run setting,
+`--d-model`, on 2026-11-09 for MF-5's from-scratch scale bet.)
   The from-step-0 toy screen, if wanted, is the review's Option T by a new registration.
 
 ### 6.5 X53 — a fresh wide run, conditional
@@ -700,3 +701,4 @@ with the interval named in the registration.
 | 2026-10-30 | **N1-P LOOK 2 (FINAL) READ: NULL** (N1-P look-2 read operator, orchestrator brief; CPU, 6,480 new Kakuna games + 14,000 in-house pairs on E3 at look 1's commit `de15dfc7b`, AM-N1P-2 `d78700253`; look 1's finals imported) | §6.5b and the lever row: F +0.55 pp [−1.26, +2.36] (5 seeds), P −3.28 pp [−4.14, −2.43]; X53-N1 not triggered; §7's levers-null branch is the one that applies |
 | 2026-10-30 | **X59-S's closure BLOCKED** (X59-S read operator; CPU, 6,000 S-P0 Kakuna games on the read's one engine) | Δ_restriction +2.85 pp [+0.14, +5.56]: the human-replay row keeps H-TEAMS open (X60-T), H-BC stays dropped | closing human data on Δ_data alone | X59-S README; `results/restriction_record_decision.json` |
 | 2026-11-04 | **THE N4 TOY READ: NO-GO** (N4 read operator, orchestrator brief; CPU, 144,000 in-house S games + 6,000 Kakuna games at `31bd9ced9`) | the capacity row: a 4× wider trunk FFN at the toy plateau gives no ≥ 2 pp in-house gain within 70M (+0.46 pp [−0.28, +1.20]); forum72 vs Kakuna +0.20 [−2.91, +3.31], UNDECIDED; the new units moved the policy less than ordinary drift. With X48, growth at the plateau is closed; no N4-P | — | [`n4_capacity_screen_2026-10-27/README.md`](../research_state/measurements/n4_capacity_screen_2026-10-27/README.md) |
+| 2026-11-09 | **THE TRUNK WIDTH BECOMES A PER-RUN SETTING** (width builder, orchestrator brief; CPU) | `--d-model N` (`gen3_d_model_width_v1`, config v169): MF-5's build prerequisite (`../research_state/EXPERIMENT_BACKLOG.md` §2.0) is met; production stays 128, byte-identical; a 2× production build holds 6,258,079 parameters against 2,609,183 | the "`D_MODEL` is still a constant" note in §6's not-built list | `../ARCHITECTURE.md` §2.1 item 9; `src/agents/model/d_model_width_test.py` |

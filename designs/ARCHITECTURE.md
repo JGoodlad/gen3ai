@@ -794,7 +794,23 @@ The concrete steps:
    refused beside per-kind experts. A FORK reaches it only through `--grow trunk_ffn_dim=N` (from a 256-wide parent):
    the zero output adds an exact 0.0, the new parameters start with fresh AdamW state (gate measured on the toy after
    one AdamW step, 256 → 1024: max |Δ| 0.0, 6 new tensors, 394,752 parameters). Detail:
-   [`endstate/design_n4_capacity_screen.md`](endstate/design_n4_capacity_screen.md) §2.
+   [`endstate/design_n4_capacity_screen.md`](endstate/design_n4_capacity_screen.md) §2. On a run of another
+   `--d-model` the base FFN is 2 × its width and the branch is `N − 2·d_model` (below).
+   **THE TRUNK WIDTH IS A PER-RUN SETTING** (`--d-model N`, `gen3_d_model_width_v1`, config v169; 128 in production;
+   MF-5's scale bet). Every token (mon, board, seat, event, OTHER_species), every trunk round, the base FFN
+   (2 · `d_model`), the role encoder (`[2·d_model, d_model]`), the static encoder's D MLP hidden (`d_model`), the
+   pools and their queries, every zero-init fact projection into the token width, the belief / value / win-prob heads'
+   inputs, `value_pooled`, the trunk-readout pointer scorer and the policy tower's INPUT follow it; the head count (4,
+   so the head dim is `d_model / 4`), the policy tower (512), the move network and every small readout width (§2.2's
+   other rows) stay fixed. `arch_constants`' width block is the one statement of the split; a module reads its width
+   from its constructor's `d_model`, never `D_MODEL`. It is recorded in `model_config.json` (with
+   `role_token_size` / `role_encoder_hidden`, which follow it), inherited by a flagless resume or fork, refused on a
+   mismatch by `check_compatible` and never grown (a trained width has no identity-preserving widening). N must be a
+   multiple of 32 and at least 128, and a wider run types `--trunk-ffn-dim 2N` (a lower value is refused). The default
+   build is the pre-width network (state-dict signature and element count pinned by `d_model_width_test.py`).
+   MEASURED 2026-11-09 on the `gen3_d_model_width_v1` tree (CPU, `fresh_checkpoint.build_fresh_model(0)` on the
+   production surface): **2,609,183 parameters at
+   128, 6,258,079 at 256 (2.40×)**; the 2× extractor holds 5,661,340 of them.
 10. **`CLSPool`** — three learned queries: `our_cls` over our 6 refined tokens, `their_cls` over
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy), emitting `PROJECTION_DIM` =
@@ -805,16 +821,16 @@ The concrete steps:
 
 | Constant | Value | File |
 |---|---|---|
-| `ROLE_TOKEN_SIZE` = `D_MODEL` | 128 | `arch_constants.py` |
+| `ROLE_TOKEN_SIZE` = `D_MODEL` | 128: the DEFAULT; a run's own width is its `d_model` (`--d-model`, §2.1 item 9), and the rows marked "follows" scale with it | `arch_constants.py` |
 | `PROJECTION_DIM` | 512 | " |
 | `MOVE_NET_HIDDEN` | `[96, 32]` | " |
 | `MOVE_LATENT_DIM` / `MOVE_LATENT_HIDDEN` | 32 / 64 | " |
-| `ROLE_ENCODER_HIDDEN` | `[256, 128]` (the static encoder's S path and the legacy role encoder) | " |
-| `STATIC_DYN_HIDDEN` / `STATIC_MOVE_POOL_DIM` / `STATIC_OPC_OUT_HIDDEN` | 128 / 32 / 32 (the static encoder's D MLP, its per-move PP / legality pool, the op content's per-move set function) | " |
+| `ROLE_ENCODER_HIDDEN` | `[256, 128]` (the static encoder's S path and the legacy role encoder; follows `d_model`: `[2·d, d]`) | " |
+| `STATIC_DYN_HIDDEN` / `STATIC_MOVE_POOL_DIM` / `STATIC_OPC_OUT_HIDDEN` | 128 / 32 / 32 (the static encoder's D MLP, its per-move PP / legality pool, the op content's per-move set function; the first follows `d_model`) | " |
 | `HYPOTHESIS_DELTA_HIDDEN` / `FLAT_INTENT_HIDDEN` | 96 / 64 (X5's species delta, the flat opponent pointer's scorer) | " |
 | `UVR_DIM` / `UVR_K` | 64 / 4 (`value_entity_pool`) | " |
 | `POINTER_HIDDEN` | 64 | " |
-| `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 (the base depth and width; production's `--trunk-layers 3` appends one identity-init round; `--trunk-ffn-dim N > 256` adds a width branch per round) | " |
+| `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 (the base depth and width; production's `--trunk-layers 3` appends one identity-init round; `--trunk-ffn-dim N > 256` adds a width branch per round; the FFN base follows `d_model`, 2·d, the head count does not) | " |
 | `NET_ARCH` (the ACTOR-only mlp_extractor; no critic branch) | `[512, 512]`, Tanh (`policy.POLICY_ACTIVATION_FN`, SB3's signature default made explicit) | " |
 
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
@@ -1865,6 +1881,7 @@ does nothing given another setting.
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
 | `belief_grad_mode` | `"shaping"` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
+| `d_model` | `128` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |
 | `damage_matrices_incoming` | `true` | ACTIVE |
 | `damage_matrices_outgoing` | `true` | ACTIVE |

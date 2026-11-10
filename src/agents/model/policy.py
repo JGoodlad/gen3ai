@@ -28,7 +28,7 @@ from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
 from agents.model import masked_categorical as _mc
-from agents.model.arch_constants import D_MODEL, POINTER_HIDDEN, TRUNK_POINTER_HIDDEN
+from agents.model.arch_constants import POINTER_HIDDEN, trunk_pointer_hidden
 from agents.model.critic_mode import CRITIC_UNRECORDED, CRITIC_WINPROB, is_winprob
 
 if TYPE_CHECKING:
@@ -135,8 +135,8 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         pi_arch = list(na.get("pi", [])) if isinstance(na, dict) else list(na)
         self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=dict(pi=pi_arch, vf=[]),
                                           activation_fn=self.activation_fn, device=self.device)
-        # The critic branch is the identity on the extractor's value half, `value_pooled` [B, D_MODEL].
-        self.mlp_extractor.latent_dim_vf = D_MODEL
+        # The critic branch is the identity on the extractor's value half, `value_pooled` [B, d_model].
+        self.mlp_extractor.latent_dim_vf = int(cast("Gen3FeaturesExtractor", self.features_extractor).d_model)
 
     def _build(self, lr_schedule: Any) -> None:
         """Build the policy's OWN stack: the actor tower, the pointer head, the optimizer.
@@ -176,11 +176,11 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         if trunk:
             self.mlp_extractor.policy_net = th.nn.Sequential()
             self.mlp_extractor.latent_dim_pi = fe.policy_ctx_dim
-            pointer_hidden = TRUNK_POINTER_HIDDEN
+            pointer_hidden = trunk_pointer_hidden(int(fe.d_model))
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),
             # not the raw 32-dim PokemonEncoder tokens — the extractor owns the width.
-            move_token_dim=fe.pointer_move_token_dim, d_model=D_MODEL,
+            move_token_dim=fe.pointer_move_token_dim, d_model=int(fe.d_model),
             ctx_dim=self.mlp_extractor.latent_dim_pi,
             move_cell_dim=fe.pointer_move_cell_dim,
             switch_cell_dim=fe.pointer_switch_cell_dim,

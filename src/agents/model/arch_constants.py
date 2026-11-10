@@ -8,7 +8,15 @@ resolves, and `model_version.py` keeps reading them from there.
 
 Change a dim HERE and nowhere else. See the root `CLAUDE.md` -> Model Versioning: a change to any of
 these is weight-shape-relevant and `check_compatible` will (correctly) reject old checkpoints.
+
+THE ONE PER-RUN WIDTH (`--d-model N`, `gen3_d_model_width_v1`, MF-5's scale bet): `D_MODEL` below is the DEFAULT
+trunk width, not the only one. A run's width is the extractor kwarg `d_model` (recorded in `model_config.json`, gated
+by `check_compatible`), and every width that FOLLOWS it is a function of it in the block after `D_MODEL`
+(`check_d_model`, `ffn_base`, `role_encoder_hidden`, `static_dyn_hidden`, `trunk_pointer_hidden`). Every other width
+in this file is FIXED whatever the run's width (the heads, the tower, the small readout widths): read the block's
+comment for which and why. A module reads its width from its constructor's `d_model`, never from `D_MODEL`.
 """
+from typing import List
 ROLE_TOKEN_SIZE = 128
 PROJECTION_DIM = 512
 MOVE_NET_HIDDEN = [96, 32]        # [hidden, output] of shared move processor
@@ -35,10 +43,70 @@ POLICY_QUERY_INIT_SEED = 20261006
 
 # Unified transformer hyperparameters. d_model matches ROLE_TOKEN_SIZE so team
 # role tokens enter the transformer without a projection step.
-D_MODEL = ROLE_TOKEN_SIZE         # 128
+D_MODEL = ROLE_TOKEN_SIZE         # 128 — the DEFAULT width; a run's own is its `d_model` (module docstring)
 TRANSFORMER_N_LAYERS = 2
 TRANSFORMER_N_HEADS = 4
 TRANSFORMER_FFN_DIM = 256
+
+# gen3_d_model_width_v1 (config v169, `--d-model N`; MF-5): the per-run trunk width and what FOLLOWS it. At the
+# default (`D_MODEL`) every function below returns the constant it replaced, so the default build is byte-identical.
+#
+# FOLLOWS d_model: the mon / role / board / event / seat tokens (`ROLE_TOKEN_SIZE` IS `d_model`), every trunk round
+# (attention in/out, LayerNorms), the base FFN (`ffn_base` = FFN_MULT · d_model, the 2:1 ratio of 256:128), the role
+# encoder's hidden (2 · d_model) and output, the static encoder's D MLP hidden (d_model), the pools and their CLS
+# queries, every zero-init fact projection INTO the token width, the belief heads' inputs, the value readout's output,
+# `value_pooled` (the critic's input), the win-prob head, the trunk-readout pointer scorer (`trunk_pointer_hidden`),
+# the policy tower's INPUT (`compute_projection_widths`), the ride-along heads' inputs.
+# FIXED whatever the width (each its own constant above / below): the head COUNT (`TRANSFORMER_N_HEADS`, so the head
+# dim is d_model / 4 and the edge-bias maps keep 4 outputs), the policy tower (`PROJECTION_DIM`, `NET_ARCH`), the
+# pointer scorers under `tower` (`POINTER_HIDDEN`), the move network (`MOVE_NET_HIDDEN`, `MOVE_LATENT_*`), the
+# embedding tables, the value readout's internal width (`UVR_K` × `UVR_DIM`), X5's δ_θ hidden
+# (`HYPOTHESIS_DELTA_HIDDEN`), the flat intent scorer (`FLAT_INTENT_HIDDEN`), the static encoder's move pool and op
+# content set function (`STATIC_MOVE_POOL_DIM`, `STATIC_OPC_OUT_HIDDEN`) and the ride-along heads' own widths.
+#: The base FFN's width per unit of d_model (TRANSFORMER_FFN_DIM / D_MODEL).
+FFN_MULT = TRANSFORMER_FFN_DIM // D_MODEL
+#: d_model's granularity: a whole number of heads, each a multiple of 8 wide (SDPA's fused kernels' alignment).
+D_MODEL_QUANTUM = TRANSFORMER_N_HEADS * 8
+
+
+def check_d_model(value: object) -> int:
+    """``value`` as a trunk width (an int multiple of `D_MODEL_QUANTUM`, at least `D_MODEL`), or `ValueError`.
+
+    NARROWER than the default is not offered: `--trunk-ffn-dim`'s default (TRANSFORMER_FFN_DIM) would then sit ABOVE
+    the narrow base and silently build a width branch, and no experiment asks for a narrower trunk."""
+    if isinstance(value, bool):
+        raise ValueError(f"d_model must be an integer, got {value!r}")
+    try:
+        v: int = int(value)  # type: ignore[call-overload]  # `value` is any user input; int() validates it
+    except (TypeError, ValueError):
+        raise ValueError(f"d_model must be an integer, got {value!r}") from None
+    if isinstance(value, float) and float(value) != v:
+        raise ValueError(f"d_model must be an integer, got {value!r}")
+    if v < D_MODEL or v % D_MODEL_QUANTUM:
+        raise ValueError(f"d_model must be a multiple of {D_MODEL_QUANTUM} ({TRANSFORMER_N_HEADS} heads, each a multiple "
+                         f"of 8 wide) and at least {D_MODEL} (a narrower trunk is not offered), got {v}")
+    return v
+
+
+def ffn_base(d_model: int) -> int:
+    """The base trunk FFN's width at ``d_model`` (TRANSFORMER_FFN_DIM at the default): `--trunk-ffn-dim`'s floor."""
+    return FFN_MULT * int(d_model)
+
+
+def role_encoder_hidden(d_model: int) -> List[int]:
+    """``[hidden, output]`` of the per-mon role encoder at ``d_model`` (ROLE_ENCODER_HIDDEN at the default)."""
+    return [ROLE_ENCODER_HIDDEN[0] * int(d_model) // D_MODEL, int(d_model)]
+
+
+def static_dyn_hidden(d_model: int) -> int:
+    """The static encoder's D MLP hidden width at ``d_model`` (STATIC_DYN_HIDDEN at the default)."""
+    return STATIC_DYN_HIDDEN * int(d_model) // D_MODEL
+
+
+def trunk_pointer_hidden(d_model: int) -> int:
+    """The pointer scorers' hidden width under `--policy-readout trunk` at ``d_model`` (TRUNK_POINTER_HIDDEN at the
+    default: the scorer keeps the state query's width)."""
+    return TRUNK_POINTER_HIDDEN * int(d_model) // D_MODEL
 
 # v61's `VALUE_SEED_K` / `VALUE_SEED_DIM` (the multi-seed critic readout's shape) and v74's
 # `_INTENT_CELL_FEATURES` (the α-weighted vf term's cell axis) are DELETED in the critic-route

@@ -579,7 +579,26 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: bool(_val(a, "promotion_sprt", False)) and _typed(a, "promote_threshold"),
         "--promote-threshold does nothing under --promotion-sprt (the SPRT decides; a typed threshold "
         "would be silently inert)"),
+
+    # ---- gen3_d_model_width_v1 (v169, MF-5): the trunk FFN's floor follows the trunk width -----------------------
+    CombinationCheck(
+        "trunk_ffn_dim_below_the_width_base", ("trunk_ffn_dim", "d_model"),
+        lambda a: _ffn_below_base(a),
+        lambda a: (f"--trunk-ffn-dim {int(_val(a, 'trunk_ffn_dim', 256))} is below the base FFN of --d-model "
+                   f"{int(_val(a, 'd_model', 128))} ({_ffn_base_of(a)}, 2 x the width): type --trunk-ffn-dim "
+                   f"{_ffn_base_of(a)} (the base, the 2:1 ratio) or wider"),
+        exit_style="fatal_config"),
 )
+
+
+def _ffn_base_of(args) -> int:
+    from agents.model.arch_constants import ffn_base
+    return ffn_base(int(_val(args, "d_model", 128)))
+
+
+def _ffn_below_base(args) -> bool:
+    """A resolved `--trunk-ffn-dim` narrower than the resolved width's base FFN (`arch_constants.ffn_base`)."""
+    return int(_val(args, "trunk_ffn_dim", 256)) < _ffn_base_of(args)
 
 
 def _floor_is_non_default(args) -> bool:

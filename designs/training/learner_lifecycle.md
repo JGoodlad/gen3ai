@@ -96,7 +96,7 @@ optimizer is still caught by the step hook, and memory by the leak detector. Ten
   instead of from the first step.
 - **The capacity telemetry's canary** (`--capacity-telemetry`, off in production): its head + Adam
   were built on the first minibatch; `CapacityTerms._capacity_declare` builds them at startup
-  (`CapacityTelemetry.declare`, D_MODEL-wide input). A direct caller that never declared (a unit
+  (`CapacityTelemetry.declare`, `d_model`-wide input: the run's own trunk width). A direct caller that never declared (a unit
   test) still gets the old build on first use — after a freeze that build is the FATAL.
 
 A startup builder is marked `@lifecycle_decl.startup_builder`; the static gate reads the decorator by

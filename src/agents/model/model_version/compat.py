@@ -487,6 +487,14 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "training run. A FORK that means to SPLIT the trunk's FFN declares it: --grow trunk_ffn_by_kind=on "
                 "(B-KFFN, `agents.model.growth`: every expert a copy of the shared FFN, the parent's function bit for "
                 "bit). Removing trained experts (on -> off) is not offered.")
+        # gen3_d_model_width_v1 (v169, MF-5): the trunk width shapes nearly every weight; `role_token_size` (a weight
+        # field above) follows it, but a frozen opponent's gate must name the cause and the flag.
+        if self.d_model != saved.d_model:
+            raise ModelVersionError(
+                f"d_model mismatch: saved={saved.d_model!r}, current={self.d_model!r}.\n"
+                "The trunk width is fixed for a run's lifetime (it shapes every token-width weight).\n"
+                "Resume with the matching --d-model setting (a flagless resume or fork inherits it), or start a fresh "
+                "training run. No growth is offered: a trained width cannot be widened as an identity.")
         # gen3_trunk_ffn_width_v1 (v164, B-FFNW): the width branch is parameters and, once trained, a different forward;
         # a frozen opponent's gate must name the cause rather than fail a strict load on key names or shapes.
         if self.trunk_ffn_dim != saved.trunk_ffn_dim:

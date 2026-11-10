@@ -36,23 +36,26 @@ from typing import Any, List, Optional
 
 import torch
 
-from agents.model.arch_constants import D_MODEL, TRANSFORMER_FFN_DIM, TRUNK_FFNW_INIT_SEED
+from agents.model.arch_constants import D_MODEL, TRANSFORMER_FFN_DIM, TRUNK_FFNW_INIT_SEED, ffn_base
 
-#: The narrowest legal width: the base FFN's (nothing built).
+#: The narrowest legal width AT THE DEFAULT d_model: the base FFN's (nothing built). A run of another width
+#: (`--d-model`, gen3_d_model_width_v1) has its own base, `arch_constants.ffn_base(d_model)`.
 FFN_DIM_BASE = TRANSFORMER_FFN_DIM
 
 
-def check_ffn_dim(value: Any) -> int:
-    """``value`` as the trunk FFN width (an int >= `FFN_DIM_BASE`), or `ValueError`."""
+def check_ffn_dim(value: Any, d_model: int = D_MODEL) -> int:
+    """``value`` as the trunk FFN width at trunk width ``d_model`` (an int >= `ffn_base(d_model)`), or `ValueError`."""
     try:
         v = int(value)
     except (TypeError, ValueError):
         raise ValueError(f"trunk_ffn_dim must be an integer, got {value!r}") from None
     if isinstance(value, float) and float(value) != v:
         raise ValueError(f"trunk_ffn_dim must be an integer, got {value!r}")
-    if v < FFN_DIM_BASE:
-        raise ValueError(f"trunk_ffn_dim must be >= {FFN_DIM_BASE} (the base FFN's width; a narrower FFN is not "
-                         f"offered), got {v}")
+    base = ffn_base(d_model)
+    if v < base:
+        raise ValueError(f"trunk_ffn_dim must be >= {base} (the base FFN's width at d_model {int(d_model)}; a narrower "
+                         f"FFN is not offered), got {v}" + ("" if int(d_model) == D_MODEL else
+                         f". A --d-model {int(d_model)} run types --trunk-ffn-dim {base} (or wider)"))
     return v
 
 
@@ -75,21 +78,26 @@ class FfnWidthBranch(torch.nn.Module):
         torch.nn.init.zeros_(self.linear1.bias)
 
 
-def build_ffn_extra(round_index: int, ffn_dim: int) -> Optional[FfnWidthBranch]:
-    """Round ``round_index``'s width branch at trunk FFN width ``ffn_dim``, built from the PRIVATE seed
-    ``TRUNK_FFNW_INIT_SEED + round_index`` (no global RNG draw); None at the base width (nothing built)."""
-    extra = check_ffn_dim(ffn_dim) - FFN_DIM_BASE
+def build_ffn_extra(round_index: int, ffn_dim: int, d_model: int = D_MODEL) -> Optional[FfnWidthBranch]:
+    """Round ``round_index``'s width branch at trunk FFN width ``ffn_dim`` (trunk width ``d_model``), built from the
+    PRIVATE seed ``TRUNK_FFNW_INIT_SEED + round_index`` (no global RNG draw); None at the base width (nothing built)."""
+    extra = check_ffn_dim(ffn_dim, d_model) - ffn_base(d_model)
     if extra == 0:
         return None
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(TRUNK_FFNW_INIT_SEED + int(round_index))
-        return FfnWidthBranch(extra)
+        return FfnWidthBranch(extra, int(d_model))
 
 
 def ffn_dim_of_round(r: Any) -> int:
-    """The FFN width round ``r`` is BUILT at: the base plus its branch's width."""
+    """The FFN width round ``r`` is BUILT at: its own base FFN's (``linear1``'s outputs) plus its branch's width."""
     br = getattr(r, "ffn_extra", None)
-    return FFN_DIM_BASE + (int(br.linear1.weight.shape[0]) if br is not None else 0)
+    return int(r.linear1.weight.shape[0]) + (int(br.linear1.weight.shape[0]) if br is not None else 0)
+
+
+def d_model_of_round(r: Any) -> int:
+    """The trunk width round ``r`` is BUILT at (``linear1``'s inputs)."""
+    return int(r.linear1.weight.shape[1])
 
 
 def install_branches(tt: Any, ffn_dim: int, *, only_missing: bool = False) -> List[torch.nn.Module]:
@@ -108,7 +116,7 @@ def install_branches(tt: Any, ffn_dim: int, *, only_missing: bool = False) -> Li
             if only_missing:
                 continue
             raise ValueError(f"trunk round {i} already carries a width branch")
-        br = build_ffn_extra(i, ffn_dim)
+        br = build_ffn_extra(i, ffn_dim, d_model_of_round(r))
         if br is None:
             continue
         ref: torch.Tensor = r.linear1.weight                                       # type: ignore[assignment]

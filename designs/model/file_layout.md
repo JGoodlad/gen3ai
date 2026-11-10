@@ -221,6 +221,13 @@ ROLE_ENCODER_HIDDEN = [256, 128]
 
 **Change them in `arch_constants.py` and nowhere else.** The phase modules' `__init__` read from these constants; `ModelVersion` imports them so `model_config.json` always reflects the live values. Do not hardcode these numbers anywhere else in the codebase.
 
+**The trunk width is per-run** (`--d-model`, `gen3_d_model_width_v1`, config v169): `D_MODEL` / `ROLE_TOKEN_SIZE` are
+its DEFAULT. Every module whose weights are token-wide takes a `d_model` constructor argument and the extractor passes
+its own (`self.d_model`); the widths that follow it are FUNCTIONS in `arch_constants.py` (`check_d_model`, `ffn_base`,
+`role_encoder_hidden`, `static_dyn_hidden`, `trunk_pointer_hidden`), and the file's width block says which widths stay
+fixed. A new token-width module takes `d_model` the same way; `d_model_width_test.py` fails on a weight still 128 wide
+at `d_model = 192`.
+
 Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `state_encoder.get_layout()` and flow through `features_extractor_kwargs` — same principle, different file.
 
 **`role_input_dim` is not a module-level constant** — it is computed dynamically in `PokemonEncoder.__init__` from the layout fields and `MOVE_NET_HIDDEN`. You do not need to update it manually when dims change; it is derived correctly. The projection input dims are likewise derived — static arithmetic in `compute_projection_widths` (`gen3_static_widths_v1`), verified per flag combo by `projection_width_test.py`.

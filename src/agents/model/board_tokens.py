@@ -137,9 +137,9 @@ class OpContent(torch.nn.Module):
 
     Our mons' incoming rows ride `prefuse_proj` (unchanged)."""
 
-    def __init__(self, outgoing: bool):
+    def __init__(self, outgoing: bool, d_model: int = D_MODEL):
         super().__init__()
-        self.amount_proj = torch.nn.Linear(OPC_AMOUNT_DIM, D_MODEL)
+        self.amount_proj = torch.nn.Linear(OPC_AMOUNT_DIM, d_model)
         torch.nn.init.zeros_(self.amount_proj.weight)
         torch.nn.init.zeros_(self.amount_proj.bias)
         # The per-move network keeps its (SB3-redrawn) random init: the zero output layer is what makes the route
@@ -147,7 +147,7 @@ class OpContent(torch.nn.Module):
         self.outgoing_cell: Optional[torch.nn.Linear] = (
             torch.nn.Linear(OPC_OUTGOING_CELL, STATIC_OPC_OUT_HIDDEN, bias=False) if outgoing else None)
         self.outgoing_proj: Optional[torch.nn.Linear] = (
-            torch.nn.Linear(STATIC_OPC_OUT_HIDDEN, D_MODEL, bias=False) if outgoing else None)
+            torch.nn.Linear(STATIC_OPC_OUT_HIDDEN, d_model, bias=False) if outgoing else None)
         if self.outgoing_proj is not None:
             torch.nn.init.zeros_(self.outgoing_proj.weight)
 

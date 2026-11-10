@@ -1529,6 +1529,7 @@ def current_model_version(
     tau_solve: str = "fp32_alt",
     trunk_ffn_by_kind: str = "off",
     trunk_ffn_dim: int = 256,
+    d_model: int = 128,
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1609,6 +1610,8 @@ def current_model_version(
     ext_kwargs["trunk_ffn_by_kind"] = str(trunk_ffn_by_kind)
     # gen3_trunk_ffn_width_v1 (v164, B-FFNW): the trunk FFN's width — structural.
     ext_kwargs["trunk_ffn_dim"] = int(trunk_ffn_dim)
+    # gen3_d_model_width_v1 (v169, MF-5): the trunk width — structural.
+    ext_kwargs["d_model"] = int(d_model)
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
     ext_kwargs["t0_species_prior"] = t0_species_prior

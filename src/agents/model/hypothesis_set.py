@@ -498,7 +498,7 @@ class HypothesisBuilder(torch.nn.Module):
         move_valid: torch.Tensor
 
     def __init__(self, layout: dict, global_input_dim: int, n_move_seats: int,
-                 tau_solve: str = TAU_SOLVE_DEFAULT) -> None:
+                 tau_solve: str = TAU_SOLVE_DEFAULT, d_model: int = D_MODEL) -> None:
         super().__init__()
         from agents.model.hypothesis_dex_rows import load_hypothesis_dex_rows
 
@@ -528,17 +528,17 @@ class HypothesisBuilder(torch.nn.Module):
             # δ_θ: Deep-Sets sum-pool over the REVEALED opponent role tokens ⊕ a projection of the
             # global token's raw inputs → 2-layer MLP → species logits (last layer ZERO: cold start ==
             # the Smogon prior's fixed-size marginal exactly).
-            self.delta_global = IsolatedLinear(global_input_dim, D_MODEL)
-            self.delta_norm = torch.nn.LayerNorm(2 * D_MODEL)
-            self.delta_hidden = IsolatedLinear(2 * D_MODEL, HYPOTHESIS_DELTA_HIDDEN)
+            self.delta_global = IsolatedLinear(global_input_dim, d_model)
+            self.delta_norm = torch.nn.LayerNorm(2 * d_model)
+            self.delta_hidden = IsolatedLinear(2 * d_model, HYPOTHESIS_DELTA_HIDDEN)
             self.delta_out = IsolatedLinear(HYPOTHESIS_DELTA_HIDDEN, S, zero=True)
             # OTHER_species: a learned rest vector + a linear map of the tail-mean species embedding.
-            self.other_rest = torch.nn.Parameter(torch.randn(D_MODEL) * 0.02)
-            self.other_map = IsolatedLinear(species_emb_dim, D_MODEL)
+            self.other_rest = torch.nn.Parameter(torch.randn(d_model) * 0.02)
+            self.other_map = IsolatedLinear(species_emb_dim, d_model)
             # U3 (§3.4): the learned marker added to a hypothesis seat's encoded token, as E5's
             # `tail_marker` is (the token-type table is NOT grown — that would change every
             # state_dict). Drawn LAST in this private stream, so no earlier X5 init byte moves.
-            self.hypothesis_marker = torch.nn.Parameter(torch.randn(D_MODEL) * 0.02)
+            self.hypothesis_marker = torch.nn.Parameter(torch.randn(d_model) * 0.02)
         self.detach_read = False      # stamped by `_stamp_belief_grad_flags` (belief_grad_mode)
         # INFERENCE-ONLY anchor of the species presence to its prior (`belief_prior_mix`): a plain attribute, never
         # state; 0.0 = the unchanged forward.

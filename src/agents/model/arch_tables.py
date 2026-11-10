@@ -186,7 +186,7 @@ def head_input_parts(fe: Any) -> Tuple[List[Tuple[str, int, str]], List[Tuple[st
     """
     from agents.model import features_extractor as fx
 
-    D = fx.D_MODEL
+    D = int(getattr(fe, "d_model", fx.D_MODEL))
     nmr = fe.team_transformer._non_matchup_rest_dim
 
     pi: List[Tuple[str, int, str]] = [

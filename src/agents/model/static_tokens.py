@@ -33,9 +33,8 @@ from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import torch
 
-from agents.model.arch_constants import (MOVE_LATENT_DIM, MOVE_NET_HIDDEN, ROLE_ENCODER_HIDDEN,
-                                         ROLE_TOKEN_SIZE, STATIC_DYN_HIDDEN, STATIC_MOVE_POOL_DIM,
-                                         STATIC_STAT_SCALE)
+from agents.model.arch_constants import (D_MODEL, MOVE_LATENT_DIM, MOVE_NET_HIDDEN, STATIC_MOVE_POOL_DIM,
+                                         STATIC_STAT_SCALE, role_encoder_hidden, static_dyn_hidden)
 from agents.model.belief_tables import build_static_stat_prior
 from agents.model.damage_kinds import our_stats
 from agents.model.encoders import MoveLatentEncoder
@@ -67,9 +66,9 @@ _LAST_ACTION_BITS = POKEMON_LAST_ACTION_DIM - 1
 
 class StaticParts(NamedTuple):
     """One encoder pass, by part (the tests read S and D separately)."""
-    tokens: torch.Tensor        # [B,N,ROLE_TOKEN_SIZE] = static + dynamic
-    static: torch.Tensor        # [B,N,ROLE_TOKEN_SIZE] S
-    dynamic: torch.Tensor       # [B,N,ROLE_TOKEN_SIZE] D
+    tokens: torch.Tensor        # [B,N,d_model] = static + dynamic
+    static: torch.Tensor        # [B,N,d_model] S
+    dynamic: torch.Tensor       # [B,N,d_model] D
     move_tokens: torch.Tensor   # [B,N,4,MOVE_NET_HIDDEN[1]] per-move: static move token + its own state
 
 
@@ -78,7 +77,7 @@ class StaticTokenEncoder(torch.nn.Module):
 
     STAT_PRIOR: torch.Tensor
 
-    def __init__(self, layout: Dict[str, Any], move_latent: bool = False):
+    def __init__(self, layout: Dict[str, Any], move_latent: bool = False, d_model: int = D_MODEL):
         super().__init__()
         self.last_move_tokens: Optional[torch.Tensor] = None
         self.layout = layout
@@ -133,10 +132,12 @@ class StaticTokenEncoder(torch.nn.Module):
                           + MOVE_NET_HIDDEN[1]                               # the SET pool
                           + 1                                                # species_known
                           + POKEMON_HP_BLOCK_DIM)
-        self.role_token_size = ROLE_TOKEN_SIZE
+        # gen3_d_model_width_v1: S and D are each a token of the run's trunk width (`arch_constants`).
+        _role_hidden = role_encoder_hidden(d_model)
+        self.role_token_size = _role_hidden[1]
         self.role_encoder = torch.nn.Sequential(
-            torch.nn.Linear(role_input_dim, ROLE_ENCODER_HIDDEN[0]), torch.nn.ReLU(),
-            torch.nn.Linear(ROLE_ENCODER_HIDDEN[0], ROLE_TOKEN_SIZE))
+            torch.nn.Linear(role_input_dim, _role_hidden[0]), torch.nn.ReLU(),
+            torch.nn.Linear(_role_hidden[0], self.role_token_size))
 
         # D: the per-move state (PP, legality) — onto each move token, and pooled (tied to the move) into D.
         self.move_dyn_proj = torch.nn.Linear(2, MOVE_NET_HIDDEN[1])
@@ -148,8 +149,8 @@ class StaticTokenEncoder(torch.nn.Module):
                          + 2 + 1 + 1                                          # trap bits · active · consumed
                          + self._active_ctx_dim + STATIC_MOVE_POOL_DIM)
         self.dynamic_encoder = torch.nn.Sequential(
-            torch.nn.Linear(dyn_input_dim, STATIC_DYN_HIDDEN), torch.nn.ReLU(),
-            torch.nn.Linear(STATIC_DYN_HIDDEN, ROLE_TOKEN_SIZE))
+            torch.nn.Linear(dyn_input_dim, static_dyn_hidden(d_model)), torch.nn.ReLU(),
+            torch.nn.Linear(static_dyn_hidden(d_model), self.role_token_size))
         self.register_buffer("STAT_PRIOR", build_static_stat_prior(int(layout['max_species'])), persistent=False)
 
     # ------------------------------------------------------------------------------------------ parts
@@ -280,14 +281,14 @@ class StaticTokenEncoder(torch.nn.Module):
                            self.active_context(ctx))
 
     def forward(self, ctx: ExtractorContext, embeddings: Embeddings) -> torch.Tensor:
-        """[B,12,ROLE_TOKEN_SIZE]; stashes the per-move tokens (SORTED-BY-ID slot order, as legacy)."""
+        """[B,12,d_model]; stashes the per-move tokens (SORTED-BY-ID slot order, as legacy)."""
         p = self.parts(ctx, embeddings)
         self.last_move_tokens = p.move_tokens
         return p.tokens
 
 
 def encode_dex_rows(pe: StaticTokenEncoder, embeddings: Embeddings, rows: torch.Tensor) -> torch.Tensor:
-    """[R,ROLE_TOKEN_SIZE] the static-mode token of each OPPONENT dex row in ``rows`` [R,POKEMON_FULL_DIM]
+    """[R,d_model] the static-mode token of each OPPONENT dex row in ``rows`` [R,POKEMON_FULL_DIM]
     (a hypothesis is never the active: active context 0, every move slot legal)."""
     pp = rows.unsqueeze(0)
     ids = slice_pokemon_categoricals(pp, pe.layout)
@@ -298,7 +299,7 @@ def encode_dex_rows(pe: StaticTokenEncoder, embeddings: Embeddings, rows: torch.
 
 def static_hypothesis_tokens(pe: StaticTokenEncoder, embeddings: Embeddings, slot_species: torch.Tensor,
                              dex_rows: torch.Tensor) -> torch.Tensor:
-    """[B,6,ROLE_TOKEN_SIZE] the opponent slots' hypothesis tokens under `static`: the dex table encoded
+    """[B,6,d_model] the opponent slots' hypothesis tokens under `static`: the dex table encoded
     ONCE and GATHERED by ``slot_species`` [B,6] (0 on a revealed slot — never read). A small batch
     (B·6 < the table, T2's buckets) encodes the slots' own rows instead (a static choice per graph)."""
     B = slot_species.shape[0]

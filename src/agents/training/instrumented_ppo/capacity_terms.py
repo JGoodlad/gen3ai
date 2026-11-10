@@ -48,17 +48,18 @@ class CapacityTerms:
         """K6 (`gen3_learner_freeze_v1`): under `--capacity-telemetry`, build the telemetry holder AND
         its canary head + optimizer at STARTUP (`learner_lifecycle.declare_learner_startup` calls
         this before the freeze), so the first minibatch builds nothing. The canary reads the trunk's
-        `value_pooled` (D_MODEL wide) and the raw observation row. ``""`` when the flag is off."""
+        `value_pooled` (the run's d_model wide) and the raw observation row. ``""`` when the flag is off."""
         state = self._capacity()
         if state is None:
             return ""
         from agents.model.arch_constants import D_MODEL
+        width = int(getattr(getattr(getattr(self, "policy", None), "features_extractor", None), "d_model", D_MODEL))
         space = getattr(self, "observation_space", None)
         sub = getattr(space, "spaces", {}).get("observation") if space is not None else None
         if sub is None:
             return ""
-        canary = state.declare(int(D_MODEL), int(sub.shape[0]), self.device)
-        return f"canary head ({int(D_MODEL)} -> {canary.k}) + Adam declared"
+        canary = state.declare(width, int(sub.shape[0]), self.device)
+        return f"canary head ({width} -> {canary.k}) + Adam declared"
 
     @staticmethod
     def _capacity_snapshot_features(features_extractor, n_rows: int) -> Optional[th.Tensor]:

@@ -500,6 +500,17 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "`--grow trunk_ffn_dim=N` (the zero output makes the child its parent's function bit for bit; the "
                    "new parameters start with fresh AdamW state). Refused beside trunk_ffn_by_kind on. +197,376 "
                    "parameters per round at N = 1024."),
+    # gen3_d_model_width_v1 (config v169, MF-5's scale bet; EXPERIMENT_BACKLOG §2.0 FINDING 5): the per-run trunk width.
+    ModelFlag("d_model", 128, Tier.CLI, Klass.STRUCTURAL, 169,
+              "the trunk width: every mon / board / seat token, trunk round, pool and head input (128 = production; "
+              "a multiple of 32, at least 128)",
+              note="`arch_constants`' width block is the one statement of what follows it (the role encoder, the "
+                   "static encoder's D MLP, the base trunk FFN at 2 x d_model, the pools, every zero-init fact "
+                   "projection, the belief / value / win-prob heads' inputs, the policy tower's input, the "
+                   "ride-along heads' inputs) and what stays fixed (4 heads, the 512 tower, the small readout "
+                   "widths). The recorded `role_token_size` / `role_encoder_hidden` follow it. A wider run also types "
+                   "--trunk-ffn-dim 2 x N (a combination check refuses a trunk_ffn_dim below the base). No growth: "
+                   "a trained width cannot be widened as an identity, so a fork inherits it and a mismatch is refused."),
     # gen3_endstate_facts_v1 (config v152; design_hand_computed_features.md §1's FACT / JUDGMENT test, §4 ranks 3-5,
     # §5 rank 1, finding 7): the FACT-COMPLETION levers. (`status_facts`, `ko_ramp` and `g_ledger` were DELETED by the
     # legacy deletion's U1 with `speed_physics`, `op_reduction`, `switch_hazard_cost`, `eot_residual` and

@@ -615,10 +615,10 @@ class AdvantageEnsemble(torch.nn.Module):
     Output RAW [B, K, 11]; the centring under π is applied by `RideAlongHeads.readout`."""
 
     def __init__(self, k: int, *, move_token_dim: int, move_cell_dim: int,
-                 switch_cell_dim: int) -> None:
+                 switch_cell_dim: int, d_model: int = D_MODEL) -> None:
         super().__init__()
         self.k = int(k)
-        kw = dict(move_token_dim=move_token_dim, d_model=D_MODEL, ctx_dim=D_MODEL,
+        kw = dict(move_token_dim=move_token_dim, d_model=int(d_model), ctx_dim=int(d_model),
                   move_cell_dim=move_cell_dim, switch_cell_dim=switch_cell_dim,
                   hidden=POINTER_HIDDEN)
         self.members = torch.nn.ModuleList()
@@ -645,10 +645,11 @@ class _FlatOppScorer(torch.nn.Module):
     the other members: one context projection, one candidate projection, a move-kind and a switch-kind
     score (zero-init)."""
 
-    def __init__(self, n_moves: int, n_species: int, k: int, hidden: int = POINTER_HIDDEN) -> None:
+    def __init__(self, n_moves: int, n_species: int, k: int, hidden: int = POINTER_HIDDEN,
+                 d_model: int = D_MODEL) -> None:
         super().__init__()
         self.n_moves, self.n_species, self.k = int(n_moves), int(n_species), int(k)
-        self.ctx_proj = torch.nn.Linear(D_MODEL, hidden)
+        self.ctx_proj = torch.nn.Linear(d_model, hidden)
         self.move_emb = torch.nn.Embedding(self.n_moves, RIDEALONG_OPP_MOVE_EMB)
         self.species_emb = torch.nn.Embedding(self.n_species, RIDEALONG_OPP_MOVE_EMB)
         self.other_move = torch.nn.Parameter(torch.randn(RIDEALONG_OPP_MOVE_EMB) * 0.02)
@@ -680,15 +681,16 @@ class FlatOppEffectEnsemble(torch.nn.Module):
     """B's K members (+ randomized priors) over the flat pointer's columns — the same structure as
     `ValueEnsemble` / `AdvantageEnsemble`, a private seed per member."""
 
-    def __init__(self, k_members: int, n_moves: int, n_species: int, k_seats: int) -> None:
+    def __init__(self, k_members: int, n_moves: int, n_species: int, k_seats: int,
+                 d_model: int = D_MODEL) -> None:
         super().__init__()
         self.k = int(k_members)
         self.members = torch.nn.ModuleList()
         self.priors = torch.nn.ModuleList()
         for j in range(self.k):
             torch.manual_seed(RIDEALONG_INIT_SEED + 10007 * (j + 1))
-            self.members.append(_FlatOppScorer(n_moves, n_species, k_seats))
-            prior = _FlatOppScorer(n_moves, n_species, k_seats)
+            self.members.append(_FlatOppScorer(n_moves, n_species, k_seats, d_model=d_model))
+            prior = _FlatOppScorer(n_moves, n_species, k_seats, d_model=d_model)
             for lin in (prior.move_score, prior.switch_score):
                 torch.nn.init.normal_(lin.weight, 0.0, 1.0 / math.sqrt(POINTER_HIDDEN))
             self.priors.append(freeze_to_buffers(prior))
@@ -749,7 +751,8 @@ class RideAlongHeads(torch.nn.Module):
 
     def __init__(self, spec: RideAlongSpec, *, obs_dim: int, move_token_dim: int,
                  move_cell_dim: int, switch_cell_dim: int, n_moves: int,
-                 block_edges: Optional[Sequence[int]] = None, n_species: int = 400) -> None:
+                 block_edges: Optional[Sequence[int]] = None, n_species: int = 400,
+                 d_model: int = D_MODEL) -> None:
         super().__init__()
         validate_spec(spec)
         self.spec = spec
@@ -757,17 +760,18 @@ class RideAlongHeads(torch.nn.Module):
         torch.manual_seed(RIDEALONG_INIT_SEED)
         mult = torch.randint(1, 2 ** 62, (self.obs_dim,), dtype=torch.int64) | 1
         self.register_buffer("hash_mult", mult)
-        self.ensemble = ValueEnsemble(spec.ensemble) if spec.ensemble else None
+        self.ensemble = ValueEnsemble(spec.ensemble, in_dim=d_model) if spec.ensemble else None
         self.rnd = RndNovelty(self.obs_dim) if spec.rnd else None
         self.adv = (AdvantageEnsemble(spec.adv, move_token_dim=move_token_dim,
                                       move_cell_dim=move_cell_dim,
-                                      switch_cell_dim=switch_cell_dim) if spec.adv else None)
+                                      switch_cell_dim=switch_cell_dim, d_model=d_model) if spec.adv else None)
         self.opp: Optional[FlatOppEffectEnsemble] = (
-            FlatOppEffectEnsemble(spec.opp, n_moves, n_species, spec.opp_flat_k) if spec.opp else None)
+            FlatOppEffectEnsemble(spec.opp, n_moves, n_species, spec.opp_flat_k, d_model=d_model)
+            if spec.opp else None)
         # gen3_ridealong_rnd_variants_v1 (v127): built LAST, each from its own private seed (or a
         # deep copy of base's predictor), so every head above is bit-identical with or without them.
         self.rnd_variants: Optional[torch.nn.ModuleDict] = (
-            build_rnd_variants(spec.rnd_variants, self.rnd)
+            build_rnd_variants(spec.rnd_variants, self.rnd, feat_dim=d_model)
             if spec.rnd_variants and self.rnd is not None else None)
         #: The observation's block boundaries, for the identification probes (not state: derived
         #: from the encoder's layout at every build).
@@ -967,7 +971,8 @@ def build_ridealong(fe: object, *, obs_dim: int,
             n_moves=n_moves,
             block_edges=obs_block_edges(layout if isinstance(layout, dict) else None,
                                         int(obs_dim)),
-            n_species=n_species)
+            n_species=n_species,
+            d_model=int(getattr(fe, "d_model", D_MODEL)))
 
 
 __all__ = ["RIDEALONG_FLAGS", "RIDEALONG_ATTR", "RIDEALONG_STATE_PREFIX",

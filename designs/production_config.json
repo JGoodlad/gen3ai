@@ -11,6 +11,7 @@
   "config_version": 157,
   "consequence_topk": 6,
   "critic": "winprob",
+  "d_model": 128,
   "damage_candidate_k": 0,
   "damage_matrices_incoming": true,
   "damage_matrices_outgoing": true,

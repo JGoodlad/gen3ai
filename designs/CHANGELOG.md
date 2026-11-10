@@ -15741,3 +15741,31 @@ was downloaded or written under `data/`.
   (`1 / E[1/M]`).
   Each fails on revert (36 mutants, all killed on a green baseline; three survived the first pass and their tests were
   strengthened).
+## 2026-11-09 — the trunk width becomes a per-run setting (`gen3_d_model_width_v1`; config v169, one STRUCTURAL field `d_model`; no `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change)
+
+- **Why.** MF-5's scale bet (`research_state/EXPERIMENT_BACKLOG.md` §2.0: a production-width and a 2× `D_MODEL` run, both
+  from scratch) needed a width a run can choose: `D_MODEL` (= `ROLE_TOKEN_SIZE`, 128) was an architecture constant every
+  module read directly.
+- **What.** `--d-model N` (a multiple of 32, at least 128; registry row `d_model`, CLI, structural): every token-wide
+  module takes a `d_model` constructor argument and the extractor passes its own. `arch_constants`' width block is the
+  one statement of what FOLLOWS the width (the tokens, every trunk round, the base FFN `ffn_base` = 2·d, the role
+  encoder `[2·d, d]`, the static D MLP hidden, the pools, every zero-init fact projection, the belief / value / win-prob
+  heads' inputs, `value_pooled`, the trunk-readout pointer scorer, the policy tower's input, the ride-along heads'
+  inputs) and what stays FIXED (4 heads, the 512 tower, the move network, the small readout widths). Recorded in
+  `model_config.json` (`role_token_size` / `role_encoder_hidden` follow it), gated by `check_compatible` with its own
+  text, inherited by a flagless resume or fork, never grown (a `--grow trunk_ffn_dim` on a wider parent is refused;
+  depth and per-kind growths build at the parent's width). `trunk_ffn_dim` must reach the width's base FFN (a
+  combination check and the extractor). `production_config.json` records `d_model: 128`.
+- **Default.** Byte-identical: the production build's state-dict signature (sha256 `b07442f9…`) and element count
+  (2,609,183) equal 2551befed's, and the weights' bytes, `pi` / `vf` and the logits / values on 96 golden rows are
+  bit-equal to the base it rebased onto (`3b1733f50`, after v167's nature / residual fix and v168's max-HP belief), and the K9
+  learner golden, the obs golden, the delivery graph and the arch viewer are unchanged (the ARCHITECTURE flag table
+  gained the `d_model` row).
+- **At 2× (256), CPU, 2026-11-09.** 6,258,079 parameters (2.40×). Step time, eager fp32, 3 agent cores: learner
+  forward + backward at B = 256 1.94×; the no-grad policy forward 1.27× (B = 48) and 1.48× (B = 128). The extractor's
+  Inductor C++ forward matches eager to 8.6e-6 (one graph); R1 traces, gates and locks on CPU. The GPU step time, the
+  CUDA / bf16 compile, T2's graph capture and memory are UNVERIFIED.
+- **Guards.** `d_model_width_test.py` (the pinned pre-width signature; no 128-wide weight at `d_model` 192 across six
+  production-surface arms and a legacy all-routes build, each with a forward and backward; the record, the gate, the
+  migration, the resume inheritance, the round trip, T2's canonical fingerprint dropping the default);
+  `projection_width_test.py` (two wide combos); `combination_checks_test.py` (the FFN floor). Each fails on revert.

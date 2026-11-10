@@ -254,6 +254,16 @@ every trunk round's FFN with a zero-output width branch: the parent's function b
 fresh AdamW state, the same pool growth; on the toy at 1024 the line reads `🌱 [GrowFork] grown: 6 new tensors (394,752
 parameters)`. Never type `--trunk-ffn-dim` on a fork: it is refused, naming `--grow`.
 
+**A WIDER network is a FRESH run, never a growth** (`--d-model N`, `gen3_d_model_width_v1`, config v169; MF-5's scale
+bet): the trunk width is recorded, inherited by every resume and fork, and refused on a mismatch. A fresh wide arm
+types three things beside `--arch production`: `--d-model N` (a multiple of 32, at least 128), `--trunk-ffn-dim 2N`
+(the base FFN follows the width; the production mirror's 256 is below a wider base and is refused by name) and
+`--allow-nonproduction-arch` (both differ from the mirror; the arch-surface report names them). Check it with
+`python -m main.checkargs --argv "…"` (the report shows `d_model` and `trunk_ffn_dim` against production) and
+`--dry-run`. At 2× (256) a fresh production build holds 6,258,079 parameters against 2,609,183 (CPU, 2026-11-09); its
+GPU step time, memory and T2 / compile behaviour are UNVERIFIED until its first GPU window (`designs/ARCHITECTURE.md`
+§2.1 item 9).
+
 ---
 
 ## Training

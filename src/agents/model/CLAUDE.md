@@ -49,6 +49,8 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
 - 🚨 **Whatever a trunk round computes lives INSIDE its class** (`trunk_kffn.TrunkRound`): the bf16 region is a
   class swap of the rounds, so a sibling module beside them silently runs fp32.
 - A new width-contributing part extends `compute_projection_widths` and its sweep (`projection_width_test.py`).
+- 🚨 **The trunk width is per-run** (`--d-model`): a token-wide module takes its constructor's `d_model`, never the
+  default `D_MODEL`; what follows the width is `arch_constants`' width block (`d_model_width_test.py`).
 - `Embeddings` alone owns the embedding tables; `ExtractorContext` is the inter-phase contract (add a field, do not
   widen a signature). The table modules import only downward (`damage_tables` → `belief_tables` → `dex_ids`).
 - **Never hand-build an obs dict** (`{"observation": zeros(1, D)}`) on a reachable path: use `zero_extra_obs` /

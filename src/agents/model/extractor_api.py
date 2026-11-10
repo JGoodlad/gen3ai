@@ -11,7 +11,7 @@ from typing import Dict, Optional, Tuple
 
 import torch
 
-from agents.model.arch_constants import D_MODEL, MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTION_SWITCH_DIM
+from agents.model.arch_constants import MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTION_SWITCH_DIM
 from agents.model.belief_heads import BELIEF_GRAD_MODES, _BELIEF_SUPERVISION_KEYS
 from agents.model.extractor_build import ExtractorBuild
 from agents.model.extractor_ctx import PointerInputs
@@ -96,9 +96,9 @@ class ExtractorApi(ExtractorBuild):
     @property
     def policy_ctx_dim(self) -> int:
         """The width of `pi_features` — the pointer head's decision context before the SB3 actor branch.
-        `tower`: `projection_dim` (the tower then maps it to `NET_ARCH[-1]`); `trunk`: `D_MODEL` (the
+        `tower`: `projection_dim` (the tower then maps it to `NET_ARCH[-1]`); `trunk`: `d_model` (the
         state query's read, and the actor branch is the identity)."""
-        return D_MODEL if self.policy_query is not None else int(self.projection_dim)
+        return int(self.d_model) if self.policy_query is not None else int(self.projection_dim)
     def set_belief_grad_mode(self, mode: str) -> None:
         """Apply a belief-grad-mode at RUNTIME (the --allow-belief-grad-mode-change migration path).
 
@@ -268,7 +268,7 @@ class ExtractorApi(ExtractorBuild):
     def pointer_move_token_dim(self) -> int:
         # gen3_entity_move_seats_v1: the head reads the REFINED E3 seats (d_model), no longer the raw
         # 32-dim PokemonEncoder move tokens.
-        return D_MODEL
+        return int(self.d_model)
 
     @property
     def pointer_move_cell_dim(self) -> int:

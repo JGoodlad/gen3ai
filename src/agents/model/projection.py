@@ -15,7 +15,8 @@ from agents.model.extractor_ctx import ExtractorContext
 
 def compute_projection_widths(layout: Dict[str, Any], *,
                               opp_belief_cls_k: int = 0,
-                              token_encoding: str = "legacy") -> Tuple[int, int]:
+                              token_encoding: str = "legacy",
+                              d_model: int = D_MODEL) -> Tuple[int, int]:
     """The `(pi, vf)` projection-input widths as STATIC ARITHMETIC (gen3_static_widths_v1).
 
     Mirrors `ProjectionAssembler.forward`'s concat exactly — this is the single place that
@@ -23,7 +24,7 @@ def compute_projection_widths(layout: Dict[str, Any], *,
     forward's measured widths equal it (the old construction-time discovery forward,
     preserved as the verifier).
 
-    **`vf` is now a CONSTANT** (`D_MODEL`). The critic-route deletion wave retired the whole
+    **`vf` is now a CONSTANT** (the run's `d_model`, `D_MODEL` by default). The critic-route deletion wave retired the whole
     post-assembler vf tail — the seed window, the hidden-opp belief's vf half and the
     `non_matchup_rest` vf concat — so `vf_combined IS value_pooled`, the same tensor the
     dist-head critic reads. That is the structural cure for the v89/M2 bug class rather than
@@ -45,11 +46,12 @@ def compute_projection_widths(layout: Dict[str, Any], *,
     # board tokens and the cells only — the head-only `non_matchup_rest` route is DELETED (F4's fourth route).
     if token_encoding == "static":
         non_matchup_rest = 0
-    belief = opp_belief_cls_k * D_MODEL
-    # pi: our_team_pooled + their_team_pooled + our_active_refined (D_MODEL each) + tail + belief.
-    pi = 3 * D_MODEL + non_matchup_rest + belief
+    # gen3_d_model_width_v1: every pooled / refined vector is the run's trunk width `d_model`.
+    belief = opp_belief_cls_k * int(d_model)
+    # pi: our_team_pooled + their_team_pooled + our_active_refined (d_model each) + tail + belief.
+    pi = 3 * int(d_model) + non_matchup_rest + belief
     # vf: value_pooled, and nothing else.
-    vf = D_MODEL
+    vf = int(d_model)
     return pi, vf
 
 

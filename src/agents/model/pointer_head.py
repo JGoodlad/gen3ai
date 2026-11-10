@@ -71,7 +71,7 @@ class EntityMoveSeats(torch.nn.Module):
     zero-init — new-information inputs, the `history_proj`/`global_proj` convention, not the
     residual-injection one)."""
 
-    def __init__(self, topk_seats: int = 0, tail_seats: bool = False):
+    def __init__(self, topk_seats: int = 0, tail_seats: bool = False, d_model: int = D_MODEL):
         super().__init__()
         self.topk_seats = int(topk_seats)
         # gen3_entity_tail_seats_v1 (E5): 6 per-opp-mon TAIL-THREAT seats — the truncation
@@ -83,14 +83,14 @@ class EntityMoveSeats(torch.nn.Module):
         # loading in-generation checkpoints into newer code): tail seats reuse
         # TOKEN_TYPE_THEIR_THREAT + a dedicated learned `tail_marker` added here.
         self.tail_seats = bool(tail_seats)
-        self.tail_proj = torch.nn.Linear(4, D_MODEL) if self.tail_seats else None
-        self.tail_marker = (torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+        self.tail_proj = torch.nn.Linear(4, d_model) if self.tail_seats else None
+        self.tail_marker = (torch.nn.Parameter(torch.randn(1, 1, d_model) * 0.02)
                             if self.tail_seats else None)
         # gen3_edge_bias_trunk_v1: the per-forward candidate selection (idx, w), stashed so the D3
         # edge bias prices the SAME K moves the seats represent. None until the first E4 forward.
         self.last_cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
-        self.move_seat_proj = torch.nn.Linear(MOVE_NET_HIDDEN[1], D_MODEL)
-        self.threat_seat_proj = (torch.nn.Linear(MOVE_LATENT_DIM + 3, D_MODEL)
+        self.move_seat_proj = torch.nn.Linear(MOVE_NET_HIDDEN[1], d_model)
+        self.threat_seat_proj = (torch.nn.Linear(MOVE_LATENT_DIM + 3, d_model)
                                  if self.topk_seats > 0 else None)
 
     @property

@@ -79,6 +79,10 @@ _COMBOS = {
     #    reaches the policy through its three board tokens); with and without the op, with the belief pool.
     "static_minimal": dict(token_encoding="static"),
     "static_damage_op_plus_pool": dict(_DAMAGE_OP_MIN, token_encoding="static", opp_belief_cls_k=6),
+    # -- gen3_d_model_width_v1 (v169, MF-5): the trunk width moves every pooled part and the belief pool's k x width.
+    "wide_belief_pool_k3": dict(attend_unrevealed_opponents=True, opp_belief_cls_k=3, d_model=192, trunk_ffn_dim=384),
+    "wide_static_damage_op_plus_pool": dict(_DAMAGE_OP_MIN, token_encoding="static", opp_belief_cls_k=6, d_model=256,
+                                            trunk_ffn_dim=512),
 }
 
 
@@ -93,7 +97,7 @@ def _assert_widths(fe, kwargs):
     """The verifier: measured REAL-forward widths == the static arithmetic == the built modules."""
     exp_pi, exp_vf = compute_projection_widths(
         _LAYOUT, opp_belief_cls_k=kwargs.get("opp_belief_cls_k", 0),
-        token_encoding=kwargs.get("token_encoding", "legacy"))
+        token_encoding=kwargs.get("token_encoding", "legacy"), d_model=kwargs.get("d_model", D_MODEL))
     g = torch.Generator().manual_seed(11)
     obs = {"observation": torch.rand(3, _LAYOUT["total_dim"], generator=g)}
     with torch.no_grad():
@@ -157,3 +161,7 @@ def test_arithmetic_deltas_without_building():
         pi, vf = compute_projection_widths(_LAYOUT, opp_belief_cls_k=k)
         assert pi == base_pi + k * D_MODEL
         assert vf == D_MODEL, "the hidden-opp belief's vf half was deleted — vf must not move"
+    # gen3_d_model_width_v1: the width scales every pooled part (3 pools + k belief queries) and vf, and nothing else.
+    wide_pi, wide_vf = compute_projection_widths(_LAYOUT, opp_belief_cls_k=6, d_model=256)
+    assert wide_vf == 256
+    assert wide_pi - compute_projection_widths(_LAYOUT, opp_belief_cls_k=6)[0] == (3 + 6) * (256 - D_MODEL)

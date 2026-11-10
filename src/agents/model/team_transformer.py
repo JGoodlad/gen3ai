@@ -27,6 +27,7 @@ from agents.model.arch_constants import (
     TRANSFORMER_N_LAYERS,
     TRANSFORMER_N_HEADS,
     TRANSFORMER_FFN_DIM,
+    ffn_base,
 )
 
 
@@ -324,8 +325,10 @@ class TeamTransformer(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy",
                  trunk_layers: int = TRANSFORMER_N_LAYERS, trunk_ffn_by_kind: str = "off",
-                 trunk_ffn_dim: int = TRANSFORMER_FFN_DIM):
+                 trunk_ffn_dim: int = TRANSFORMER_FFN_DIM, d_model: int = D_MODEL):
         super().__init__()
+        # gen3_d_model_width_v1: the trunk's width (every token, every round); the base FFN is `ffn_base(d_model)`.
+        self.d_model = int(d_model)
         # Runtime-only memory/compute knob (NOT a weight or arch param — never enters
         # model_config.json / the version check). When True, the encoder layers are run
         # under gradient checkpointing during the backward-needing pass, trading one extra
@@ -339,7 +342,7 @@ class TeamTransformer(torch.nn.Module):
         # exactly what it always did, in the same order (byte-identical init).
         self.static_board = token_encoding == "static"
         self.token_type_emb = torch.nn.Embedding(
-            NUM_TOKEN_TYPES_STATIC if self.static_board else NUM_TOKEN_TYPES, D_MODEL)
+            NUM_TOKEN_TYPES_STATIC if self.static_board else NUM_TOKEN_TYPES, self.d_model)
 
         reactive_layout = layout['reactive_layout']
         _board_scalar_dim = reactive_layout['active_req_moves']['offset']
@@ -350,10 +353,10 @@ class TeamTransformer(torch.nn.Module):
         self._global_token_input_dim = 2 * active_ctx_dim + self._non_matchup_rest_dim
         if self.static_board:
             self._board_offsets = board_offsets(layout)
-            self.side_proj = torch.nn.Linear(SIDE_DIM, D_MODEL)
-            self.field_proj = torch.nn.Linear(FIELD_DIM, D_MODEL)
+            self.side_proj = torch.nn.Linear(SIDE_DIM, self.d_model)
+            self.field_proj = torch.nn.Linear(FIELD_DIM, self.d_model)
         else:
-            self.global_proj = torch.nn.Linear(self._global_token_input_dim, D_MODEL)
+            self.global_proj = torch.nn.Linear(self._global_token_input_dim, self.d_model)
 
         # gen3_edge_bias_trunk_v1 (v55): the encoder stack is the BIASED clone — same math, same
         # shapes, but attention takes an additive per-pair per-head float bias (the edge-delivery
@@ -361,7 +364,8 @@ class TeamTransformer(torch.nn.Module):
         # bias reproduces the stock layer's masked attention exactly (test-pinned). Unconditional
         # swap — state_dict keys change → the v55 ARCH_SIGNATURE bump carries it.
         self.transformer_layers = torch.nn.ModuleList(
-            BiasedEncoderLayer() for _ in range(TRANSFORMER_N_LAYERS)
+            BiasedEncoderLayer(self.d_model, TRANSFORMER_N_HEADS, ffn_base(self.d_model))
+            for _ in range(TRANSFORMER_N_LAYERS)
         )
 
         self._our_token_slice = slice(0, TEAM_SIZE)
@@ -379,22 +383,23 @@ class TeamTransformer(torch.nn.Module):
         from agents.model.trunk_depth import build_extra_rounds
         self.trunk_layers = int(trunk_layers)
         self.extra_rounds: Optional[torch.nn.ModuleList] = build_extra_rounds(self.trunk_layers,
-                                                                               ffn_by_kind=trunk_ffn_by_kind)
+                                                                               ffn_by_kind=trunk_ffn_by_kind,
+                                                                               d_model=self.d_model)
         # gen3_trunk_ffn_by_kind_v1 (B-KFFN, `trunk_kffn.py`): `on` gives every round its per-kind FFN experts, each
         # round's from its own PRIVATE seed (no global RNG draw; the extra rounds' were built by `build_extra_rounds`);
         # the segment table is set once the extractor's seats exist (`extractor_build`). `off` builds nothing.
         self.trunk_ffn_by_kind = check_kffn_mode(trunk_ffn_by_kind)
         if self.trunk_ffn_by_kind == "on":
             for i, layer in enumerate(self.transformer_layers):
-                layer.kind_ffn = build_kind_ffn(i, identity=False)
+                layer.kind_ffn = build_kind_ffn(i, identity=False, d_model=self.d_model)
         # gen3_trunk_ffn_width_v1 (B-FFNW, `trunk_ffn_width.py`): `trunk_ffn_dim > 256` gives every round (the extra rounds
         # included) a zero-output WIDTH branch, round i's from its own PRIVATE seed (no global RNG draw), built LAST. 256
         # builds nothing (byte-identical). Never beside the per-kind experts.
-        from agents.model.trunk_ffn_width import FFN_DIM_BASE, check_ffn_dim, install_branches
-        self.trunk_ffn_dim = check_ffn_dim(trunk_ffn_dim)
-        if self.trunk_ffn_dim != FFN_DIM_BASE:
+        from agents.model.trunk_ffn_width import check_ffn_dim, install_branches
+        self.trunk_ffn_dim = check_ffn_dim(trunk_ffn_dim, self.d_model)
+        if self.trunk_ffn_dim != ffn_base(self.d_model):
             if self.trunk_ffn_by_kind == "on":
-                raise ValueError("trunk_ffn_dim > 256 is refused beside trunk_ffn_by_kind='on' (the per-kind experts "
+                raise ValueError("a trunk_ffn_dim above the base is refused beside trunk_ffn_by_kind='on' (the per-kind experts "
                                  "would have to decide whether to copy the width branch; design_n4_capacity_screen.md "
                                  "§2)")
             install_branches(self, self.trunk_ffn_dim)
@@ -596,7 +601,7 @@ class EventSeats(torch.nn.Module):
     # id / a raw scalar / the pad flag and demands the counts agree.
     _N_SCALARS = 16
 
-    def __init__(self, layout: Dict[str, Any]):
+    def __init__(self, layout: Dict[str, Any], d_model: int = D_MODEL):
         super().__init__()
         from agents.observation.constants import N_EVENT_STATUS, N_EVENT_TYPES
         from agents.observation.gen3_effects import CANT_DIM_LIVE
@@ -637,9 +642,9 @@ class EventSeats(torch.nn.Module):
                   2 * layout['move_embedding_dim'] + self._STATUS_EMB + self._CANT_EMB +
                   self._FAINT_EMB + self._ITEMTR_EMB + self._ENTRY_EMB + self._DENIAL_EMB +
                   self._STAT_EMB + self._N_SCALARS)
-        self.proj = torch.nn.Linear(in_dim, D_MODEL)
-        self.norm = torch.nn.LayerNorm(D_MODEL)
-        self.event_marker = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+        self.proj = torch.nn.Linear(in_dim, d_model)
+        self.norm = torch.nn.LayerNorm(d_model)
+        self.event_marker = torch.nn.Parameter(torch.randn(1, 1, d_model) * 0.02)
 
     def forward(self, ev: torch.Tensor, embeddings: 'Embeddings'
                 ) -> Tuple[torch.Tensor, torch.Tensor]:

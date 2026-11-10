@@ -53,13 +53,14 @@ class ModelVersionConstruction(ModelVersionFields):
         canary_shift_max: Optional[float] = None,
         growth: Optional[Dict[str, Any]] = None,
     ) -> Self:
+        from agents.model.arch_constants import D_MODEL, check_d_model, role_encoder_hidden
         from agents.model.features_extractor import (
-            ROLE_TOKEN_SIZE,
             PROJECTION_DIM,
             MOVE_NET_HIDDEN,
-            ROLE_ENCODER_HIDDEN,
             NET_ARCH,
         )
+        # gen3_d_model_width_v1 (v169): the run's trunk width; the token width and the role encoder follow it.
+        _d_model = check_d_model(policy_kwargs.get("features_extractor_kwargs", {}).get("d_model", D_MODEL))
         return cls(
             config_version=MODEL_CONFIG_VERSION,
             arch_signature=ARCH_SIGNATURE,
@@ -75,10 +76,10 @@ class ModelVersionConstruction(ModelVersionFields):
             max_types=layout["max_types"],
             total_dim=layout["total_dim"],
             active_context_dim=layout["active_context_dim"],
-            role_token_size=ROLE_TOKEN_SIZE,
+            role_token_size=_d_model,
             projection_dim=PROJECTION_DIM,
             move_net_hidden=list(MOVE_NET_HIDDEN),
-            role_encoder_hidden=list(ROLE_ENCODER_HIDDEN),
+            role_encoder_hidden=role_encoder_hidden(_d_model),
             net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
             vf_coef=vf_coef,
             # The fallbacks track the RewardConfig defaults: a version built with reward_config=None
@@ -216,6 +217,8 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_trunk_ffn_width_v1 (v164, B-FFNW): the trunk FFN's width.
             trunk_ffn_dim=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("trunk_ffn_dim", 256)),
+            # gen3_d_model_width_v1 (v169, MF-5): the trunk width.
+            d_model=_d_model,
             # gen3_probe_facts_v1 (v153): their active's state on our move seats.
             move_target_state=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_target_state", "off")),

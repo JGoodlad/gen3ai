@@ -23,7 +23,7 @@ import torch
 from gymnasium import spaces
 
 from agents.model.arch_constants import (
-    D_MODEL, PROJECTION_DIM, ROLE_TOKEN_SIZE, TRANSFORMER_FFN_DIM, TRANSFORMER_N_LAYERS,
+    D_MODEL, PROJECTION_DIM, TRANSFORMER_FFN_DIM, TRANSFORMER_N_LAYERS, check_d_model, ffn_base,
 )
 from agents.model.aux_value_heads import WinProbHead
 from agents.model.belief_heads import (
@@ -107,8 +107,13 @@ class ExtractorBuild(torch.nn.Module):
                  tau_solve: str = TAU_SOLVE_DEFAULT,
                  trunk_ffn_by_kind: str = "off",
                  trunk_ffn_dim: int = TRANSFORMER_FFN_DIM,
+                 d_model: int = D_MODEL,
                  ):
         super().__init__()
+        # gen3_d_model_width_v1 (config v169, `--d-model N`; MF-5): the trunk width EVERY module below is built at
+        # (`arch_constants`' width block says what follows it and what stays fixed). The default builds the network it
+        # always built, byte for byte (the same constructions in the same order, every width the constant it was).
+        self.d_model = check_d_model(d_model)
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
         # builds the extractor from `features_extractor_kwargs`; every real construction passes
         # it and `Embeddings` indexes it immediately — so absence fails loud HERE, with the fix
@@ -200,8 +205,8 @@ class ExtractorBuild(torch.nn.Module):
             raise ValueError(f"token_encoding must be one of {TOKEN_ENCODING_MODES}, got {token_encoding!r}")
         self.token_encoding = token_encoding
         self.pokemon_encoder: Union[PokemonEncoder, StaticTokenEncoder] = (
-            StaticTokenEncoder(layout, move_latent=move_latent) if token_encoding == "static"
-            else PokemonEncoder(layout, move_latent=move_latent))
+            StaticTokenEncoder(layout, move_latent=move_latent, d_model=self.d_model) if token_encoding == "static"
+            else PokemonEncoder(layout, move_latent=move_latent, d_model=self.d_model))
         # gen3_entity_move_seats_v1 (v54, Stage 1): move ENTITY seats in the trunk — E3 (our active's
         # 4 request-ordered move tokens, unconditional) + E4 (the opp active's top-`entity_topk_seats`
         # believed threat moves, opt-in). The pointer head then reads the REFINED E3 seats (post-
@@ -211,7 +216,7 @@ class ExtractorBuild(torch.nn.Module):
         self.entity_topk_seats = int(entity_topk_seats)
         self.consequence_topk = int(consequence_topk)   # v59: C1b/C2/C3 k_cand + D4 k_bench
         self.entity_tail_seats = bool(entity_tail_seats)
-        self.entity_seats = EntityMoveSeats(self.entity_topk_seats, self.entity_tail_seats)
+        self.entity_seats = EntityMoveSeats(self.entity_topk_seats, self.entity_tail_seats, d_model=self.d_model)
         # gen3_x5_flat_pointer_v1: DECLARED here, CONSTRUCTED at the end of __init__ with the belief family.
         self.flat_intent_head: Optional[FlatIntentHead] = None
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
@@ -246,18 +251,19 @@ class ExtractorBuild(torch.nn.Module):
         # width above 256 as a zero-output branch per round built from a PRIVATE seed (no global RNG draw); 256 builds
         # nothing. Refused beside the per-kind experts.
         from agents.model.trunk_ffn_width import check_ffn_dim as _check_ffn_dim
-        self.trunk_ffn_dim = _check_ffn_dim(trunk_ffn_dim)
-        if self.trunk_ffn_dim != TRANSFORMER_FFN_DIM and self.trunk_ffn_by_kind == "on":
-            raise ValueError("trunk_ffn_dim > 256 is refused beside trunk_ffn_by_kind='on' (the per-kind experts would "
+        self.trunk_ffn_dim = _check_ffn_dim(trunk_ffn_dim, self.d_model)
+        if self.trunk_ffn_dim != ffn_base(self.d_model) and self.trunk_ffn_by_kind == "on":
+            raise ValueError("a trunk_ffn_dim above the base is refused beside trunk_ffn_by_kind='on' (the per-kind experts would "
                              "have to decide whether to copy the width branch)")
         self.team_transformer = TeamTransformer(layout, token_encoding=token_encoding,
                                                 trunk_layers=self.trunk_layers,
                                                 trunk_ffn_by_kind=self.trunk_ffn_by_kind,
-                                                trunk_ffn_dim=self.trunk_ffn_dim)
+                                                trunk_ffn_dim=self.trunk_ffn_dim, d_model=self.d_model)
         # (The critic's token-content threat projection `CLSPool.value_threat_proj` is DELETED, legacy deletion U3,
         # lane VTI: it was constructed and retired under the adopted surface, so it no longer draws from the stream.)
-        self.cls_pool = CLSPool(layout)
-        self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
+        self.cls_pool = CLSPool(layout, d_model=self.d_model)
+        self.hidden_opp_belief = (HiddenOppBeliefPool(opp_belief_cls_k, d_model=self.d_model)
+                                  if opp_belief_cls_k > 0 else None)
         # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
         # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the
         # baseline arch byte-for-byte (no module, opp slots stay zeros). k>0 the side-pool and this are
@@ -336,7 +342,7 @@ class ExtractorBuild(torch.nn.Module):
         # hypothesis's token.)
         self.belief_head = (
             BeliefHead(layout['max_species'], layout['max_moves'],
-                       species_prior_fusion=species_prior_fusion) if opp_belief_slots else None
+                       species_prior_fusion=species_prior_fusion, d_model=self.d_model) if opp_belief_slots else None
         )
         # (`stash.belief_logits` — the per-minibatch aux dict, carries grad — and
         # `stash.opp_believed_mask` are written each forward; see ExtractorStashes.)
@@ -373,7 +379,7 @@ class ExtractorBuild(torch.nn.Module):
         self.move_belief = (
             MoveBelief(layout['max_moves'], layout['move_embedding_dim'],
                        prior_fusion=move_prior_fusion, n_species=layout['max_species'],
-                       move_candidate_floor=move_candidate_floor)
+                       move_candidate_floor=move_candidate_floor, d_model=self.d_model)
             if move_belief_mode != "off" else None
         )
         # gen3_unified_spread_belief_v1: the THIRD belief leg — predicts the opp's hidden SPREAD (5 derived
@@ -390,7 +396,8 @@ class ExtractorBuild(torch.nn.Module):
         # gen3_nature_ev_belief_v1: the op marginalises P(KO) over the head's nature distribution → requires it.
         self.spread_belief_enabled = spread_belief
         self.spread_belief_nature = spread_belief_nature
-        self.spread_belief = SpreadBelief(layout['max_species'], nature=spread_belief_nature) if spread_belief else None
+        self.spread_belief = (SpreadBelief(layout['max_species'], nature=spread_belief_nature, d_model=self.d_model)
+                              if spread_belief else None)
         # gen3_typed_hp_belief_v1 / gen3_hp_belief_ablation_v1: the opponent's Hidden Power is ALWAYS
         # reasoned about as the 16 DISCRETE TYPED moves — the old typeless-BP-0 candidate is gone in both
         # arms, because it was a correctness bug (a 0-damage "immune" reading of a revealed HP), not an
@@ -415,13 +422,13 @@ class ExtractorBuild(torch.nn.Module):
             raise ValueError(
                 f"hp_belief_mode must be one of composed|flat, got {hp_belief_mode!r}")
         self.hp_type_belief_head = (
-            HPTypeBelief(layout['max_species'], layout['type_embedding_dim'])
+            HPTypeBelief(layout['max_species'], layout['type_embedding_dim'], d_model=self.d_model)
             if (self.move_belief is not None and self.hp_belief_mode == "composed") else None)
         # gen3_item_belief_v1: the hidden-ITEM posterior (Smogon prior ⊕ zero-init delta), the
         # BeliefBank's seventh head. The op consumes P(Choice Band) at the active slot in place
         # of its static usage scalar; OFF builds nothing (byte-identical).
         self.item_belief_head = (
-            ItemBelief(layout['max_species'], layout['max_items']) if item_belief else None)
+            ItemBelief(layout['max_species'], layout['max_items'], d_model=self.d_model) if item_belief else None)
         # Differentiable damage operator (flag-guarded): consumes the move belief's PREDICTED moves for
         # the opp active and computes the believed-move incoming damage to each of our mons, fed to BOTH
         # heads. OFF reproduces the baseline arch byte-for-byte (no module, projection widths unchanged).
@@ -522,7 +529,7 @@ class ExtractorBuild(torch.nn.Module):
         # the baseline transformer sees (identity-at-init; the gradient still flows because the damage
         # feats are non-zero). It carries the FULL per-mon incoming row. NOTE there is no OUTGOING or
         # STATUS trunk residual: those measured null (K10) and would need their own projections.
-        self.prefuse_proj = (torch.nn.Linear(_DMG_PER_MON, D_MODEL) if damage_op else None)
+        self.prefuse_proj = (torch.nn.Linear(_DMG_PER_MON, self.d_model) if damage_op else None)
         if self.prefuse_proj is not None:
             torch.nn.init.zeros_(self.prefuse_proj.weight)
             torch.nn.init.zeros_(self.prefuse_proj.bias)
@@ -531,7 +538,7 @@ class ExtractorBuild(torch.nn.Module):
         # outgoing cells on each of THEIR mons — through zero-init projections (`board_tokens.OpContent`).
         # Built only under static with the op (the cells are op kernels); legacy builds nothing here.
         self.op_content: Optional[OpContent] = (
-            OpContent(outgoing=bool(damage_outgoing))
+            OpContent(outgoing=bool(damage_outgoing), d_model=self.d_model)
             if (token_encoding == "static" and damage_op) else None)
         # gen3_entity_move_seats_v1: E4 threat seats need the belief-weighted candidate definition
         # (`DamageOperator.refine_candidates`) + the move latent table, both PRE-transformer — which the
@@ -633,7 +640,7 @@ class ExtractorBuild(torch.nn.Module):
         if win_prob_mode not in ("none", "read_only", "shaping"):
             raise ValueError(f"win_prob_mode must be none|read_only|shaping, got {win_prob_mode!r}")
         self.win_prob_mode = win_prob_mode
-        self.win_head = WinProbHead() if win_prob_mode != "none" else None
+        self.win_head = WinProbHead(self.d_model) if win_prob_mode != "none" else None
         # (`stash.win_prob_logits` [B,1] — the aux BCE + prober readout — and `stash.value_pooled`
         # — the value-CLS hint layer the capacity / ride-along / cf readers use — are written each
         # forward; NEVER fed into pi/vf, so no label can leak.)
@@ -648,18 +655,18 @@ class ExtractorBuild(torch.nn.Module):
                 "the pool's row set; there is no pool to extend without the base flag.")
         self.value_entity_pool = (
             UnifiedValueReadout(self.damage_op.per_mon if self.damage_op is not None else 0,
-                                full=value_entity_pool_full)
+                                full=value_entity_pool_full, d_model=self.d_model)
             if value_entity_pool else None)
 
         # gen3_event_window_v1 (Tier H-B): the event-seat consumer of the obs event window —
         # opt-in (OFF builds nothing, byte-identical); the obs block itself is unconditional.
-        self.history_events = EventSeats(layout) if history_events else None
+        self.history_events = EventSeats(layout, d_model=self.d_model) if history_events else None
         if history_events and 'event_window_n' not in layout:
             raise ValueError(
                 "history_events=True but the obs layout carries no event_window block — "
                 "the seats would attend over nothing.")
 
-        self.role_token_size = ROLE_TOKEN_SIZE
+        self.role_token_size = self.d_model
 
         # gen3_belief_grad_mode_v1: stamp the per-head trunk-read detach flag now that every belief head
         # exists. 'shaping' ⇒ all False ⇒ byte-identical.
@@ -675,7 +682,7 @@ class ExtractorBuild(torch.nn.Module):
         # test `projection_width_test.py` preserves the old mechanism AS THE VERIFIER: it runs
         # a real forward per flag combo and asserts the measured widths equal this arithmetic.
         self.projection_input_dim, self.vf_features_dim = compute_projection_widths(
-            layout, opp_belief_cls_k=opp_belief_cls_k, token_encoding=token_encoding)
+            layout, opp_belief_cls_k=opp_belief_cls_k, token_encoding=token_encoding, d_model=self.d_model)
 
         # The POLICY projection → PROJECTION_DIM (a pre-projection LayerNorm equalises per-block scales).
         # gen3_x5_version_break_v1 part 2 (architecture audit F1): there is NO value projection. The extractor's
@@ -704,7 +711,7 @@ class ExtractorBuild(torch.nn.Module):
         # edge families, so our OUTGOING physics is already in `our_team_pooled` — design §3.1's
         # requirement that alpha see our own threat (both sides anticipate; the fixed point is found
         # by self-play training, never solved at inference).
-        _intent_ctx = 2 * D_MODEL
+        _intent_ctx = 2 * self.d_model
         # (The blob path's α / β heads — `AlphaIntentHead` / `BetaSwitchHead` — are DELETED with their
         # construct-and-retire (the X5 version break, config v144, part 2): the flat pointer below is the
         # intent readout.)
@@ -810,10 +817,11 @@ class ExtractorBuild(torch.nn.Module):
                 f"candidate) re-uses the opponent active's E5 tail seat as its token; {_x5_fix}.")
         if opp_belief_slots and self.opp_intent:
             self.hypothesis_builder = HypothesisBuilder(
-                layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats, tau_solve=tau_solve)
+                layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats, tau_solve=tau_solve,
+                d_model=self.d_model)
             # The FLAT opponent pointer: built from its OWN private seed out of `IsolatedLinear`s, appended
             # after the hypothesis builder (no position moves).
-            self.flat_intent_head = FlatIntentHead(D_MODEL, _intent_ctx)
+            self.flat_intent_head = FlatIntentHead(self.d_model, _intent_ctx)
             cast("ExtractorApi", self)._stamp_belief_grad_flags()
 
         # gen3_policy_readout_trunk_v1 (config v138, architecture audit F2, `--policy-readout`): WHERE the
@@ -829,7 +837,7 @@ class ExtractorBuild(torch.nn.Module):
             raise ValueError(f"policy_readout must be one of {POLICY_READOUT_MODES}, got {policy_readout!r}")
         self.policy_readout = policy_readout
         self.policy_query: Optional[PolicyStateQuery] = (
-            PolicyStateQuery() if policy_readout == "trunk" else None)
+            PolicyStateQuery(self.d_model) if policy_readout == "trunk" else None)
         # gen3_move_resolution_v1 (architecture audit F11 §9): the MOVE-RESOLUTION family — per legal action, P(it
         # resolves as stated) and the facts the seven deleted per-action blocks carried, plus the restored facts and
         # the exact status facts (`gen3_endstate_facts_v1`). DERIVED, never a flag (legacy deletion U3, D-LD2): built
@@ -863,7 +871,7 @@ class ExtractorBuild(torch.nn.Module):
             if "obs_facts" not in layout:
                 raise ValueError("obs_facts=v1 needs an observation layout that carries the OBS-FACTS "
                                  "block (gen3_obs_facts_v1): this layout predates it")
-            self.obs_facts_inject = ObsFactsInject(layout, token_encoding=token_encoding)
+            self.obs_facts_inject = ObsFactsInject(layout, token_encoding=token_encoding, d_model=self.d_model)
 
         # gen3_op_reduction_principled_v1 (architecture audit F6b): the noisy-OR WORST-CASE row per our mon
         # (`op.last_worst_rows`, [B,6,OP_WORST_DIM]: P(some physical / special move of theirs KOs it)) joins
@@ -871,7 +879,7 @@ class ExtractorBuild(torch.nn.Module):
         # LAST and drawing no RNG (SB3's orthogonal re-init skips it), so it adds exactly 0 at init. Built with the op.
         from agents.model.hypothesis_set import IsolatedLinear as _IsoLin
         from agents.model.op_reduction import OP_WORST_DIM
-        self.op_worst_proj: Optional[_IsoLin] = (_IsoLin(OP_WORST_DIM, D_MODEL, zero=True, bias=False)
+        self.op_worst_proj: Optional[_IsoLin] = (_IsoLin(OP_WORST_DIM, self.d_model, zero=True, bias=False)
                                                  if damage_op else None)
 
         # gen3_static_port_v1 (`--mon-hazard-cost`, `--move-actor-state`; `static_facts.py`): two NARROW facts for the
@@ -896,9 +904,9 @@ class ExtractorBuild(torch.nn.Module):
                              "mixes the mon's HP into its move tokens.")
         self.mon_hazard_cost = mon_hazard_cost
         self.move_actor_state = move_actor_state
-        self.mon_hazard_proj: Optional[_IsoLin] = (_IsoLin(MON_HAZARD_DIM, D_MODEL, zero=True, bias=False)
+        self.mon_hazard_proj: Optional[_IsoLin] = (_IsoLin(MON_HAZARD_DIM, self.d_model, zero=True, bias=False)
                                                    if mon_hazard_cost == "on" else None)
-        self.move_actor_proj: Optional[_IsoLin] = (_IsoLin(MOVE_ACTOR_DIM, D_MODEL, zero=True, bias=False)
+        self.move_actor_proj: Optional[_IsoLin] = (_IsoLin(MOVE_ACTOR_DIM, self.d_model, zero=True, bias=False)
                                                    if move_actor_state == "on" else None)
 
         # gen3_static_recovery_v1 (`design_static_tokens.md` §13), built with the op. The switch-cell hazard adds the
@@ -911,7 +919,7 @@ class ExtractorBuild(torch.nn.Module):
         from agents.model.eot_residual import EOT_DIM, EotResidualRule
         self.switch_hazard_cost = bool(damage_op)
         self.eot_residual_rule: Optional[EotResidualRule] = EotResidualRule(layout) if damage_op else None
-        self.eot_residual_proj: Optional[_IsoLin] = (_IsoLin(EOT_DIM, D_MODEL, zero=True, bias=False)
+        self.eot_residual_proj: Optional[_IsoLin] = (_IsoLin(EOT_DIM, self.d_model, zero=True, bias=False)
                                                      if damage_op else None)
 
         # gen3_endstate_facts_v1 (`designs/endstate/design_hand_computed_features.md` §4 ranks 3-5, §5 rank 1, finding
@@ -927,7 +935,7 @@ class ExtractorBuild(torch.nn.Module):
         self.drop_progress_clock = drop_progress_clock
         self.unpack.drop_progress_clock = drop_progress_clock == "on"
         self.status_cure_rule: Optional[CureFlags] = CureFlags(layout) if damage_op else None
-        self.status_cure_proj: Optional[_IsoLin] = (_IsoLin(CURE_DIM, D_MODEL, zero=True, bias=False)
+        self.status_cure_proj: Optional[_IsoLin] = (_IsoLin(CURE_DIM, self.d_model, zero=True, bias=False)
                                                     if damage_op else None)
 
         # gen3_probe_facts_v1 (config v153; `design_hand_computed_features.md` §4 rows 12-13, the probe battery's two
@@ -939,9 +947,9 @@ class ExtractorBuild(torch.nn.Module):
         if move_target_state not in MOVE_TARGET_STATE_MODES:
             raise ValueError(f"move_target_state must be one of {MOVE_TARGET_STATE_MODES}, got {move_target_state!r}")
         self.move_target_state = move_target_state
-        self.effective_stats_proj: Optional[_IsoLin] = (_IsoLin(EFFECTIVE_STATS_DIM, D_MODEL, zero=True, bias=False)
+        self.effective_stats_proj: Optional[_IsoLin] = (_IsoLin(EFFECTIVE_STATS_DIM, self.d_model, zero=True, bias=False)
                                                         if damage_op else None)
-        self.move_target_proj: Optional[_IsoLin] = (_IsoLin(MOVE_TARGET_DIM, D_MODEL, zero=True, bias=False)
+        self.move_target_proj: Optional[_IsoLin] = (_IsoLin(MOVE_TARGET_DIM, self.d_model, zero=True, bias=False)
                                                     if move_target_state == "on" else None)
 
         # gen3_move_set_closure_v1 (config v154; `design_hand_computed_features.md` §4, the four-move FACT): `on` = every

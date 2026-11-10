@@ -852,11 +852,14 @@ class ProbeModel:
         def on(attr: str) -> bool:          # an optional sub-module is built (≠ None) ⇒ that phase is active
             return getattr(ex, attr, None) is not None
 
-        d = getattr(F, "D_MODEL", "?")
+        d = getattr(ex, "d_model", getattr(F, "D_MODEL", "?"))     # gen3_d_model_width_v1: the model's OWN width
         # gen3_static_recovery_v1: the model's OWN depth (`--trunk-layers`), the constant only for an older extractor.
         layers = getattr(ex, "trunk_layers", getattr(F, "TRANSFORMER_N_LAYERS", "?"))
         ffn = getattr(ex, "trunk_ffn_dim", 256)       # B-FFNW (config v164): above 256 every round adds a width branch
-        ffn_note = f" · FFN {ffn} wide (256 + a width branch)" if isinstance(ffn, int) and ffn != 256 else ""
+        from agents.model.arch_constants import ffn_base
+        _base = ffn_base(d) if isinstance(d, int) else 256
+        ffn_note = (f" · FFN {ffn} wide ({_base} + a width branch)" if isinstance(ffn, int) and ffn != _base
+                    else f" · FFN {ffn}" if isinstance(ffn, int) and _base != 256 else "")
         hist = getattr(F, "N_HISTORY_TURNS", 0)   # gen3_frame_deletion_v1: absent ⇒ 0 frames
         tokens = 12 + (hist if isinstance(hist, int) else 0) + 1
         proj = getattr(ex, "projection_dim", getattr(F, "PROJECTION_DIM", "?"))

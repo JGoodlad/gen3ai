@@ -11,7 +11,7 @@ from agents.model.team_transformer import _KEY_PAD_NEG
 from agents.model.dense_attn_bias import dense_attn_bias
 from agents.model.arch_constants import (D_MODEL,
     TRANSFORMER_N_HEADS,
-    TRANSFORMER_FFN_DIM,
+    ffn_base,
 )
 
 
@@ -29,20 +29,20 @@ class CLSPool(torch.nn.Module):
     transformer, so pooling over the 12 team tokens gives the value query a whole-board read.
     """
 
-    def __init__(self, layout: Dict[str, Any]):
+    def __init__(self, layout: Dict[str, Any], d_model: int = D_MODEL):
         super().__init__()
-        self.our_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
-        self.their_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
-        self.our_cls_attn = torch.nn.MultiheadAttention(embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
-        self.their_cls_attn = torch.nn.MultiheadAttention(embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
-        self.norm_pool_our = torch.nn.LayerNorm(D_MODEL)
-        self.norm_pool_their = torch.nn.LayerNorm(D_MODEL)
+        self.our_cls = torch.nn.Parameter(torch.randn(1, 1, d_model) * 0.02)
+        self.their_cls = torch.nn.Parameter(torch.randn(1, 1, d_model) * 0.02)
+        self.our_cls_attn = torch.nn.MultiheadAttention(embed_dim=d_model, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
+        self.their_cls_attn = torch.nn.MultiheadAttention(embed_dim=d_model, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
+        self.norm_pool_our = torch.nn.LayerNorm(d_model)
+        self.norm_pool_their = torch.nn.LayerNorm(d_model)
 
         # Value-dedicated CLS pool (Option C): a separate readout for the critic so the
         # shared body's representation is summarised through a value-specific lens.
-        self.value_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
-        self.value_cls_attn = torch.nn.MultiheadAttention(embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
-        self.norm_pool_value = torch.nn.LayerNorm(D_MODEL)
+        self.value_cls = torch.nn.Parameter(torch.randn(1, 1, d_model) * 0.02)
+        self.value_cls_attn = torch.nn.MultiheadAttention(embed_dim=d_model, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
+        self.norm_pool_value = torch.nn.LayerNorm(d_model)
 
         # (The critic's token-content threat projection `value_threat_proj`, `--value-threat-inject`, is DELETED:
         # legacy deletion U3, lane VTI. The value pool reads the same team tokens the policy pools read.)
@@ -116,21 +116,22 @@ class HiddenOppBeliefPool(torch.nn.Module):
     BYOL) the RL gradient only weakly shapes these queries; this module is the *structure* those
     objectives later attach to. See `designs/ai_v5/design_offense_and_opponent_belief.md` §B2."""
 
-    def __init__(self, k: int):
+    def __init__(self, k: int, d_model: int = D_MODEL):
         super().__init__()
         if k < 1:
             raise ValueError(f"HiddenOppBeliefPool needs k >= 1, got {k}")
         self.k = k
+        self.d_model = int(d_model)
         # K distinct learned queries — non-identical by construction (independent init) so they do
         # not collapse the way identical zero-slots would. Same 0.02 init scale as the CLSPool queries.
-        self.queries = torch.nn.Parameter(torch.randn(1, k, D_MODEL) * 0.02)
+        self.queries = torch.nn.Parameter(torch.randn(1, k, d_model) * 0.02)
         # DETR-style decoder block: query self-attention (coordinate) → cross-attention to the 12
         # team tokens (read the board) → FFN. dropout=0.0 / post-LN match the encoder stack.
         self.decoder = torch.nn.TransformerDecoderLayer(
-            d_model=D_MODEL, nhead=TRANSFORMER_N_HEADS, dim_feedforward=TRANSFORMER_FFN_DIM,
+            d_model=d_model, nhead=TRANSFORMER_N_HEADS, dim_feedforward=ffn_base(d_model),
             dropout=0.0, activation="relu", batch_first=True, norm_first=False,
         )
-        self.norm = torch.nn.LayerNorm(D_MODEL)
+        self.norm = torch.nn.LayerNorm(d_model)
 
     def forward(self, all_team_out: torch.Tensor, all_fainted: torch.Tensor,
                 batch_size: int, presence: Optional[OppPresence] = None) -> torch.Tensor:
@@ -147,10 +148,10 @@ class HiddenOppBeliefPool(torch.nn.Module):
             mem, mem_mask = team_keys_with_other(all_team_out, all_fainted, presence)
             belief = self.decoder(queries, mem, memory_key_padding_mask=mem_mask)
             belief = self.norm(belief)
-            return belief.reshape(batch_size, self.k * D_MODEL)  # type: ignore[no-any-return]
+            return belief.reshape(batch_size, self.k * self.d_model)  # type: ignore[no-any-return]
         belief = self.decoder(queries, all_team_out, memory_key_padding_mask=all_fainted)
         belief = self.norm(belief)                                                # [B, K, D_MODEL]
-        return belief.reshape(batch_size, self.k * D_MODEL)  # type: ignore[no-any-return]  # [B, K*D_MODEL]
+        return belief.reshape(batch_size, self.k * self.d_model)  # type: ignore[no-any-return]  # [B, K*D_MODEL]
 
 
 #: gen3_policy_readout_trunk_v1 (config v138, architecture audit F2): WHERE the pointer head's decision
@@ -178,7 +179,7 @@ class PolicyStateQuery(torch.nn.Module):
     ``torch.random.fork_rng`` from ``POLICY_QUERY_INIT_SEED``, out of linears SB3's orthogonal re-init
     skips, so building it moves no other module's initial bytes and no later global draw."""
 
-    def __init__(self) -> None:
+    def __init__(self, d_model: int = D_MODEL) -> None:
         super().__init__()
         from agents.model.arch_constants import POLICY_QUERY_INIT_SEED
         from agents.model.hypothesis_set import IsolatedLinear
@@ -186,11 +187,11 @@ class PolicyStateQuery(torch.nn.Module):
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(POLICY_QUERY_INIT_SEED)
             # Same 0.02 scale as the CLSPool queries.
-            self.query = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
-            self.k_proj = IsolatedLinear(D_MODEL, D_MODEL)
-            self.v_proj = IsolatedLinear(D_MODEL, D_MODEL)
-            self.out_proj = IsolatedLinear(D_MODEL, D_MODEL)
-        self.norm = torch.nn.LayerNorm(D_MODEL)
+            self.query = torch.nn.Parameter(torch.randn(1, 1, d_model) * 0.02)
+            self.k_proj = IsolatedLinear(d_model, d_model)
+            self.v_proj = IsolatedLinear(d_model, d_model)
+            self.out_proj = IsolatedLinear(d_model, d_model)
+        self.norm = torch.nn.LayerNorm(d_model)
 
     def forward(self, tokens: torch.Tensor, pad: torch.Tensor,
                 key_log_presence: Optional[torch.Tensor] = None) -> torch.Tensor:

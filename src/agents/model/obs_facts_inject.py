@@ -50,7 +50,7 @@ class ObsFactsInject(torch.nn.Module):
     """See the module docstring. ``layout`` is the encoder's `get_layout()` (the sub-block offsets);
     ``token_encoding`` decides where the SIDE-class facts go."""
 
-    def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy"):
+    def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy", d_model: int = D_MODEL):
         super().__init__()
         sub = layout["obs_facts"]
         unclassified = sorted(set(sub) - set(FACTS_TOKEN_CLASS))
@@ -68,11 +68,11 @@ class ObsFactsInject(torch.nn.Module):
         # `nn.Linear`, so SB3's orthogonal re-init neither re-draws them nor shifts its global stream —
         # every OTHER parameter of a `v1` build starts byte-equal to the `off` build at the same seed
         # (the X5 builder's rule, `hypothesis_set.IsolatedLinear`).
-        self.seen_proj = IsolatedLinear(FACTS_SEEN_ROW_DIM, D_MODEL, zero=True)
-        self.vol_proj = IsolatedLinear(FACTS_VOL_SIDE_DIM, D_MODEL, zero=True)
+        self.seen_proj = IsolatedLinear(FACTS_SEEN_ROW_DIM, d_model, zero=True)
+        self.vol_proj = IsolatedLinear(FACTS_VOL_SIDE_DIM, d_model, zero=True)
         # [not_locked_item, not_locked_moves, run] + the first move's embedding
-        self.choice_proj = IsolatedLinear(FACTS_CHOICE_DIM - 1 + move_emb, D_MODEL, zero=True)
-        self.screens_proj = IsolatedLinear(self._n_screens, D_MODEL, zero=True)
+        self.choice_proj = IsolatedLinear(FACTS_CHOICE_DIM - 1 + move_emb, d_model, zero=True)
+        self.screens_proj = IsolatedLinear(self._n_screens, d_model, zero=True)
 
     def _screen_rows(self, facts: torch.Tensor) -> torch.Tensor:
         o, d = self._screens

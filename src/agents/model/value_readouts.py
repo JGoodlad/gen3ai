@@ -49,9 +49,9 @@ class UnifiedValueReadout(torch.nn.Module):
     board) degrades to a uniform average instead of NaN, and the k×N pattern is
     stashed for diagnostics (`last_att`)."""
 
-    def __init__(self, per_mon: int, full: bool = False):
+    def __init__(self, per_mon: int, full: bool = False, d_model: int = D_MODEL):
         super().__init__()
-        self.token_proj = torch.nn.Linear(D_MODEL, UVR_DIM)
+        self.token_proj = torch.nn.Linear(d_model, UVR_DIM)
         self.op_proj = torch.nn.Linear(per_mon, UVR_DIM) if per_mon > 0 else None
         # `full` (gen3_unified_value_readout_v2, v82): the COMPLETE row set — the refined
         # GLOBAL token (source 3) and the hidden-opp BELIEF queries (source 4) join the pool,
@@ -62,10 +62,10 @@ class UnifiedValueReadout(torch.nn.Module):
         n_sources = _UVR_N_SOURCES_FULL if full else _UVR_N_SOURCES
         self.source_emb = torch.nn.Parameter(torch.randn(n_sources, UVR_DIM) * 0.02)
         self.queries = torch.nn.Parameter(torch.randn(UVR_K, UVR_DIM) * (UVR_DIM ** -0.5))
-        self.out_proj = torch.nn.Linear(UVR_K * UVR_DIM, D_MODEL)
+        self.out_proj = torch.nn.Linear(UVR_K * UVR_DIM, d_model)
         torch.nn.init.zeros_(self.out_proj.weight)
         torch.nn.init.zeros_(self.out_proj.bias)
-        self.out_dim = D_MODEL
+        self.out_dim = int(d_model)
         self.last_att: Optional[torch.Tensor] = None    # [B, K, N] — the diagnostics read
 
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,

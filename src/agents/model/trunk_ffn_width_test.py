@@ -105,8 +105,8 @@ def test_w1b_a_non_identity_branch_is_refused_by_the_fork_time_gate(rows, monkey
 
     real = W.build_ffn_extra
 
-    def nonzero(i: int, n: int) -> Any:
-        br = real(i, n)
+    def nonzero(i: int, n: int, *rest: Any) -> Any:
+        br = real(i, n, *rest)
         if br is not None:
             with torch.no_grad():
                 br.linear2.weight.fill_(1e-3)

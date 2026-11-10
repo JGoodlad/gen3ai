@@ -18,8 +18,9 @@ THE ARMS (one lever apart, the same seed per pair, so the dice match):
   probability 0.7, else the side's usual pool draw (``gen3_team_mix_v1``), so the pool keeps a 0.3 minority share,
   the survey's design ("the pool is kept at a minority share (e.g. 0.3)"). Eval stays on the pool.
 
-N4 (a WIDER network from step 0) is NOT an arm: the trunk width is the architecture constant ``D_MODEL``
-(``agents/model/arch_constants.py``), with no flag; a width flag is its own build (PREREG FINDING).
+N4 (a WIDER network from step 0) is NOT an arm: at X61's registration the trunk width was the architecture constant
+``D_MODEL`` with no flag (PREREG FINDING). The per-run width (``--d-model``, ``gen3_d_model_width_v1``) was built later,
+for MF-5's scale bet, not for X61.
 """
 from __future__ import annotations
 

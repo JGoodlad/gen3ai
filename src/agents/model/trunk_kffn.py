@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import torch
 
-from agents.model.arch_constants import D_MODEL, KFFN_INIT_SEED, TRANSFORMER_FFN_DIM
+from agents.model.arch_constants import D_MODEL, KFFN_INIT_SEED, TRANSFORMER_FFN_DIM, ffn_base
 
 if TYPE_CHECKING:
     from agents.model.trunk_ffn_width import FfnWidthBranch
@@ -64,7 +64,7 @@ def check_mode(mode: str) -> str:
 
 
 class KindExpert(torch.nn.Module):
-    """One kind's FFN: ``linear2(relu(linear1(h)))``, 128 → 256 → 128, out of `IsolatedLinear`s."""
+    """One kind's FFN: ``linear2(relu(linear1(h)))``, d_model → ffn_base(d_model) → d_model, out of `IsolatedLinear`s."""
 
     def __init__(self, d_model: int = D_MODEL, ffn_dim: int = TRANSFORMER_FFN_DIM, *, zero_out: bool = False) -> None:
         super().__init__()
@@ -78,12 +78,13 @@ class KindExpert(torch.nn.Module):
             torch.nn.init.zeros_(lin.bias)
 
 
-def build_kind_ffn(round_index: int, *, identity: bool) -> torch.nn.ModuleDict:
+def build_kind_ffn(round_index: int, *, identity: bool, d_model: int = D_MODEL) -> torch.nn.ModuleDict:
     """Round ``round_index``'s experts (`EXPERT_KINDS` order), built from the PRIVATE seed ``KFFN_INIT_SEED +
     round_index`` (no global RNG draw). ``identity`` (a pre-LN `IdentityInitRound`): every expert's ``linear2`` zero."""
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(KFFN_INIT_SEED + int(round_index))
-        return torch.nn.ModuleDict({k: KindExpert(zero_out=identity) for k in EXPERT_KINDS})
+        return torch.nn.ModuleDict({k: KindExpert(d_model, ffn_base(d_model), zero_out=identity)
+                                    for k in EXPERT_KINDS})
 
 
 class TrunkRound(torch.nn.Module):

@@ -22,7 +22,7 @@ from typing import Any, Dict, Iterator, Optional, Tuple
 import torch
 from torch.utils.checkpoint import checkpoint
 
-from agents.model.arch_constants import D_MODEL
+
 from agents.model.belief_heads import mask_typeless_hp
 from agents.model.extractor_api import ExtractorApi
 from agents.model.extractor_ctx import (ExtractorContext, PointerInputs, TOKEN_TYPE_HISTORY,
@@ -927,7 +927,7 @@ class ExtractorForward(ExtractorApi):
                                  device=ctx.device), _seat_pad]
             _qlp = _klp
             if belief is not None:
-                _brows = belief.view(ctx.batch_size, -1, D_MODEL)
+                _brows = belief.view(ctx.batch_size, -1, self.d_model)
                 _keys.append(_brows)
                 _pads.append(torch.zeros(ctx.batch_size, _brows.shape[1], dtype=torch.bool,
                                          device=ctx.device))
@@ -976,6 +976,6 @@ class ExtractorForward(ExtractorApi):
                 else:
                     _uvr_kw["global_row"] = self.team_transformer.last_global_out
                 if belief is not None:
-                    _uvr_kw["belief_rows"] = belief.view(ctx.batch_size, -1, D_MODEL)
+                    _uvr_kw["belief_rows"] = belief.view(ctx.batch_size, -1, self.d_model)
             yield "value_entity_pool", self.value_entity_pool(
                 our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive, **_uvr_kw)

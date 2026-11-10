@@ -32,7 +32,7 @@ from typing import Optional, Tuple
 import torch
 
 from agents.model.arch_constants import (D_MODEL, TRANSFORMER_FFN_DIM, TRANSFORMER_N_HEADS, TRANSFORMER_N_LAYERS,
-                                         TRUNK_EXTRA_INIT_SEED)
+                                         TRUNK_EXTRA_INIT_SEED, ffn_base)
 from agents.model.dense_attn_bias import dense_attn_bias
 from agents.model.trunk_kffn import TrunkRound, build_kind_ffn
 from agents.model.trunk_kffn import check_mode as check_kffn_mode
@@ -77,7 +77,8 @@ class IdentityInitRound(TrunkRound):
         return out
 
 
-def build_extra_rounds(trunk_layers: int, ffn_by_kind: str = "off") -> Optional[torch.nn.ModuleList]:
+def build_extra_rounds(trunk_layers: int, ffn_by_kind: str = "off",
+                       d_model: int = D_MODEL) -> Optional[torch.nn.ModuleList]:
     """The `trunk_layers − TRANSFORMER_N_LAYERS` extra rounds, built from the PRIVATE seed (no global RNG draw), or
     None at the production depth (nothing built: byte-identical). ``ffn_by_kind`` ``"on"`` (B-KFFN, `trunk_kffn`)
     also gives each round its per-kind experts, from round ``TRANSFORMER_N_LAYERS + j``'s own private seed and with
@@ -90,10 +91,11 @@ def build_extra_rounds(trunk_layers: int, ffn_by_kind: str = "off") -> Optional[
         return None
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(TRUNK_EXTRA_INIT_SEED)
-        rounds = torch.nn.ModuleList(IdentityInitRound() for _ in range(n_extra))
+        rounds = torch.nn.ModuleList(IdentityInitRound(d_model, TRANSFORMER_N_HEADS, ffn_base(d_model))
+                                     for _ in range(n_extra))
     if ffn_by_kind == "on":
         for j, r in enumerate(rounds):
-            r.kind_ffn = build_kind_ffn(TRANSFORMER_N_LAYERS + j, identity=True)
+            r.kind_ffn = build_kind_ffn(TRANSFORMER_N_LAYERS + j, identity=True, d_model=d_model)
     return rounds
 
 

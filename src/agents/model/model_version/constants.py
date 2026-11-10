@@ -682,7 +682,16 @@ from typing import Any, Dict
 #   Skarmory read 1.0 and reads 0.05); their HP in points (their Endeavor) is fraction × E[M]; their end-of-turn
 #   amounts are E[max(1, ⌊M / d⌋) / M], on the same HP chain. Non-persistent buffers only: every past config stamps
 #   through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker rises to 168 by hand (`warn`).
-MODEL_CONFIG_VERSION = 168
+# v169 (gen3_d_model_width_v1, 2026-11-09; MF-5's scale bet, EXPERIMENT_BACKLOG §2.0): one STRUCTURAL field, `d_model`
+#   (int, default 128; `--d-model N`, a multiple of 32, at least 128): the run's trunk width. Every width that follows it
+#   (the tokens, every trunk round, the base FFN at 2 · d_model, the role encoder, the pools, the belief / value /
+#   win-prob heads' inputs, the policy tower's INPUT) is a function of it in `arch_constants`; the heads (4), the
+#   tower (512) and the small readout widths stay fixed. The recorded `role_token_size` / `role_encoder_hidden` follow
+#   it. Gated in check_compatible with its own text (no growth: a trained width cannot be widened as an identity). A
+#   pre-v169 config migrates to its recorded `role_token_size` (128, the only width ever built). No ARCH_SIGNATURE bump
+#   (128 builds the same modules in the same order: every existing state dict and forward is unchanged; another width
+#   is gated by the field), no OBS_SEMANTICS or MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 169
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

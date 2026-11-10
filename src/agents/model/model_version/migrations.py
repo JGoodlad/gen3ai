@@ -608,6 +608,11 @@ def _migrate_config(data: dict) -> dict:
     # buffers (a forward fix; the state_dict is unchanged), so every past config stamps through.
     if version < 168:
         data["config_version"] = 168
+    # v169 (gen3_d_model_width_v1, MF-5) — the trunk width: absent before, so every past network is its recorded token
+    # width (`role_token_size`, which d_model IS; 128, the only width ever built).
+    if version < 169:
+        data.setdefault("d_model", int(data.get("role_token_size", 128)))
+        data["config_version"] = 169
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

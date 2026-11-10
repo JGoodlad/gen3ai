@@ -37,11 +37,23 @@ def _canary_shift_max_arg(value: str) -> float:
 
 
 def _trunk_ffn_dim(value: str) -> int:
-    """argparse ``type`` for --trunk-ffn-dim: an integer >= 256 (`trunk_ffn_width.check_ffn_dim`)."""
+    """argparse ``type`` for --trunk-ffn-dim: an integer >= 256 (`trunk_ffn_width.check_ffn_dim` at the default width,
+    the narrowest `--d-model` offered). A wider run's own floor, `ffn_base(d_model)`, is checked once `--d-model` is
+    resolved (the `trunk_ffn_dim_below_the_width_base` combination check) and again by the extractor."""
     from agents.model.trunk_ffn_width import check_ffn_dim
 
     try:
         return check_ffn_dim(str(value).strip())
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from e
+
+
+def _d_model(value: str) -> int:
+    """argparse ``type`` for --d-model: a multiple of 32, at least 128 (`arch_constants.check_d_model`)."""
+    from agents.model.arch_constants import check_d_model
+
+    try:
+        return check_d_model(str(value).strip())
     except ValueError as e:
         raise argparse.ArgumentTypeError(str(e)) from e
 
@@ -256,6 +268,14 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "units per round (+197,376 parameters per round at 1024). STRUCTURAL, version-checked. "
                              "Refused beside --trunk-ffn-by-kind on. A FORK widens a parent's FFN with "
                              "--grow trunk_ffn_dim=N (the parent's function bit for bit), never this flag.")
+    # gen3_d_model_width_v1 (v169; MF-5's scale bet, EXPERIMENT_BACKLOG §2.0): the run's trunk width.
+    parser.add_argument("--d-model", "--d_model", dest="d_model", type=_d_model, default=None,
+                        help="The trunk WIDTH (gen3_d_model_width_v1, v169): every token, trunk round, pool and head "
+                             "input is this wide (arch_constants' width block lists what follows it and what stays "
+                             "fixed: 4 heads, the 512 policy tower, the small readout widths). 128 (default; "
+                             "production). A multiple of 32, at least 128. The base trunk FFN is 2 x this, so a wider run "
+                             "also types --trunk-ffn-dim 2*N (or wider). STRUCTURAL, version-checked, fresh-only: a "
+                             "trained width is never grown.")
     parser.add_argument("--trunk-layers", "--trunk_layers", dest="trunk_layers", type=int,
                         choices=TRUNK_LAYERS_CHOICES, default=None,
                         help="The number of trunk self-attention rounds (gen3_static_recovery_v1, v150). 2 (the bare default, "

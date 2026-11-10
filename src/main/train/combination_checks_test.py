@@ -217,6 +217,8 @@ ARGVS: dict[str, list[str]] = {
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],
     "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],
+    # gen3_d_model_width_v1 (v169, MF-5): a wider trunk without its base FFN (the default 256 < 2 x 256)
+    "trunk_ffn_dim_below_the_width_base": ["--d-model", "256"],
     # T25 lever C (gen3_r1_graphed_route_v1): the graphed route needs a compiled CUDA learner
     "learner_cudagraphs_needs_the_compiled_cuda_learner": ["--learner-cudagraphs", "on", "--device", "cpu"],
     # T37 (gen3_canary_shift_max_v1): a typed margin input needs the compiled CUDA learner whose gate it moves

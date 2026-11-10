@@ -209,6 +209,13 @@ refuses a learner the region cannot serve (no features extractor, a non-CUDA dev
 will be compiled. **HEAD runs torch >= 2.8 only** (`utils/torch_floor.py`; Lane K1 below). The extractor-only compile, its
 gate, the CUDA trunk split and the compiled rollout region R0 are deleted; their history is in the archive.
 
+**At a non-default trunk width** (`--d-model`, `gen3_d_model_width_v1`, config v169) every compiled program is the same
+code at other shapes. MEASURED on CPU at `d_model` 256 (2026-11-09, fp32, perturbed weights): the extractor's Inductor
+C++ forward matches eager to max |Δ| 8.6e-6 at B = 8 and 16 (bar 1e-5) as ONE graph with no break; R1 traces through
+dynamo (eager backend), its startup gate PASSES (every term 0.0) and the lock holds over two real updates (0 compiles
+after the lock). **UNVERIFIED until a GPU window:** the CUDA Inductor / Triton build of R1 at that width, its bf16 parity
+bar and canary, CUDA-graph capture of T2's buckets, and the memory either needs.
+
 🚨 **The default is AUTO, not a flat `True`**, because the flag REFUSES a non-cuda device and `default=True` would turn
 every working CPU invocation (the `--debug` smoke, a laptop, CI) into `FATAL_CONFIG`. It is resolved by
 `main.train.compile_flags.resolve_compile_trainer_default` (pure, injectable, unit-tested without a card; re-exported
