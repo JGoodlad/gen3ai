@@ -30972,3 +30972,54 @@ for byte (1 of the 68 checkpoint × panel blocks re-checked). (7) P\* piloting P
 View: `UNDERSTANDING.md` (§4, after the belief prior mix), `designs/endstate/design_offpool_belief.md` (§3), `EXPERIMENT_BACKLOG.md` (MF-3).
 
 Tag: **OFF-POOL BELIEF BASELINE · REPORTED · DESCRIPTIVE · species log-presence − prior: P\* −3.00 / −3.97 / −7.66 (H / F / P72), N1-P +0.04 / −0.07 / −0.13, X60-T −0.05 / −0.29 / −0.84, P\* at λ = 0.25 −0.17 / −0.30 / −0.79 · move leg WORSE off the pool for every arm · no head reshape for BOUNDARY-1 · X68 registered**
+
+### 2026-11-09 · SCREEN · **X68 reads DROP: P\*'s three belief residuals retrained on procedural-team labels with the trunk frozen are 2.3 / 3.2 nats better than P\* on H / F but still 0.68 / 0.74 nats below the Smogon prior (lower bounds −0.94 / −1.05 against the −0.25 bar); a light screen, never a verdict, adopts nothing**
+
+**Registration:** `measurements/x68_belief_repair_screen_2026-11-09/SCREEN.md` (light screen, registered at `2afe856e0`, run at the pin
+`67233fc3d` in a clean detached worktree; seed 6801; no deviation from the page). **What ran:** five 300-game banks of P\* against
+`n1_proc_v1` teams (tier `ALL`; 54,008 training rows and 15,012 validation rows; every `--check` reported 0 held-out hits), the belief-only
+fine-tune (212,184 trained / 5,411,995 frozen parameters, 8 epochs of 211 steps), one score of the picked epoch over the four banked panels,
+one `table`. CPU only, 1.85 lane-hours (banks 0.61, fine-tune 1.17, score 0.08), inside the 2.5 lane-hour stop and the 5,400 s fine-tune bound
+(4,196 s).
+
+**The meter (`species_logp`: mean log presence of the truly hidden species; mean over 72 teams of team means; paired team bootstrap, 10,000
+draws, seed 20261109, 95 %).** FT = the fine-tuned checkpoint (epoch 4), PSTAR = banked P\*.
+
+| panel | FT | prior | d_P = FT − PSTAR | d_0 = FT − prior |
+|---|---|---|---|---|
+| F (`forum72`), PRIMARY | −2.985 | −2.247 | +3.229 [+2.227, +4.391] | −0.738 [−1.052, −0.473] |
+| H (`heldout72_hpfix`), PRIMARY | −2.757 | −2.082 | +2.321 [+1.296, +3.435] | −0.676 [−0.941, −0.427] |
+| `p72`, reported | −4.046 | −3.030 | +6.643 [+5.555, +7.765] | −1.016 [−1.288, −0.764] |
+| `home72` (in-pool), reported | −2.020 | −1.843 | −1.393 [−1.614, −1.186] | −0.177 [−0.355, −0.007] |
+
+**The rule, applied mechanically.** Rule 1: `picked_epoch` = 4, not 0, so the candidate was scored. Rule 2 needs, on BOTH F and H, the lower
+bound of d_P > 0 AND the lower bound of d_0 ≥ −0.25: d_P is met on both (+2.227, +1.296); d_0 is NOT met on either (−1.052, −0.941). Rule 3:
+**DROP**. No bound is within 1e-6 of its threshold.
+
+**Reported, never deciding.** `moves_logp` FT − PSTAR: −0.141 [−0.186, −0.096] home72, +0.001 [−0.050, +0.055] H, −0.089 [−0.137, −0.040] F,
+−0.033 [−0.093, +0.030] `p72`; FT − prior −0.001 / −0.331 / −0.136 / −0.371 (WORSE on all three held-out panels). `items_logp` FT − PSTAR:
+−0.186 [−0.250, −0.123] home72, −0.082 [−0.155, −0.006] H, −0.023 [−0.160, +0.149] F, +0.349 [+0.148, +0.576] `p72`. Validation loss
+(`finetune.json`, total = species + moves + items): epoch 0 (P\* itself) 23.550 = 23.002 + 0.022 + 0.526; picked epoch 4 10.979 = 10.624 +
+0.048 + 0.307; the prior alone 10.250 = 9.662 + 0.016 + 0.572. Epochs 5 to 8 read 11.04, 11.17, 11.31, 11.53 while the training loss kept
+falling (8.40 at epoch 4, 6.84 at epoch 8).
+
+**What DROP does (the page's §7).** MF-3 step (b) closes for a frozen trunk at this size. Breadth in the loop stays the only shown repair; the
+design's trained-in floor (`designs/endstate/design_offpool_belief.md` §7) is the candidate for the next fresh run. It reopens only with a new
+label source. The fine-tuned checkpoint plays nothing and seeds nothing.
+
+**FINDINGs.** (1) On its own validation shard (procedural teams, the training corpus's family) the picked epoch's species leg is still 0.96
+above the prior alone and its move leg is above both P\*'s and the prior's; only the item leg is below the prior's. (2) The rank columns moved
+the other way from the primary: `species_hit` FT − PSTAR −0.076 [−0.138, −0.019] H and −0.057 [−0.104, −0.015] F, and `moves_prec` FT − PSTAR
+−0.214 H, −0.261 F, −0.319 home72 (all WORSE); the fine-tune's move loss is trained at weight 1 beside a species loss about 200 times larger.
+(3) The in-pool cost is the whole of P\*'s advantage: `home72` species goes from +1.216 above the prior to −0.177 below it. (4) The page's
+1,728 total steps is 1,688 as run (211 steps an epoch at 54,008 rows); the recipe is the tool's constant and nothing was changed. (5) The
+fine-tune held one heavy slot for 70 minutes as a single job (the page registers one run with a 5,400 s bound); the slot tool printed its
+"≤ 45 min per chunk" LONG HOLD notice. (6) The five banks ran in parallel in one capped job on the agent cores (403 to 471 s each); a bank is a
+pure function of its inputs, so this changes no row. (7) As in the baseline entry: the rows are P\*'s greedy self-play states, and both arms are
+read through the six warn-level `obs_gap` rows (162, 163, 165 to 168). (8) The views that say "X68 REGISTERED"
+(`designs/endstate/design_offpool_belief.md`, `EXPERIMENT_BACKLOG.md` MF-3) were outside this unit and are not updated here.
+
+**Record:** `~/gen3ai_archive/offpool_belief_2026-11-09/x68/` (`train_0`–`3`, `val`, `run/finetune.json`, `run/finetuned.zip` sha256
+`a30954ca4857…`, `score_ft.json` sha256 `9f45dbabb567…`, `table.md`, `table.json` sha256 `e18618d0b0ce…`).
+
+Tag: **X68 · SCREEN · DROP · species log-presence FT − prior −0.74 [−1.05, −0.47] F / −0.68 [−0.94, −0.43] H (bar: lower bound ≥ −0.25); FT − P\* +3.23 [+2.23, +4.39] F / +2.32 [+1.30, +3.44] H · never a verdict, never quoted as a claim**

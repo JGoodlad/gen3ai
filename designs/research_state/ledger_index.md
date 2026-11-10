@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,975-line file. **The ledger itself is append-only and is never edited by this**;
+31,026-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1001 headings · 946 dated · 2026-08-01 → 2026-11-09 · ledger 30,975 lines.**
+**1002 headings · 947 dated · 2026-08-01 → 2026-11-09 · ledger 31,026 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1021,3 +1021,4 @@ rename.
   - `L30800` · `2026-11-09` · ADDENDUM · **S′-HONEST clustered on teams (REPORTED; the registered GO-HONEST + GOAL-B-REACHED is unchanged): the search GAIN survives every dependence model (+1.98 pp, LB ≥ +0.31), the searched score's 0.50 clearance survives none but independent deals ([0.4942, 0.5353] on our team, [0.4908, 0.5382] two-way), and the gain is detected on the procedural panel P72 alone**
   - `L30856` · `2026-11-09` · MEASUREMENT (DESCRIPTIVE) · **ARCHITECTURE DIAGNOSIS of P\* (REPORTED, no verdict): the policy tower's first tanh layer is 0.897 saturated ON and OFF the pool and cuts the policy gradient 15–18×, but the tower is not dead; the critic head has a hidden layer it does not use; its error on unfamiliar teams is a level, not a ranking — nothing here supports a critic or activation change in BOUNDARY-1's shared base**
   - `L30905` · `2026-11-09` · MEASUREMENT (DESCRIPTIVE) · **OFF-POOL BELIEF BASELINE (REPORTED, no verdict): P\*'s belief about the opponent's unseen species is 3.0 / 4.0 / 7.7 nats WORSE than its own Smogon prior on held-out teams (H / F / P72, team-clustered) and 1.2 nats better in the pool; team breadth in the training loop brings it to the prior with the head unchanged, no arm beats the prior off the pool, and the move leg is not repaired by breadth — the belief needs no reshape, it needs other labels**
+  - `L30976` · `2026-11-09` · SCREEN · **X68 reads DROP: P\*'s three belief residuals retrained on procedural-team labels with the trunk frozen are 2.3 / 3.2 nats better than P\* on H / F but still 0.68 / 0.74 nats below the Smogon prior (lower bounds −0.94 / −1.05 against the −0.25 bar); a light screen, never a verdict, adopts nothing**

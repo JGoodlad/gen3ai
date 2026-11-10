@@ -87,4 +87,14 @@ Per panel, d_P = FT − PSTAR and d_0 = FT − prior on the primary, each with i
 
 ## 9. Result (filled AFTER the look)
 
-—
+**DROP (rule 3), 2026-11-09.** `picked_epoch` 4 of 8 (rule 1 did not fire). `species_logp`, 72 teams a panel:
+
+| panel | d_P = FT − PSTAR | d_0 = FT − prior | rule 2 |
+|---|---|---|---|
+| F | +3.229 [+2.227, +4.391] | −0.738 [−1.052, −0.473] | d_P met; d_0 lower bound −1.052 < −0.25: NOT met |
+| H | +2.321 [+1.296, +3.435] | −0.676 [−0.941, −0.427] | d_P met; d_0 lower bound −0.941 < −0.25: NOT met |
+
+No bound is within 1e-6 of a threshold. Cost 1.85 CPU lane-h (banks 0.61, fine-tune 1.17 = 4,196 s of the 5,400 s
+bound, score 0.08), 0 GPU. Reported columns, the fine-tune's validation legs and the FINDINGs: ledger
+`### 2026-11-09 · SCREEN · X68 …`; files `~/gen3ai_archive/offpool_belief_2026-11-09/x68/` (`table.json` sha256
+`e18618d0b0ce9142…`).
