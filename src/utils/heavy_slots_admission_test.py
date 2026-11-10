@@ -26,6 +26,7 @@ import time
 
 import pytest
 
+from utils import core_split
 from utils import gate_lock as GL
 from utils import heavy_admission as HA
 from utils import heavy_slots as HS
@@ -402,7 +403,7 @@ def test_the_ship_gates_argv_declares_the_gates_cap(max_run_s):
 
 def test_the_gate_is_admitted_by_its_own_cap(box, tmp_path, monkeypatch):
     monkeypatch.setenv(GL.DIR_ENV, str(tmp_path / "gate"))
-    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {"/m/rb_admission_test": 1})
+    monkeypatch.setattr(core_split, "training_runs", lambda *a, **k: {"/m/rb_admission_test": 1})
     _holders(tmp_path, 12, 12)
     gate = [str(repo_path("scripts", "ops", "mem_cap.sh")), "--max-run-s", "5400", "24", "python", "-m", "pytest"]
     with GL.gate_slot(log=lambda _m: None, cmd=gate):

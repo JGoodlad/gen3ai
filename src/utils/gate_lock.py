@@ -317,11 +317,14 @@ def live_run_warning(runs: Optional[dict] = None, *, my_cpus: Optional[List[int]
                      my_nice: Optional[int] = None, trainer_cpus: Optional[List[int]] = None) -> Optional[str]:
     """One line naming the live training run(s) and the rule-5b shape (nice 19, the agent cores, the
     measured ``-n``), plus what is WRONG with this gate's own shape — or None when no run is live.
-    A WARNING only: the gate's command is never changed. The ``my_*`` / ``trainer_cpus`` arguments
-    are for tests; by default they are read from this process and the first live trainer."""
+    A run is a TRAINING run here by ``core_split.training_runs``: an agent's CPU-only smoke on the agent cores is agent
+    work, so it neither triggers the warning nor stands in for "the trainer's cpus" (its affinity IS the agent list:
+    the old reading warned that this gate's cpus "OVERLAP the trainer's"). A WARNING only: the gate's command is never
+    changed. The ``my_*`` / ``trainer_cpus`` arguments are for tests; by default they are read from this process and
+    the first live trainer."""
     if runs is None:
         try:
-            runs = procfs.live_training_runs()
+            runs = core_split.training_runs()
         except Exception:                    # noqa: BLE001 — a warning must never stop a gate
             return None
     if not runs:

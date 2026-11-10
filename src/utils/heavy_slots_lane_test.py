@@ -29,9 +29,9 @@ import time
 
 import pytest
 
+from utils import core_split
 from utils import heavy_slots as HS
 from utils import mem_cap as M
-from utils import procfs
 from utils.contention import scale_timeout
 from utils.paths import src_root
 
@@ -281,11 +281,11 @@ def test_a_job_with_no_declaration_has_no_deadline(slots, fake_run):
 def test_a_declared_job_that_needs_no_slot_or_bypasses_is_never_killed(slots, fake_run, monkeypatch):
     """The deadline is the price of the lane: no slot taken, no deadline. An ambient ``$GEN3AI_HEAVY_SLOT_MAX_S`` must not be
     able to cut a job that never queued (no run live, no lease) or one the orchestrator marked BLOCKING."""
-    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {})
+    monkeypatch.setattr(core_split, "training_runs", lambda *a, **k: {})
     monkeypatch.setattr(HS, "lease_reason", lambda: None)
     assert M.main(["--max-s", "100", "1", "true"]) == 0                    # nothing wants a slot
     assert fake_run.calls[-1]["slot_fd"] is None and fake_run.calls[-1]["deadline_s"] is None
-    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {"/m/rb_x": 1})
+    monkeypatch.setattr(core_split, "training_runs", lambda *a, **k: {"/m/rb_x": 1})
     monkeypatch.setenv(HS.BLOCKING_ENV, "plateau tick")
     assert M.main(["--max-s", "100", "1", "true"]) == 0                    # a run is live, but BLOCKING bypasses
     assert fake_run.calls[-1]["slot_fd"] is None and fake_run.calls[-1]["deadline_s"] is None
@@ -383,7 +383,7 @@ def test_max_run_s_reaches_the_run_whether_or_not_a_slot_was_taken_and_is_absent
     assert M.main(["--slot", "1", "true"]) == 0 and fake_run.calls[-1]["max_run_s"] is None
     assert M.main(["--slot", "--max-run-s", "2700", "1", "true"]) == 0
     assert fake_run.calls[-1]["max_run_s"] == 2700 and fake_run.calls[-1]["deadline_s"] is None      # a LONG job: no ceiling
-    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {})
+    monkeypatch.setattr(core_split, "training_runs", lambda *a, **k: {})
     monkeypatch.setattr(HS, "lease_reason", lambda: None)
     assert M.main(["--max-run-s", "5", "1", "true"]) == 0                    # nothing wants a slot: the bound still binds
     assert fake_run.calls[-1]["slot_fd"] is None and fake_run.calls[-1]["max_run_s"] == 5

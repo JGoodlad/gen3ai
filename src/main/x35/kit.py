@@ -78,7 +78,7 @@ canonical flag order (the order carries no meaning to the trainer's parser):
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
     python -m main.x35.kit phase1-record --arm a3 --call <R_production.json> --out <stage>/phase1_a3.json
     python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json
-    python -m main.x35.kit live                    # exit 1 while any training run is live (pre-check 1)
+    python -m main.x35.kit live                    # exit 1 while any TRAINING run is live (pre-check 1; an agent's CPU smoke is not one)
     python -m main.x35.kit disk --required-gib 20.68 [--thinning]   # pre-check 8 (F22)
     python -m main.x35.kit validate-run --arm toy_x47 --seed 3601 --call <R_toy.json> --dryrun F --checkargs F \\
         --rc-dryrun 0 --rc-checkargs 0     # ``validate_batch1.sh``'s verdict on one argv's transcripts (exit 1 = FAIL)
@@ -786,9 +786,11 @@ def reference_pool_check(arm: str, call: Mapping[str, Any], *, write: bool = Fal
 
 # ------------------------------------------------------------------------------------------------ pre-checks
 def live_runs() -> Dict[str, int]:
-    from utils.procfs import live_training_runs
+    """The live TRAINING runs (``kit live``, GO pre-check 1): ``core_split.training_runs``, so an agent's own CPU-only
+    smoke on the agent cores is no reason to HOLD a launch (it shares no GPU and no trainer core)."""
+    from utils import core_split
 
-    return live_training_runs()
+    return core_split.training_runs()
 
 
 def disk_check(models_dir: str, required_gib: float, *, thinning: bool,

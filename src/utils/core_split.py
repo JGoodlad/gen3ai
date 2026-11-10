@@ -33,7 +33,15 @@ THE ORDER (``core_split.md`` §7) is held by two refusals, not by care:
 CPUs are the online CPUs in neither the trainer's affinity nor the active trainer list, so a trainer narrowed for a
 few seconds by the A/B driver (``main.ops.core_split_ab``) frees nothing.
 
-Stdlib and ``utils.procfs`` only. Tests: ``core_split_test.py``, ``core_split_literal_gate_test.py``.
+THE LIVE-RUN QUESTION OF RULE 5b is asked here too (:func:`training_runs`, :func:`split_runs`): "is a training run live,
+so agent work must take the agent cores, low priority and a heavy slot?". An agent's own CPU-only run (a smoke on the
+agent cores, or anything started with CUDA hidden) is AGENT WORK and is not a training run for that question. Every
+consumer that decides a SHAPE or a SLOT from "a run is live" reads this one rule (the ship gate, the heavy slots, the
+gate lock's warning, the launch kits' pre-checks); a question about a run DIRECTORY being written (``utils.paths``,
+``main.tb_curate``) is a different one and keeps :func:`utils.procfs.live_training_runs`.
+
+Stdlib and ``utils.procfs`` only. Tests: ``core_split_test.py``, ``core_split_literal_gate_test.py``,
+``live_runs_test.py``.
 """
 from __future__ import annotations
 
@@ -46,7 +54,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from utils import procfs
 
@@ -342,7 +350,7 @@ def is_agent_work(affinity: Optional[Iterable[int]], *splits: "Split") -> bool:
     """THE rule for "this run is agent work, not the pinned trainer": its CPUs (``affinity``) lie inside the agent
     list of every split given (none given: the active split). A CPU-only run an agent started on the agent cores is
     that. An unreadable (``None``) or empty affinity is never agent work. Read by :func:`blocking_trainers`,
-    :func:`status` and the ship gate's shape (``utils.ship_gate.split_runs``)."""
+    :func:`status` and the whole-tree rule of :func:`agent_run_pids`."""
     cpus = set(affinity or ())
     return bool(cpus) and all(cpus <= set(s.agent_ids) for s in (splits or (active(),)))
 
@@ -353,6 +361,86 @@ def blocking_trainers(cur: "Split", new: "Split", proc: str = "/proc",
     agent list of BOTH splits does not count: it is agent work (:func:`is_agent_work`), and it stays on agent cores.
     An unreadable affinity counts."""
     return {pid: kind for pid, kind in live_trainers(proc).items() if not is_agent_work(affinity(pid), cur, new)}
+
+
+#: ``CUDA_VISIBLE_DEVICES`` values that hide every GPU from a process.
+_CUDA_HIDDEN = ("", "-1")
+
+
+def cuda_hidden(pid: int, proc: str = "/proc") -> bool:
+    """Was ``pid`` STARTED with every GPU hidden (root ``CLAUDE.md`` rule 5: an agent without a lease)? Read from the
+    environment it was started with; unset or unreadable is not hidden."""
+    for kv in procfs.read_text(pid, "environ", proc).split("\0"):
+        name, eq, value = kv.partition("=")
+        if eq and name == "CUDA_VISIBLE_DEVICES":
+            return value in _CUDA_HIDDEN
+    return False
+
+
+def _tasks(pid: int, proc: str) -> List[int]:
+    """The thread ids of ``pid`` (an affinity is per thread); the pid alone when they cannot be listed."""
+    try:
+        return sorted(int(t) for t in os.listdir(f"{proc}/{pid}/task") if t.isdigit()) or [pid]
+    except OSError:
+        return [pid]
+
+
+def _gone(pid: int, task: int, proc: str) -> bool:
+    """A thread or process that exited after it was listed (its affinity then cannot be read)."""
+    return not procfs.pid_alive(pid, proc) if task == pid else not os.path.exists(f"{proc}/{pid}/task/{task}")
+
+
+def _is_agent_run(pid: int, procs: Dict[int, "procfs.Proc"], kids: Dict[int, List[int]], proc: str,
+                  affinity: Callable[[int], Optional[List[int]]]) -> bool:
+    if cuda_hidden(pid, proc):
+        return True
+    above = [a for a in procfs.ancestors(pid, procs)
+             if is_trainer_argv([x for x in procfs.read_text(a, "cmdline", proc).split("\0") if x])]
+    for p in [*above, pid, *procfs.descendants(pid, kids)]:
+        for task in _tasks(p, proc):
+            aff = affinity(task)
+            if aff is None and task != pid and _gone(p, task, proc):
+                continue
+            if not is_agent_work(aff):
+                return False
+    return True
+
+
+def agent_run_pids(pids: Iterable[int], *, proc: str = "/proc",
+                   affinity: Optional[Callable[[int], Optional[List[int]]]] = None) -> Set[int]:
+    """The pids (a trainer, or a launcher) whose RUN is agent work, not a training run for rule 5b: it was started
+    with CUDA hidden, or its WHOLE TREE (the launcher above the trainer, the trainer, every descendant, every thread of
+    each) sits inside the active split's agent list (:func:`is_agent_work`; only the tree walk is here). A process whose
+    affinity cannot be read keeps the run a training run, unless it has just exited (never ``pid`` itself).
+    ``affinity``: a process's CPUs, ``None`` when unreadable (default ``os.sched_getaffinity``; a test's seam)."""
+    pids = list(pids)
+    if not pids:
+        return set()
+    procs = procfs.snapshot(proc)
+    kids = procfs.children_map(procs)
+    aff = affinity or _affinity
+    return {pid for pid in pids if _is_agent_run(pid, procs, kids, proc, aff)}
+
+
+def split_runs(runs: Dict[str, int], *, proc: str = "/proc",
+               affinity: Optional[Callable[[int], Optional[List[int]]]] = None) -> Tuple[Dict[str, int], Dict[str, int]]:
+    """``(training, agent_work)``: ``runs`` (``{run_dir: trainer pid}``, :func:`utils.procfs.live_training_runs`) split
+    by :func:`agent_run_pids`. The ship gate's shape reads both (it names the agent work it set aside)."""
+    agent = agent_run_pids(runs.values(), proc=proc, affinity=affinity)
+    return ({rd: p for rd, p in runs.items() if p not in agent}, {rd: p for rd, p in runs.items() if p in agent})
+
+
+def training_runs(proc: str = "/proc", affinity: Optional[Callable[[int], Optional[List[int]]]] = None) -> Dict[str, int]:
+    """``{run_dir: pid}`` of the live runs that count as TRAINING for rule 5b (the heavy slots' and the gates' question):
+    :func:`utils.procfs.live_training_runs` less the agent work (:func:`split_runs`). A classification that cannot be
+    made (a ``/proc`` read that fails) keeps every run a training run: the safe answer is "live"."""
+    runs = procfs.live_training_runs(proc)
+    if not runs:
+        return {}
+    try:
+        return split_runs(runs, proc=proc, affinity=affinity)[0]
+    except OSError:
+        return runs
 
 
 # ---------------------------------------------------------------------------------------------------------------------

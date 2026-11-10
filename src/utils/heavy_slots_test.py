@@ -25,9 +25,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from utils import core_split
 from utils import gate_lock as GL
 from utils import heavy_slots as HS
-from utils import procfs
 from utils.contention import scale_timeout
 from utils.paths import repo_path, src_root
 
@@ -145,7 +145,7 @@ def test_a_gate_holds_ONE_heavy_slot_and_mem_cap_inside_it_takes_none(slots, tmp
     monkeypatch.setenv(HS.SLOTS_ENV, "1")
     monkeypatch.setenv(GL.DIR_ENV, str(tmp_path / "gate"))
     monkeypatch.delenv(GL.HELD_ENV, raising=False)
-    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {"/m/rb_x34_test": 1})
+    monkeypatch.setattr(core_split, "training_runs", lambda *a, **k: {"/m/rb_x34_test": 1})
     with GL.gate_slot(log=lambda _m: None):
         held = HS.verified_holder()
         assert held is not None and held[0] == os.getpid(), "a gate beside a live run holds a heavy slot"
@@ -181,8 +181,8 @@ def test_lock_order_a_gate_wait_under_a_heavy_holder_is_refused(slots, tmp_path,
 
 _GATE_DRIVER = (
     "import pathlib, sys, time\n"
-    "from utils import procfs, gate_lock as GL\n"
-    "procfs.live_training_runs = lambda *a, **k: {'/m/rb_convoy_test': 1}      # rule 5b: a run is 'live'\n"
+    "from utils import core_split, gate_lock as GL\n"
+    "core_split.training_runs = lambda *a, **k: {'/m/rb_convoy_test': 1}      # rule 5b: a training run is live\n"
     "marker = sys.argv[1]\n"
     "with GL.gate_slot(poll_s=0.05, report_every_s=0.5, cmd=['convoy-gate']) as s:\n"
     "    pathlib.Path(marker).write_text('ran'); time.sleep(float(sys.argv[2]))\n"
@@ -343,7 +343,7 @@ def test_a_job_behind_a_held_lease_queues_for_a_slot_but_the_lease_owners_gpu_jo
 
     monkeypatch.setattr(GPUL.L, "read_lease", lambda _p: SimpleNamespace(pid=os.getpid(), describe=lambda: "x"))
     monkeypatch.setattr(GPUL.L, "token_matches", lambda _l: False)    # an ordinary agent job, not the owner
-    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {})
+    monkeypatch.setattr(core_split, "training_runs", lambda *a, **k: {})
     monkeypatch.setenv(HS.SLOTS_ENV, "1")
     pa = _taker(tmp_path / "a", hold=60.0)
     try:

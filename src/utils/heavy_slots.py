@@ -16,7 +16,8 @@ BLOCKS the GPU's next work) was starved, and a 14-min ship gate took over an hou
 already goes through ``scripts/ops/mem_cap.sh``, so that is where the slot is taken.
 
 POLICY (:func:`wanted`). A job takes a slot when a training run is live
-(``utils.procfs.live_training_runs``), while the GPU is LEASED (:func:`lease_reason`: rule 5b is keyed to the lease
+(``core_split.training_runs``: ``utils.procfs.live_training_runs`` less the agent's own CPU-only runs, which are agent
+work and protect no trainer), while the GPU is LEASED (:func:`lease_reason`: rule 5b is keyed to the lease
 state too, so a leased window - a measurement battery under ``mem_cap`` in the same 64 GiB slice - is not flooded
 by the jobs that queued behind a run the moment it ends), or when it asks (``--slot``). A job the orchestrator marks
 BLOCKING (``$GEN3AI_BLOCKING=<reason>``, or ``mem_cap.sh --blocking <reason>``) BYPASSES the slots: it
@@ -108,6 +109,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
+from utils import core_split
 from utils import gpu_lock as GL
 from utils import heavy_admission as HA
 from utils import procfs
@@ -300,11 +302,14 @@ def lease_reason() -> Optional[str]:
 
 def wanted(*, force: bool = False, runs: Optional[dict] = None, lease: bool = True) -> Optional[str]:
     """Why this job must take a slot, or ``None`` when it need not (no run live, no GPU lease, not forced).
-    ``lease=False`` ignores the lease (tests that pin the run-only policy)."""
+    A run is live for this question only when it is a TRAINING run (``core_split.training_runs``): an agent's CPU-only
+    smoke on the agent cores is agent work, which protects no trainer and so needs no slot (2026-11-10: it read as a
+    live run, so every heavy job took a slot, and queued for one, for the smoke's whole life). ``runs`` given: taken as the
+    training runs, unclassified. ``lease=False`` ignores the lease (tests that pin the run-only policy)."""
     if force:
         return "asked for (--slot)"
     try:
-        runs = procfs.live_training_runs() if runs is None else runs
+        runs = core_split.training_runs() if runs is None else runs
     except Exception:            # noqa: BLE001 — a /proc read must never stop a job; it then takes no slot
         runs = {}
     if runs:

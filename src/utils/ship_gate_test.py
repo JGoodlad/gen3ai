@@ -2,17 +2,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Optional
 
 import pytest
 
 from utils import core_split
+from utils import fake_proc_testing as FP
 from utils import heavy_slots as HS
 from utils import ship_gate as SG
 
-_ONLINE = list(range(16))
-_TRAINER = list(core_split.DEFAULT.trainer_ids)
-_AGENTS = list(core_split.DEFAULT.agent_ids)
+_ONLINE, _TRAINER, _AGENTS = FP.ONLINE, FP.TRAINER, FP.AGENTS
 
 
 @pytest.fixture(autouse=True)
@@ -48,101 +47,31 @@ def test_a_trainer_narrowed_below_the_split_frees_nothing_for_the_gate() -> None
     assert wide.cpus == [14, 15]                      # a trainer pinned WIDER than the split is still respected
 
 
-# --- agent work is not a training run (2026-11-09) -------------------------------------------------------------------
-_TRAINER_SCRIPT = "train_rl_agent" + ".py"
-_SMOKE, _REAL = "/m/smoke_b1", "/m/rb_x"
-
-
-def _fake_proc(root: Path, table: Dict[int, Tuple[int, List[str], Optional[str]]]) -> str:
-    """A fake process table: ``{pid: (ppid, argv, CUDA_VISIBLE_DEVICES or None)}`` as ``/proc`` would show it."""
-    for pid, (ppid, argv, cuda) in table.items():
-        d = root / str(pid)
-        d.mkdir()
-        (d / "cmdline").write_bytes("\0".join(argv).encode() + b"\0")
-        (d / "stat").write_text(f"{pid} (python3) S {ppid} {pid} {pid} " + " ".join(["0"] * 30) + "\n")
-        env = ["LANG=C"] + ([] if cuda is None else [f"CUDA_VISIBLE_DEVICES={cuda}"])
-        (d / "environ").write_bytes("\0".join(env).encode() + b"\0")
-    return str(root)
-
-
-def _box(root: Path, *, smoke_cuda: Optional[str] = "0", real: bool = True) -> str:
-    """The incident's box: an agent's training smoke (wrapper 100 > launcher 110 > trainer 111 > worker 112) and,
-    with ``real``, the pinned GPU run (launcher 200 > trainer 201)."""
-    table: Dict[int, Tuple[int, List[str], Optional[str]]] = {
-        100: (1, ["python3", "-m", "main.b1.resume_check", "smoke"], smoke_cuda),
-        110: (100, ["python3", "-m", "main.launcher", "--debug", "--steps", "10000"], smoke_cuda),
-        111: (110, ["python3", f"/wt/src/main/{_TRAINER_SCRIPT}", "--run-dir", _SMOKE], smoke_cuda),
-        112: (111, ["python3", "-c", "from multiprocessing.spawn import spawn_main"], smoke_cuda)}
-    if real:
-        table[200] = (1, ["python3", "-m", "main.launcher", "--steps", "15000000", "--device", "cuda"], "0")
-        table[201] = (200, ["python3", f"/repo/src/main/{_TRAINER_SCRIPT}", "--run-dir", _REAL], "0")
-    return _fake_proc(root, table)
-
-
-def _aff(smoke: Sequence[int] = tuple(_AGENTS), **over: Optional[Sequence[int]]):
-    table: Dict[int, Optional[List[int]]] = {100: list(_ONLINE), 110: list(smoke), 111: list(smoke), 112: list(smoke),
-                                             200: list(_TRAINER), 201: list(_TRAINER)}
-    table.update({int(k[1:]): (None if v is None else list(v)) for k, v in over.items()})
-    return lambda pid: table[pid]
-
-
+# --- agent work is not a training run (2026-11-09; the rule itself is core_split's: live_runs_test.py) ---------------
 def test_an_agents_cpu_smoke_on_the_agent_cores_is_not_a_training_run_for_the_shape(tmp_path: Path) -> None:
     """THE INCIDENT (2026-11-09, FINDING 1 of 1504c1639): an agent's CPU-only training smoke on the agent cores was
     read as a second trainer, the union of the two affinities was every CPU, and the gate REFUSED ("pinned to EVERY
     cpu") for the smoke's 25 minutes. The core-split owner calls that run agent work; the gate agrees. Fails on
     revert: the first line raises SystemExit."""
-    proc = _box(tmp_path)
-    shape = SG.resolve_shape(online=_ONLINE, proc=proc, affinity=_aff())
-    assert shape.live_runs == {_REAL: 201} and shape.cpus == _AGENTS and shape.nice == 19
+    proc = FP.incident_box(tmp_path)
+    shape = SG.resolve_shape(online=_ONLINE, proc=proc, affinity=FP.affinities())
+    assert shape.live_runs == {FP.REAL: FP.REAL_PID} and shape.cpus == _AGENTS and shape.nice == 19
     assert "rb_x" in shape.describe() and "agent work, not a training run: smoke_b1" in shape.describe()
-    assert SG.split_runs({_SMOKE: 111, _REAL: 201}, proc=proc, affinity=_aff()) == ({_REAL: 201}, {_SMOKE: 111})
 
 
 def test_a_smoke_alone_leaves_the_quiet_shape(tmp_path: Path) -> None:
-    shape = SG.resolve_shape(online=_ONLINE, proc=_box(tmp_path, real=False), affinity=_aff())
+    shape = SG.resolve_shape(online=_ONLINE, proc=FP.incident_box(tmp_path, real=False), affinity=FP.affinities())
     assert (shape.live_runs, shape.cpus, shape.nice, shape.workers) == ({}, None, 0, SG.QUIET_WORKERS)
     assert "smoke_b1" in shape.describe()
 
 
-@pytest.mark.parametrize("over,why", [
-    ({"p112": _ONLINE}, "a worker of the smoke runs on the trainer's cores"),
-    ({"p110": _ONLINE}, "its launcher is unpinned: the next child inherits every CPU"),
-    ({"p111": None}, "the trainer's affinity cannot be read"),
-    ({"p112": None}, "a LIVE descendant's affinity cannot be read"),
-    ({"p111": [], "p110": [], "p112": []}, "an empty affinity proves nothing"),
-])
-def test_a_run_counts_as_training_unless_its_WHOLE_tree_sits_inside_the_agent_list(
-        tmp_path: Path, over: Dict[str, Optional[Sequence[int]]], why: str) -> None:
-    proc = _box(tmp_path, real=False)
-    training, agent = SG.split_runs({_SMOKE: 111}, proc=proc, affinity=_aff(**over))
-    assert (training, agent) == ({_SMOKE: 111}, {}), why
-    (tmp_path / "112" / "stat").unlink()                        # the descendant EXITED after it was listed: no evidence
-    gone = SG.split_runs({_SMOKE: 111}, proc=proc, affinity=_aff(p112=None))
-    assert gone == ({}, {_SMOKE: 111})
-
-
-def test_the_agent_list_is_the_ACTIVE_splits_read_from_the_owner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """One rule, the owner's (`core_split.is_agent_work`): a smoke on the 4+4 agent cores is agent work only while
-    4+4 is the active split. Fails if the gate spells its own list or its own subset test."""
-    proc, four = _box(tmp_path, real=False), core_split.parse_split("4+4")
-    wide = _aff(smoke=four.agent_ids)
-    assert SG.split_runs({_SMOKE: 111}, proc=proc, affinity=wide) == ({_SMOKE: 111}, {})
-    monkeypatch.setattr(core_split, "active", lambda path=None: four)
-    assert SG.split_runs({_SMOKE: 111}, proc=proc, affinity=wide) == ({}, {_SMOKE: 111})
-    seen = []
-    monkeypatch.setattr(core_split, "is_agent_work", lambda aff, *s: seen.append(aff) or False)
-    assert SG.split_runs({_SMOKE: 111}, proc=proc, affinity=wide) == ({_SMOKE: 111}, {}) and seen
-
-
 @pytest.mark.parametrize("cuda,agent_work", [("", True), ("-1", True), ("0", False), (None, False)])
-def test_a_run_started_with_cuda_hidden_is_agent_work_wherever_it_runs(
+def test_a_run_started_with_cuda_hidden_shapes_nothing_wherever_it_runs(
         tmp_path: Path, cuda: Optional[str], agent_work: bool) -> None:
     """Rule 5: an agent without a lease runs with CUDA hidden, so such a run is never the GPU's trainer, pinned or
     not. With CUDA visible (or unset) an unpinned run is a training run and the every-CPU refusal stands."""
-    proc = _box(tmp_path, smoke_cuda=cuda)
-    everywhere = _aff(smoke=_ONLINE)
-    training, agent = SG.split_runs({_SMOKE: 111, _REAL: 201}, proc=proc, affinity=everywhere)
-    assert (_SMOKE in agent, _SMOKE in training) == (agent_work, not agent_work) and _REAL in training
+    proc = FP.incident_box(tmp_path, smoke_cuda=cuda)
+    everywhere = FP.affinities(smoke=_ONLINE)
     if agent_work:
         assert SG.resolve_shape(online=_ONLINE, proc=proc, affinity=everywhere).cpus == _AGENTS
     else:

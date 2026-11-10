@@ -50,8 +50,12 @@ python -m utils.core_split set 5+3                 # set it now: REFUSED while a
 - **Beside a live run, the ship gate reads the trainer's own affinity** (`core_split.agent_ids_beside`): its CPUs are
   the online CPUs in neither the trainer's affinity nor the active trainer list. A trainer narrowed for 8 s by the
   A/B frees nothing. A live run that is agent work (`core_split.is_agent_work`, the one rule `blocking_trainers` and
-  `status` read too: its whole tree inside the agent list, or started with CUDA hidden) is not a trainer for the
-  gate's shape (`ship_gate.split_runs`).
+  `status` read too: its whole tree inside the agent list, or started with CUDA hidden) is not a training run for
+  rule 5b. `core_split.training_runs` / `split_runs` / `agent_run_pids` are the ONE answer to "is a training run
+  live?" that every shape or slot decision reads: the ship gate, `heavy_slots.wanted`, the gate lock's warning, the
+  launch kit's `kit live` and the arm chain's second-GO refusal (`live.launches`). `utils.paths.refuse_live_run_dir`
+  asks a different question (is this run DIRECTORY being written?) and keeps the raw `procfs.live_training_runs`;
+  `src/utils/live_runs_test.py` pins the callers.
 - **Who reads it.** The trainer's pin: `launch_x35.sh` (the launch kit; it HOLDs when the read fails, and logs the list it got and any note about a queued
   split). The agent list: the arm chain's defaults
   (`src/main/ops/arm_chain/spec.py`; a chain file's `cpu` block still overrides them), `main.x35.kakuna` (also the

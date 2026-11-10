@@ -118,6 +118,9 @@ class Deps:
     ship_wait_s: float = 45 * 60
     #: the live launchers / trainers (``live.discover`` lines); the GO refuses beside any. Default: ``/proc``
     live_runs: Optional[Callable[[], List[str]]] = None
+    #: a process's CPU affinity (``None``: unreadable), for the rule that an agent's CPU-only run is not a launch
+    #: (``core_split.agent_run_pids``); default the real ``sched_getaffinity``
+    affinity: Optional[Callable[[int], Optional[List[int]]]] = None
 
 
 class _BeatingRunner:
@@ -514,7 +517,8 @@ class Chain:
     def _refuse_a_second_go(self, it: ArmItem) -> None:
         """Review 10-26, finding 7: never GO beside a live GO wrapper (any arm's) or a live launcher / trainer."""
         wrappers = self.launcher.live_go_wrappers(self.d.proc)
-        runs = (self.d.live_runs or (lambda: [r.line() for r in live.discover(self.spec.models_dir, self.d.proc)]))()
+        runs = (self.d.live_runs
+                or (lambda: [r.line() for r in live.launches(self.spec.models_dir, self.d.proc, self.d.affinity)]))()
         if wrappers or runs:
             raise Hold(f"refusing the GO of {it.run}: a launch is already live (GO wrapper(s) "
                        f"{[w.pid for w in wrappers]}; launcher / trainer {runs[:3]}) — never a second GO beside it")

@@ -475,7 +475,9 @@ def fd_path_for(pid: int, key: str, proc: str = _PROC) -> str:
 
 def live_training_runs(proc: str = _PROC) -> Dict[str, int]:
     """``{run_dir (absolute): pid}`` of every live ``train_rl_agent.py`` process that names a
-    ``--run-dir`` — the live-run rule the ops layer reads (``utils.gate_lock`` warns from it)."""
+    ``--run-dir``: EVERY run, an agent's CPU-only smoke included (the answer to "is this run directory being
+    written?"). Rule 5b's question - "is a TRAINING run live, so agent work takes the agent cores, low priority and a
+    slot?" - is ``utils.core_split.training_runs``, which drops agent work; ``live_runs_test.py`` pins who may call this."""
     out: Dict[str, int] = {}
     for pid in all_pids(proc):
         try:

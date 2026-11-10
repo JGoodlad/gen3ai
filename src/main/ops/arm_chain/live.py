@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
-from utils import procfs
+from utils import core_split, procfs
 
 _TRAINER = "train_rl_agent" + ".py"
 
@@ -125,3 +125,15 @@ def discover(models_dir: str, proc: str = "/proc") -> List[LiveRun]:
             out.append(LiveRun(pid=t, start_ticks=p.starttime, elapsed_s=int(up - p.starttime / procfs.HZ) if up else 0,
                                run_dir=rd, source="orphan-trainer", stdout=procfs.readlink(t, "fd/1", proc)))
     return out
+
+
+def launches(models_dir: str, proc: str = "/proc",
+             affinity: Optional[Callable[[int], Optional[List[int]]]] = None) -> List[LiveRun]:
+    """:func:`discover` less the AGENT WORK: the live launchers / trainers a GO must not land beside. An agent's own
+    CPU-only run (a smoke on the agent cores, or anything started with CUDA hidden) is not a launch to wait for:
+    ``core_split.agent_run_pids`` is the one rule (``affinity``: a test's seam for ``sched_getaffinity``), and a run
+    whose tree cannot be read stays a launch. The monitors, the canary and the liveness reads keep :func:`discover`:
+    they follow EVERY live run."""
+    runs = discover(models_dir, proc)
+    agent = core_split.agent_run_pids([r.pid for r in runs], proc=proc, affinity=affinity)
+    return [r for r in runs if r.pid not in agent]
