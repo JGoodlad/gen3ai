@@ -70,6 +70,8 @@ that obeys the rule. The fix is the re-tier's: mark it ``slow`` with its measure
 ``# ship gate (YYYY-MM-DD): N s beside a live run`` comment (the WHOLE file when a module fixture
 moves), or make it faster.
 
+The wide-fixture spans are read on :data:`now` (wall time), a test's phases on pytest's own clock.
+
 Knobs (tests and deliberate experiments only): ``$GEN3AI_SHIP_BAR_S`` (the bar),
 ``$GEN3AI_SHIP_BAR_REPORT`` (a JSON of every test at or over half the bar, for calibration).
 """
@@ -92,6 +94,10 @@ FAIL_MARGIN = 2.0
 FAIL_BAND = 0.25
 FAIL_LINE = FAIL_MARGIN * (1.0 + FAIL_BAND)
 EXEMPT_MARKERS = ("slow", "e2e", "benchmark", "static", "linchpin")
+#: The clock the wide-fixture spans are read on, looked up at each call. A module attribute so that a child session
+#: can PLANT its timings (``ship_bar_test.py`` points this and pytest's own ``_pytest.timing`` at one clock that only
+#: its planted costs advance): a verdict tested on wall time is the box's, not the code's (rule 8).
+now: Callable[[], float] = time.time
 
 
 def enabled() -> bool:
@@ -151,16 +157,16 @@ class ScopedTimer:
 
         def end_marker() -> None:           # runs LAST: after the fixture's own teardown
             if "t0" in span:
-                self._event(scope, owner, name, "teardown", span["t0"], time.time())
+                self._event(scope, owner, name, "teardown", span["t0"], now())
 
         fixturedef.addfinalizer(end_marker)
-        return (scope, owner, name, span, fixturedef, time.time())
+        return (scope, owner, name, span, fixturedef, now())
 
     def end(self, token: tuple, ok: bool) -> None:
         scope, owner, name, span, fixturedef, t0 = token
-        self._event(scope, owner, name, "setup", t0, time.time())
+        self._event(scope, owner, name, "setup", t0, now())
         if ok:
-            fixturedef.addfinalizer(lambda: span.__setitem__("t0", time.time()))   # runs FIRST
+            fixturedef.addfinalizer(lambda: span.__setitem__("t0", now()))   # runs FIRST
 
     def drain(self) -> List[dict]:
         out, self.pending = self.pending, []

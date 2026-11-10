@@ -338,18 +338,21 @@ def _affinity(pid: int) -> Optional[List[int]]:
         return None
 
 
+def is_agent_work(affinity: Optional[Iterable[int]], *splits: "Split") -> bool:
+    """THE rule for "this run is agent work, not the pinned trainer": its CPUs (``affinity``) lie inside the agent
+    list of every split given (none given: the active split). A CPU-only run an agent started on the agent cores is
+    that. An unreadable (``None``) or empty affinity is never agent work. Read by :func:`blocking_trainers`,
+    :func:`status` and the ship gate's shape (``utils.ship_gate.split_runs``)."""
+    cpus = set(affinity or ())
+    return bool(cpus) and all(cpus <= set(s.agent_ids) for s in (splits or (active(),)))
+
+
 def blocking_trainers(cur: "Split", new: "Split", proc: str = "/proc",
                       affinity: Callable[[int], Optional[List[int]]] = _affinity) -> Dict[int, str]:
     """The live launchers and trainers a change from ``cur`` to ``new`` must wait for. One whose CPUs lie inside the
-    agent list of BOTH splits does not count: it is agent work (a CPU-only run an agent started on the agent cores),
-    and it stays on agent cores. An unreadable affinity counts."""
-    keep = set(cur.agent_ids) & set(new.agent_ids)
-    out: Dict[int, str] = {}
-    for pid, kind in live_trainers(proc).items():
-        aff = affinity(pid)
-        if aff is None or not set(aff) <= keep:
-            out[pid] = kind
-    return out
+    agent list of BOTH splits does not count: it is agent work (:func:`is_agent_work`), and it stays on agent cores.
+    An unreadable affinity counts."""
+    return {pid: kind for pid, kind in live_trainers(proc).items() if not is_agent_work(affinity(pid), cur, new)}
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -461,7 +464,7 @@ def status(path: Optional[Path] = None, *, live: Optional[Callable[[], Dict[int,
         on_agents = sorted(set(aff or []) & set(cur.agent_ids))
         trainers.append({"pid": pid, "kind": kind, "cpus": format_cpus(aff) if aff is not None else None,
                          "is_trainer_list": aff == list(cur.trainer_ids), "on_agent_cpus": format_cpus(on_agents),
-                         "agent_work": bool(aff) and set(aff or []) <= set(cur.agent_ids)})
+                         "agent_work": is_agent_work(aff, cur)})
     return {"state_file": str(p), "state_file_exists": p.exists(), "split": cur.name, "trainer_cpus": cur.trainer_list,
             "agent_cpus": cur.agent_list, "next_launch": d.get("next_launch"), "trainers": trainers,
             "ab_marker": read_ab_marker(p), "log": d.get("log") or []}

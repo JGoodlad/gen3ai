@@ -272,6 +272,10 @@ _LOCK_RE = re.compile(r"^\s*\d+:\s+(->\s+)?(\S+)\s+\S+\s+(\S+)\s+(-?\d+)\s+([0-9
 
 
 def read_locks(path: str = f"{_PROC}/locks") -> List[LockEntry]:
+    """The lock table as listed. A listing can MISS a live lock: the kernel hands the table out one page per
+    ``read()`` and resumes by position, so a lock released between two reads shifts the rest and the next entry is
+    skipped (2026-11-09: a live GPU-lease holder read as absent). An entry listed did exist; an entry NOT listed
+    proves nothing once the table is over a page. For "does THIS pid hold it" use :func:`holds_lock`."""
     out: List[LockEntry] = []
     try:
         with open(path) as f:
@@ -296,9 +300,33 @@ def file_key(path: str) -> Optional[str]:
 
 
 def holders(key: str, locks: Optional[Iterable[LockEntry]] = None) -> List[int]:
-    """The pids HOLDING any lock on the file ``key`` (blocked waiters excluded)."""
+    """The pids LISTED holding any lock on the file ``key`` (blocked waiters excluded). A pid missing here is not
+    proof it does not hold (:func:`read_locks`): decide on a known pid with :func:`holds_lock`."""
     locks = read_locks() if locks is None else locks
     return sorted({e.pid for e in locks if e.file == key and not e.blocked and e.pid > 0})
+
+
+def holds_lock(pid: int, key: str, proc: str = _PROC) -> bool:
+    """Does ``pid`` HOLD a lock on the file ``key`` now? Read from the process's own ``fdinfo`` (a ``lock:`` line per
+    lock taken through that descriptor, each file one whole read under the file's lock), never from the ``/proc/locks``
+    listing, which can skip a live entry (:func:`read_locks`). False for a process that is gone or unreadable."""
+    try:
+        fds = os.listdir(f"{proc}/{pid}/fdinfo")
+    except OSError:
+        return False
+    for fd in fds:
+        try:
+            with open(f"{proc}/{pid}/fdinfo/{fd}") as f:
+                lines = f.readlines()
+        except OSError:
+            continue                              # the descriptor closed under the listing
+        for line in lines:
+            if not line.startswith("lock:"):
+                continue
+            m = _LOCK_RE.match(line[len("lock:"):])
+            if m and not m.group(1) and m.group(5) == key and int(m.group(4)) == pid:
+                return True
+    return False
 
 
 def waiters(key: str, locks: Optional[Iterable[LockEntry]] = None) -> List[int]:

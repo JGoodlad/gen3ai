@@ -229,6 +229,10 @@ def test_a_launcher_and_its_trainer_are_live_and_a_dry_run_is_not(tmp_path: Path
     assert set(CS.blocking_trainers(four, five, str(tmp_path), lambda pid: list(four.agent_ids))) == {10, 11}, \
         "a rollback would put the trainer on two of its CPUs"
     assert set(CS.blocking_trainers(five, four, str(tmp_path), lambda pid: None)) == {10, 11}, "unreadable counts"
+    # the ONE rule (the ship gate's shape reads it too): inside the agent list of every split given, default active
+    assert CS.is_agent_work(five.agent_ids) and CS.is_agent_work([5, 13], five, four)
+    assert not CS.is_agent_work(four.agent_ids) and CS.is_agent_work(four.agent_ids, four)
+    assert not CS.is_agent_work(None) and not CS.is_agent_work([]) and not CS.is_agent_work(range(16), five)
 
 
 def test_show_names_the_live_tree_and_flags_one_on_the_agent_cpus(state: Path) -> None:

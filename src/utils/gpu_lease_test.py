@@ -59,8 +59,16 @@ def _free(lock) -> bool:
 
 
 def _holders(lock) -> List[int]:
+    """The pids LISTED holding ``lock``. The listing can skip a live holder (``procfs.read_locks``), so it is read
+    only for what it can prove: who else is there, and whom to clean up. Never ``== [pid]``: :func:`_held_only_by`."""
     key = P.file_key(str(lock))
     return P.holders(key) if key else []
+
+
+def _held_only_by(lock, pid: int) -> bool:
+    """``pid`` holds ``lock`` (its own fdinfo: a whole read) and the listing names nobody else."""
+    key = P.file_key(str(lock))
+    return bool(key) and P.holds_lock(pid, key) and set(_holders(lock)) <= {pid}
 
 
 @pytest.fixture
@@ -99,7 +107,7 @@ def _one_off_holder(lock) -> subprocess.Popen:
     """A SIBLING one-off holder: the lock CLI holding the lock around a long sleep (no lease)."""
     h = subprocess.Popen([sys.executable, "-m", "utils.gpu_lock", "--", "sleep", "120"], env=_env(lock),
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    _wait_for(lambda: h.pid in _holders(lock), "the one-off holder to take the lock")
+    _wait_for(lambda: _held_only_by(lock, h.pid), "the one-off holder to take the lock")
     return h
 
 
@@ -126,7 +134,7 @@ def test_acquire_status_release_roundtrip(lock):
     assert got.token and not got.already_held
     lease = L.read_lease(lock)
     assert lease is not None and lease.owner == "agent-A" and lease.note == "x5 u1"
-    assert lease.pid != os.getpid() and _holders(lock) == [lease.pid], "a detached holder owns the flock"
+    assert lease.pid != os.getpid() and _held_only_by(lock, lease.pid), "a detached holder owns the flock"
     assert got.token not in L.lease_file(lock).read_text(), "the record keeps only the token's HASH"
     assert json.loads(L.lease_file(lock).read_text())["token_sha256"] == L.token_hash(got.token)
     assert L.status(lock).startswith("LEASED") and "agent-A" in L.status(lock)
@@ -180,7 +188,7 @@ def test_acquire_against_a_one_off_holder_fails_fast_busy(lock):
         r = _cli("utils.gpu_lease", lock, "acquire", "--owner", "agent-A")
         assert r.returncode == L.EXIT_BUSY and "GPU BUSY" in r.stderr, r
         assert L.read_lease(lock) is None and L.status(lock).startswith("BUSY")
-        assert _holders(lock) == [h.pid], "the failed acquire must not leave a holder behind"
+        assert _held_only_by(lock, h.pid), "the failed acquire must not leave a holder behind"
     finally:
         _reap(h)
 
@@ -190,7 +198,30 @@ def test_a_renewing_acquire_with_the_token_is_a_noop_that_extends_expiry(lock):
     again = L.acquire(lock, "agent-A", max_hours=5, watch_pid=os.getpid(), env={L.TOKEN_ENV: got.token})
     assert again.already_held and again.token is None and again.lease.watch_pid == os.getpid()
     assert again.lease.pid == got.lease.pid and again.lease.expires_epoch > got.lease.expires_epoch + 3 * 3600
-    assert _holders(lock) == [got.lease.pid], "still ONE holder"
+    assert _held_only_by(lock, got.lease.pid), "still ONE holder"
+
+
+def test_a_lease_stays_valid_when_the_lock_listing_skips_its_holder(lock, monkeypatch):
+    """THE RACE (2026-11-09, ``_holders`` read ``[]`` beside a live holder): ``/proc/locks`` is handed out one page
+    per ``read()`` and resumes by position, so a lock released elsewhere between two reads makes the listing skip a
+    live entry. Forced here by a listing that names NO lock at all: the lease must still read as valid (the holder's
+    own fdinfo decides), a stale-sweep must not delete its record, the owner's renewal and a foreign refusal must both
+    still work, and release must still wait for the real holder. Fails on a revert to the listing: the first line
+    after the patch reads the live lease as absent."""
+    got = _acquire(lock, "agent-A", max_hours=1)
+    key = P.file_key(str(lock))
+    monkeypatch.setattr(P, "read_locks", lambda *a, **k: [])
+    assert _holders(lock) == [], "the forced miss is in place"
+    assert L.read_lease(lock) is not None and L.read_lease(lock).pid == got.lease.pid
+    assert L.clear_stale(lock) is False and L.lease_file(lock).exists(), "a live lease's record was swept as stale"
+    again = L.acquire(lock, "agent-A", max_hours=5, env={L.TOKEN_ENV: got.token})
+    assert again.already_held and again.lease.pid == got.lease.pid
+    with pytest.raises(L.GpuLeased):
+        _acquire(lock, "agent-B")
+    assert P.holds_lock(got.lease.pid, key) and not P.holds_lock(os.getpid(), key)
+    assert L.release(lock, env={L.TOKEN_ENV: got.token}).startswith("released")
+    assert _free(lock), "release returned before the holder let go"
+    assert not P.holds_lock(got.lease.pid, key)
 
 
 def test_force_release_by_a_non_owner_and_refusal_without_it(lock):
@@ -216,7 +247,7 @@ def test_gpu_lock_under_a_foreign_lease_raises_at_once_and_never_waits(lock, wai
     assert time.monotonic() - t0 < 1.0, "a refusal must be immediate"
     assert P.waiters(key) == [], "no kernel waiter may ever have been queued"
     assert "agent-A" in str(ei.value) and ei.value.lease.pid == got.lease.pid
-    assert _holders(lock) == [got.lease.pid]
+    assert _held_only_by(lock, got.lease.pid)
 
 
 def test_the_lock_cli_exits_6_on_a_foreign_lease_even_with_wait(lock):
@@ -235,7 +266,7 @@ def test_the_owners_token_passes_straight_through_without_the_flock(lock, monkey
     with G.gpu_lock(lock) as a, G.gpu_lock(lock) as b:          # re-entrant too
         assert a == b == got.lease.pid, "the yielded holder is the lease's"
     assert time.monotonic() - t0 < 1.0
-    assert P.waiters(key) == [] and _holders(lock) == [got.lease.pid], "the lease keeps the flock throughout"
+    assert P.waiters(key) == [] and _held_only_by(lock, got.lease.pid), "the lease keeps the flock throughout"
     assert G.HELD_ENV not in os.environ
     # a CHILD of the owner (token inherited through the env) is passed through as well, and a wrong token is not
     r = _cli("utils.gpu_lock", lock, "--", sys.executable, "-c",
@@ -300,7 +331,7 @@ def test_the_holder_ends_when_its_watched_pid_dies(lock):
     owner = subprocess.Popen(["sleep", "120"])
     try:
         got = _acquire(lock, "agent-A", watch_pid=owner.pid)
-        assert _holders(lock) == [got.lease.pid]
+        assert _held_only_by(lock, got.lease.pid)
         owner.kill()
         owner.wait(timeout=30)
         _wait_for(lambda: _free(lock), "the holder to release when its watched pid died")
@@ -332,7 +363,7 @@ def test_the_default_against_a_one_off_holder_fails_fast_busy(lock):
         assert ei.value.holders == [h.pid] and f"pid {h.pid}" in str(ei.value)
         r = _cli("utils.gpu_lock", lock, "--", "true")
         assert r.returncode == L.EXIT_BUSY and "GPU BUSY" in r.stderr, r
-        assert _holders(lock) == [h.pid]
+        assert _held_only_by(lock, h.pid)
     finally:
         _reap(h)
 
@@ -398,7 +429,7 @@ def test_the_teardown_never_kills_its_own_process_even_when_it_holds_the_lock(lo
         "p = Path(sys.argv[1])\n"
         "fd = os.open(str(p), os.O_RDWR | os.O_CREAT)\n"
         "fcntl.flock(fd, fcntl.LOCK_EX)\n"
-        "assert os.getpid() in T._holders(p), 'precondition: this process holds the lock'\n"
+        "assert T._held_only_by(p, os.getpid()), 'precondition: this process holds the lock'\n"
         "T._kill_leftover_holders(p)\n"
         "print('SURVIVED')\n"
     )

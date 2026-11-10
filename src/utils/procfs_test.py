@@ -86,3 +86,30 @@ def test_pid_alive_is_one_atomic_read_and_every_failure_mode_is_not_alive(tmp_pa
     assert P.pid_alive(7, proc=str(tmp_path)) is False
     (tmp_path / "7" / "stat").write_text("7 (a) X 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0")
     assert P.pid_alive(7, proc=str(tmp_path)) is False, "state X (dead) is not alive"
+
+
+def test_holds_lock_reads_the_process_own_fdinfo_never_the_listing(tmp_path, monkeypatch):
+    """``/proc/locks`` can skip a live entry (``read_locks``); a known pid is decided from its fdinfo. Synthetic
+    tree: the lock line must be a HELD lock on that file taken by that pid; a real flock is read back too."""
+    d = tmp_path / "77" / "fdinfo"
+    d.mkdir(parents=True)
+    (d / "3").write_text("pos:\t0\nflags:\t02100002\nmnt_id:\t29\nino:\t86\n"
+                         "lock:\t1: FLOCK  ADVISORY  WRITE 77 00:58:86 0 EOF\n")
+    (d / "4").write_text("pos:\t0\nflags:\t02\nmnt_id:\t29\nino:\t90\n"
+                         "lock:\t1: FLOCK  ADVISORY  WRITE 55 00:58:90 0 EOF\n")      # inherited: another pid took it
+    (d / "5").write_text("pos:\t0\nflags:\t02\nmnt_id:\t29\nino:\t91\n")
+    proc = str(tmp_path)
+    assert P.holds_lock(77, "00:58:86", proc)
+    assert not P.holds_lock(77, "00:58:90", proc), "a lock another pid took through a shared descriptor"
+    assert not P.holds_lock(77, "00:58:91", proc) and not P.holds_lock(78, "00:58:86", proc)
+
+    import fcntl
+    f = tmp_path / "real.lock"
+    fd = os.open(f, os.O_RDWR | os.O_CREAT)
+    key = P.file_key(str(f))
+    assert key is not None and not P.holds_lock(os.getpid(), key)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    monkeypatch.setattr(P, "read_locks", lambda *a, **k: [])           # the listing skipping it changes nothing
+    assert P.holds_lock(os.getpid(), key) and P.holders(key) == []
+    os.close(fd)
+    assert not P.holds_lock(os.getpid(), key)

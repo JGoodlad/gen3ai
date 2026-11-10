@@ -12,6 +12,14 @@ Load-bearing pins, each FAILS on revert of what it guards:
   routine test far over a (shrunk) bar, names a near one as WARN, and exempts ``slow`` / ``linchpin``;
   the same session with the bar off exits 0.
 
+NO VERDICT HERE IS READ OFF WALL TIME (rule 8). Every planted file starts with :data:`_CLOCK`: the child session's
+two clocks (pytest's ``_pytest.timing``, which stamps each report's duration, and ``ship_bar.now``, which times the
+wide fixtures) become ONE clock that only a planted ``sleep`` advances, so a planted cost is exact and everything else
+costs zero. And every child session runs with :data:`_STALL_S` of REAL sleep in each test's setup, outside every
+fixture and body: what a contended box does to a worker (2026-11-09: the ``[xdist load split]`` arm failed a ship gate
+when four instant tests read over the 0.25 s planted bar, and passed 20 of 20 alone). A session that judged wall
+time would name every test; each wiring test below fails on a revert of the planted clock.
+
 ``integration``: one child pytest session per arm, ~2-4 s each.
 """
 from __future__ import annotations
@@ -61,25 +69,49 @@ def test_a_read_just_over_the_nominal_fail_line_is_warn_and_a_clear_one_is_fail(
     assert SB.FAIL_BAND >= 0.25, "the band is at least the contention meter's documented 25 % under-read"
 
 
-_PLANTED = '''\
+#: The head of every planted file: ONE planted clock for the child session (pytest's own ``MockTiming``, started at
+#: the real time), advanced only by ``sleep``. Under xdist each worker plants its own; only durations cross.
+_CLOCK = '''\
+import pytest
+import _pytest.timing as _timing
+from utils import ship_bar as _ship_bar
+
+_clock = _timing.MockTiming(_timing.time())
+_timing.time = _timing.perf_counter = _ship_bar.now = _clock.time
+sleep = _clock.sleep
+'''
+
+#: The bar every child session runs with (``$GEN3AI_SHIP_BAR_S``).
+_BAR_S = "0.25"
+#: REAL seconds every test of a child session stalls in its setup (over the planted bar): never a planted cost.
+_STALL_S = 0.3
+_STALL_PLUGIN = f'''\
 import time, pytest
+
+@pytest.hookimpl(wrapper=True, tryfirst=True)
+def pytest_runtest_setup(item):
+    time.sleep({_STALL_S})
+    return (yield)
+'''
+
+_PLANTED = _CLOCK + '''\
 
 def test_fast():
     pass
 
 def test_drifted():
-    time.sleep(0.9)
+    sleep(0.9)
 
 def test_near():
-    time.sleep(0.3)
+    sleep(0.3)
 
 @pytest.mark.slow
 def test_marked_slow():
-    time.sleep(0.6)
+    sleep(0.6)
 
 @pytest.mark.linchpin
 def test_a_linchpin():
-    time.sleep(0.6)
+    sleep(0.6)
 '''
 
 
@@ -87,14 +119,15 @@ def _session(tmp_path, *, bar_on: bool, source: str = _PLANTED, args=("-p", "no:
     shutil.copy(repo_root() / "conftest.py", tmp_path / "conftest.py")
     (tmp_path / "pytest.ini").write_text("[pytest]\nmarkers =\n    slow: slow\n    linchpin: linchpin\n")
     (tmp_path / "planted_test.py").write_text(source)
+    (tmp_path / "stall_plugin.py").write_text(_STALL_PLUGIN)
     env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTEST_", "GEN3AI_SHIP_"))}
     env.update(GEN3AI_SKIP_DEPS_GUARD="1", PYTHONPATH=str(src_root()), GEN3AI_COST_SCHEDULE="0",
                GEN3AI_SLOW_STATUS_FILE=str(tmp_path / "status.json"), GEN3AI_SKIP_TIER_BUDGET="1",
                GEN3AI_TIMEOUT_SCALE="1",            # the contention reading is pinned at x1: a fixed factor
-               GEN3AI_SHIP_BAR_S="0.25", GEN3AI_SHIP_BAR_REPORT=str(tmp_path / "bar.json"))
+               GEN3AI_SHIP_BAR_S=_BAR_S, GEN3AI_SHIP_BAR_REPORT=str(tmp_path / "bar.json"))
     if bar_on:
         env["GEN3AI_SHIP_BAR"] = "1"
-    return subprocess.run([sys.executable, "-m", "pytest", "-p", "no:cacheprovider", *args, "-q",
+    return subprocess.run([sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "-p", "stall_plugin", *args, "-q",
                            *targets], cwd=str(tmp_path), env=env, capture_output=True, text=True,
                           timeout=scale_timeout(120))
 
@@ -123,18 +156,17 @@ def test_the_bar_off_judges_nothing(tmp_path):
 # A module fixture whose setup (0.5 s) AND teardown (0.5 s) cost 1.0 s against a 0.25 s bar (4x: clear of the
 # fail line's 2.5x), four tests that are individually instant, and one test whose own FUNCTION-scoped fixture
 # costs 0.9 s.
-_SCOPED = '''\
-import time, pytest
+_SCOPED = _CLOCK + '''\
 
 @pytest.fixture(scope="module")
 def heavy():
-    time.sleep(0.5)
+    sleep(0.5)
     yield
-    time.sleep(0.5)
+    sleep(0.5)
 
 @pytest.fixture
 def slow_fn():
-    time.sleep(0.9)
+    sleep(0.9)
 
 def test_a(heavy): pass
 def test_b(heavy): pass
@@ -182,8 +214,16 @@ def test_a_module_fixtures_cost_is_the_modules_in_every_order_and_split(tmp_path
     assert _judged_rows(out) == _EXPECTED_ROWS, f"[{label}] the verdict depends on the order / the split:\n{out}"
 
 
+def test_the_stall_every_child_session_carries_is_over_the_planted_bar() -> None:
+    """The proof above is only a proof while the real stall would be JUDGED on wall time: over the bar the child
+    sessions run with, and counted (the planted clock is in every planted file)."""
+    assert _STALL_S >= float(_BAR_S)
+    assert _PLANTED.startswith(_CLOCK) and _SCOPED.startswith(_CLOCK) and "_ship_bar.now" in _CLOCK
+
+
 @pytest.mark.integration
 def test_a_cheap_module_fixture_judges_nothing(tmp_path):
-    src = _SCOPED.replace("time.sleep(0.5)", "time.sleep(0.02)").replace("time.sleep(0.9)", "pass")
+    src = _SCOPED.replace("sleep(0.5)", "sleep(0.02)").replace("sleep(0.9)", "pass")
+    assert src.count("sleep(0.02)") == 2 and "sleep(0.9)" not in src
     r = _session(tmp_path, bar_on=True, source=src)
     assert r.returncode == 0 and "8 s BAR" not in r.stdout, r.stdout + r.stderr

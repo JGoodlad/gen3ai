@@ -49,7 +49,9 @@ python -m utils.core_split set 5+3                 # set it now: REFUSED while a
   agents.
 - **Beside a live run, the ship gate reads the trainer's own affinity** (`core_split.agent_ids_beside`): its CPUs are
   the online CPUs in neither the trainer's affinity nor the active trainer list. A trainer narrowed for 8 s by the
-  A/B frees nothing.
+  A/B frees nothing. A live run that is agent work (`core_split.is_agent_work`, the one rule `blocking_trainers` and
+  `status` read too: its whole tree inside the agent list, or started with CUDA hidden) is not a trainer for the
+  gate's shape (`ship_gate.split_runs`).
 - **Who reads it.** The trainer's pin: `launch_x35.sh` (the launch kit; it HOLDs when the read fails, and logs the list it got and any note about a queued
   split). The agent list: the arm chain's defaults
   (`src/main/ops/arm_chain/spec.py`; a chain file's `cpu` block still overrides them), `main.x35.kakuna` (also the

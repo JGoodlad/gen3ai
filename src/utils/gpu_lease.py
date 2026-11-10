@@ -25,8 +25,9 @@ MECHANISM. ``acquire`` starts a small DETACHED holder process that takes the SAM
 for the lease's lifetime, then writes ``<lock>.lease.json`` (owner, holder pid + start time, SHA-256 of
 the token — never the token — start, expiry). The holder ends when the record is removed or no longer
 names it (``release``), on SIGTERM, at ``--max-hours`` (default 12; 0 = none), or when ``--watch-pid``
-dies. A lease is VALID only if its holder pid (with its recorded start time) is listed HOLDING the lock
-in ``/proc/locks`` — a record whose holder is dead, or whose pid was reused, is STALE: ``status`` and
+dies. A lease is VALID only if its holder pid (with its recorded start time) HOLDS the lock, read from the
+holder's own ``/proc/<pid>/fdinfo`` (``procfs.holds_lock``; never the ``/proc/locks`` listing, which can skip a
+live holder) — a record whose holder is dead, or whose pid was reused, is STALE: ``status`` and
 ``acquire`` clear it (under a microsecond-scale mutex, never racing a new holder), deterministically.
 Re-running ``acquire`` with the matching token is a no-op that renews the expiry (and sets ``--watch-pid``
 when given — a training agent attaches the launcher's pid after the launch).
@@ -262,7 +263,7 @@ def _valid(lock: object, rec: Lease) -> bool:
     """The record's holder is alive (same pid AND start time) and HOLDS the lock file."""
     key = procfs.file_key(str(lock))
     st = procfs.read_stat(rec.pid)
-    return bool(key and st is not None and st.starttime == rec.start_ticks and rec.pid in procfs.holders(key))
+    return bool(key and st is not None and st.starttime == rec.start_ticks and procfs.holds_lock(rec.pid, key))
 
 
 def read_lease(lock: object) -> Optional[Lease]:
@@ -450,7 +451,7 @@ def release(lock: object, force: bool = False, env: Optional[Mapping[str, str]] 
     key = procfs.file_key(str(lock))
 
     def gone() -> bool:
-        return key is None or lease.pid not in procfs.holders(key)
+        return key is None or not procfs.holds_lock(lease.pid, key)
 
     with contextlib.suppress(ProcessLookupError):
         os.kill(lease.pid, signal.SIGTERM)           # the verified holder's explicit pid
