@@ -1,11 +1,11 @@
-# python -m main.launcher --dry-run $(cat argv_rb_b1wb_s5107.txt)   [CUDA_VISIBLE_DEVICES=""; a worktree whose HEAD is the pin 0220f84086af37dc79b674de4a08642c1b17cd7c; 2026-11-10T02:35Z]
+# python -m main.launcher --dry-run $(cat argv_rb_b1wb_s5107.txt)   [CUDA_VISIBLE_DEVICES=""; a worktree whose HEAD is the pin 507d0c11961da8d4243a4c8877bcc04ef220058c; 2026-11-10T05:53Z]
 
 ── launcher --dry-run — resolving only, nothing will be created ────────────
   role        : FRESH
   run dir     : /home/goodlad/dev/gen3ai/models/rb_b1wb_s5107   [would be created]
   on restart  : RESUME role — drops FRESH-only --arch (inherited from model_config.json); --model → the run's latest checkpoint
-  pin         : 0220f84086af37dc79b674de4a08642c1b17cd7c  (source: pin_commit)
-                ↳ feat(model): the trunk width becomes a per-run setting, --d-model (gen3_d_model_width_v1, config v169) -- MF-5's width build; production stays 128, byte-identical
+  pin         : 507d0c11961da8d4243a4c8877bcc04ef220058c  (source: pin_commit)
+                ↳ feat(b1): BOUNDARY-1's kit and meters -- the four arms of the from-scratch 2 x 2 (width x team breadth) as one launch block, the stop-at-50M-and-resume check (PASS), the head-to-head cross with its floored variance and coded rules, the look driver and its run guards, and Kakuna clustered by team as a read rule; this commit is the registration's pin
                 (a real launch would create an isolated worktree at this commit — the dry run does not)
   steps       : --steps 50,000,000 (fresh run, from 0)
   interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — FRESH launch; this torch is recorded at the run's first save
@@ -44,7 +44,7 @@
     trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
     ✓ every RECIPE knob matches recipe.fresh (31 knobs)
   desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
-  disk space  : ✓ 211.00 GiB free on /home/goodlad/dev/gen3ai/models vs 16.42 GiB REQUIRED (checkpoint archive run rb_x60t_s3507 (same ARCH_SIGNATURE) checkpoint_294000076_steps.zip)
+  disk space  : ✓ 209.30 GiB free on /home/goodlad/dev/gen3ai/models vs 16.42 GiB REQUIRED (checkpoint archive run rb_x60t_s3508 (same ARCH_SIGNATURE) checkpoint_290000067_steps.zip)
                 the arithmetic:
           periodic checkpoints      2.67 GiB   = 50 x 54.7 MiB  (steps 50,000,000 // 1,000,000 - resume 0 // 1,000,000)
           final/best/aborted       164.2 MiB   = 3 x 54.7 MiB

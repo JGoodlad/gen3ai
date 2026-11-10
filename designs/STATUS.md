@@ -89,9 +89,10 @@ its GO.
 - **X67, the entropy screen, in the gap after X60-T's and X66's training:** REGISTERED 2026-11-09, NOT LAUNCHED
   ([`research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md`](research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md)).
   Three P\* + 20M forks with a quarter of the entropy bonus (`ent_coef` 0.0125; ≈ 12.3 GPU-h) against the banked
-  no-lever forks, head to head. A PASS names 0.0125 for the base recipe of BOTH BOUNDARY-1 arms.
+  no-lever forks, head to head. A PASS names 0.0125 for the base recipe of every BOUNDARY-1 arm; the registration
+  stands at 0.05 and moves only on the owner's word, by an amendment before launch.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
-  mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh pair, no GPU
+  mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.
 - **MF-3:** the opponent belief off the pool. Its meter is built (`python -m main.offpool_belief`) and the baseline
   REPORTED (ledger 2026-11-09): P\*'s species belief is 3 to 8 nats worse than its Smogon prior on held-out teams,
@@ -101,11 +102,15 @@ its GO.
   better than P\* on F / H but still 0.74 / 0.68 below the prior (screen evidence, never a verdict). Breadth in the
   loop is the measured route; BOUNDARY-1's 2 × 2 tests it.
 - **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
-- **MF-5: the scale bet** (production width and 2× `D_MODEL` from scratch at BOUNDARY-1; the width build is on
-  main, `--d-model`, `0220f8408`, config v169), the one lever whose point
-  reaches goal (b)'s gap without search; it waits on the owner (§6.5). Its DRAFT design sizes it at four seeds an arm,
-  ≈ 207 GPU-h to a 100M look
-  ([`research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)).
+- **MF-5: BOUNDARY-1's from-scratch 2 × 2**, width (128 against 2× `D_MODEL`, `--d-model`, `0220f8408`, config
+  v169) × team breadth (the pool against half procedural teams), two seeds a cell, eight fresh runs to 100M: REGISTERED
+  2026-11-09 at pin `507d0c119`, NOT LAUNCHED
+  ([`research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md));
+  the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options. ≈ 207 GPU-h (the wide arms'
+  share is a guess until the GPU pilot), launched after X66 and X67 and its GPU checklist. Width is decided on the
+  in-house cross over all four panels, breadth on forum72 alone and kept only if home72 pays no more than forum72
+  gains; Kakuna clustered by team confirms either. Honest power: a true +4 pp reads WIN 7 times in 10 if the seed
+  spread at 100M is the 1.76 pp measured at 15M, 1 in 2 at 2.5 pp; the seed spread on forum72 alone is unmeasured.
 - X60-T's verdict routes the next run's team mix (ADOPT-CANDIDATE ⇒ human teams in BOUNDARY-1's recipe).
 
 **Search engineering for goal (b): UN-PAUSED by S′-HONEST's GO-HONEST (2026-11-09), CPU-side and lower priority**
@@ -237,7 +242,8 @@ Every open owner question, in one place.
    ≈ 207 GPU-h to the 100M look (≈ 9 days of our card; a second card would halve the wall), as a bundle, as width
    alone, or as both crossed
    ([`research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)
-   §0). Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
+   §0). **Registered 2026-11-09** as both crossed at two seeds a cell, the orchestrator's choice
+   ([`PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md), pin `507d0c119`). Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
    yes, staged, launched once X60-T's verdict and the boundary's fixes are in, so the owner's answer is needed before
    then.

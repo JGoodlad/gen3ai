@@ -1,6 +1,6 @@
-# python -m main.checkargs --argv "$(cat argv_rb_b1w_s5103.txt)"   [CUDA_VISIBLE_DEVICES=""; a worktree whose HEAD is the pin 0220f84086af37dc79b674de4a08642c1b17cd7c, so this is the pin's own parser]
+# python -m main.checkargs --argv "$(cat argv_rb_b1w_s5103.txt)"   [CUDA_VISIBLE_DEVICES=""; a worktree whose HEAD is the pin 507d0c11961da8d4243a4c8877bcc04ef220058c, so this is the pin's own parser]
 checked 12 flags from --argv
-  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (0220f840)
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (507d0c11)
   accepted by the trainer parser : 10
   launcher-owned (not forwarded) : 2
   unrecognized                   : 0

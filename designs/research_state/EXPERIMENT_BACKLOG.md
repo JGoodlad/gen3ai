@@ -60,10 +60,10 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 |---|---|---:|---:|---|---:|---|
 | **MF-1** | **ExIt-0H**: can P\* learn honest search's choices? | ≈ 3 | ≈ 2–5 (gate); 25–100 (look 1, only if DELIVERED) | +0.5 (0, +2) without search | ≈ 0.2 | **REGISTERED 2026-11-09 as X66** ([`measurements/x66_exit0h_2026-11-09/PREREG.md`](measurements/x66_exit0h_2026-11-09/PREREG.md)); its bank amendment; the GPU lease |
 | MF-1b | ExIt-1: honest search targets in the PPO loop | ≈ 35 | ≈ 107 | +1 (−1, +3) | ≈ 0.03 | its own case, never X66 alone (X66 PREREG §8.3); an X66 GO with placebo SEARCH-INFO is necessary, not sufficient |
-| **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh pair) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built (`3b1733f50`, config v168); its forward census is not run |
+| **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh runs) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built (`3b1733f50`, config v168); its forward census is not run |
 | **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | 0 | ≈ 8 CPU-min a checkpoint (the meter); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a DONE 2026-11-09 (baseline REPORTED); **step b SCREENED OUT 2026-11-09** (light screen X68 read DROP: screen evidence, never a verdict); no head reshape (`../endstate/design_offpool_belief.md`); the route left is breadth in the loop, tested by MF-5's 2 × 2 |
 | **MF-4** | **The value at the leaf on unfamiliar teams** | 0 until V-RANK fires; then ≈ 1–2 | ≈ 96 (V-RANK) + ≈ 300–600 (a searched game read; S′-LIVE took ≈ 315) | +0.3 (−0.5, +1.5), with search only | ≈ 0.05 after P(V-RANK fires) ≈ 0.3 | V-RANK's builds and PREREG |
-| **MF-5** | **BOUNDARY-1's from-scratch run**: REPLACED 2026-11-09 by the DRAFT design [`measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md) (option B, a bundle; option S, width alone; the same eight runs crossed 2 × 2; the owner's answer picks one) | its §8 | its §8 | its §0, §2 | — | **the owner's word** (`../STATUS.md` §6.5); its §8 (the builds; the width build is on main: `--d-model`, `0220f8408`, config v169); MF-2's version; X60-T's verdict |
+| **MF-5** | **BOUNDARY-1's from-scratch 2 × 2** (width × team breadth, two seeds a cell, eight fresh runs to 100M): REGISTERED 2026-11-09, pin `507d0c119`, [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md); the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options | its §12 | its §12 | its §11 | — | X66 and X67 done; its §13 GPU checklist (the wide-arm pilot, the CUDA-only slow tests at the pin); its §10 HOLDs (X60-T reads ADOPT-CANDIDATE; the owner changes `ent_coef` after X67) |
 | MF-6 | Breadth at the plateau: X62's recombined teams | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | X60-T not NO-TRANSFER / LOSS; PR-1′'s place is the orchestrator's |
 | MF-7 | The league's main exploiters (X35-A3) | ≈ 15 | ≈ 107 | +0.5 (−1, +2) vs Kakuna | ≈ 0.03 | its two-phase kit (T55) |
 
@@ -188,14 +188,14 @@ time.
     ordering, AUC, equal on both sets); R-EVAL information-bound (search ledger N13); the 4-turn leaf keeps about half
     the oracle leaf's value (W3). WEAKER THAN IT READS: a level bias common to every sibling cancels in a one-ply
     argmax, so H-MID is not evidence that the leaf mis-ranks siblings on U; that is V-RANK's unmeasured question.
-- **MF-5 BOUNDARY-1's from-scratch run: a pointer.** The one-seed-an-arm scale bet that stood here is replaced by
-  [`measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)
-  and its [`DRAFT_PREREG.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_PREREG.md): the arms, the seeds an arm
-  sized by the measured seed-to-seed spread, the meters, the rule, the costs, the builds and the launch dates are
-  there and nowhere else. DRAFT: nothing is registered, and the owner's answer on bundles (`../STATUS.md` §6.5)
-  picks the option. Its §9.1 entropy screen IS registered, as **X67**
-  ([`measurements/x67_entropy_screen_2026-11-09/PREREG.md`](measurements/x67_entropy_screen_2026-11-09/PREREG.md)): a PASS names `ent_coef` 0.0125 for the base of BOTH arms;
-  any other class leaves 0.05, and the screen never holds the launch.
+- **MF-5 BOUNDARY-1's from-scratch run: a pointer.** REGISTERED 2026-11-09 as the 2 × 2 the orchestrator adopted
+  (width × team breadth, two seeds a cell): [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md),
+  pin `507d0c119`. The arms, the seeds, the meters, the rules, the power, the costs, the GPU checklist and the launch block
+  are there and nowhere else; [`DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md) stays as
+  the record of the options and the sizing. The draft's §9.1 entropy screen is registered as **X67**
+  ([`measurements/x67_entropy_screen_2026-11-09/PREREG.md`](measurements/x67_entropy_screen_2026-11-09/PREREG.md)): a PASS names `ent_coef` 0.0125 for the base of every arm,
+  adopted only on the owner's word (the registration stands at 0.05); any other class leaves 0.05, and the screen
+  never holds the launch.
 - **MF-6 X62** (`../endstate/design_x62_team_recombination.md`) and **MF-7 X35-A3** (§2.1's CE-3c) keep their own
   designs; they are here because they are model levers with a known price. X62's case rests on H-CTX SUPPORTED
   (`6f126c4af`) against four breadth misses at the plateau (D1, D3 UNDECIDED; N1-P NULL; X63 NOT PURSUED); A3's on

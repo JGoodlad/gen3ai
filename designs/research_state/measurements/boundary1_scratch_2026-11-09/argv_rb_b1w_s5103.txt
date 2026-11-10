@@ -1,1 +1,1 @@
---restart-interval-hours 6 --pin-commit 0220f84086af37dc79b674de4a08642c1b17cd7c --arch production --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5103 --device cuda --log-level periodic --run-name rb_b1w_s5103
+--restart-interval-hours 6 --pin-commit 507d0c11961da8d4243a4c8877bcc04ef220058c --arch production --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5103 --device cuda --log-level periodic --run-name rb_b1w_s5103

@@ -1,8 +1,6 @@
 # BOUNDARY-1 — the from-scratch 2 × 2, width × team breadth: PRE-REGISTRATION (2026-11-09)
 
-**Status: NOT YET REGISTERED: THE PIN IS PENDING.** This commit carries the tooling and is itself the pin; the
-commit after it writes the pin's SHA into §3 and §14 and flips this line to REGISTERED (tier FULL). **NOT LAUNCHED**
-(no `rb_b1*` run exists).
+**Status: REGISTERED (tier FULL) before any launch, any game and any read. NOT LAUNCHED** (no `rb_b1*` run exists).
 The launch is the orchestrator's GO through the Training session, after X66 and X67 and after §13's GPU checklist is
 green. Nothing below changes after the first run launches except by a dated amendment (§18), written before the look
 it touches is played, that says why. **Once the first look has been played, no amendment touches §5, §6, §8 or §9**
@@ -72,9 +70,11 @@ Every run is a FRESH `--arch production` launch: the architecture and the recipe
 
 ## 3. The pin, the seeds, and the checks before launch
 
-- **ONE pin for everything: `@@PIN@@`** (main at registration, the commit that carries the kit, the cross
+- **ONE pin for everything: `507d0c11961da8d4243a4c8877bcc04ef220058c`** (main at registration, the commit that carries the kit, the cross
   statistic and the Kakuna rule). All eight runs train at it, every look plays at it, and the Kakuna read plays at
-  it. It is `0220f8408` plus @@PIN_SINCE@@ and this unit's tooling;
+  it. It is `0220f8408` plus the nine commits main gained while this was written (`c4a842d12` to `c8c212214`: the light-screen
+  tier's docs, the heavy slots admitted by memory, the core split and its owner, the off-pool belief meter with
+  X68's records, three gate-reliability fixes; none touches a trainer, launcher, model or head-to-head file) and this unit's tooling;
   `designs/production_config.json` and `src/agents/model/model_version/` are unchanged between `0220f8408` and the
   pin, and `checkargs` at the pin resolves the same production surface (`production_config@51496e4209fc`).
 - **The pin is an ARGUMENT of every command (`--pin`), never a constant in the code.** A commit cannot name
@@ -576,6 +576,10 @@ agent the orchestrator leases the card to, and its result is recorded in §18 be
 7. **The spec**: `python -m main.reads check-spec --spec <this folder>/read_spec_kakuna.json` at the pin reports
    `play_path_differs_at_head` 0, or names the files.
 8. **The HOLDs of §10** are checked against the day's STATUS: X60-T's verdict, the owner's word on `ent_coef`.
+9. **The core split is settled before the first launch and not changed until the eighth run ends**
+   (`python -m utils.core_split show`; `designs/ops/core_split.md` proposes an A/B at the next launch). A look
+   refuses a set of runs whose recorded `init_num_threads` differ (§10), so a split changed between two runs of the
+   eight costs the look, by design: a different thread count is a different trainer.
 
 ## 14. Commands
 
@@ -595,9 +599,9 @@ Run every training command from the MAIN checkout with the launcher's interprete
   detached checkout of the pin:
 
   ```bash
-  git worktree add --detach <PIN_DIR> @@PIN@@
+  git worktree add --detach <PIN_DIR> 507d0c11961da8d4243a4c8877bcc04ef220058c
   <PIN_DIR>/designs/research_state/measurements/boundary1_scratch_2026-11-09/looks/drive_look.sh \
-      <PIN_DIR> @@PIN@@ <WORK_DIR> 50M cuda
+      <PIN_DIR> 507d0c11961da8d4243a4c8877bcc04ef220058c <WORK_DIR> 50M cuda
   # or 75M / 100M; EQ takes --eq-step <N>; after a replacement, --replace <the registered seed 5109 replaced>;
   # after a STOP-HARM of the other factor, --survivor width|breadth
   ```

@@ -1,1 +1,1 @@
---restart-interval-hours 6 --pin-commit 0220f84086af37dc79b674de4a08642c1b17cd7c --arch production --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5105 --device cuda --log-level periodic --run-name rb_b1br_s5105
+--restart-interval-hours 6 --pin-commit 507d0c11961da8d4243a4c8877bcc04ef220058c --arch production --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5105 --device cuda --log-level periodic --run-name rb_b1br_s5105
