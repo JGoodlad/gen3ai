@@ -255,7 +255,8 @@ log "START $RUN: ${A[*]} (pin ${PIN:0:8}, restart 24 h)"
 TRAINER_CPUS=$(cd "$REPO" && PYTHONPATH="$REPO/src" "$PY" -m utils.core_split trainer-cpus --launch 2>> "$J/$RUN.core_split.txt") \
   && [ -n "$TRAINER_CPUS" ] || hold "utils.core_split named no trainer CPUs (see $J/$RUN.core_split.txt)"
 ! grep -q "stays QUEUED" "$J/$RUN.core_split.txt" || hold "the queued core split did NOT apply: $(tr '\n' ' ' < "$J/$RUN.core_split.txt")"
-log "trainer CPUs $TRAINER_CPUS (core split: $(tr '\n' ' ' < "$J/$RUN.core_split.txt"))"
+# the read's stderr holds only a queued-split note; an empty note means none was queued (11-10: it printed "(core split: )")
+CSNOTE=$(tr '\n' ' ' < "$J/$RUN.core_split.txt"); log "trainer CPUs $TRAINER_CPUS (core split: ${CSNOTE:-no queued split})"
 ( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec setsid taskset -c "$TRAINER_CPUS" "$PY" -m main.launcher \
   --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) >> "$J/$RUN.launcher.log" 2>&1 < /dev/null &
 LP=$!; echo "$LP" > "$J/$RUN.pid"; LP_START=$(pid_start "$LP" 2>/dev/null || true)

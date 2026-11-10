@@ -133,6 +133,8 @@ def test_the_trainer_pin_is_the_core_splits_read_at_launch(tmp_path):
     dry = code.index('-m utils.core_split trainer-cpus --launch --dry-run')
     assert dry < code.index("\nprechecks go") and dry < code.index("kit pin-check --pin \"$PIN\" --side \"$SIDE\" --arm \"$ARM\" --stage \"$STAGE\" --models-dir \"$MODELS\" --write")
     assert code.count(f'grep -q "{core_split.STAYS_QUEUED}"') == 2 and code.count("|| hold \"the queued core split") == 2
+    # the launch line names the note, or says none was queued (an empty "(core split: )" read as a broken read, 11-10)
+    assert '(core split: ${CSNOTE:-no queued split})' in code
     state = tmp_path / "q" / "core_split.json"
     env = dict(os.environ, GEN3AI_CORE_SPLIT_STATE=str(state))
     assert subprocess.run([sys.executable, "-m", "utils.core_split", "set", "4+4", "--next-launch"], env=env,
