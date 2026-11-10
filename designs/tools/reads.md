@@ -8,7 +8,9 @@ folders stay as FROZEN records: their scripts are never edited or re-run as tool
 
 ## 1. The interface
 
-A read is one **spec** file (`read_spec.json`, committed with the PREREG) and one **state** directory. The state
+A read is one **spec** file (`read_spec.json`, committed with the PREREG, or with a light screen's one-page
+`SCREEN.md`, which the spec's `prereg` then names: `designs/research_state/README.md` § Registration tiers; every
+guard and rule below applies to a screen unchanged) and one **state** directory. The state
 lives outside the repo and outside `models/`, for example `~/gen3ai_archive/<read>/`.
 
 ```bash

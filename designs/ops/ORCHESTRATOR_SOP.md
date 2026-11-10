@@ -75,6 +75,16 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   **Why:** the 2026-09-24 belief win-rate A/B was a single 18,000-battle driver launched from its
   agent's shell. A session restart killed the agent mid-run, and only luck (the workers happened to
   keep running and write per-battle rows) meant the hours were not lost.
+- **EVERY EXPERIMENT BRIEF NAMES ITS REGISTRATION TIER: `registration tier: full | light screen` (2026-11-09).**
+  The rule, the eligibility test and the one-page form are `designs/research_state/README.md` § Registration tiers.
+  **Light screen** (≤ ~15 GPU-h and ≤ ~50 CPU lane-h; adopts nothing; no goal claim; its result only promotes a
+  candidate to a full registration or drops it): the agent fills `measurements/_templates/LIGHT_SCREEN.md` (≤ ~6 KB,
+  no amendments) and reports to the ledger as `SCREEN`. **Full** for anything that sets direction: a goal verdict, a
+  recipe or architecture adoption, a fresh-run comparison such as BOUNDARY-1, any result that will be quoted as a
+  claim. A brief with no tier is FULL, and an agent that finds its screen fails the eligibility test STOPS and
+  reports. **Why:** an independent review (2026-11-09) found 55.6 % of a month's 975 commits were docs,
+  registrations or measurements, with 80 to 110 KB registrations amended up to 12 times; the owner's time is the
+  scarce input, and a cheap look should cost a page.
 - **A REGISTERED READ IS A `main.reads` SPEC, never a new script (2026-10-25).** A brief for a read (an arm
   against its control, a final against a comparator, Kakuna cells) names: the spec to write
   (`read_spec.json`, committed with the PREREG before any counted game; its `pin` is an EXISTING code commit, never
@@ -251,7 +261,8 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   line; the old value stays in the ledger.
 - Never quote a mid-run ELO; compare at matched snapshot count; every delta carries its interval and
   the evidence vocabulary; a floor is the max pairwise difference among replicates.
-- The discipline is the point, not overhead: pre-register the reading before launching; meters before
+- The discipline is the point; its WEIGHT follows what the result decides (§2's registration tier: a light screen
+  is one page, and it is still written before the data). In both tiers: pre-register the reading before launching; meters before
   arms; kill conditions written down; every deviation flagged, never silent; instrument defects
   banked as ledger specimens; read the per-arm spread before believing a delta; never carry an
   underpowered point estimate; matched budget and count for every cross-run comparison.

@@ -27,7 +27,7 @@ view is wrong**: fix the view.
   The early era parenthesises it mid-title (`## Gen-3 40M gate (2026-08-08) - ...`), the current one leads with it
   (`### 2026-09-07 · TECH DEBT · ...`). Undated headings are front matter or a subsection inside an entry; the
   index lists them nested and dateless. **Write new entries as `### YYYY-MM-DD · TAG · title`** so an index line
-  sorts and reads correctly.
+  sorts and reads correctly. A light screen's result is tagged `SCREEN`, never `VERDICT` (§ Registration tiers).
 
   **On a rebase conflict in `ledger_index.md`, never merge it by hand: keep BOTH ledger entries, then take either
   side of the index and re-run the generator.** The index is a pure function of the ledger.
@@ -38,8 +38,8 @@ view is wrong**: fix the view.
 
 - **[UNDERSTANDING.md](UNDERSTANDING.md)**: what we believe about the research now (it owns the claim-tag
   vocabulary). **[EXPERIMENT_BACKLOG.md](EXPERIMENT_BACKLOG.md)**: the one ranked queue of experiments.
-- **This README**: the index of this folder, plus the standing method below (defect genres, maintenance protocol,
-  the amortizability gate, the build bar).
+- **This README**: the index of this folder, plus the standing method below (registration tiers, defect genres,
+  maintenance protocol, the amortizability gate, the build bar).
 - **[levers/](levers/)**: one file per lever, in the **Known / Not-known / Pros / Cons / Next test** shape of
   `levers/_template.md` (its first line carries the status). A killed lever normally has no file; the two that
   survive (`opp_pp_observability`, `compile_opponents_net_value`) are kept because the way they died is reusable.
@@ -106,6 +106,46 @@ view is wrong**: fix the view.
   late-August 2026 programme snapshot, the frontier table and the defect-genre specimens of THIS README are
   in [research_state_readme_history.md](claude_md_archive/research_state_readme_history.md).
 - **[../ops/TRAINING_RUN_SOP.md](../ops/TRAINING_RUN_SOP.md)**: the operating procedure for a training run.
+
+## Registration tiers: full, or a light screen
+
+Every experiment is written down before its first step, in ONE of two tiers. The orchestrator names the tier in
+the brief (`../ops/ORCHESTRATOR_SOP.md` §2); an agent never picks the lighter one on its own, and an unnamed tier
+is FULL. **Why two (orchestrator, 2026-11-09, under the owner's delegation):** an independent review found
+55.6 % of a month's 975 commits were docs, registrations or measurements, with registrations of 80 to 110 KB
+carrying up to 12 amendments. That weight is right for a result that sets direction and wrong for a cheap look
+that only decides whether a candidate deserves one.
+
+| | **LIGHT SCREEN** | **FULL pre-registration** |
+|---|---|---|
+| for | a cheap experiment that sets no direction | anything that sets direction: a goal verdict, adopting a recipe or an architecture, a fresh-run comparison (BOUNDARY-1), any result quoted as a claim |
+| file | `measurements/<id>_<slug>_<date>/SCREEN.md`, from [`measurements/_templates/LIGHT_SCREEN.md`](measurements/_templates/LIGHT_SCREEN.md); ONE page, ≤ ~6 KB | `PREREG.md` in the same kind of folder; as long as its decision needs |
+| changes | none: a change is a NEW screen that names the old one | dated amendments, written before the read |
+| its result | PROMOTE the candidate to a full registration, or DROP it | a verdict, scored against the registered rule |
+| ledger tag | `SCREEN` | `REGISTRATION`, then `VERDICT` / `READ` |
+
+**Eligibility: a screen must meet ALL of these, else it is a full registration.**
+1. It costs ≤ ~15 GPU-h and ≤ ~50 CPU lane-h in total, budgeted from a measured rate.
+2. It adopts nothing: no recipe, architecture, baseline or default changes on its result.
+3. It supports no goal claim, and no doc quotes its number as a finding.
+4. Its result can only (a) promote the candidate to a full registration or (b) drop it.
+
+**The page holds exactly:** the question; the arms and the pin; the seeds, checked disjoint from every registered
+sibling's; ONE meter; the decision rule in ≤ 5 lines with one look; the cost and hard stop; what PROMOTE and DROP
+each do. A page that cannot fit is not a screen.
+
+**Mandatory in BOTH tiers** (a screen is lighter in prose, not in honesty):
+- **Outcome-blind:** the page lands on main before the first step, game or look.
+- **Guards:** every leak and determinism guard that exists for the meter runs (a read through `main.reads` keeps
+  all of its guards; its spec's `prereg` names the `SCREEN.md`).
+- **Any Kakuna number carries its team-clustered interval.**
+- **Root rule 8:** every check is deterministic; a timeout is never an outcome.
+
+**Reporting.** A screen's result is ONE ledger entry, `### YYYY-MM-DD · SCREEN · <id> …`, with the meter, its
+interval and PROMOTE or DROP; the page's own Result section cites that entry. It is never tagged `VERDICT`, never
+enters `UNDERSTANDING.md` as a belief or under a claim tag, and is never the comparator of a later claim: the
+backlog row moves (promoted, or closed as "screened out"), and a promoted candidate is measured again under its
+full registration, on seeds the screen did not use. A screen that turns out to matter is NOT upgraded in place.
 
 ## The defect genres: five named failure classes
 
