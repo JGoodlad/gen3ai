@@ -96,10 +96,13 @@ its GO.
 - **MF-3:** the opponent belief off the pool. Its meter is built (`python -m main.offpool_belief`) and the baseline
   REPORTED (ledger 2026-11-09): P\*'s species belief is 3 to 8 nats worse than its Smogon prior on held-out teams,
   team breadth in the loop brings it to the prior with the head unchanged, no arm beats the prior. Decision: no head
-  reshape for BOUNDARY-1 (`endstate/design_offpool_belief.md`). Step (b) is the CPU-only light screen X68 (P\*'s
-  belief residuals retrained on procedural-team labels; REGISTERED, not run, ≈ 2 CPU lane-h).
+  reshape for BOUNDARY-1 (`endstate/design_offpool_belief.md`). Step (b) is screened out: the light screen X68 (P\*'s
+  belief residuals retrained on procedural-team labels, trunk frozen) read DROP at `9ba2e80b8`, +3.2 / +2.3 nats
+  better than P\* on F / H but still 0.74 / 0.68 below the prior (screen evidence, never a verdict). Breadth in the
+  loop is the measured route; BOUNDARY-1's 2 × 2 tests it.
 - **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
-- **MF-5: the scale bet** (production width and 2× `D_MODEL` from scratch at BOUNDARY-1), the one lever whose point
+- **MF-5: the scale bet** (production width and 2× `D_MODEL` from scratch at BOUNDARY-1; the width build is on
+  main, `--d-model`, `0220f8408`, config v169), the one lever whose point
   reaches goal (b)'s gap without search; it waits on the owner (§6.5). Its DRAFT design sizes it at four seeds an arm,
   ≈ 207 GPU-h to a 100M look
   ([`research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)).
@@ -229,7 +232,7 @@ Every open owner question, in one place.
 5. **The scale bet: a network wider from step 0** (EXPERIMENT_BACKLOG §2.0 MF-5;
    [`endstate/strategy_if_levers_null_2026-10-26.md`](endstate/strategy_if_levers_null_2026-10-26.md) §5 question 3).
    The ask as first priced: one seed of production width and one of 2× `D_MODEL`, both from scratch at the next retrain
-   boundary, ≈ 52–73 GPU-h to a registered 100M look and ≈ 145–205 GPU-h to the plateau, plus a width build. **Re-sized
+   boundary, ≈ 52–73 GPU-h to a registered 100M look and ≈ 145–205 GPU-h to the plateau, plus a width build (since landed: `--d-model`, `0220f8408`, config v169). **Re-sized
    2026-11-09 (DRAFT):** one seed an arm cannot clear the measured seed-to-seed spread; four seeds an arm can, at
    ≈ 207 GPU-h to the 100M look (≈ 9 days of our card; a second card would halve the wall), as a bundle, as width
    alone, or as both crossed

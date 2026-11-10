@@ -2,9 +2,10 @@
 
 **Status: DECIDED 2026-11-09 — no head reshape; the fix is the LABELS.** The meter is BUILT
 (`python -m main.offpool_belief`, [`../tools/offpool_belief.md`](../tools/offpool_belief.md)) and its baseline is
-REPORTED (§3; ledger 2026-11-09). The post-hoc repair of P\* (MF-3 step b) is REGISTERED as the light screen X68
-([`../research_state/measurements/x68_belief_repair_screen_2026-11-09/SCREEN.md`](../research_state/measurements/x68_belief_repair_screen_2026-11-09/SCREEN.md)),
-not run. Nothing here is a strength claim: no game read has yet DETECTED a win-rate effect of belief quality
+REPORTED (§3; ledger 2026-11-09). The post-hoc repair of P\* (MF-3 step b) is SCREENED OUT: the light screen X68
+([`../research_state/measurements/x68_belief_repair_screen_2026-11-09/SCREEN.md`](../research_state/measurements/x68_belief_repair_screen_2026-11-09/SCREEN.md)
+§9) read DROP on 2026-11-09 (§6; screen evidence, never a verdict). Breadth in the loop stays the only shown repair,
+and BOUNDARY-1's 2 × 2 tests it. Nothing here is a strength claim: no game read has yet DETECTED a win-rate effect of belief quality
 (ledger 2026-10-26, the belief-prior-mix reads at λ = 0.25 and λ = 1).
 
 This doc answers MF-3 of [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md) and the
@@ -99,7 +100,7 @@ What it says:
    proper score too (the full Bernoulli log-likelihood over a mon's candidate moves on P72: prior −5.7, P\* −7.8,
    N1-P −7.5 a unit; a 768-row check), so it is not an artefact of scoring only the true moves. **UNVERIFIED:**
    why. Candidates: a linear head on a token that the pool shaped; 20M steps too few to re-fit it; a difference
-   between `p72`'s and `n1_proc_v1`'s set generators. X68 reads this leg directly (§6).
+   between `p72`'s and `n1_proc_v1`'s set generators. X68's fine-tune did not repair this leg either (§6).
 5. The item leg is at its prior off the pool for P\* and C0 (WORSE only on P72), and breadth moves it to BETTER on F
    and P72.
 
@@ -115,7 +116,7 @@ they can remove the harm and cannot be expected to add information about human t
 | # | lever | what it can do | cost | state |
 |---|---|---|---|---|
 | 1 | **Team breadth in the loop** (`--team-mix`, or `--human-data teams:`) | Takes the species leg from 3–8 nats below the prior to the prior (§3) with no model change. Does not repair the move leg. | A recipe line. In-house strength on home72 −3.28 pp at 20M (X61P, ledger 2026-10-30). | BUILT; in BOUNDARY-1's option B |
-| 2 | **Post-hoc belief-only fine-tune** (MF-3 step b): retrain only the three residuals of a finished checkpoint on broad-team labels, trunk frozen | Repairs a pool-only checkpoint without retraining it; 100 % broad labels, so no pool half to average with. Its policy then reads a belief it never trained on. | ≈ 2 CPU lane-h, no GPU | BUILT (`main.offpool_belief trainbank` / `finetune`); X68 REGISTERED |
+| 2 | **Post-hoc belief-only fine-tune** (MF-3 step b): retrain only the three residuals of a finished checkpoint on broad-team labels, trunk frozen | Repairs a pool-only checkpoint without retraining it; 100 % broad labels, so no pool half to average with. Its policy then reads a belief it never trained on. | ≈ 2 CPU lane-h, no GPU | BUILT (`main.offpool_belief trainbank` / `finetune`); SCREENED OUT (X68 DROP, §6): better than P\* off the pool, still below the prior, and the in-pool advantage is lost |
 | 3 | Inference prior mix λ (`agents.model.belief_prior_mix`) | Caps the harm at −log λ (1.39 nats at 0.25). Measured: still WORSE than the prior at 0.25; no win-rate effect DETECTED at 0.25 or 1. | none | BUILT; not adopted |
 | 4 | A trained-in floor: the same mix inside the training forward | The same cap, with the residual trained through it. Cannot beat option 1: the floor only bounds how wrong a wrong residual is. | a model flag, a config version, golden checks | SPECIFIED (§7), not built |
 | 5 | A bounded residual: δ ← c · tanh(δ / c) | Caps how far one species' score can move from the prior. The same limit as 4, and it also caps the in-pool gain. | as 4 | SPECIFIED (§7), not built |
@@ -146,8 +147,8 @@ they can remove the harm and cannot be expected to add information about human t
   no GPU): each arm's `species_logp` − prior on H, F and P72. It decides nothing in BOUNDARY-1's rule. For an arm
   trained on `n1_proc_v1`, P72 is generator-adjacent, so F is the panel to read (the same hazard as BOUNDARY-1's
   breadth guard).
-- **If X68 PROMOTES**, a pool-only final can be repaired after the fact in ≈ 2 CPU lane-hours; whether to do that
-  for any checkpoint that plays or seeds a search is the full registration's question (§6), not this doc's.
+- **A pool-only final has no shown repair after the fact.** X68 read DROP (§6): retraining the residuals on
+  procedural labels with the trunk frozen does not reach the prior, so no checkpoint is repaired that way.
 
 **Can it make Friday's base?** Yes, because it asks nothing of the base: no model change, no new flag, no version.
 The breadth recipe line and the meter both exist today.
@@ -160,13 +161,30 @@ against procedural teams (`n1_proc_v1`, four disjoint 300-team shards, a fifth f
 on the validation shard, no panel row is read). The control is P\* itself and the prior, on the banked rows of §3.
 The primary meter is `species_logp` on F and H. It runs on CPU (≈ 2 lane-hours) and needs no GPU lease.
 
-- **PROMOTE** (better than P\* on both panels, and no more than 0.25 nats below the prior at the interval's lower
-  end on both): the repair earns a full registration, which must put a number on what a repaired belief is WORTH
-  (a game read against Kakuna on unfamiliar teams, and the belief as the searched player's world sampler). A
-  screen adopts nothing.
-- **DROP**: P\*'s belief cannot be repaired after the fact at this size with a frozen trunk. Breadth in the loop
-  stays the only shown repair, and option 4 becomes the candidate for the next fresh run.
-- It also reads, as reported columns, the leg breadth did not repair (moves) and what the repair costs in the pool.
+The rule: PROMOTE needed the candidate better than P\* on both panels and no more than 0.25 nats below the prior at
+the interval's lower end on both; anything else is DROP. A screen adopts nothing.
+
+**Result: DROP, 2026-11-09** (`SCREEN.md` §9; ledger 2026-11-09 SCREEN; 1.85 CPU lane-h, epoch 4 of 8 picked). Screen
+evidence, never a verdict and never quoted as a claim.
+
+| panel | fine-tuned − P\* | fine-tuned − prior | the −0.25 bar |
+|---|---|---|---|
+| F | +3.23 [+2.23, +4.39] | −0.74 [−1.05, −0.47] | NOT met |
+| H | +2.32 [+1.30, +3.44] | −0.68 [−0.94, −0.43] | NOT met |
+
+- **Off the pool it is much better than P\* and still below the prior.** P72 (reported) reads the same way:
+  +6.64 against P\*, −1.02 against the prior.
+- **The in-pool advantage vanished:** on `home72` the species leg went from +1.22 above the prior (P\*) to −0.18
+  below it.
+- **The validation loss never reached the prior's:** 10.98 at the picked epoch against 10.25 for the prior alone
+  (P\* itself: 23.55), on a shard of the training corpus's own family; later epochs rose while the training loss
+  kept falling.
+- **The move leg is not repaired:** fine-tuned − prior is WORSE on all three held-out panels (−0.33 H, −0.14 F,
+  −0.37 P72).
+- **The lesson.** Residual retraining on procedural labels does not reach the prior. Breadth in the loop is the
+  measured route (§3), and BOUNDARY-1's 2 × 2 (its breadth cells) tests it; option 4 is the candidate if a later
+  fresh pool-only run needs a bound (§7). Step (b) reopens only with a new label source. The fine-tuned
+  checkpoint plays nothing and seeds nothing.
 
 **What the screen cannot say.** Procedural labels carry no information about human teams beyond the prior, so
 "beats the prior on F and H" is not expected and is not the bar. The human corpus (`hr_spec_v1`) is the only label
@@ -175,7 +193,8 @@ X60-T's finals are that read, in the loop (§3).
 
 ## 7. The fallback, specified and not built
 
-If a later fresh run needs a structural bound (X68 DROPS and a pool-only run must still seed a search), build
+If a later fresh run needs a structural bound (X68 read DROP, so a pool-only run that must still seed a search has
+no after-the-fact repair), build
 option 4, a trained-in floor, behind one model flag that is off in production:
 
 - **Form.** Species: π ← (1 − λ) · π(prior ⊕ δ) + λ · π(prior), applied in the TRAINING forward as it is at
@@ -188,7 +207,7 @@ option 4, a trained-in floor, behind one model flag that is off in production:
 - **Its registered test** is the meter of §3 on a matched fresh pair, never a fork: a floor changes what the
   residual learns from step 0.
 - **What would make us build it:** X68 DROP together with a game read that DETECTS a cost of the pool-only belief.
-  Neither exists today.
+  The DROP exists (screen evidence, §6); the game read does not.
 
 ## Decision record
 
@@ -197,3 +216,4 @@ option 4, a trained-in floor, behind one model flag that is off in production:
 | 2026-11-09 | **This doc CREATED; the off-pool belief meter built** (MF-3 builder, orchestrator brief: an offline meter first, then the design) | `main.offpool_belief`: a banked, team-clustered read of each belief leg against its own prior on the registered held-out panels, scoring-only banks outside the checkout | re-running the one-off P5 probe script: a `measurements/` script is a frozen record, never a tool; scoring each checkpoint on its own games: the beliefs would be compared on different decisions | `../tools/offpool_belief.md`; the package's tests |
 | 2026-11-09 | **No head reshape; the fix is the labels** | team breadth in the loop for a fresh run (already in BOUNDARY-1's breadth arms); the meter as a REPORTED guard on BOUNDARY-1's finals | a prior + residual re-parameterisation: all three legs already have it (§2); a trained-in floor or a bounded residual in BOUNDARY-1's base: they bound a wrong residual and breadth removes it, the 0.25 floor on P\* is still WORSE than the prior, and no game effect of the belief is DETECTED; a pull-to-prior penalty or a familiarity input: §4 rows 6, 7 | §3's baseline; ledger 2026-11-09 (the baseline), 2026-10-26 (H3 and the two λ reads) |
 | 2026-11-09 | **MF-3 step (b) REGISTERED as the light screen X68** | P\*'s three residuals retrained on procedural-team labels, trunk frozen, read on the banked panels; CPU only | the ladder corpus as the label source: a human corpus enters training only through `--human-data`, and X60-T's finals already read human teams in the loop; a full pre-registration: the screen sets no direction and adopts nothing | `SCREEN.md`; `main.offpool_belief trainbank --check` / `finetune --check` |
+| 2026-11-09 | **MF-3 step (b) SCREENED OUT: X68 read DROP** | close the post-hoc repair for a frozen trunk at this size; breadth in the loop is the measured route and BOUNDARY-1's 2 × 2 tests it | repairing any pool-only checkpoint by this fine-tune: it stays 0.68 to 0.74 nats below the prior off the pool and loses the in-pool advantage; building option 4 now: no game read DETECTS a cost of the pool-only belief | `SCREEN.md` §9; ledger 2026-11-09 SCREEN (screen evidence, never a verdict) |

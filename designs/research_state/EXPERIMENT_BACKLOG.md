@@ -60,15 +60,15 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 |---|---|---:|---:|---|---:|---|
 | **MF-1** | **ExIt-0H**: can P\* learn honest search's choices? | ≈ 3 | ≈ 2–5 (gate); 25–100 (look 1, only if DELIVERED) | +0.5 (0, +2) without search | ≈ 0.2 | **REGISTERED 2026-11-09 as X66** ([`measurements/x66_exit0h_2026-11-09/PREREG.md`](measurements/x66_exit0h_2026-11-09/PREREG.md)); its bank amendment; the GPU lease |
 | MF-1b | ExIt-1: honest search targets in the PPO loop | ≈ 35 | ≈ 107 | +1 (−1, +3) | ≈ 0.03 | its own case, never X66 alone (X66 PREREG §8.3); an X66 GO with placebo SEARCH-INFO is necessary, not sufficient |
-| **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh pair) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built |
-| **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | 0 (step b is the CPU screen X68) | ≈ 2 (X68); ≈ 8 CPU-min a checkpoint (the meter); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a DONE 2026-11-09 (baseline REPORTED); step b = light screen X68 REGISTERED, not run; no head reshape (`../endstate/design_offpool_belief.md`) |
+| **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh pair) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built (`3b1733f50`, config v168); its forward census is not run |
+| **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | 0 | ≈ 8 CPU-min a checkpoint (the meter); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a DONE 2026-11-09 (baseline REPORTED); **step b SCREENED OUT 2026-11-09** (light screen X68 read DROP: screen evidence, never a verdict); no head reshape (`../endstate/design_offpool_belief.md`); the route left is breadth in the loop, tested by MF-5's 2 × 2 |
 | **MF-4** | **The value at the leaf on unfamiliar teams** | 0 until V-RANK fires; then ≈ 1–2 | ≈ 96 (V-RANK) + ≈ 300–600 (a searched game read; S′-LIVE took ≈ 315) | +0.3 (−0.5, +1.5), with search only | ≈ 0.05 after P(V-RANK fires) ≈ 0.3 | V-RANK's builds and PREREG |
-| **MF-5** | **BOUNDARY-1's from-scratch run**: REPLACED 2026-11-09 by the DRAFT design [`measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md) (option B, a bundle; option S, width alone; the same eight runs crossed 2 × 2; the owner's answer picks one) | its §8 | its §8 | its §0, §2 | — | **the owner's word** (`../STATUS.md` §6.5); its §8 (the builds); MF-2's version; X60-T's verdict |
+| **MF-5** | **BOUNDARY-1's from-scratch run**: REPLACED 2026-11-09 by the DRAFT design [`measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md) (option B, a bundle; option S, width alone; the same eight runs crossed 2 × 2; the owner's answer picks one) | its §8 | its §8 | its §0, §2 | — | **the owner's word** (`../STATUS.md` §6.5); its §8 (the builds; the width build is on main: `--d-model`, `0220f8408`, config v169); MF-2's version; X60-T's verdict |
 | MF-6 | Breadth at the plateau: X62's recombined teams | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | X60-T not NO-TRANSFER / LOSS; PR-1′'s place is the orchestrator's |
 | MF-7 | The league's main exploiters (X35-A3) | ≈ 15 | ≈ 107 | +0.5 (−1, +2) vs Kakuna | ≈ 0.03 | its two-phase kit (T55) |
 
-**The recommendation.** Queue **MF-1** when X60-T's last final settles; **MF-3 step (b)** is the CPU-only light screen
-X68 and takes no GPU slot. Between and after them the GPU's fill is the orchestrator's (MF-6's or MF-7's training, whose reads can wait for the lanes);
+**The recommendation.** Queue **MF-1** when X60-T's last final settles; **MF-3 step (b)** is screened out (X68 read DROP)
+and asks for nothing more. Between and after them the GPU's fill is the orchestrator's (MF-6's or MF-7's training, whose reads can wait for the lanes);
 **MF-5** launches the day its four prerequisites hold, and the owner is asked about it NOW because a card has a lead
 time.
 
@@ -86,15 +86,17 @@ time.
   review):** its NOT-DELIVERED or NULL is NOT evidence for the scale bet (MF-5), because S′h's labels are only about a
   third reproducible and the source gain is P72's alone (P72 +4.69, H +1.32 and F 0.00 spanning 0); and MF-1b
   (ExIt-1) is not planned on X66 alone, whatever its class.
-- **Why MF-3 step (b) second.** P\*'s species posterior on unfamiliar opponents is confidently WORSE than the Smogon
+- **Why MF-3 was second, and where it stands.** P\*'s species posterior on unfamiliar opponents is confidently WORSE than the Smogon
   prior it is built on (H3, ledger 2026-10-26; the clustered baseline of 2026-11-09: −3.00 / −3.97 / −7.66 nats
   against the prior on H / F / P72), and the never-seen Pokémon carry most of the oracle edge search lacks (search
   ledger §1, R3). Fixing it serves both halves of the owner's sentence: the network's own hypothesis tokens, the
   damage operator and the critic read that belief at every decision, including every playout of S′h. Step (a) is
   DONE: team breadth in the loop already brings the species leg to the prior with the head unchanged (N1-P; X60-T
-  on H), no arm beats the prior off the pool, and the move leg is not repaired. So step (b) is no longer a GPU job:
-  it is the CPU-only light screen X68 (can P\*'s three belief residuals be repaired after the fact on procedural
-  labels, trunk frozen), and the decision for BOUNDARY-1 is no head reshape (`../endstate/design_offpool_belief.md`).
+  on H), no arm beats the prior off the pool, and the move leg is not repaired. Step (b) is SCREENED OUT: the light
+  screen X68 (P\*'s three belief residuals retrained on procedural labels, trunk frozen) read DROP. The lesson, as
+  screen evidence and never a verdict: residual retraining on procedural labels does not reach the prior, so breadth
+  in the loop is the measured route and MF-5's 2 × 2 (its breadth cells) tests it. The decision for BOUNDARY-1 stays
+  no head reshape (`../endstate/design_offpool_belief.md`).
 
 **The cards** (each: the question; the meter; the cheapest decisive experiment; what it unlocks; the evidence).
 
@@ -121,13 +123,14 @@ time.
     memorises in-sample, the curve arms' held-out Δagree ≤ 0). "Unlearnable at this scale" there means at ≈ 60k leaky
     label rows and that recipe; the capacity arm fitting in-sample does NOT show the network's width binds.
 - **MF-2 Fidelity of the op's opponent side, batched as BOUNDARY-1.**
-  - *Question:* does pricing THEIR mons at their believed max HP (E13: today `2·base + 141`, 0 HP EVs, which over-states
-    every damage fraction against them, and the fixed-damage KO as P(true HP ≤ fixed)) change what P\* would play?
+  - *Question:* does pricing THEIR mons at their believed max HP (E13, BUILT at `3b1733f50`, config v168: their max HP is a
+    Smogon distribution and a KO on their mon a probability over it, where the op used `2·base + 141`, 0 HP EVs, which
+    over-stated every damage fraction against them) change what P\* would play?
   - *Meter:* the forward census on P\*'s 16,785-row population: rows whose op cells move, top-action changes, by kind
     (the our-HP fix's precedent, `83272a8f9`: 6.7 % of rows moved, 0 top-action changes); then E13's own meters (K9
     move-choice agreement on Seismic Toss / Night Shade users, the probe battery's KO-call calibration).
-  - *Cheapest decisive experiment:* that census, CPU only, once E13 is built (M: a per-species max-HP mixture from the
-    Smogon spreads, `../endstate/obs_enrichment_backlog.md` E13). A fix that moves no top action is correctness only
+  - *Cheapest decisive experiment:* that census, CPU only, now that E13 is built (a per-species max-HP mixture from the
+    Smogon spreads, `../endstate/obs_enrichment_backlog.md` E13); not run. A fix that moves no top action is correctness only
     and rides the next fresh run without a strength read of its own; one that moves many earns a P\*-fork arm.
   - *BOUNDARY-1, the one retrain boundary:* E13, round 2 of the mechanics fixes (the nature floor, the end-of-turn
     integers; it joins where its landing commit says it is not a stamp-through), and E9 (damage-roll consistency, which
@@ -149,10 +152,15 @@ time.
   - *Cheapest decisive experiment:* (a) **DONE 2026-11-09 (REPORTED, ledger):** species log-presence − prior on
     H / F / P72: P\* −3.00 / −3.97 / −7.66 and C0 the same (all WORSE); N1-P +0.04 / −0.07 / −0.13 (at the prior on H
     and F); X60-T −0.05 / −0.29 / −0.84; P\* floored at λ = 0.25 −0.17 / −0.30 / −0.79 (WORSE). The move leg stays
-    WORSE than its prior for every arm on H and P72. (b) **the light screen X68, REGISTERED, not run**
-    (`measurements/x68_belief_repair_screen_2026-11-09/SCREEN.md`): P\*'s three belief residuals retrained on
-    procedural-team labels with the trunk frozen, ≈ 2 CPU lane-h, no GPU; a PROMOTE earns a full registration with a
-    Kakuna game read. The ladder-team version of the fine-tune (the `hr_spec_v1` logs' revealed teams, under the
+    WORSE than its prior for every arm on H and P72. (b) **SCREENED OUT 2026-11-09: the light screen X68 read DROP**
+    (`measurements/x68_belief_repair_screen_2026-11-09/SCREEN.md` §9; ledger 2026-11-09 SCREEN; screen evidence,
+    never a verdict): P\*'s three belief residuals retrained on procedural-team labels with the trunk frozen (1.85 CPU
+    lane-h, no GPU) are +3.23 [+2.23, +4.39] / +2.32 [+1.30, +3.44] nats better than P\* on F / H but stay −0.74
+    [−1.05, −0.47] / −0.68 [−0.94, −0.43] below the Smogon prior (bar: lower bound ≥ −0.25). The in-pool advantage
+    vanished (`home72` from +1.22 above the prior to −0.18 below it) and the validation loss never reached the
+    prior's (10.98 at the picked epoch against 10.25). The lesson: residual retraining on procedural labels does not
+    reach the prior; breadth in the loop is the measured route, and MF-5's 2 × 2 tests it. It reopens only with a new
+    label source. The ladder-team version of the fine-tune (the `hr_spec_v1` logs' revealed teams, under the
     human-data toggle and its manifest-driven panel exclusion) is NOT built: a human corpus enters training only
     through `--human-data`, and X60-T's finals are the in-loop read of it; (c) for search, S′h's never-seen draws from the repaired
     posterior instead of the Smogon usage marginals (`src/main/value_search/world_draws.py`'s `Prior` today), read
