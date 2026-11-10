@@ -6,6 +6,7 @@ later). ``/proc/locks`` is built by the kernel while other processes take and dr
 was there all along. Each test below fails when its half of the fix is reverted:
 
 * the "nobody holds it" answer is re-read (``lock_holder``);
+* a row the listing skips on EVERY read is found in the holder's own ``fdinfo`` (``procfs.LockTable``, 2026-11-09);
 * a heartbeat inside its declared deadline, whose pid is alive, overrides a missed lock read (``probe``);
 * a supervisor whose pid is gone from ``/proc`` is DEAD at once (``Liveness.final``), but a ``/proc`` read that merely
   FAILS is not a death;
@@ -57,6 +58,19 @@ class LockWorld:
         if held and os.path.isdir(os.path.dirname(fd)) and not os.path.lexists(fd):
             os.symlink(self.lock, fd)                              # the supervisor holds its lock file open
 
+    def hold_unlisted(self, pid: int = SUP_PID) -> None:
+        """``pid`` holds the lock (its own ``fdinfo`` says so, its ``fd`` has the file open) and NO read of the
+        ``locks`` listing shows the row: the listing as a busy lock table can keep handing it out."""
+        self.set_locks(False)
+        for sub_dir in ("fd", "fdinfo"):
+            os.makedirs(os.path.join(self.proc, str(pid), sub_dir), exist_ok=True)
+        fd = os.path.join(self.proc, str(pid), "fd", "9")
+        if not os.path.lexists(fd):
+            os.symlink(self.lock, fd)
+        with open(os.path.join(self.proc, str(pid), "fdinfo", "9"), "w") as f:
+            f.write(f"pos:\t0\nflags:\t02100002\nmnt_id:\t29\nino:\t{self.key.rsplit(':', 1)[1]}\n"
+                    f"lock:\t1: FLOCK  ADVISORY  WRITE {pid} {self.key} 0 EOF\n")
+
     def kill_supervisor(self) -> None:
         import shutil
         shutil.rmtree(os.path.join(self.proc, str(SUP_PID)))
@@ -95,6 +109,21 @@ def test_a_lock_read_that_misses_once_is_re_read_and_finds_the_holder(lw):
     lw.set_locks(False)
     lv = lw.probe({**FLIGHT}, sleep=table_whole_again)             # mid-flight, no heartbeat
     assert (lv.verdict, lv.pid, lv.loud) == ("ALIVE", SUP_PID, False)
+
+
+def test_a_holder_the_listing_never_shows_is_found_in_its_own_fdinfo(lw):
+    """The listing skips the supervisor's row on EVERY read (re-reading cannot help) and there is no heartbeat to
+    vouch for it (a supervisor older than the heartbeat). Its own ``fdinfo`` names the lock, and that is a whole read.
+    On a revert to the listing alone this live supervisor reads DEAD, loudly, mid-flight."""
+    lw.hold_unlisted()
+    assert liveness.lock_holder(lw.lock, lw.proc, reads=1, sleep=lw.sleep) == SUP_PID and lw.sleeps == []
+    lv = lw.probe({**FLIGHT})
+    assert (lv.verdict, lv.pid, lv.loud) == ("ALIVE", SUP_PID, False)
+    os.remove(os.path.join(lw.proc, "locks"))                      # ... and with the listing unreadable altogether
+    assert lw.probe({**FLIGHT}).verdict == "ALIVE"
+    lw.kill_supervisor()                                           # a real death is still a death
+    lw.set_locks(False)
+    assert liveness.lock_holder(lw.lock, lw.proc, reads=3, gap_s=0.2, sleep=lw.sleep) is None
 
 
 def test_a_lock_nobody_holds_is_read_reads_times_before_it_is_believed(lw):

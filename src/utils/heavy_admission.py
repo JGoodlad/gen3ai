@@ -217,7 +217,7 @@ def read_box() -> Box:
 @dataclass(frozen=True)
 class Holder:
     slot: int
-    pids: Tuple[int, ...]      # the flock holders of the slot (``/proc/locks``)
+    pids: Tuple[int, ...]      # the flock holders of the slot (``procfs.LockTable``)
     declared: Optional[int]    # the cap in its holder record, bytes; None: no record of this holder, or no cap in it
 
 

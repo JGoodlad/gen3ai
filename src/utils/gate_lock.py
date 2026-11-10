@@ -29,7 +29,8 @@ listed in ``/proc/locks`` as a waiter exactly as a bare ``flock`` is, while re-t
 
 RE-ENTRANT, the ``utils.gpu_lock`` way: holding a slot exports ``GEN3AI_GATE_LOCK_HELD=<pid>:<slot>``;
 a taker that sees it does NOT take a second slot — after VERIFYING that the pid is itself or an
-ANCESTOR and that ``/proc/locks`` lists it holding that slot. A stale marker is ignored with a line on
+ANCESTOR and that it holds that slot by its own ``fdinfo`` (``procfs.holds_lock``; a ``/proc/locks`` listing can
+skip a live holder, so nothing here reads "held" or "stale" from one). A stale marker is ignored with a line on
 stderr. A taker all of whose slots are held by its own ancestors (a bare ``flock`` around it) raises
 :class:`GateLockSelfDeadlock` at once.
 
@@ -112,14 +113,17 @@ def _chain() -> List[int]:
     return [me, *procfs.ancestors(me)]
 
 
-def _holders(path: Path) -> List[int]:
+def _holds(pid: int, path: Path) -> bool:
+    """Does ``pid`` hold the slot file ``path``, by its own ``fdinfo``? Never the ``/proc/locks`` listing: one read
+    can skip a live holder (``utils.procfs``), which read a held marker as stale (the nested gate then queued for a
+    slot its own ancestor held) and hid a self-deadlock from the one check that looks for it."""
     key = procfs.file_key(str(path))
-    return procfs.holders(key) if key else []
+    return bool(key) and procfs.holds_lock(pid, key)
 
 
 def verified_holder(d: Optional[Path] = None) -> Optional[Tuple[int, int]]:
     """``(pid, slot)`` from ``$GEN3AI_GATE_LOCK_HELD`` iff the pid is this process or an ancestor AND
-    holds that slot's file in ``/proc/locks``; else ``None``."""
+    holds that slot's file (:func:`_holds`); else ``None``."""
     raw = os.environ.get(HELD_ENV, "")
     try:
         pid_s, slot_s = raw.split(":")
@@ -128,7 +132,7 @@ def verified_holder(d: Optional[Path] = None) -> Optional[Tuple[int, int]]:
         return None
     if pid not in _chain():
         return None
-    return (pid, slot) if pid in _holders(slot_path(slot, d)) else None
+    return (pid, slot) if _holds(pid, slot_path(slot, d)) else None
 
 
 def status(d: Optional[Path] = None, *, sample_s: float = 0.0, compact: bool = False) -> str:
@@ -200,10 +204,12 @@ def _acquire(fds: List[int], paths: List[Path], *, report_every_s: float, poll_s
                 fcntl.flock(fd, fcntl.LOCK_UN)        # the home slot won the race: keep that one
                 return home, time.monotonic() - t0
         now = time.monotonic()
-        if not checked_self or now >= next_report:
-            chain = set(_chain())
-            held = [_holders(p) for p in paths]
-            if not checked_self and all(hs and set(hs) <= chain for hs in held):
+        if not checked_self:
+            # a flock is exclusive, so a slot an ancestor holds has no other holder: every slot held that way is a
+            # wait nothing can end. Each ancestor is asked through its own fdinfo (:func:`_holds`).
+            chain = _chain()
+            held = [[a for a in chain if _holds(a, p)] for p in paths]
+            if all(held):
                 if abandon():
                     raise GateLockSelfDeadlock(
                         f"gate lock SELF-DEADLOCK: every one of the {n} slots is held by this "
@@ -211,10 +217,10 @@ def _acquire(fds: List[int], paths: List[Path], *, report_every_s: float, poll_s
                         f"outer slot with scripts/ops/gate_lock.sh / utils.gate_lock, not a bare flock")
                 return home, time.monotonic() - t0
             checked_self = True
-            if now >= next_report:
-                log(f"[gate_lock] waiting {now - t0:.0f} s for one of {n} gate slots: "
-                    + status(paths[0].parent, compact=True))
-                next_report = now + report_every_s
+        if now >= next_report:
+            log(f"[gate_lock] waiting {now - t0:.0f} s for one of {n} gate slots: "
+                + status(paths[0].parent, compact=True))
+            next_report = now + report_every_s
         if timeout_s is not None and now - t0 >= timeout_s:
             if abandon():
                 raise TimeoutError(f"[gate_lock] gave up after {now - t0:.0f} s: "

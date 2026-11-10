@@ -7,7 +7,7 @@ and the GPU idled until a human looked.
 Three readings, none of which takes the lock (a ``status`` that flocked, even for a moment, could make a supervisor
 starting at that instant exit 4):
 
-* **the lock holder**: the ``FLOCK`` entry on ``<state>.lock``'s device and inode in ``/proc/locks`` whose pid still
+* **the lock holder**: the pid holding a lock on ``<state>.lock``'s device and inode (``procfs.LockTable``) that still
   has that file open (the supervisor holds the fd for its whole life). Every supervisor version takes this lock, so
   it also sees a supervisor older than the heartbeat (``93a05fe91``, which writes only its pid into the lock file);
 * **the heartbeat**: ``state["supervisor"]`` (pid, start ticks, ``last_beat``, and ``stale_after_epoch``: the beat
@@ -24,7 +24,10 @@ builds ``/proc/locks`` while other processes take and drop locks (this box runs 
 test's flocks), so one read can skip a row that was there all along, and the holder's ``/proc/<pid>/fd`` walk can fail the
 same way. A single read of a racy file must not pronounce a death. So:
 
-* **a "nobody holds it" answer is re-read** :data:`LOCK_READS` times, :data:`LOCK_READ_GAP_S` apart, before it is believed;
+* **"nobody holds it" is never the listing's word alone** (2026-11-09): the reading falls back to every process's own
+  ``fdinfo``, which names a live supervisor of this user whatever the listing skipped;
+* **a "nobody holds it" answer is re-read** :data:`LOCK_READS` times, :data:`LOCK_READ_GAP_S` apart, before it is believed
+  (the ``fd`` walk can still fail under load);
 * **a fresh heartbeat overrides a missed lock read**: the heartbeat's own pid is alive (same start ticks), the
   supervisor has not recorded an ``exit``, and now is not past the heartbeat's declared deadline;
 * **DEAD / STALE must hold on two probes at least** :data:`CONFIRM_GAP_S` **apart** (:class:`Confirm` for the monitor's
@@ -65,24 +68,15 @@ def _iso(t: float) -> str:
 
 
 def _lock_holder_once(lock_path: str, proc: str) -> Optional[int]:
-    """One read of ``/proc/locks`` and of the holder's ``/proc/<pid>/fd``. Raises ``OSError`` when ``/proc/locks``
-    cannot be read."""
-    try:
-        st = os.stat(lock_path)
-    except FileNotFoundError:
+    """One reading of who holds ``lock_path`` (``procfs.LockTable``: the listing, and when it names nobody the
+    ``fdinfo`` of every process, which a busy lock table cannot make skip a live holder) and of the holder's
+    ``/proc/<pid>/fd``. Raises ``OSError`` when the listing cannot be read and no process shows the lock."""
+    key = procfs.file_key(lock_path)
+    if key is None:
         return None
-    key = f"{os.major(st.st_dev):02x}:{os.minor(st.st_dev):02x}:{st.st_ino}"
-    with open(os.path.join(proc, "locks")) as f:
-        rows = f.read().splitlines()
+    table = procfs.LockTable(proc)
     real = os.path.realpath(lock_path)
-    for row in rows:
-        parts = row.split()
-        if len(parts) < 6 or parts[1] != "FLOCK" or parts[5] != key:
-            continue
-        try:
-            pid = int(parts[4])
-        except ValueError:
-            continue
+    for pid in table.holders(key):
         fd_dir = os.path.join(proc, str(pid), "fd")
         try:
             fds = os.listdir(fd_dir)
@@ -94,6 +88,8 @@ def _lock_holder_once(lock_path: str, proc: str) -> Optional[int]:
                     return pid
             except OSError:
                 continue
+    if table.unreadable is not None:
+        raise table.unreadable
     return None
 
 

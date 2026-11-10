@@ -8,12 +8,22 @@ stay cheap and dependency-free:
 * ``utils.gpu_lock`` — the one helper that takes the box's GPU lock, re-entrantly.
 
 Both need the same two answers and must agree on them: *who is my ancestor* (the ``ppid`` chain) and
-*who holds this lock file* (``/proc/locks``, keyed by the file's ``major:minor:inode``, where a line
+*who holds this lock file* (keyed by the file's ``major:minor:inode``; in ``/proc/locks`` a line
 ``N: -> FLOCK ...`` is a BLOCKED waiter and a line without the arrow is a HOLDER).
 
-The ``pid`` column of ``/proc/locks`` is the process that TOOK the lock. For ``flock(1)`` that is the
-``flock`` process itself — its child inherits the descriptor but is not the one listed — which is
-exactly what a self-deadlock check wants: the holder is an ANCESTOR of the command it runs.
+The ``pid`` of a lock is the process that TOOK it. For ``flock(1)`` that is the ``flock`` process itself — its
+child inherits the descriptor but is not the one named — which is exactly what a self-deadlock check wants: the
+holder is an ANCESTOR of the command it runs.
+
+A ``/proc/locks`` NEGATIVE IS NEVER A VERDICT (2026-11-09). The kernel hands the listing out one page per ``read()``
+and resumes by position, so a lock released between two reads makes it SKIP a live entry: a listed entry did exist,
+an entry not listed proves nothing. The listing therefore has ONE reader, this module, and nothing outside it sees
+its negatives (``src/lock_listing_gate_test.py`` holds the tree to that). Ask instead:
+
+* *does THIS pid hold it?* :func:`holds_lock` — the process's own ``fdinfo``, each file one whole read;
+* *who holds it / is it free?* :class:`LockTable` (:func:`lock_holders` for one file): the listing when it names a
+  holder, else the pids the caller already knows, else the ``fdinfo`` of every process (:func:`scan_locks`);
+* *may I take it?* a non-blocking ``flock`` — the only authority there is for a take.
 """
 from __future__ import annotations
 
@@ -271,17 +281,8 @@ class LockEntry:
 _LOCK_RE = re.compile(r"^\s*\d+:\s+(->\s+)?(\S+)\s+\S+\s+(\S+)\s+(-?\d+)\s+([0-9a-f]+:[0-9a-f]+:\d+)\s")
 
 
-def read_locks(path: str = f"{_PROC}/locks") -> List[LockEntry]:
-    """The lock table as listed. A listing can MISS a live lock: the kernel hands the table out one page per
-    ``read()`` and resumes by position, so a lock released between two reads shifts the rest and the next entry is
-    skipped (2026-11-09: a live GPU-lease holder read as absent). An entry listed did exist; an entry NOT listed
-    proves nothing once the table is over a page. For "does THIS pid hold it" use :func:`holds_lock`."""
+def _parse_listing(lines: Iterable[str]) -> List[LockEntry]:
     out: List[LockEntry] = []
-    try:
-        with open(path) as f:
-            lines = f.readlines()
-    except OSError:
-        return out
     for line in lines:
         m = _LOCK_RE.match(line)
         if m:
@@ -290,8 +291,28 @@ def read_locks(path: str = f"{_PROC}/locks") -> List[LockEntry]:
     return out
 
 
+def _read_listing(path: str) -> List[LockEntry]:
+    """One read of a ``/proc/locks`` listing, parsed; raises ``OSError`` when it cannot be read. THE ONE PLACE the
+    listing is opened (``utils.lock_listing_testing`` replaces it to make a test's listing miss a live lock)."""
+    with open(path) as f:
+        return _parse_listing(f.readlines())
+
+
+def read_locks(path: str = f"{_PROC}/locks") -> List[LockEntry]:
+    """The lock table as listed. A listing can MISS a live lock: the kernel hands the table out one page per
+    ``read()`` and resumes by position, so a lock released between two reads shifts the rest and the next entry is
+    skipped (2026-11-09: a live GPU-lease holder read as absent). An entry listed did exist; an entry NOT listed
+    proves nothing once the table is over a page. PRIVATE TO THIS MODULE in effect (the module docstring): callers
+    take :class:`LockTable` / :func:`holds_lock`."""
+    try:
+        return _read_listing(path)
+    except OSError:
+        return []
+
+
 def file_key(path: str) -> Optional[str]:
-    """``path``'s ``/proc/locks`` key (``"MAJ:MIN:INODE"``), or ``None`` if it does not exist."""
+    """``path``'s lock key (``"MAJ:MIN:INODE"``, as ``/proc/locks`` and ``fdinfo`` print it), or ``None`` if it does
+    not exist."""
     try:
         st = os.stat(path)
     except OSError:
@@ -301,42 +322,138 @@ def file_key(path: str) -> Optional[str]:
 
 def holders(key: str, locks: Optional[Iterable[LockEntry]] = None) -> List[int]:
     """The pids LISTED holding any lock on the file ``key`` (blocked waiters excluded). A pid missing here is not
-    proof it does not hold (:func:`read_locks`): decide on a known pid with :func:`holds_lock`."""
+    proof it does not hold (:func:`read_locks`), so this is PRIVATE TO THIS MODULE in effect: a caller asks
+    :func:`holds_lock` about a pid it knows, or :class:`LockTable` / :func:`lock_holders` about a file."""
     locks = read_locks() if locks is None else locks
     return sorted({e.pid for e in locks if e.file == key and not e.blocked and e.pid > 0})
+
+
+def _fdinfo_locks(pid: int, proc: str = _PROC) -> Optional[List[LockEntry]]:
+    """The locks HELD through ``pid``'s open descriptors: its ``fdinfo`` ``lock:`` lines, each file one whole read
+    under the file's lock (so none is skipped the way a listing skips). An entry's ``pid`` is the lock's TAKER, which
+    is another process when the descriptor was inherited. ``None``: the process is gone or not this user's to read."""
+    d = f"{proc}/{pid}/fdinfo"
+    try:
+        fds = os.listdir(d)
+    except OSError:
+        return None
+    out: List[LockEntry] = []
+    for fd in fds:
+        try:
+            with open(f"{d}/{fd}", "rb") as f:
+                raw = f.read()
+        except OSError:
+            continue                              # the descriptor closed under the listing
+        if b"lock:" not in raw:
+            continue
+        for line in raw.decode("utf-8", "replace").splitlines():
+            if not line.startswith("lock:"):
+                continue
+            m = _LOCK_RE.match(line[len("lock:"):])
+            if m and not m.group(1):
+                out.append(LockEntry(kind=m.group(2), mode=m.group(3), pid=int(m.group(4)), file=m.group(5),
+                                     blocked=False))
+    return out
 
 
 def holds_lock(pid: int, key: str, proc: str = _PROC) -> bool:
     """Does ``pid`` HOLD a lock on the file ``key`` now? Read from the process's own ``fdinfo`` (a ``lock:`` line per
     lock taken through that descriptor, each file one whole read under the file's lock), never from the ``/proc/locks``
     listing, which can skip a live entry (:func:`read_locks`). False for a process that is gone or unreadable."""
+    return any(e.file == key and e.pid == pid for e in _fdinfo_locks(pid, proc) or ())
+
+
+def scan_locks(proc: str = _PROC) -> List[LockEntry]:
+    """Every HELD lock found in the ``fdinfo`` of every process this user may read (one entry per taker and file).
+    What a "nobody holds it" from the listing is re-checked against: a lock that is held for the whole scan through a
+    descriptor some readable process keeps open the whole time IS found (``/proc`` is walked by pid, so a process
+    that lives through the walk is never skipped, and each ``fdinfo`` is one whole read). NOT found: a lock all of
+    whose descriptors belong to processes of another user (``fdinfo`` is unreadable; the listing still names it,
+    unless it skips it), and a BLOCKED waiter (it holds nothing). Cost, measured 2026-11-09 on this box: 35 ms for
+    105 readable processes and 1,341 descriptors, so it is the fallback of a reading, never a poll loop's body."""
+    seen: Set[Tuple[int, str, str, str]] = set()
+    out: List[LockEntry] = []
     try:
-        fds = os.listdir(f"{proc}/{pid}/fdinfo")
+        pids = all_pids(proc)
     except OSError:
-        return False
-    for fd in fds:
-        try:
-            with open(f"{proc}/{pid}/fdinfo/{fd}") as f:
-                lines = f.readlines()
-        except OSError:
-            continue                              # the descriptor closed under the listing
-        for line in lines:
-            if not line.startswith("lock:"):
-                continue
-            m = _LOCK_RE.match(line[len("lock:"):])
-            if m and not m.group(1) and m.group(5) == key and int(m.group(4)) == pid:
-                return True
-    return False
+        return out
+    for pid in pids:
+        for e in _fdinfo_locks(pid, proc) or ():
+            k = (e.pid, e.file, e.kind, e.mode)
+            if k not in seen:
+                seen.add(k)
+                out.append(e)
+    return out
+
+
+class LockTable:
+    """ONE reading of who holds which lock file whose "nobody holds it" may be acted on (module docstring: the
+    ``/proc/locks`` listing alone cannot say it). Read lazily, each source once: the listing at the first question,
+    the :func:`scan_locks` walk only when a file has no listed and no known holder.
+
+    A reading is a moment: a lock taken after it is not in it, so a TAKE is still decided by a non-blocking ``flock``.
+    The scan's blind spots are :func:`scan_locks`'s. ``unreadable`` holds the ``OSError`` of a listing that could not
+    be read (the scan still answers)."""
+
+    def __init__(self, proc: str = _PROC) -> None:
+        self.proc = proc
+        self.unreadable: Optional[OSError] = None
+        self._listed: Optional[List[LockEntry]] = None
+        self._scanned: Optional[List[LockEntry]] = None
+
+    def _listing(self) -> List[LockEntry]:
+        if self._listed is None:
+            try:
+                self._listed = _read_listing(f"{self.proc}/locks")
+            except OSError as e:
+                self._listed, self.unreadable = [], e
+        return self._listed
+
+    def listed_holders(self, key: str, known: Iterable[int] = ()) -> List[int]:
+        """The CHEAP reading, for a poll loop: the listed holders of ``key``, else those of the ``known`` pids whose
+        own ``fdinfo`` shows them holding it. An empty answer is NOT a verdict: whoever acts on it owes
+        :meth:`holders` on this same table first (``utils.heavy_slots.admission`` is the one caller, and does)."""
+        return holders(key, self._listing()) or sorted({p for p in known if holds_lock(p, key, self.proc)})
+
+    def holders(self, key: str, known: Iterable[int] = ()) -> List[int]:
+        """The pids that TOOK a lock now held on ``key``: the listed ones; when none is listed, the ``known`` pids
+        that hold it by their own ``fdinfo``; when none does, whatever :func:`scan_locks` finds. ``[]`` means no
+        process this user can read holds it."""
+        hs = self.listed_holders(key, known)
+        if hs:
+            return hs
+        if self._scanned is None:
+            self._scanned = scan_locks(self.proc)
+        return holders(key, self._scanned)
+
+    def waiters(self, key: str) -> List[int]:
+        """The pids LISTED blocked on ``key``. A blocked request has no ``fdinfo`` line, so this cannot be re-checked:
+        a waiter not listed proves nothing, and nothing may act on its absence."""
+        return waiters(key, self._listing())
+
+    def blocked(self) -> Dict[int, List[str]]:
+        """``{pid: [key, …]}`` of every LISTED blocked waiter (the same caveat as :meth:`waiters`)."""
+        out: Dict[int, List[str]] = {}
+        for e in self._listing():
+            if e.blocked:
+                out.setdefault(e.pid, []).append(e.file)
+        return out
+
+
+def lock_holders(key: str, known: Iterable[int] = (), proc: str = _PROC) -> List[int]:
+    """:meth:`LockTable.holders` for one file, from a fresh reading."""
+    return LockTable(proc).holders(key, known)
 
 
 def waiters(key: str, locks: Optional[Iterable[LockEntry]] = None) -> List[int]:
+    """The pids LISTED blocked on ``key`` (:meth:`LockTable.waiters`: its absence proves nothing)."""
     locks = read_locks() if locks is None else locks
     return sorted({e.pid for e in locks if e.file == key and e.blocked and e.pid > 0})
 
 
 def fd_path_for(pid: int, key: str, proc: str = _PROC) -> str:
     """The path by which ``pid`` holds the file ``key`` open ('' when no fd matches) — how a
-    ``/proc/locks`` inode is turned back into a name a human can read."""
+    lock key's inode is turned back into a name a human can read."""
     d = f"{proc}/{pid}/fd"
     try:
         fds = os.listdir(d)

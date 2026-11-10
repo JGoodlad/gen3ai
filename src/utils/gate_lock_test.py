@@ -7,6 +7,7 @@ Load-bearing pins, each FAILS on revert of what it guards:
   frees a crashed holder's slot;
 * a child of a holder does not take a second slot and does not block (N = 1);
 * every slot held by an ANCESTOR (a bare flock) is a self-deadlock, refused at once (exit 3);
+* both of those under a ``/proc/locks`` listing that skips the holder (each pid's own fdinfo decides, 2026-11-09);
 * the timeout is inside (exit 4).
 
 ``integration``: spawns and kills its own processes, by explicit PID. ~10 s.
@@ -74,7 +75,7 @@ def _kill_tree(p: subprocess.Popen) -> None:
 
 
 def _slot_holders(d, n):
-    return [P.holders(P.file_key(str(GL.slot_path(i, d))) or "") for i in range(n)]
+    return [P.lock_holders(P.file_key(str(GL.slot_path(i, d))) or "") for i in range(n)]
 
 
 def test_a_third_taker_waits_and_a_crashed_holders_slot_frees(tmp_path):
@@ -135,6 +136,66 @@ def test_every_slot_held_by_an_ANCESTOR_is_refused_at_once(tmp_path):
                        capture_output=True, text=True, timeout=scale_timeout(60))
     assert r.returncode == 3 and "SELF-DEADLOCK" in r.stderr, r
     assert time.monotonic() - t0 < scale_timeout(10)
+
+
+# ---- a ``/proc/locks`` listing that MISSES the live holder (2026-11-09; ``utils.lock_listing_testing``) ----------------
+# gate_lock read "this ancestor holds a slot" off the listing, which one read can make skip a live lock: a held marker
+# then read as STALE and every-slot-held-by-an-ancestor read as somebody else's gate, and either way the gate WAITED
+# on its own parent. ``_BLIND`` is gate_lock's CLI in a process whose listing names no holder at all.
+
+_BLIND = ("import sys\n"
+          "from utils import gate_lock, lock_listing_testing as T\n"
+          "T.install(T.without())\n"
+          "sys.exit(gate_lock.main(sys.argv[1:]))\n")
+
+
+def test_a_child_of_a_holder_re_enters_when_the_listing_skips_the_holder(tmp_path):
+    """The marker is verified by the holder's own fdinfo. On a revert to the listing the inner take reads the marker
+    as STALE, finds its slot held, and waits out its 5 s on its own parent (exit 4)."""
+    d = tmp_path / "slots"
+    r = subprocess.run([_SH, "--timeout-s", "20", sys.executable, "-c", _BLIND, "--timeout-s", "5", "--",
+                        sys.executable, "-c", "print('inner-ran')"], env=_env(d, 1),
+                       capture_output=True, text=True, timeout=scale_timeout(120))
+    assert r.returncode == 0, r
+    assert "inner-ran" in r.stdout and "STALE" not in r.stderr, r.stderr
+    assert r.stderr.count("acquired slot") == 1, r.stderr       # only the OUTER took one
+
+
+def test_every_slot_held_by_an_ANCESTOR_is_refused_when_the_listing_skips_it(tmp_path):
+    """The ancestor chain is asked through each pid's own fdinfo. On a revert to the listing the chain is not among
+    the (empty) holders, so the gate waits on its own parent until the timeout (exit 4, never 3)."""
+    d = tmp_path / "slots"
+    d.mkdir()
+    slot = GL.slot_path(0, d)
+    slot.touch()
+    r = subprocess.run(["flock", str(slot), sys.executable, "-c", _BLIND, "--timeout-s", "5", "--", "true"],
+                       env=_env(d, 1), capture_output=True, text=True, timeout=scale_timeout(120))
+    assert r.returncode == 3 and "SELF-DEADLOCK" in r.stderr, r
+
+
+def test_status_shows_a_slot_held_when_the_listing_skips_its_holder(tmp_path, monkeypatch):
+    """``--status`` is what a queued agent reads before it decides to wait or go: a held slot must read HELD, by the
+    pid its record names (that pid's own fdinfo) and, with no record, by the all-process walk. On a revert to the
+    listing both read ``free`` beside a running gate."""
+    from utils import gate_lock_status as GS
+    from utils import lock_listing_testing as T
+
+    d = tmp_path / "slots"
+    a = tmp_path / "a"
+    h = _holder(d, 1, a, tmp_path)
+    try:
+        _wait_for(a.exists, "the holder inside")
+        key = P.file_key(str(GL.slot_path(0, d)))
+        monkeypatch.setattr(P, "_read_listing", T.without())
+        assert T.listed(key) == [], "the forced miss is in place"
+        slot = GS.collect(d, 1, sample_s=0)["slots"][0]
+        assert slot is not None and slot.pid == h.pid and slot.since_source == "record", slot
+        assert f"HELD by pid {h.pid}" in GS.format_human(GS.collect(d, 1, sample_s=0))
+        GS.record_path(d, 0).unlink()                                # a holder with no record (a bare flock)
+        slot = GS.collect(d, 1, sample_s=0)["slots"][0]
+        assert slot is not None and slot.pid == h.pid and slot.since_source != "record", slot
+    finally:
+        _kill_tree(h)
 
 
 def test_the_timeout_is_inside(tmp_path):

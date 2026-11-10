@@ -431,7 +431,7 @@ def acquire(lock: object, owner: str, note: str = "", max_hours: float = DEFAULT
         if won is not None:
             raise GpuLeased(won, lock)
         key = procfs.file_key(str(lock))
-        raise GpuBusy(lock, procfs.holders(key) if key else [])
+        raise GpuBusy(lock, procfs.lock_holders(key) if key else [])
     with contextlib.suppress(ProcessLookupError):
         os.kill(proc.pid, signal.SIGKILL)            # our own child, by explicit pid
     raise RuntimeError(f"lease holder did not report READY/BUSY within {START_TIMEOUT_S:.0f} s (got {line!r})")
@@ -477,7 +477,7 @@ def status(lock: object) -> str:
     if lease is not None:
         return head + f"LEASED: {lease.describe()}" + jobs
     key = procfs.file_key(str(lock))
-    hs: List[int] = procfs.holders(key) if key else []
+    hs: List[int] = procfs.lock_holders(key) if key else []
     if hs:
         return head + f"BUSY (one-off hold, no lease): {lock} held by " + ", ".join(
             f"pid {h} ({procfs.cmdline(h)[:160] or 'gone'!r})" for h in hs) + jobs

@@ -157,7 +157,9 @@ class Scan:
         self.procs = P.snapshot()
         self.kids = P.children_map(self.procs)
         self.cpu = P.subtree_cpu(self.procs, self.kids)
-        self.locks = P.read_locks()
+        # who HOLDS a lock is never read off the listing alone (one read can skip a live holder: utils.procfs); who is
+        # BLOCKED on one can only be (a blocked request has no fdinfo line), so a waiter can be missed for one run
+        self.table = P.LockTable()
         self.min_age_s, self.min_interval_s, self.idle_frac = min_age_s, min_interval_s, idle_frac
         self.dup_min_age_s = dup_min_age_s
         self.rss_bytes, self.rss_growth_bytes = int(rss_gb * GiB), int(rss_growth_gb * GiB)
@@ -174,13 +176,7 @@ class Scan:
         self.prev = state if _valid_state(state) else None
         self.judge = self.prev is not None and self.now - self.prev["t"] >= self.min_interval_s
         self._cmd: Dict[int, str] = {}
-        self._holders: Dict[str, Set[int]] = {}
-        self._blocked_on: Dict[int, List[str]] = {}
-        for e in self.locks:
-            if e.blocked:
-                self._blocked_on.setdefault(e.pid, []).append(e.file)
-            elif e.pid > 0:
-                self._holders.setdefault(e.file, set()).add(e.pid)
+        self._blocked_on: Dict[int, List[str]] = self.table.blocked()
         self.sleep_child: Dict[str, str] = {}
 
     # ------------------------------------------------------------------------------- primitives
@@ -223,7 +219,9 @@ class Scan:
                 continue
             anc = P.ancestors(pid, self.procs)
             for key in keys:
-                held = [h for h in sorted(self._holders.get(key, ())) if h in anc]
+                # each ancestor answers for itself (its own fdinfo); the table covers one this user cannot read
+                held = ([a for a in anc if P.holds_lock(a, key)]
+                        or [h for h in self.table.holders(key) if h in anc])
                 if held:
                     h = held[0]
                     out.append(self._finding("SELF-DEADLOCK", pid, (
@@ -305,9 +303,9 @@ class Scan:
         for q in tree:
             for key in self._blocked_on.get(q, ()):
                 named_any = True
-                hs = sorted(self._holders.get(key, ()))
+                hs = self.table.holders(key)
                 if not hs:
-                    notes.append(f"blocked on {self.lock_name(q, key)} with no live holder listed")
+                    notes.append(f"blocked on {self.lock_name(q, key)} with no live holder any readable process shows")
                 for h in hs:
                     if h in seen:
                         continue

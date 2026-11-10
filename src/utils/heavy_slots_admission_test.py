@@ -10,7 +10,9 @@ Load-bearing pins, each FAILS on revert of what it guards:
 * FIFO holds across the rule: nobody passes a queued job whose cap does not fit, or a queued job with no cap;
 * THE SWITCH BACK: ``--admission count`` binds a job already queued; ``memory`` returns; an explicit
   ``$GEN3AI_HEAVY_SLOTS`` is the fixed count with no memory check;
-* the routine gate is admitted by its own ``mem_cap.sh 24`` cap, read from the argv ``utils.ship_gate`` builds.
+* the routine gate is admitted by its own ``mem_cap.sh 24`` cap, read from the argv ``utils.ship_gate`` builds;
+* A ``/proc/locks`` LISTING THAT SKIPS A LIVE HOLDER admits nobody: the holder is charged all the same (its record's pid
+  by its own fdinfo, else every process's), with the rows removed and under the real tear forced through the kernel.
 """
 from __future__ import annotations
 
@@ -27,6 +29,7 @@ import pytest
 from utils import gate_lock as GL
 from utils import heavy_admission as HA
 from utils import heavy_slots as HS
+from utils import lock_listing_testing as T
 from utils import mem_cap as M
 from utils import procfs
 from utils import ship_gate as SG
@@ -127,6 +130,89 @@ def _scope(cg, name, cap_gb, populated=1):
     p.mkdir(exist_ok=True)
     (p / "memory.max").write_text(f"{int(cap_gb * G)}\n")
     (p / "cgroup.events").write_text(f"populated {populated}\nfrozen 0\n")
+
+
+# ── a listing that MISSES a live holder (2026-11-09; ``utils.lock_listing_testing``) ──────────────────────────────────
+# One read of ``/proc/locks`` can skip a live lock. Admission counted the holders off it, and it picks the TOP free
+# slot: with the top slot really free and a holder lower down skipped, the flock on the top slot succeeds and the box
+# runs a job whose cap was never charged. The scene below is that case: 30 + 30 GiB held on slots 2 and 1, slot 3
+# free, budget 62, so a 12 GiB job does not fit; a listing without slot 1's holder used to read 30 + 12 <= 62.
+
+def _two_low_holders_and_the_top_slot_free(tmp_path):
+    """``(pid on slot 2, pid on slot 1)``: 30 GiB each, with slot 3 (the one admission picks) and slot 0 free."""
+    (top, s3), (mid, s2), (low, s1) = _holders(tmp_path, 1, 30, 30)
+    assert (s3, s2, s1) == (3, 2, 1)
+    os.kill(top.pid, signal.SIGKILL)                  # our own holder, by pid
+    top.wait()
+    key = procfs.file_key(str(HS.slot_path(3)))
+    _wait_for(lambda: procfs.lock_holders(key) == [], "slot 3 to be free")
+    assert HS.free_count(HS.lock_dir(), 4) == 2
+    return mid.pid, low.pid
+
+
+def test_a_holder_the_listing_skips_is_still_charged_and_nobody_is_over_admitted(box, tmp_path, monkeypatch):
+    mid, low = _two_low_holders_and_the_top_slot_free(tmp_path)
+    d = HS.lock_dir()
+    key = procfs.file_key(str(HS.slot_path(1)))
+    monkeypatch.setattr(procfs, "_read_listing", T.without(low))
+    assert T.listed(key) == [], "the forced miss is in place"
+    got = _try(12)
+    assert isinstance(got, str) and "does not fit" in got, f"a 12 GiB job was admitted beside 60 GiB of 62: {got!r}"
+    assert HS.free_count(d, 4) == 2, "a held slot was counted free"
+    st = HS.collect()
+    assert st["slots"][1]["pids"] == [low] and st["slots"][1]["cap_gb"] == 30.0, st["slots"][1]
+    assert st["admission"]["committed_gb"] == 60.0 and st["admission"]["unknown_holders"] == 0, st["admission"]
+    assert "slot 1: free" not in HS.format_human(st)
+    assert _try(1) == 3, "a job that fits is still admitted, to the top free slot"
+
+    # ... and with NO record naming the holder (a holder record lost, an older taker): nothing but the walk of every
+    # process's fdinfo finds it. It is a holder of unknown cap, so the fixed count of 2 applies, and 2 are held.
+    HS._rec_path(d, "holder", 1).unlink()
+    monkeypatch.setattr(procfs, "_read_listing", T.without(low, mid))
+    got = _try(1)
+    assert isinstance(got, str) and "REFUSING" in got, f"admitted beside two holders the listing skipped: {got!r}"
+    assert HS.free_count(d, 4) == 2 and HS.collect()["slots"][1]["pids"] == [low]
+
+
+def test_the_forced_tear_of_the_listing_over_admits_nobody(box, tmp_path, monkeypatch):
+    """THE INCIDENT, forced through the kernel: every read of the real listing made here is torn so that it skips slot
+    1's live holder (``T.Torn``; the precondition is checked, and the test is INCONCLUSIVE where a tear cannot be
+    forced). Admission, the free count and the status must all still see the holder."""
+    mid, low = _two_low_holders_and_the_top_slot_free(tmp_path)
+    d = HS.lock_dir()
+    fill = tmp_path / "fill"
+    fill.mkdir()
+    torn = T.Torn(fill, procfs.file_key(str(HS.slot_path(1))))
+    if not torn.hides(low):
+        pytest.skip("INCONCLUSIVE: one read of /proc/locks could not be made to skip a live lock on this kernel")
+    monkeypatch.setattr(procfs, "_read_listing", torn)
+    got = _try(12)
+    reads = torn.hid
+    assert isinstance(got, str) and "does not fit" in got, f"a 12 GiB job was admitted beside 60 GiB of 62: {got!r}"
+    assert HS.free_count(d, 4) == 2 and HS.collect()["slots"][1]["pids"] == [low]
+    HS._rec_path(d, "holder", 1).unlink()             # no record: only the all-process walk can find the holder
+    got = _try(1)
+    assert isinstance(got, str) and "REFUSING" in got, f"admitted beside a holder the torn listing skipped: {got!r}"
+    assert HS.free_count(d, 4) == 2
+    if torn.unforced or not 0 < reads < torn.hid:     # the answers above hold either way; the PROOF needs torn reads
+        pytest.skip(f"INCONCLUSIVE: {torn.unforced} of {torn.unforced + torn.hid} listing reads could not be torn")
+
+
+def test_a_nested_take_re_enters_when_the_listing_skips_the_holder(box, monkeypatch):
+    """The held marker is verified by the holder's own fdinfo. On a revert to the listing the marker reads as STALE and
+    the nested job takes a SECOND slot (or queues for one behind its own parent)."""
+    d = HS.lock_dir()
+    said: list = []
+    with HS.heavy_slot(["outer"], force=True, wait=False, log=said.append, cap_gb=1) as outer:
+        assert outer == 3
+        monkeypatch.setattr(procfs, "_read_listing", T.without())
+        assert HS.verified_holder(d) == (os.getpid(), 3)
+        with HS.heavy_slot(["inner"], force=True, wait=False, log=said.append, cap_gb=1) as inner:
+            assert inner == outer, "the nested take did not reuse its own slot"
+            assert HS.free_count(d, 4) == 3, "the nested take took a second slot"
+        assert not any("STALE" in m for m in said), said
+        assert HS.verified_holder(d) == (os.getpid(), 3), "leaving the nested take released the outer slot"
+    assert HS.verified_holder(d) is None and HS.free_count(d, 4) == 4
 
 
 # ── the rule ─────────────────────────────────────────────────────────────────────────────────────────────────

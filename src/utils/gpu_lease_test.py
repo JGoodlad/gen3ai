@@ -26,6 +26,7 @@ import pytest
 
 from utils import gpu_lease as L
 from utils import gpu_lock as G
+from utils import lock_listing_testing as T
 from utils import procfs as P
 from utils.paths import src_root
 
@@ -59,14 +60,14 @@ def _free(lock) -> bool:
 
 
 def _holders(lock) -> List[int]:
-    """The pids LISTED holding ``lock``. The listing can skip a live holder (``procfs.read_locks``), so it is read
-    only for what it can prove: who else is there, and whom to clean up. Never ``== [pid]``: :func:`_held_only_by`."""
+    """The pids holding ``lock``, by the VERIFIED reading (``procfs.lock_holders``: the listing can skip a live
+    holder, so "nobody" is the answer only after every process's own fdinfo agrees)."""
     key = P.file_key(str(lock))
-    return P.holders(key) if key else []
+    return P.lock_holders(key) if key else []
 
 
 def _held_only_by(lock, pid: int) -> bool:
-    """``pid`` holds ``lock`` (its own fdinfo: a whole read) and the listing names nobody else."""
+    """``pid`` holds ``lock`` (its own fdinfo: a whole read) and nobody else is seen holding it."""
     key = P.file_key(str(lock))
     return bool(key) and P.holds_lock(pid, key) and set(_holders(lock)) <= {pid}
 
@@ -193,6 +194,23 @@ def test_acquire_against_a_one_off_holder_fails_fast_busy(lock):
         _reap(h)
 
 
+def test_a_busy_acquire_and_status_name_the_one_off_holder_the_listing_skips(lock, monkeypatch):
+    """A one-off holder the listing omits is still BUSY and still named (the verified reading). Fails on a revert to
+    the listing: ``status`` then says ``FREE`` beside a live GPU job, and the refusal names no pid to look at."""
+    h = _one_off_holder(lock)
+    try:
+        key = P.file_key(str(lock))
+        monkeypatch.setattr(P, "_read_listing", T.without(h.pid))
+        assert T.listed(key) == [], "the forced miss is in place"
+        with pytest.raises(L.GpuBusy) as ei:
+            _acquire(lock, "agent-B")
+        assert f"pid {h.pid}" in str(ei.value), str(ei.value)
+        st = L.status(lock)
+        assert st.startswith("BUSY") and f"pid {h.pid}" in st and "FREE" not in st, st
+    finally:
+        _reap(h)
+
+
 def test_a_renewing_acquire_with_the_token_is_a_noop_that_extends_expiry(lock):
     got = _acquire(lock, "agent-A", max_hours=1)
     again = L.acquire(lock, "agent-A", max_hours=5, watch_pid=os.getpid(), env={L.TOKEN_ENV: got.token})
@@ -210,8 +228,9 @@ def test_a_lease_stays_valid_when_the_lock_listing_skips_its_holder(lock, monkey
     after the patch reads the live lease as absent."""
     got = _acquire(lock, "agent-A", max_hours=1)
     key = P.file_key(str(lock))
-    monkeypatch.setattr(P, "read_locks", lambda *a, **k: [])
-    assert _holders(lock) == [], "the forced miss is in place"
+    monkeypatch.setattr(P, "_read_listing", T.without())
+    assert T.listed(key) == [], "the forced miss is in place"
+    assert "LEASED" in L.status(lock) and _holders(lock) == [got.lease.pid]
     assert L.read_lease(lock) is not None and L.read_lease(lock).pid == got.lease.pid
     assert L.clear_stale(lock) is False and L.lease_file(lock).exists(), "a live lease's record was swept as stale"
     again = L.acquire(lock, "agent-A", max_hours=5, env={L.TOKEN_ENV: got.token})
@@ -413,7 +432,7 @@ def test_a_lease_appearing_mid_wait_ends_the_wait_with_gpu_leased(lock):
                                       watch_pid=0, acquirer_cmd="forged"))
         t.join(timeout=60)
         assert not t.is_alive() and isinstance(out.get("err"), G.GpuLeased) and "entered" not in out, out
-        assert P.holders(key) == [h.pid], "the abandoned wait must not have taken the lock"
+        assert P.lock_holders(key) == [h.pid], "the abandoned wait must not have taken the lock"
     finally:
         _reap(h)
 

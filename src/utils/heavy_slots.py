@@ -77,9 +77,13 @@ HOLD A SLOT PER BOUNDED CHUNK (<= 45 min), NEVER PER RUN: a multi-hour job holdi
 holder past its worst case is flagged `SHORT-LANE OVERDUE`).
 
 NEVER TWO SLOTS FOR ONE JOB. Holding a slot exports ``GEN3AI_HEAVY_SLOT_HELD=<pid>:<slot>``; a taker
-that sees it takes NO slot after VERIFYING that the pid is itself or an ancestor and that
-``/proc/locks`` lists it holding that slot (the ``utils.gate_lock`` re-entrance) — so a gate run under
+that sees it takes NO slot after VERIFYING that the pid is itself or an ancestor and that it holds that slot by its
+own ``fdinfo`` (the ``utils.gate_lock`` re-entrance) — so a gate run under
 mem_cap inside gate_lock holds ONE slot, and a mem_cap.sh a test spawns inside it takes none.
+
+A ``/proc/locks`` LISTING NEVER SAYS "FREE" HERE (2026-11-09): one read can skip a live holder (``utils.procfs``), so
+who holds a slot is ``procfs.LockTable``'s answer (:func:`_slot_state`) and nobody is admitted on less
+(:func:`admission`). The reading sees the holders this user can read; the TAKE is still the ``flock``.
 
 LOCK ORDER: the gate slot BEFORE a heavy slot. ``gate_lock.sh mem_cap.sh …`` (the ship gate's order)
 is safe. ``mem_cap.sh gate_lock.sh …`` holds a heavy slot while it queues for the gate, and two of
@@ -253,14 +257,11 @@ def _chain() -> List[int]:
     return [me, *procfs.ancestors(me)]
 
 
-def _holders(path: Path) -> List[int]:
-    key = procfs.file_key(str(path))
-    return procfs.holders(key) if key else []
-
-
 def verified_holder(d: Optional[Path] = None) -> Optional[Tuple[int, int]]:
-    """``(pid, slot)`` from ``$GEN3AI_HEAVY_SLOT_HELD`` iff that pid is this process or an ancestor AND
-    ``/proc/locks`` lists it holding that slot; else ``None`` (absent, malformed or stale)."""
+    """``(pid, slot)`` from ``$GEN3AI_HEAVY_SLOT_HELD`` iff that pid is this process or an ancestor AND holds that
+    slot by its own ``fdinfo`` (``procfs.holds_lock``; a ``/proc/locks`` listing can skip a live holder, and a held
+    marker read as stale makes the nested job queue for a second slot behind its own parent); else ``None`` (absent,
+    malformed or stale)."""
     raw = os.environ.get(HELD_ENV, "")
     try:
         pid_s, slot_s = raw.split(":")
@@ -269,7 +270,8 @@ def verified_holder(d: Optional[Path] = None) -> Optional[Tuple[int, int]]:
         return None
     if pid not in _chain():
         return None
-    return (pid, slot) if pid in _holders(slot_path(slot, d)) else None
+    key = procfs.file_key(str(slot_path(slot, d)))
+    return (pid, slot) if key and procfs.holds_lock(pid, key) else None
 
 
 def slot_fd(slot: Optional[int]) -> Optional[int]:
@@ -525,9 +527,8 @@ def queue_ahead(d: Path, pid: Optional[int] = None, *, now: Optional[float] = No
 
 
 def free_count(d: Path, n: int) -> int:
-    locks = procfs.read_locks()
-    keys = [procfs.file_key(str(slot_path(i, d))) for i in range(n)]
-    return sum(1 for k in keys if not (procfs.holders(k, locks) if k else []))
+    """How many of the ``n`` slot files nobody holds (:func:`_slot_state`, the verified reading)."""
+    return len(_slot_state(d, n)[0])
 
 
 def entitled(d: Path, n: int, pid: Optional[int] = None, *, now: Optional[float] = None) -> bool:
@@ -554,19 +555,27 @@ def _admit_lock(d: Path, wait_s: Optional[float] = None) -> Iterator[bool]:
         yield got
 
 
-def _slot_state(d: Path, n: int) -> Tuple[List[int], List[HA.Holder]]:
+def _slot_state(d: Path, n: int, table: Optional[procfs.LockTable] = None, *,
+                verified: bool = True) -> Tuple[List[int], List[HA.Holder]]:
     """``(free slot indices, holders)`` over ``n`` slot files; a holder's declared cap is its record's, when the record
-    is that holder's (``/proc/locks`` lists the record's pid on the slot)."""
-    locks = procfs.read_locks()
+    is that holder's (the record's pid is among the slot's holders).
+
+    A slot is FREE only when ``procfs.LockTable`` finds no holder: the ``/proc/locks`` listing, then the holder
+    record's pid by its own ``fdinfo``, then every process's. One listing read can SKIP a live holder (``utils.procfs``,
+    2026-11-09), and a held slot read as free is a job whose cap is not charged: one job more than the budget, or than
+    the count, allows. ``verified=False`` stops before the all-process walk: the cheap reading of a poll that is only
+    going to wait, which :func:`admission` repeats ``verified`` on the same ``table`` before it admits anybody."""
+    table = procfs.LockTable() if table is None else table
     free: List[int] = []
     holders: List[HA.Holder] = []
     for i in range(n):
         key = procfs.file_key(str(slot_path(i, d)))
-        pids = procfs.holders(key, locks) if key else []
+        rec = _read(_rec_path(d, "holder", i))
+        known = [rec.pid] if rec is not None else []
+        pids = [] if not key else table.holders(key, known) if verified else table.listed_holders(key, known)
         if not pids:
             free.append(i)
             continue
-        rec = _read(_rec_path(d, "holder", i))
         holders.append(HA.Holder(i, tuple(pids), _cap_bytes(rec.cap_gb) if rec is not None and rec.pid in pids else None))
     return free, holders
 
@@ -586,9 +595,12 @@ def admission(d: Path, n: int, cap_gb: Optional[float], pid: Optional[int] = Non
     """THE BOX'S RULE for ``pid`` (this process) right now: the slot it may take, or why it waits. Reads only (the caller
     takes the slot, under :data:`ADMIT_LOCK`). ``utils.heavy_admission`` has the rule: by memory for a job that declares
     its cap ``cap_gb`` while the box's mode is ``memory`` and everything it needs is known; else the fixed count of
-    :data:`HEAVY_SLOTS` over all ``n`` slot files."""
+    :data:`HEAVY_SLOTS` over all ``n`` slot files.
+
+    NOBODY IS ADMITTED ON AN UNVERIFIED READING: a decision that grants a slot is taken again from the verified slot
+    state (:func:`_slot_state`), so a holder the listing skipped is charged before the grant; a decision that waits
+    costs one listing read, as it always did."""
     pid = os.getpid() if pid is None else pid
-    free, holders = _slot_state(d, n)
     ahead: List[int] = []
     for t in grant_order(d, pid, now=now):
         if t.pid == pid:
@@ -596,16 +608,27 @@ def admission(d: Path, n: int, cap_gb: Optional[float], pid: Optional[int] = Non
         ahead.append(t.pid)
     cap = _cap_bytes(cap_gb)
     mode, source = HA.mode(d)
-    if mode != HA.MODE_MEMORY or cap is None:
-        return HA.decide(cap, free=free, held=[None] * len(holders), other=0, budget=None, ahead=[None] * len(ahead),
-                         unknown=f"admission is `{mode}` ({source})")
-    if not free:
-        return HA.Decision(None, HA.RULE_MEMORY, f"all {n} heavy slots are held (the hard maximum)")
-    box = HA.read_box()
-    held, other = HA.charges(holders, box.scopes)
-    waits = _wait_caps(d)
-    return HA.decide(cap, free=free, held=held, other=other, budget=box.budget, ahead=[waits.get(p) for p in ahead],
-                     unknown=box.why)
+
+    def decide(state: Tuple[List[int], List[HA.Holder]]) -> HA.Decision:
+        free, holders = state
+        if mode != HA.MODE_MEMORY or cap is None:
+            return HA.decide(cap, free=free, held=[None] * len(holders), other=0, budget=None,
+                             ahead=[None] * len(ahead), unknown=f"admission is `{mode}` ({source})")
+        if not free:
+            return HA.Decision(None, HA.RULE_MEMORY, f"all {n} heavy slots are held (the hard maximum)")
+        box = HA.read_box()
+        held, other = HA.charges(holders, box.scopes)
+        waits = _wait_caps(d)
+        return HA.decide(cap, free=free, held=held, other=other, budget=box.budget,
+                         ahead=[waits.get(p) for p in ahead], unknown=box.why)
+
+    table = procfs.LockTable()
+    seen = _slot_state(d, n, table, verified=False)
+    dec = decide(seen)
+    if dec.slot is None:
+        return dec
+    sure = _slot_state(d, n, table)
+    return dec if sure == seen else decide(sure)
 
 
 def _leave_queue(d: Path) -> None:
@@ -861,17 +884,18 @@ def _alive(pid: int) -> bool:
 
 
 def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[float] = None) -> dict:
-    """Holders (from ``/proc/locks``, with their records when the pid matches), waiters and bypassers
+    """Holders (``procfs.LockTable``: a slot shows free only when the listing, its record's pid and every readable
+    process's ``fdinfo`` agree nobody holds it; with their records when the pid matches), waiters and bypassers
     (records whose pid is alive)."""
     d = d or lock_dir()
     n = slot_files() if n is None else n
     now = time.time() if now is None else now
-    locks = procfs.read_locks()
+    table = procfs.LockTable()
     slots = []
     for i in range(n):
         key = procfs.file_key(str(slot_path(i, d)))
-        pids = procfs.holders(key, locks) if key else []
         rec = _read(_rec_path(d, "holder", i))
+        pids = table.holders(key, [rec.pid] if rec is not None else []) if key else []
         row: dict = {"slot": i, "pids": pids, "held_s": None, "cmd": "", "cwd": "", "why": "", "lane": LANE_LONG,
                      "max_s": 0.0, "cap_gb": -1.0}
         if pids:
@@ -906,10 +930,10 @@ def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[
     for k in side:
         side[k].sort(key=lambda r: (order.get(r["pid"], 1 << 60), -r["for_s"]))
     return {"dir": str(d), "n_slots": n, "slots": slots, "waiting": side["wait"], "bypassing": side["bypass"],
-            "admission": admission_state(d, n)}
+            "admission": admission_state(d, n, table)}
 
 
-def admission_state(d: Path, n: int) -> dict:
+def admission_state(d: Path, n: int, table: Optional[procfs.LockTable] = None) -> dict:
     """What ``--status`` says about the rule in force: the mode and where it was set, the budget and what is committed.
     Best effort (a status never fails over a read)."""
     fixed = fixed_slots()
@@ -920,7 +944,7 @@ def admission_state(d: Path, n: int) -> dict:
         mode, source = HA.mode(d)
         out.update(mode=mode, source=source, max_slots=HA.max_slots())
         box = HA.read_box()
-        held, other = HA.charges(_slot_state(d, n)[1], box.scopes)
+        held, other = HA.charges(_slot_state(d, n, table)[1], box.scopes)
         out.update(total_gb=box.total / HA.GiB, reserve_gb=box.reserve / HA.GiB, slice_gb=box.slice_cap / HA.GiB,
                    budget_gb=None if box.budget is None else box.budget / HA.GiB, unknown=box.why,
                    unslotted_gb=other / HA.GiB, unknown_holders=sum(1 for c in held if c is None),

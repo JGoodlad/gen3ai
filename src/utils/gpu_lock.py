@@ -52,7 +52,8 @@ CPU on a lock its own ancestor held. Nothing could ever release it. The class fi
   (the flock holder AND the lease owner's pass-through) sees ``GEN3AI_GPU_JOB=<pid>`` (:func:`gpu_job`): the
   CPU heavy slots read it and never make a job that holds the GPU queue for a slot (D-3).
 * **A taker that sees the marker does NOT re-acquire — after VERIFYING it**: the marker's pid must be
-  this process or one of its ANCESTORS, and ``/proc/locks`` must list that pid HOLDING this lock file.
+  this process or one of its ANCESTORS, and that pid must HOLD this lock file by its own
+  ``/proc/<pid>/fdinfo`` (``procfs.holds_lock``).
   A stale marker (inherited into a process that outlived its holder, or copied into an unrelated
   environment) is ignored with a line on stderr, and the lock is taken normally.
 * **A taker that finds the lock held checks the HOLDER** at first contention and again every
@@ -60,6 +61,11 @@ CPU on a lock its own ancestor held. Nothing could ever release it. The class fi
   ``flock`` around this command — raises :class:`GpuLockSelfDeadlock` naming both pids at once;
   any other holder is refused at once (:class:`GpuBusy`) unless ``wait`` — then it is waited for, with
   its pid and command line printed each interval.
+* **"Held" and "stale" are never read off a ``/proc/locks`` listing** (2026-11-09): one read can skip a live
+  holder (``utils.procfs``), which read a held marker as stale (the nested take then refused itself with
+  :class:`GpuBusy` or :class:`GpuLockSelfDeadlock`) and an ancestor's hold as somebody else's. The marker and the
+  ancestor chain are decided by each pid's own ``fdinfo``; the holder a refusal NAMES comes from
+  ``procfs.lock_holders``; the take itself is the ``flock``.
 
 The lock path is ``~/.claude/jobs/gpu.lock``; ``$GEN3AI_GPU_LOCK`` overrides (tests point it at a
 temp file — never at the real lock). A ``wait=True`` waiter BLOCKS in the kernel exactly as a bare ``flock`` does
@@ -124,8 +130,9 @@ def _self_and_ancestors() -> List[int]:
 
 
 def verified_holder(path: Optional[PathLike] = None, env: Optional[Mapping[str, str]] = None) -> Optional[int]:
-    """The pid in ``$GEN3AI_GPU_LOCK_HELD`` iff it is this process or an ancestor AND ``/proc/locks``
-    lists it holding ``path``; otherwise ``None`` (no marker, or a stale / forged one)."""
+    """The pid in ``$GEN3AI_GPU_LOCK_HELD`` iff it is this process or an ancestor AND it holds ``path`` by its own
+    ``fdinfo`` (``procfs.holds_lock``: a ``/proc/locks`` listing can skip a live holder, and a held marker read as
+    stale makes the nested take refuse itself); otherwise ``None`` (no marker, or a stale / forged one)."""
     raw = (os.environ if env is None else env).get(HELD_ENV, "")
     try:
         pid = int(raw)
@@ -134,7 +141,13 @@ def verified_holder(path: Optional[PathLike] = None, env: Optional[Mapping[str, 
     key = procfs.file_key(str(path or lock_path()))
     if key is None or pid not in _self_and_ancestors():
         return None
-    return pid if pid in procfs.holders(key) else None
+    return pid if procfs.holds_lock(pid, key) else None
+
+
+def _ancestral_holders(key: str) -> List[int]:
+    """This process and its ancestors that HOLD the lock ``key``, each by its own ``fdinfo`` (never the listing: a
+    skipped ancestor reads as somebody else's hold, and a self-deadlock as a wait)."""
+    return [a for a in _self_and_ancestors() if procfs.holds_lock(a, key)]
 
 
 def gpu_job(env: Optional[Mapping[str, str]] = None) -> Optional[int]:
@@ -166,7 +179,7 @@ def holder_report(path: Optional[PathLike] = None) -> str:
     """One line naming who holds the lock now (pid + command line), for a waiter's progress print."""
     p = str(path or lock_path())
     key = procfs.file_key(p)
-    hs = procfs.holders(key) if key else []
+    hs = procfs.lock_holders(key) if key else []
     if not hs:
         return f"{p}: not held"
     return f"{p}: held by " + ", ".join(f"pid {h} ({procfs.cmdline(h)[:160] or 'gone'!r})" for h in hs)
@@ -175,7 +188,7 @@ def holder_report(path: Optional[PathLike] = None) -> str:
 def _acquire(fd: int, path: Path, *, report_every_s: float, poll_s: float, timeout_s: Optional[float],
              log: Callable[[str], None], what: str, wait: bool) -> None:
     """Take an exclusive ``flock`` on ``fd``. A contended lock is judged AT ONCE: held by this process's
-    ANCESTOR -> :class:`GpuLockSelfDeadlock`; a LEASE -> :class:`GpuLeased`; a one-off holder ->
+    ANCESTOR (its own ``fdinfo``) -> :class:`GpuLockSelfDeadlock`; a LEASE -> :class:`GpuLeased`; a one-off holder ->
     :class:`GpuBusy` unless ``wait``. Only then is the wait a BLOCKING flock in a helper thread (so the
     waiter is listed in ``/proc/locks`` as a ``->`` waiter — which ``idle_waiter_watchdog.py`` reads —
     and is woken by the kernel), while this thread re-checks for a LEASE every ``poll_s`` (a lease taking
@@ -190,16 +203,16 @@ def _acquire(fd: int, path: Path, *, report_every_s: float, poll_s: float, timeo
             return
         except BlockingIOError:
             pass
-        hs = procfs.holders(key)
-        mine = [h for h in hs if h in _self_and_ancestors()]
+        mine = _ancestral_holders(key)
         if mine:
             raise GpuLockSelfDeadlock(path, mine[0], os.getpid(), procfs.cmdline(mine[0]))
         lease = L.read_lease(path)
         if lease is not None:
             raise GpuLeased(lease, path, what)
+        hs = procfs.lock_holders(key)
         if hs or wait:
-            break                      # a real, listed one-off holder (or a deliberate wait)
-        # nothing listed: the holder released between the failed take and the read — take once more
+            break                      # a real one-off holder (or a deliberate wait)
+        # nobody holds it: the holder released between the failed take and the read — take once more
     if not wait:
         raise GpuBusy(path, hs, what)
     t0 = time.monotonic()
@@ -249,13 +262,13 @@ def _acquire(fd: int, path: Path, *, report_every_s: float, poll_s: float, timeo
             give_up(GpuLeased(lease, path, what))
             return
         if now >= next_report:
-            chain = _self_and_ancestors()
-            hs = procfs.holders(key)
-            mine = [h for h in hs if h in chain]
+            mine = _ancestral_holders(key)
             if mine:
                 give_up(GpuLockSelfDeadlock(path, mine[0], os.getpid(), procfs.cmdline(mine[0])))
                 return
-            who = ", ".join(f"pid {h} ({procfs.cmdline(h)[:160] or 'gone'!r})" for h in hs) or "an unlisted holder"
+            hs = procfs.lock_holders(key)
+            who = (", ".join(f"pid {h} ({procfs.cmdline(h)[:160] or 'gone'!r})" for h in hs)
+                   or "a holder no readable process shows")
             log(f"[gpu_lock] waiting {now - t0:.0f} s for {path}{what}: held by {who}")
             next_report = now + report_every_s
         if timeout_s is not None and now - t0 >= timeout_s:

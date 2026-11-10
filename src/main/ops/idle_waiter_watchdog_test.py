@@ -22,6 +22,7 @@ from typing import Callable, Dict, List
 
 import pytest
 
+from utils import lock_listing_testing as T
 from utils import procfs as P
 from utils.contention import scale_timeout
 from utils.paths import repo_path
@@ -247,7 +248,7 @@ def test_self_deadlock_is_reported_on_the_first_run(session, tmp_path):
     key = P.file_key(str(lock))
     assert key is not None
     _wait_for(lambda: inner in P.waiters(key), "the inner flock to block")
-    assert P.holders(key) == [outer]
+    assert P.lock_holders(key) == [outer]
 
     findings = W.Scan(None, scope_pid=os.getpid(), **KW).run()
     dead = [f for f in findings if f.kind == "SELF-DEADLOCK"]
@@ -268,6 +269,50 @@ def test_self_deadlock_is_reported_on_the_first_run(session, tmp_path):
     lines = r.stdout.splitlines()
     assert len(lines) == 1 and "SELF-DEADLOCK" in lines[0] and f"pid={inner}" in lines[0], r.stdout
     assert state.is_file()
+
+
+def test_self_deadlock_is_reported_when_the_lock_listing_skips_the_holder(session, tmp_path, monkeypatch):
+    """One read of ``/proc/locks`` can skip a live holder (2026-11-09). The waiter's ancestors answer for themselves
+    (each one's own fdinfo), so the deadlock is still found. On a revert to the listing the holder is not among the
+    waiter's ancestors' listed locks and the run reports NOTHING: a deadlock that waits a whole interval more."""
+    lock = tmp_path / "held_by_parent.lock"
+    lock.touch()
+    root = session(f"flock {lock} bash -c 'flock {lock} true' &")
+    outer = _pid_of(root.pid, f"flock {lock} bash")
+    inner = _pid_of(root.pid, f"flock {lock} true", comm="flock", exact=True)
+    key = P.file_key(str(lock))
+    assert key is not None
+    _wait_for(lambda: inner in P.waiters(key), "the inner flock to block")
+    monkeypatch.setattr(P, "_read_listing", T.without(outer))
+    assert T.listed(key) == [] and inner in P.waiters(key), "the forced miss is in place; the waiter is still listed"
+    dead = [f for f in W.Scan(None, scope_pid=os.getpid(), **KW).run() if f.kind == "SELF-DEADLOCK"]
+    assert [f.pid for f in dead] == [inner] and f"pid {outer}" in dead[0].reason, dead
+
+
+def test_a_busy_holder_the_listing_skips_still_vouches_for_its_waiter(session, tmp_path, monkeypatch):
+    """A waiter is judged by its lock's holder. With the holder skipped by the listing, the old reading had "no live
+    holder", nothing vouched for the waiter, and a job queued behind a WORKING holder was flagged as stalled. (The
+    holder here takes the lock's path from its environment: a holder that NAMES the file on its command line vouches
+    for the waiter by that name alone, lock or no lock.)"""
+    lock = tmp_path / "other.lock"
+    holder = subprocess.Popen([sys.executable, "-c", "import fcntl, os\nf = open(os.environ['WD_TEST_LOCK'], 'w')\n"
+                               "fcntl.flock(f, fcntl.LOCK_EX)\nprint('held', flush=True)\nwhile True: pass"],
+                              stdout=subprocess.PIPE, text=True, env={**os.environ, "WD_TEST_LOCK": str(lock)})
+    try:
+        assert holder.stdout is not None and holder.stdout.readline().strip() == "held"
+        root = session(f"flock {lock} true &")
+        waiter = _pid_of(root.pid, f"flock {lock} true", comm="flock", exact=True)
+        key = P.file_key(str(lock))
+        assert key is not None
+        _wait_for(lambda: waiter in P.waiters(key), "the flock to block")
+        monkeypatch.setattr(P, "_read_listing", T.without(holder.pid))
+        assert T.listed(key) == [], "the forced miss is in place"
+        first, second = _two_scans(busy=(holder.pid,))
+        assert not _flagged(first + second, waiter), second
+        assert not any("no live holder" in f.reason for f in first + second), second
+    finally:
+        holder.kill()
+        holder.wait(timeout=10)
 
 
 def _holder(lock: Path, busy: bool) -> subprocess.Popen:

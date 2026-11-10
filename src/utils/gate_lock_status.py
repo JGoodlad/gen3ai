@@ -10,8 +10,9 @@ command line, and had to GUESS how long the wait would be. This module answers f
 durable records plus ``/proc`` — never from a guess:
 
 * **who**: every holder writes ``slot<i>.json`` beside its slot file (pid, worktree, command, cpus,
-  nice, ``-n``, acquired-at). A record is TRUSTED only while ``/proc/locks`` lists its pid holding that
-  slot; a holder with no record (an older gate_lock, a bare ``flock``) falls back to ``/proc`` and says so;
+  nice, ``-n``, acquired-at). A record is TRUSTED only while its pid holds that slot (``procfs.LockTable``:
+  the pid's own ``fdinfo`` when the ``/proc/locks`` listing skips it); a holder with no record (an older
+  gate_lock, a bare ``flock``) falls back to ``/proc`` and says so;
 * **since when / how long**: the acquisition time, and the gate's ETA = the MEDIAN wall of the last
   :data:`ETA_SAMPLES` gates of the SAME SHAPE (the same ``-n`` on the same number of cpus, a routine-gate
   command, exit 0 or 1 = it ran to the end) from ``history.jsonl``, which every release appends to.
@@ -20,7 +21,8 @@ durable records plus ``/proc`` — never from a guess:
   over a short sample window. A tree using under :data:`IDLE_CORES` of a core over the sample is
   flagged IDLE — a possible deadlock to ``py-spy dump``; never a licence to kill a gate you did not
   start (standing rule 1). A holder past :data:`OVERDUE_FACTOR` x its ETA is flagged OVERDUE;
-* **who waits**: every blocked taker is a ``/proc/locks`` waiter on one slot file; its wait is its
+* **who waits**: every blocked taker is a ``/proc/locks`` waiter on one slot file (the listing is the only
+  source: a torn read can show the queue one waiter short, never a slot free); its wait is its
   process age (a gate_lock process starts waiting at once). flock does not wake waiters in FIFO
   order, so the queue is listed oldest first but is NOT a promise of order.
 
@@ -266,29 +268,25 @@ def _cwd(pid: int) -> str:
         return ""
 
 
-def _holders_of(d: Path, slot: int, locks) -> List[int]:
-    key = procfs.file_key(str(d / f"slot{slot}.lock"))
-    return procfs.holders(key, locks) if key else []
-
-
-def _waiters_of(d: Path, slot: int, locks) -> List[int]:
-    key = procfs.file_key(str(d / f"slot{slot}.lock"))
-    return procfs.waiters(key, locks) if key else []
-
-
 def collect(d: Path, n_slots: int, *, sample_s: float = 0.0, now: Optional[float] = None) -> dict:
-    """``{"slots": [Holder | None per slot], "waiters": [Waiter, oldest first]}`` — read-only."""
-    locks = procfs.read_locks()
+    """``{"slots": [Holder | None per slot], "waiters": [Waiter, oldest first]}`` — read-only.
+
+    A slot reads FREE (``None``) only when ``procfs.LockTable`` finds no holder: the ``/proc/locks`` listing, then
+    the slot record's pid by its own ``fdinfo``, then every process's (one listing read can skip a live holder, and a
+    held gate slot shown as free sends a reader to a gate that will only queue). The WAITERS are the listing alone
+    (a blocked request has no ``fdinfo`` line): the queue shown can be short by a waiter."""
+    table = procfs.LockTable()
+    keys = [procfs.file_key(str(d / f"slot{i}.lock")) for i in range(n_slots)]
     history = read_history(d)
     now = time.time() if now is None else now
     slots: List[Optional[Holder]] = []
     for i in range(n_slots):
-        pids = _holders_of(d, i, locks)
+        rec = read_record(d, i)
+        pids = table.holders(keys[i], [rec.pid] if rec is not None else []) if keys[i] else []
         if not pids:
             slots.append(None)
             continue
         pid = pids[0]
-        rec = read_record(d, i)
         if rec is not None and rec.pid == pid:
             since, src = rec.acquired, "record"
             cwd, cmd, cpus, nice, workers = rec.cwd, shlex.join(rec.cmd), rec.cpus, rec.nice, rec.workers
@@ -314,7 +312,7 @@ def collect(d: Path, n_slots: int, *, sample_s: float = 0.0, now: Optional[float
     waiters: List[Waiter] = []
     seen = set()
     for i in range(n_slots):
-        for pid in _waiters_of(d, i, locks):
+        for pid in (table.waiters(keys[i]) if keys[i] else []):
             if pid in seen:
                 continue
             seen.add(pid)

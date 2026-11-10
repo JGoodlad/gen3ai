@@ -171,10 +171,11 @@ status line says why. A restarted supervisor on a held chain writes `HOLD: <item
 
 **Liveness** (`liveness.py`). `status` reads three things and takes no lock: a `status` that took the lock even for an
 instant could make a supervisor starting at that moment exit 4.
-- The **lock holder**: the `FLOCK` entry in `/proc/locks` on the lock file's device and inode, whose pid still has
-  that file open. Every supervisor version takes this lock, so this also sees a supervisor older than the heartbeat.
+- The **lock holder**: the pid holding a lock on the lock file's device and inode (`procfs.LockTable`), which still
+  has that file open. Every supervisor version takes this lock, so this also sees a supervisor older than the heartbeat.
   `/proc/locks` is built by the kernel while other processes take and drop locks, so one read can skip a row that was
-  there all along (CB-48): a "nobody holds it" answer is read 3 times, 0.2 s apart, before it stands.
+  there all along (CB-48): when the listing names nobody, every process's own `fdinfo` is asked (2026-11-09), and a
+  "nobody holds it" answer is still read 3 times, 0.2 s apart, before it stands.
 - The **heartbeat** (`state["supervisor"]`), written by the supervisor's main thread, so a wedged loop goes STALE where
   a liveness thread would keep beating.
 - **Mid-flight**: an item started, neither terminal nor held.
@@ -186,7 +187,7 @@ The verdicts:
 - `STALE`: the lock is held, but now is past the heartbeat's own `stale_after_epoch`.
 - `DEAD`: nobody holds the lock and the heartbeat does not vouch for the supervisor. It is loud with an item
   mid-flight, naming any live launcher of that item.
-- `UNKNOWN`: `/proc/locks` cannot be read.
+- `UNKNOWN`: `/proc/locks` cannot be read and no process's `fdinfo` shows the lock.
 
 **A loud DEAD or STALE is a candidate until it is confirmed** (CB-48; `Liveness.final`, `Confirm`, `probe_confirmed`):
 - A **certain death** pages at once: the heartbeat's pid is gone from `/proc` (no entry, a zombie, or other start

@@ -1,6 +1,6 @@
-"""``utils.procfs`` on SYNTHETIC input: the ``/proc/locks`` grammar and the tree arithmetic.
-(The real-process behaviour is pinned by ``main/ops/idle_waiter_watchdog_test.py`` and
-``utils/gpu_lock_test.py``.)"""
+"""``utils.procfs`` on SYNTHETIC input: the ``/proc/locks`` grammar, the lock readings and the tree arithmetic.
+(The real-process behaviour is pinned by ``main/ops/idle_waiter_watchdog_test.py``, ``utils/gpu_lock_test.py`` and,
+for a listing that really skips a live lock, ``utils/lock_listing_test.py``.)"""
 from __future__ import annotations
 
 import os
@@ -109,7 +109,72 @@ def test_holds_lock_reads_the_process_own_fdinfo_never_the_listing(tmp_path, mon
     key = P.file_key(str(f))
     assert key is not None and not P.holds_lock(os.getpid(), key)
     fcntl.flock(fd, fcntl.LOCK_EX)
-    monkeypatch.setattr(P, "read_locks", lambda *a, **k: [])           # the listing skipping it changes nothing
+    monkeypatch.setattr(P, "_read_listing", lambda path: [])           # the listing skipping it changes nothing
     assert P.holds_lock(os.getpid(), key) and P.holders(key) == []
+    assert P.lock_holders(key) == [os.getpid()], "the verified reading finds the holder the listing skipped"
     os.close(fd)
-    assert not P.holds_lock(os.getpid(), key)
+    assert not P.holds_lock(os.getpid(), key) and P.lock_holders(key) == []
+
+
+def _fdinfo(root, pid: int, fd: int, taker: int, key: str, arrow: str = "") -> None:
+    d = root / str(pid) / "fdinfo"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / str(fd)).write_text(f"pos:\t0\nflags:\t02\nmnt_id:\t29\nino:\t{key.rsplit(':', 1)[1]}\n"
+                             f"lock:\t1: {arrow}FLOCK  ADVISORY  WRITE {taker} {key} 0 EOF\n")
+
+
+def test_a_lock_table_never_reads_free_from_the_listing_alone(tmp_path):
+    """THE CLASS (2026-11-09): the listing can skip a live lock, so "nobody holds it" is the listing's answer only
+    after the known pids' own fdinfo and then every process's agree. Synthetic tree: the listing names ONE of four
+    held locks; each of the others must be found by the reading that fits it, and a file nobody holds stays free."""
+    proc = str(tmp_path)
+    (tmp_path / "locks").write_text("1: FLOCK  ADVISORY  WRITE 9006 00:58:86 0 EOF\n"
+                                    "1: -> FLOCK  ADVISORY  WRITE 9100 00:58:86 0 EOF\n"
+                                    "2: -> FLOCK  ADVISORY  WRITE 9100 00:58:87 0 EOF\n")
+    _fdinfo(tmp_path, 77, 3, 77, "00:58:90")              # a live holder the listing skipped
+    _fdinfo(tmp_path, 80, 4, 55, "00:58:91")              # its taker (55) is gone; the job that inherited the fd holds it
+    _fdinfo(tmp_path, 81, 4, 55, "00:58:91")              # ... and so does a second process of that job: ONE holder
+    _fdinfo(tmp_path, 82, 5, 82, "00:58:92", arrow="-> ")  # a blocked request is not a hold (the kernel prints none)
+    (tmp_path / "83").mkdir()                              # a process whose fdinfo is not ours to read
+
+    t = P.LockTable(proc)
+    assert t.holders("00:58:86") == [9006] and t.waiters("00:58:86") == [9100]
+    assert t.blocked() == {9100: ["00:58:86", "00:58:87"]}
+    assert t.listed_holders("00:58:90") == [], "the cheap reading stops at the listing: its [] is not a verdict"
+    assert t.listed_holders("00:58:90", known=[78, 77]) == [77], "a pid the caller knows answers for itself"
+    assert t.holders("00:58:90") == [77] and t.holders("00:58:90", known=[77]) == [77]
+    assert t.holders("00:58:91") == [55] and t.holders("00:58:91", known=[55]) == [55], "the surviving job tree's hold"
+    assert t.holders("00:58:92") == [] and t.holders("00:58:99") == [] and t.unreadable is None
+    assert P.lock_holders("00:58:90", proc=proc) == [77]
+    assert sorted((e.pid, e.file) for e in P.scan_locks(proc)) == [(55, "00:58:91"), (77, "00:58:90")]
+
+    # an unreadable listing is recorded, never an empty table: the fdinfo walk still answers
+    (tmp_path / "locks").unlink()
+    u = P.LockTable(proc)
+    assert u.holders("00:58:90") == [77] and isinstance(u.unreadable, OSError)
+    assert u.holders("00:58:86") == [] and u.waiters("00:58:86") == []
+    assert P.scan_locks(str(tmp_path / "absent")) == [] and P.LockTable(str(tmp_path / "absent")).holders("00:58:90") == []
+
+
+def test_a_lock_table_reads_each_source_once(tmp_path, monkeypatch):
+    """One reading is one moment: the listing is read once and the all-process walk at most once, however many files
+    are asked about (a status over N slots must not cost N walks), and never when the listing names a holder."""
+    calls = {"listing": 0, "scan": 0}
+    real_scan = P.scan_locks
+
+    def listing(path):
+        calls["listing"] += 1
+        return [P.LockEntry("FLOCK", "WRITE", 9006, "00:58:86", False)]
+
+    def scan(proc=P._PROC):
+        calls["scan"] += 1
+        return real_scan(proc)
+
+    monkeypatch.setattr(P, "_read_listing", listing)
+    monkeypatch.setattr(P, "scan_locks", scan)
+    _fdinfo(tmp_path, 77, 3, 77, "00:58:90")
+    t = P.LockTable(str(tmp_path))
+    assert t.holders("00:58:86") == [9006] and t.listed_holders("00:58:90") == [] and calls == {"listing": 1, "scan": 0}
+    assert t.holders("00:58:90", known=[77]) == [77] and calls["scan"] == 0, "a known holder needs no walk"
+    assert [t.holders(k) for k in ("00:58:90", "00:58:93", "00:58:94")] == [[77], [], []]
+    assert calls == {"listing": 1, "scan": 1}

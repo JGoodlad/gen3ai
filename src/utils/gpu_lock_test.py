@@ -72,6 +72,90 @@ def test_a_nested_take_under_a_real_holder_parent_does_not_block(tmp_path):
     assert time.monotonic() - t0 < 10, "the nested take waited — it re-acquired instead of re-entering"
 
 
+# ---- a ``/proc/locks`` listing that MISSES the live holder (2026-11-09; ``utils.lock_listing_testing``) ----------------
+# One read of the listing can skip a live lock. gpu_lock read "held" and "stale" off it: a held marker read as stale
+# made the nested take refuse itself (GpuBusy / a wait on its own parent), and an ancestor's bare flock read as
+# somebody else's hold. Each test FAILS on a revert of the fdinfo reading it names.
+
+_NESTED = """
+    import os, sys
+    from utils import lock_listing_testing as T, procfs
+    from utils.gpu_lock import gpu_lock, lock_path
+    {install}
+    with gpu_lock(timeout_s=10) as h:
+        print(h, os.getppid(), os.environ["GEN3AI_GPU_LOCK_HELD"])
+"""
+
+
+@pytest.mark.parametrize("listing", ["omits_the_holder", "torn"])
+def test_a_nested_take_re_enters_when_the_listing_skips_its_holder(tmp_path, listing):
+    """``verified_holder`` decides the marker by the holder's own fdinfo. ``torn`` is THE INCIDENT forced through the
+    kernel: locks released between two reads of the real listing, which then skips the parent's hold."""
+    lock = tmp_path / "gpu.lock"
+    fill = tmp_path / "fill"
+    fill.mkdir()
+    install = "T.install(T.without())" if listing == "omits_the_holder" else (
+        f"torn = T.Torn({str(fill)!r}, procfs.file_key(str(lock_path())))\n"
+        "    if not torn.hides(os.getppid()):\n"
+        "        print('INCONCLUSIVE'); sys.exit(0)\n"
+        "    T.install(torn)\n"
+        "    import atexit; atexit.register(lambda: print('TORN', torn.hid, torn.unforced, file=sys.stderr))")
+    t0 = time.monotonic()
+    r = subprocess.run([sys.executable, "-m", "utils.gpu_lock", "--", *_py(_NESTED.format(install=install))],
+                       env=_env(lock), capture_output=True, text=True, timeout=120)
+    if r.stdout.strip() == "INCONCLUSIVE":
+        pytest.skip("INCONCLUSIVE: one read of /proc/locks could not be made to skip a live lock on this kernel")
+    assert r.returncode == 0, r.stderr
+    assert "STALE" not in r.stderr, "the held marker was read as stale: the listing was believed"
+    holder, parent, marker = r.stdout.split()
+    assert holder == parent == marker, "the inner take must reuse its PARENT's hold, not take its own"
+    assert time.monotonic() - t0 < 60
+    if listing == "torn":                    # the answer above holds either way; the PROOF needs every read torn
+        hid, unforced = map(int, r.stderr.split("TORN")[1].split()[:2])
+        if unforced:
+            pytest.skip(f"INCONCLUSIVE: {unforced} of {hid + unforced} listing reads could not be torn")
+
+
+def test_a_bare_flock_ancestor_is_a_self_deadlock_when_the_listing_skips_it(tmp_path):
+    """The ancestor chain is asked through each pid's own fdinfo: with the listing naming nobody, the old check found
+    no ancestor among the holders and WAITED on its own parent (here: until the 10 s timeout)."""
+    lock = tmp_path / "gpu.lock"
+    lock.touch()
+    r = subprocess.run(["flock", str(lock), *_py("""
+        import os
+        from utils import lock_listing_testing as T
+        from utils.gpu_lock import gpu_lock, GpuLockSelfDeadlock
+        T.install(T.without())
+        try:
+            with gpu_lock(timeout_s=10, wait=True):
+                print("ACQUIRED")
+        except GpuLockSelfDeadlock as e:
+            print(e.holder_pid, e.waiter_pid, os.getppid(), os.getpid())
+    """)], env=_env(lock), capture_output=True, text=True, timeout=120)
+    assert r.returncode == 0 and len(r.stdout.split()) == 4, (r.stdout, r.stderr)
+    holder, waiter, ppid, me = r.stdout.split()
+    assert (holder, waiter) == (ppid, me), r.stdout
+
+
+def test_a_busy_refusal_names_the_holder_the_listing_skipped(tmp_path, monkeypatch):
+    """A refusal names its holder from the verified reading: ``GpuBusy`` with no pid sent the reader to a lock that
+    looked free, and ``holder_report`` said ``not held`` beside a live holder."""
+    from utils import lock_listing_testing as T
+
+    lock = tmp_path / "gpu.lock"
+    h = _holder(lock)
+    try:
+        monkeypatch.setattr(P, "_read_listing", T.without(h.pid))
+        with pytest.raises(G.GpuBusy) as e:
+            with G.gpu_lock(lock, wait=False, log=lambda _m: None):
+                pass
+        assert f"pid {h.pid}" in str(e.value), str(e.value)
+        assert f"held by pid {h.pid}" in G.holder_report(lock) and "not held" not in G.holder_report(lock)
+        assert "BUSY" in L.status(lock) and "FREE" not in L.status(lock), L.status(lock)
+    finally:
+        _reap(h)
+
+
 def _holder(lock) -> subprocess.Popen:
     """A SIBLING holder: the helper CLI holding the lock around a long sleep."""
     h = subprocess.Popen([sys.executable, "-m", "utils.gpu_lock", "--", "sleep", "60"], env=_env(lock))
@@ -80,7 +164,7 @@ def _holder(lock) -> subprocess.Popen:
     def held() -> bool:
         nonlocal key
         key = key or P.file_key(str(lock))
-        return key is not None and P.holders(key) == [h.pid]
+        return key is not None and P.lock_holders(key) == [h.pid]
 
     _wait_for(held, "the sibling holder to take the lock")
     return h
@@ -119,7 +203,7 @@ def test_a_non_ancestor_holder_still_blocks(tmp_path, forged):
         assert "TimeoutError" in err and f"held by pid {h.pid}" in err, err
         assert "utils.gpu_lock" in err, "the periodic report names the holder's command line"
         assert ("STALE" in err) == forged, err
-        assert P.holders(key) == [h.pid], "an abandoned wait must not leave the waiter holding anything"
+        assert P.lock_holders(key) == [h.pid], "an abandoned wait must not leave the waiter holding anything"
     finally:
         _reap(h)
 
@@ -158,7 +242,7 @@ def test_a_stale_marker_naming_a_non_holding_ancestor_is_ignored(tmp_path, monke
     with G.gpu_lock(lock, timeout_s=5, log=logs.append) as h:
         assert h == os.getpid()
         key = P.file_key(str(lock))
-        assert key is not None and P.holders(key) == [os.getpid()]
+        assert key is not None and P.lock_holders(key) == [os.getpid()]
         assert os.environ[G.HELD_ENV] == str(os.getpid())
     assert any("STALE" in m for m in logs), logs
     assert os.environ[G.HELD_ENV] == str(os.getppid()), "the caller's environment is restored on exit"
