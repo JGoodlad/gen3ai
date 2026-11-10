@@ -16,7 +16,11 @@ supervisor as having no lock.
    either outside a comment;
 4. the one cheap reading that stops before the all-process walk, ``LockTable.listed_holders``, is called by its ONE
    declared caller (:data:`UNVERIFIED_READER`), which repeats the verified reading before anybody acts on it;
-5. only a test imports ``utils.lock_listing_testing`` (it REPLACES the reading with one that misses a live lock).
+5. only a test imports ``utils.lock_listing_testing`` (it REPLACES the reading with one that misses a live lock);
+6. the WAITERS of a lock (``LockTable.waiters`` / ``procfs.waiters``) are read by ONE declared caller
+   (:data:`DISPLAY_READER`), and it only DISPLAYS them: a blocked request has no ``fdinfo`` line, so "nobody waits" can
+   never be verified and nothing may act on it. A new reader of ``.waiters`` in non-test code is declared here, with
+   its reason, or it asks the question another way (``holds_lock`` about a pid it knows).
 
 What a caller uses instead: ``procfs.holds_lock(pid, key)`` for a pid it knows; ``procfs.LockTable().holders(key,
 known)`` / ``procfs.lock_holders(key)`` for "who holds it / is it free"; a non-blocking ``flock`` to take it.
@@ -28,10 +32,11 @@ exempt from rules 3 and 5 only (a fake ``/proc`` tree has to write its ``locks``
 Opt out explicitly (never silently): ``GEN3AI_SKIP_LOCK_LISTING_GATE=1``.
 
 **Blind spots, stated:** a path assembled at run time from pieces none of which ends in ``/locks``; a reader in a
-file outside ``src/`` and ``scripts/`` or in another language; a negative taken from ``procfs.waiters`` /
-``LockTable.waiters`` (a blocked request has no ``fdinfo`` line, so "nobody waits" cannot be verified at all: nothing
-may act on it, and this gate cannot tell a display from an action); and a holder that only another user's processes
-keep open, which ``LockTable`` itself reads from the listing alone.
+file outside ``src/`` and ``scripts/`` or in another language (the repo's other trees, ``tools/`` and the root
+``conftest.py``, were read for one on 2026-11-10 and hold none; a session script under ``~/.claude`` is outside any
+gate); the DECLARED display caller of rule 6 acting on its waiters one day (the gate cannot tell a display from an
+action, it only keeps the sites to the one that was reviewed); and a holder that only another user's processes keep
+open, which ``LockTable`` itself reads from the listing alone.
 """
 from __future__ import annotations
 
@@ -58,6 +63,9 @@ RAW_READERS = frozenset({"read_locks", "_read_listing"})
 LISTED_ONLY = "holders"
 #: Rule 4: ``(file, function)`` of the one caller of ``LockTable.listed_holders``.
 UNVERIFIED_READER = ("src/utils/heavy_slots.py", "_slot_state")
+#: Rule 6: ``(file, function)`` of the one caller of ``waiters``: ``--status``'s queue, a display (a queue shown can be
+#: one waiter short, never a slot shown free).
+DISPLAY_READER = ("src/utils/gate_lock_status.py", "collect")
 _MODULE = "utils.procfs"
 #: Rule 5: the test support that makes the reading miss a live lock.
 TEST_SUPPORT = "lock_listing_testing"
@@ -83,7 +91,7 @@ def _is_str(node: ast.AST, value: str) -> bool:
 
 
 def scan_python(text: str, rel: str) -> List[Tuple[int, str]]:
-    """``(line, what)`` for every breach of the five rules in the python source ``text`` of the file ``rel``."""
+    """``(line, what)`` for every breach of the six rules in the python source ``text`` of the file ``rel``."""
     tree = ast.parse(text)
     hits: Set[Tuple[int, str]] = set()
     aliases: Set[str] = set()                    # the names this file binds to the module utils.procfs
@@ -119,6 +127,16 @@ def scan_python(text: str, rel: str) -> List[Tuple[int, str]]:
                                 f"{UNVERIFIED_READER[0]}::{UNVERIFIED_READER[1]}"))
     if _is_test(rel):
         return sorted(hits)
+    # rule 6: the waiters have one declared caller (a display); tests may read them (they build the queue they check)
+    shown: Set[int] = set()
+    if rel == DISPLAY_READER[0]:
+        for fn in ast.walk(tree):
+            if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)) and fn.name == DISPLAY_READER[1]:
+                shown.update(id(x) for x in ast.walk(fn))
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Attribute) and n.attr == "waiters" and id(n) not in shown:
+            hits.add((n.lineno, "reads `.waiters` (a blocked request has no fdinfo line: its absence proves nothing, so "
+                                f"it is DISPLAYED only, by {DISPLAY_READER[0]}::{DISPLAY_READER[1]})"))
     # rule 5: the reading is replaced in tests only
     for n in ast.walk(tree):
         if isinstance(n, (ast.Import, ast.ImportFrom)) and (
@@ -165,7 +183,7 @@ def scan(root: Path, files: Iterable[str]) -> List[str]:
         except (OSError, UnicodeDecodeError):
             continue
         if suffix == ".py":
-            if not any(t in text for t in ("locks", LISTED_ONLY, "listed_holders", TEST_SUPPORT)):
+            if not any(t in text for t in ("locks", LISTED_ONLY, "listed_holders", TEST_SUPPORT, "waiters")):
                 continue                              # the cheap pass: nothing any rule could match
             try:
                 found = scan_python(text, rel)
@@ -202,6 +220,16 @@ def test_the_one_unverified_reader_exists() -> None:
     assert {"listed_holders", "holders"} <= attrs, f"{rel}::{fn_name} no longer makes both readings: drop rule 4's exception"
 
 
+def test_the_one_display_reader_exists() -> None:
+    """Rule 6 names a real function that really reads the waiters (and says so about its own shape)."""
+    rel, fn_name = DISPLAY_READER
+    tree = ast.parse(repo_path(*rel.split("/")).read_text())
+    fns = [f for f in ast.walk(tree) if isinstance(f, ast.FunctionDef) and f.name == fn_name]
+    assert len(fns) == 1, f"{rel} has no single `{fn_name}`: update DISPLAY_READER"
+    assert "waiters" in {n.attr for n in ast.walk(fns[0]) if isinstance(n, ast.Attribute)}, \
+        f"{rel}::{fn_name} no longer reads the waiters: drop rule 6's exception"
+
+
 def test_the_scanner_has_teeth() -> None:
     def what(src: str, rel: str = "src/x/y.py") -> List[int]:
         return [n for n, _ in scan_python(src, rel)]
@@ -218,7 +246,7 @@ def test_the_scanner_has_teeth() -> None:
     assert what("import utils.procfs as pf\nhs = pf.holders(k)\n") == [2]
     assert what("import utils.procfs\nhs = utils.procfs.holders(k)\n") == [2]
     assert not what("from utils import procfs\nhs = procfs.LockTable().holders(key)\nt = procfs.lock_holders(key)\n")
-    assert not what("from utils import procfs\nok = procfs.holds_lock(pid, key)\nw = procfs.waiters(key)\n")
+    assert not what("from utils import procfs\nok = procfs.holds_lock(pid, key)\n")
     assert not what("holders = table.holders(key)\nself.holders(x)\n")
     # rule 3: the path, in code only; a docstring may explain it
     assert what("with open('/proc/locks') as f:\n    pass\n") == [1]
@@ -231,6 +259,13 @@ def test_the_scanner_has_teeth() -> None:
     assert not what(cheap, UNVERIFIED_READER[0])
     assert what(cheap, "src/utils/gate_lock.py") == [2]
     assert what("def admission(t, key):\n    return t.listed_holders(key)\n", UNVERIFIED_READER[0]) == [2]
+    # rule 6: the waiters are displayed by one declared caller, in code; a test builds the queue it checks
+    show = "def collect(t, key):\n    return t.waiters(key)\n"
+    assert not what(show, DISPLAY_READER[0])
+    assert what(show, "src/utils/gate_lock.py") == [2] and what("w = procfs.waiters(key)\n") == [1]
+    assert what("def idle(t, k):\n    return not t.waiters(k)\n", DISPLAY_READER[0]) == [2]
+    assert what("def other(t, k):\n    return not t.waiters(k)\n" + show, DISPLAY_READER[0]) == [2]
+    assert not what("w = procfs.waiters(key)\n", "src/utils/x_test.py") and not what("waiters = []\nwaiters.append(1)\n")
     # rule 5: the reading is replaced by tests only
     assert what("from utils import lock_listing_testing as T\n") == [1] and what("import utils.lock_listing_testing\n") == [1]
     assert what("from utils.lock_listing_testing import without\n") == [1]

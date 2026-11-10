@@ -18,15 +18,20 @@ split's agent cores").
 * THE OWNER: the module, its test, this gate, and its design doc (which tabulates the lists).
 * FROZEN RECORDS: everything under ``designs/research_state/`` (measurement records and their scripts, the
   append-only ledger, the archive). A record says what ran; it is never a tool. :data:`LIVE_KITS` are the files
-  under that tree that ARE still tools: they are scanned.
+  under that tree that ARE still tools: they are scanned. SO IS EVERY KIT BORN LIVE (:func:`born_live`): a CODE file
+  in a measurement directory dated :data:`KITS_SCANNED_FROM` or later. The owner existed on 2026-11-09 and the X66 /
+  X67 / X68 kits written that day spelled the lists anyway; an armed kit cannot be edited (it is a record), so the
+  gate reads a new one the day it is written, never "the day it is run again". Prose in such a directory (a
+  PREREG, a README) stays a record.
 * APPEND-ONLY AND DATED RECORDS: ``designs/CHANGELOG.md``, and a file whose name carries its date
   (``…_2026-10-19.md``): a review or audit of that day.
 
 Opt out explicitly (never silently): ``GEN3AI_SKIP_CORE_SPLIT_GATE=1``.
 
 **Blind spots, stated:** a list assembled at run time (``f"{a}-{b}"``, ``range(5, 8)``), a list in an untracked
-file or a session script outside the repo, and a kit under the frozen tree that is run again without being named in
-:data:`LIVE_KITS`.
+file or a session script outside the repo, a kit in a measurement directory dated BEFORE :data:`KITS_SCANNED_FROM`
+(or with no date in its name) that is run again without being named in :data:`LIVE_KITS` (the X66, X67, X65 and X34
+kits are such: ``designs/ops/core_split.md`` §6), and any list that is not one of the owner's (``taskset -c 0-3``).
 """
 from __future__ import annotations
 
@@ -51,6 +56,10 @@ FROZEN_TREE = "designs/research_state/"
 #: Files under the frozen tree that are still tools (a launch kit in use): scanned like any other code.
 LIVE_KITS = ("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh",
              "designs/research_state/measurements/boundary1_scratch_2026-11-09/looks/drive_look.sh")
+#: A measurement directory (``designs/research_state/measurements/<name>_<date>/``) dated on or after this day holds
+#: kits that are TOOLS from the day they are written (:func:`born_live`).
+KITS_SCANNED_FROM = "2026-11-10"
+_MEASUREMENT_DIR = re.compile(r"^designs/research_state/measurements/[^/]+_(20\d\d-\d\d-\d\d)/")
 APPEND_ONLY = ("designs/CHANGELOG.md",)
 _DATED = re.compile(r"_20\d\d-\d\d-\d\d(?:[._][^/]*)?$")
 #: Text files: by suffix, plus extensionless scripts. A binary or oversized file is not read.
@@ -82,8 +91,14 @@ _LIST_TOKENS = tuple(text for _, text, _ in _sides())
 _ID_TOKENS = tuple(",".join(map(str, ids)) for _, _, ids in _sides())
 
 
+def born_live(rel: str) -> bool:
+    """Is ``rel`` a CODE file in a measurement directory dated :data:`KITS_SCANNED_FROM` or later? Such a kit is scanned."""
+    m = _MEASUREMENT_DIR.match(rel)
+    return bool(m) and m.group(1) >= KITS_SCANNED_FROM and Path(rel).suffix.lower() in CODE_SUFFIXES
+
+
 def excepted(rel: str) -> bool:
-    if rel in LIVE_KITS:
+    if rel in LIVE_KITS or born_live(rel):
         return False
     return (rel in OWNER or rel in APPEND_ONLY or rel.startswith(FROZEN_TREE) or bool(_DATED.search(rel.rsplit("/", 1)[-1])))
 
@@ -159,12 +174,21 @@ def test_the_exceptions_are_the_declared_classes_and_a_live_kit_is_scanned(tmp_p
         assert not excepted(scanned), scanned
     for kit in LIVE_KITS:
         assert repo_path(*kit.split("/")).is_file(), f"{kit} is gone: drop it from LIVE_KITS"
+    # a kit BORN LIVE (a code file in a measurement directory dated from KITS_SCANNED_FROM) is scanned; a record is not
+    new_dir = f"designs/research_state/measurements/x70_probe_{KITS_SCANNED_FROM}/"
+    assert not excepted(new_dir + "gpu.sh") and not excepted(new_dir + "drive/run.py") and not excepted(new_dir + "kit")
+    assert excepted(new_dir + "PREREG.md") and excepted(new_dir + "result.json"), "the prose and the rows stay records"
+    assert excepted("designs/research_state/measurements/x66_exit0h_2026-11-09/gpu_students.sh"), "armed before the ratchet"
+    assert excepted("designs/research_state/measurements/undated_probe/run.sh"), "no date in the name: a record"
+    assert not born_live("designs/research_state/ledger.md") and not born_live("src/x_2026-11-10/run.sh")
     # the scan itself, on a made-up tree: the frozen record passes, the live kit and the code fail
     lst = core_split.DEFAULT.agent_list
     files = {"src/a.py": f'X = "{lst}"\n', "designs/research_state/measurements/m/run.sh": f"taskset -c {lst} x\n",
              LIVE_KITS[0]: f"taskset -c {lst} x\n", "docs/x.md": "the agent cores\n", "bin.png": lst,
-             "data/t.json": "[" + ", ".join(map(str, core_split.DEFAULT.agent_ids)) + "]"}
+             "data/t.json": "[" + ", ".join(map(str, core_split.DEFAULT.agent_ids)) + "]",
+             new_dir + "gpu.sh": f"taskset -c {lst} x\n", new_dir + "PREREG.md": f"taskset -c {lst} x\n",
+             "designs/research_state/measurements/x66_2026-11-09/gpu.sh": f"taskset -c {lst} x\n"}
     for rel, text in files.items():
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / rel).write_text(text)
-    assert [h.split(":")[0] for h in scan(tmp_path, sorted(files))] == sorted([LIVE_KITS[0], "src/a.py"])
+    assert [h.split(":")[0] for h in scan(tmp_path, sorted(files))] == sorted([LIVE_KITS[0], "src/a.py", new_dir + "gpu.sh"])
