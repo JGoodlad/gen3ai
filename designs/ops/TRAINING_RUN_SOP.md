@@ -269,6 +269,7 @@ with what it measures.
 | MARGINAL fps, from checkpoint mtimes | `scripts/ops/marginal_fps.sh <run> [--target N:label]` |
 | per-arm host RSS (a resume baselines after ITS first update) | `python -m main.ops.rss_watch --launcher-pid … --run … --fork-step … --status-file … --rows-dir …` |
 | the run's CPU use by thread group and phase, its run-queue wait, its worker bursts (reads `/proc` only; [`core_split.md`](core_split.md)) | `python -m main.ops.trainer_cpu_profile sample --launcher-pid … --seconds … --out …`, then `summarize`; `burst` for the 4 ms view |
+| which CPUs the trainer and the agents get, a queued split, a tree left narrowed by a killed A/B | `python -m utils.core_split show` ([`core_split.md`](core_split.md)) |
 | the registered first-restart read | `scripts/ops/restart_read.sh <run> [--baseline …]` |
 | the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` — 🚨 on a FORK every live-tier TB reader reads the ARM's steps only (> the lineage `fork_step`; the parent's inherited prefix is cut and the first line says where; `--include-inherited` shows it) |
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
@@ -334,6 +335,45 @@ regime where `v` is a probability at all.
 
 A session may still keep a scratch copy while an arm is live; the repo copies are the durable
 ones and are what this document names.
+
+### The trainer's CPUs: the pin at launch, the one-time A/B, the rollback
+
+Which CPUs the trainer gets has ONE owner, `utils.core_split` ([`core_split.md`](core_split.md)); the default is the
+`5+3` split and nothing changes it but the steps below.
+
+- **Every launch pins the launcher with the owner's list**, never a typed one:
+  `taskset -c "$(python -m utils.core_split trainer-cpus --launch)" python -m main.launcher …`, and HOLD if the read
+  prints nothing or says a queued split `stays QUEUED` (`launch_x35.sh` does all of it, and reads the list with
+  `--dry-run` in its pre-checks first). That read is also what makes a queued split active, and only when no trainer
+  is live. `python -m utils.core_split show` names the split and each live tree's CPUs.
+- **The A/B, ONCE, on the next fresh launch, on the orchestrator's go** (it decides whether the trainer gives one or
+  two of its five cores to the agents; rule and method: `core_split.md` §5). After the run's third logged iteration,
+  right after an eval has logged (no eval may fall inside its 7 minutes):
+
+  ```bash
+  A="$(python -m utils.core_split agent-cpus)"; D=<a scratch dir>; LP=<the launcher's pid>
+  nice -n 19 taskset -c "$A" python -m main.ops.core_split_ab run --launcher-pid $LP --out-dir $D --check   # changes nothing
+  setsid nohup nice -n 19 taskset -c "$A" python -m main.ops.core_split_ab run --launcher-pid $LP --out-dir $D \
+    > $D.log 2>&1 &                                              # ~9 min: DETACHED; P = the python process's pid
+  timeout 3300 bash -c "while [ -d /proc/$P ]; do sleep 5; done"; python -m main.ops.core_split_ab restore   # the ONE watcher (background)
+  ```
+
+  Never run it in a foreground tool call (the call is cut before the 9 minutes are up), and never under a job killer
+  (`mem_cap.sh --max-s`, `timeout -s KILL`: a SIGKILLed driver restores nothing; the watcher's `restore` is what
+  covers a kill, and does nothing after a clean exit). It narrows only YOUR
+  launcher's tree, inside its own CPUs, for 8 s at a time, and puts the list back on exit, on an error and on a
+  signal; `$D.log` ends with `restored: True`. Stop it with SIGTERM to its pid, never SIGKILL; after a SIGKILL, an OOM
+  kill or `restored: False` run `python -m main.ops.core_split_ab restore`, then `python -m utils.core_split show`
+  (no A/B MARKER line, the tree on the trainer list). It prints PASS / FAIL / INCONCLUSIVE per arm and one RESULT
+  line. Report the RESULT line and `$D/record.json` to the orchestrator, and ship the record as a measurement. An
+  INCONCLUSIVE arm is a fail; one re-run after the next eval is allowed when the cause was an eval, a moved control,
+  a thin recording or an unverified segment.
+- **Adopting** is `python -m utils.core_split set <split> --next-launch --note "A/B <record>"`, on the orchestrator's
+  word. The live run keeps its five cores; the split takes effect at the next launch through a kit (the next run, or
+  this run stopped and resumed), and `core_split.md` §7 step 4 is the check to run then.
+- **Rolling back is agents first:** stop the run keeping the lease, `python -m utils.core_split set 5+3`, wait for
+  an enforcer cycle with no `pinned` line, resume. Never widen a live tree by hand while agents hold the cores it
+  would get.
 
 ---
 
@@ -422,7 +462,7 @@ wake. Re-create it on the next GO, written to this contract.
   post-lock baseline for 3 updates; `compile/regression_flag`) is a WARN — check contention first.
   Detail: `designs/training/compile_flags.md` "The compile sentinel".
 - **A live run's Tier-1 plateau tick (`python -m main.plateau tick`) is BLOCKING the GPU's next work**: launch it with
-  `GEN3AI_BLOCKING=<why>` set, at nice 0 inside the agent cores (`taskset -c 5-7,13-15`), never at nice 19 — a
+  `GEN3AI_BLOCKING=<why>` set, at nice 0 inside the agent cores (`taskset -c "$(python -m utils.core_split agent-cpus)"`), never at nice 19 — a
   started job cannot be reniced back down (RLIMIT_NICE 0). Measured 2026-10-19: 18 → 135 pairs/min, X34's fps
   unaffected.
 - **A plateau STOP reads BOTH tiers** (2026-10-19): `python -m main.plateau status <run>` prints Tier 1, Tier 2 (the

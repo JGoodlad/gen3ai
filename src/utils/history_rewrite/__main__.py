@@ -347,7 +347,7 @@ def cmd_dryrun(a: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="python -m utils.history_rewrite", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--cpus", default=None, help="pin to these CPUs, e.g. 5-7,13-15 (rule 5b agent cores)")
+    ap.add_argument("--cpus", default=None, help="pin to these CPUs: the rule 5b agent cores, `python -m utils.core_split agent-cpus`")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     def add(name: str, fn, **kw):

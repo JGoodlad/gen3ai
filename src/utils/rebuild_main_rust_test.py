@@ -12,6 +12,7 @@ from typing import Dict, List
 
 import pytest
 
+from utils import core_split
 from utils import rebuild_main_rust as R
 from utils.rust_env import columns
 from utils.rust_env import stamp as S
@@ -84,7 +85,7 @@ def test_plan_is_the_four_builds_with_the_documented_cargo_flags(main_dir: Path)
 def test_build_argv_is_niced_pinned_and_capped_with_the_env_scrubbed(main_dir: Path) -> None:
     b = R.plan(main_dir)[0]
     argv = R.build_argv(b, "/x/mem_cap.sh", "/c/cargo")
-    assert argv[:7] == ["nice", "-n", "19", "taskset", "-c", "5-7,13-15", "/x/mem_cap.sh"]
+    assert argv[:7] == ["nice", "-n", "19", "taskset", "-c", core_split.agent_cpus(), "/x/mem_cap.sh"]
     assert argv[7:10] == ["8", "/c/cargo", "build"]
     env = R.build_env({"CARGO_TARGET_DIR": "/elsewhere", "PATH": "/p"})
     assert "CARGO_TARGET_DIR" not in env and env["GEN3AI_BLOCKING"] and env["PATH"] == "/p"
@@ -303,4 +304,4 @@ def test_no_mode_refuses_and_dry_run_runs_nothing(main_dir: Path, empty_proc: st
     assert R.main(cli(main_dir), proc=empty_proc, run=run) == R.EXIT_USAGE
     assert R.main(cli(main_dir, "--dry-run"), proc=empty_proc, run=run) == R.EXIT_OK and run.builds == 0
     out = capsys.readouterr().out
-    assert out.count("nice -n 19 taskset -c 5-7,13-15 mem_cap.sh 8") == 4 and "CARGO_TARGET_DIR unset" in out
+    assert out.count(f"nice -n 19 taskset -c {core_split.agent_cpus()} mem_cap.sh 8") == 4 and "CARGO_TARGET_DIR unset" in out

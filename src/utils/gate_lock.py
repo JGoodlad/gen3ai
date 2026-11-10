@@ -62,6 +62,7 @@ import time
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
+from utils import core_split
 from utils import gate_lock_status as GS
 from utils import heavy_slots as HS
 from utils import mem_cap
@@ -327,7 +328,7 @@ def live_run_warning(runs: Optional[dict] = None, *, my_cpus: Optional[List[int]
         for pid in runs.values():
             trainer_cpus.extend(GS.affinity_of(pid) or [])
     online = range(os.cpu_count() or 0)
-    agent = [c for c in online if c not in set(trainer_cpus)] if trainer_cpus else []
+    agent = core_split.agent_ids_beside(trainer_cpus, online) if trainer_cpus else []
     problems = []
     if nice < 19:
         problems.append(f"this gate runs at nice {nice}, not 19")

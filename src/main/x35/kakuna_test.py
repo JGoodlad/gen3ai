@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from main.x35 import kakuna as KA
+from utils import core_split
 
 
 def test_the_committed_config_is_the_x26_reads_and_our_side_matches_the_manifest():
@@ -81,10 +82,10 @@ def test_a_unit_counts_only_under_every_condition_of_the_rule(bad):
 def test_the_supervisor_may_name_other_unit_cores_only_while_the_heavy_slots_are_not_wanted(monkeypatch):
     """S′-HONEST's whole-box read: ``$GEN3AI_ANCHOR_CORES`` pins its units elsewhere while no run is live and the GPU
     is not leased; whenever rule 5b's slots are wanted a NEW unit goes to the agent cores; a bad list is refused."""
-    assert KA.unit_cores({}, wanted=lambda: None) == KA.CORES == "5-7,13-15"
+    assert KA.unit_cores({}, wanted=lambda: None) == KA.agent_cores() == core_split.agent_cpus()
     assert KA.unit_cores({KA.CORES_ENV: " 0-15 "}, wanted=lambda: None) == "0-15"
-    assert KA.unit_cores({KA.CORES_ENV: "0-4,8-12"}, wanted=lambda: None) == "0-4,8-12"
-    assert KA.unit_cores({KA.CORES_ENV: "0-15"}, wanted=lambda: "a training run is live (x): rule 5b") == KA.CORES
+    assert KA.unit_cores({KA.CORES_ENV: "0-1,8-9"}, wanted=lambda: None) == "0-1,8-9"
+    assert KA.unit_cores({KA.CORES_ENV: "0-15"}, wanted=lambda: "a training run is live (x): rule 5b") == KA.agent_cores()
     for bad in ("all", "0-15;", "0 - 15", "-3"):
         with pytest.raises(KA.KakunaError, match="a cpu list"):
             KA.unit_cores({KA.CORES_ENV: bad}, wanted=lambda: None)
@@ -96,9 +97,9 @@ def test_the_supervisor_may_name_other_unit_cores_only_while_the_heavy_slots_are
     assert KA.unit_argv(u, Path("/o"), 9541, py="PY")[:6] == ["nice", "-n", "19", "taskset", "-c", "0-15"]
     assert KA.unit_argv(u, Path("/o"), 9541, py="PY", cores="5-7")[5] == "5-7"
     # set aside: the agent cores AND the box's own slot count (the supervisor's raised count is not inherited)
-    assert KA.unit_shape({KA.CORES_ENV: "0-15"}, wanted=lambda: "a lease") == (KA.CORES, True)
+    assert KA.unit_shape({KA.CORES_ENV: "0-15"}, wanted=lambda: "a lease") == (KA.agent_cores(), True)
     assert KA.unit_shape({KA.CORES_ENV: "0-15"}, wanted=lambda: None) == ("0-15", False)
-    assert KA.unit_shape({}, wanted=lambda: "a lease") == (KA.CORES, False)
+    assert KA.unit_shape({}, wanted=lambda: "a lease") == (KA.agent_cores(), False)
     base = {KA.SLOTS_ENV: "14", KA.CORES_ENV: "0-15", "X": "1"}
     assert KA.SLOTS_ENV not in KA.unit_env(base, set_aside=True) and KA.unit_env(base)[KA.SLOTS_ENV] == "14"
 
@@ -115,7 +116,7 @@ def test_the_unit_argv_is_rule_5b_wrapped_and_greedy_from_the_root(monkeypatch):
     u = KA.Unit(name="n", label="l", arm="A1", seed=3501, teamset="away", unit_seed=4, model="/m.zip",
                 model_sha256="")
     a = KA.unit_argv(u, Path("/o"), 9541, py="PY")
-    assert a[:6] == ["nice", "-n", "19", "taskset", "-c", "5-7,13-15"] and a[6].endswith("scripts/ops/mem_cap.sh")
+    assert a[:6] == ["nice", "-n", "19", "taskset", "-c", core_split.agent_cpus()] and a[6].endswith("scripts/ops/mem_cap.sh")
     i = a.index("PY")
     assert a[a.index("--max-s") + 1] == str(KA.UNIT_MAX_S) and a.index("--max-s") < i   # the SHORT lane (mem_cap's)
     assert 0 < KA.UNIT_MAX_S <= 600

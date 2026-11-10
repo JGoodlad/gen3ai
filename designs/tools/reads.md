@@ -214,7 +214,7 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
 - **Stops.** The registered stop starts no unit past it and waits for those in flight. A unit that raises (a preflight
   refusal, say) lets its siblings finish, then ends the lane with that refusal; the lane's claims are held until its last
   unit ended. SIGINT leaves the units running in their own sessions, as at K = 1.
-- **Cost.** All K units share the agent cores (`5-7,13-15`, rule 5b), and each takes a heavy slot while a training run is
+- **Cost.** All K units share the agent cores (`python -m utils.core_split agent-cpus`, rule 5b), and each takes a heavy slot while a training run is
   live or the GPU is leased, so beside the S lane's slot a K above the free slots only queues FIFO. A read the owner
   gives the WHOLE box (no run live, no lease) names its cores in the supervisor's environment
   (`$GEN3AI_ANCHOR_CORES`, e.g. `0-15`, with `$GEN3AI_HEAVY_SLOTS` raised to K); a unit launched while the slots are
@@ -230,7 +230,7 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
   (`<state>/s/<group>/ledger`);
 - one request per node, `<group>_<label>_b<batch_pairs>`;
 - a unit is up to `--workers` engines in ONE heavy slot (`mem_cap.sh --slot`), time-boxed to `--unit-s` (default
-  2,400 s), at nice 19 on cores 5-7,13-15;
+  2,400 s), at nice 19 on the agent cores (`utils.core_split`);
 - an engine is one label plus some of its pending members (`runner.s_engines`). The members are striped over the
   free engines (`left[w::k]`), unless a stripe would hold more architectures, the label's counted, than one
   `main.h2h` engine serves (`main.h2h.arch.MAX_GROUPS`, 2). Then the members go on engines BY ARCHITECTURE: each

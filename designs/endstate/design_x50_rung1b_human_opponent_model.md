@@ -289,7 +289,7 @@ legality check above; the team validator. Counts of refusals and exclusions go i
 ## 7. Cost
 
 **Measured 2026-10-23 (feasibility, < 1 CPU-minute):**
-- X26 @ 280M on the CPU, 6 threads on the agent cores (`taskset -c 5-7,13-15`, nice 19), while `rb_x35_c0_s3504`
+- X26 @ 280M on the CPU, 6 threads on the agent cores (`taskset -c <the 5+3 agent cores>`, nice 19), while `rb_x35_c0_s3504`
   trained;
 - rows from R1's `humans_0000.npz`, after one warm-up batch;
 - **forward 794 rows/s** (the feature pass, batch 512); **forward + backward 373 rows/s** (policy-logit

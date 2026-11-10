@@ -38,6 +38,7 @@ from main.ops.arm_chain.launch import Hold, X35Launcher
 from main.ops.arm_chain.procwatch import ProcRef, ref_of, signal_if, wait_gone
 from main.ops.arm_chain.runner import SubprocessRunner
 from main.ops.arm_chain.statuslog import StatusLog
+from utils import core_split
 
 
 def _models_default() -> str:
@@ -156,8 +157,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="where canary weight dumps are copied (<root>/<run>_canary_u<u>/, with a .sha256)")
     cw.add_argument("--first-record-min", type=float, default=60.0)
     g = sub.add_parser("cpu-gate")
-    g.add_argument("--trainer-cores", default="0-4,8-12")
-    g.add_argument("--agent-cores", default="5-7,13-15")
+    g.add_argument("--trainer-cores", default=None, help="default: the active split's (utils.core_split)")
+    g.add_argument("--agent-cores", default=None, help="default: the active split's (utils.core_split)")
     g.add_argument("--sample-s", type=float, default=60.0)
     w = sub.add_parser("wait-pid")
     w.add_argument("pid", type=int)
@@ -217,7 +218,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                             archive_root=a.archive_root, interval_s=a.interval_s, max_hours=a.max_hours,
                             first_record_min=a.first_record_min)
     if a.cmd == "cpu-gate":
-        r = cpugate.sample(a.trainer_cores, a.agent_cores, sample_s=a.sample_s, me=os.getpid())
+        r = cpugate.sample(a.trainer_cores or core_split.trainer_cpus(), a.agent_cores or core_split.agent_cpus(),
+                           sample_s=a.sample_s, me=os.getpid())
         print(r.line)
         return 0 if r.ok else (1 if r.measured else 2)
     if a.cmd == "wait-pid":

@@ -408,7 +408,7 @@ def as_json(state: dict) -> str:
 
 
 def cpu_list(cpus: Sequence[int]) -> str:
-    """``[5, 6, 7, 13, 14, 15]`` → ``"5-7,13-15"``."""
+    """``[0, 2, 3]`` → ``"0,2-3"`` (``taskset -c``'s form)."""
     out: List[str] = []
     xs = sorted(set(cpus))
     i = 0

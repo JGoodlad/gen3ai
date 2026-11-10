@@ -142,6 +142,15 @@ os.environ["GEN3AI_RUN_ARCHIVE_SEALED"] = "1"
 os.environ["GEN3AI_SHARED_COMPILE_CACHE"] = "0"
 os.environ.pop("GEN3AI_T2_AOT_DIR", None)
 
+# --- The CORE SPLIT a test sees is the DEFAULT one -----------------------------------------------
+#
+# `utils.core_split` reads the box's active trainer / agent CPU split from one state file under
+# `~/.local/state/gen3ai/`. A test must not pass or fail by what the operator set there (nor may a
+# test write it), so the suite names a file that never exists: every reader gets the default split,
+# and a test of the state itself points this at its own `tmp_path`. Set at import, like the archive
+# seal, so every xdist worker and subprocess inherits it. Pinned by `src/utils/core_split_test.py`.
+os.environ["GEN3AI_CORE_SPLIT_STATE"] = os.path.join(os.sep, "nonexistent", "gen3ai-test-core-split", "core_split.json")
+
 
 # --- Tier budget: a slow test may not hide in the cheap tier -------------------------------------
 #

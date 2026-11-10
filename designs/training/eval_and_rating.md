@@ -650,7 +650,7 @@ python -m main.plateau status <run> [--panel NAME]             # Tier 1 + Tier 2
   one-sided 95 % bound < 14 Elo. Bots cannot be members (`main.h2h` plays checkpoints only); Metamon / Kakuna stay REPORTED
   milestones on `main.anchors`.
 - 🚨 **Cost.** The toy ≈ 15–20 games/s on rule 5b's cores (≈ 10 min a row); the production net ≈ 1.2–2 games/s (≈ 1.5–2.5 h a
-  row). Run it like Tier 1: offline, `nice` + `taskset -c 5-7,13-15` + `scripts/ops/mem_cap.sh` beside a live run, never on CPU
+  row). Run it like Tier 1: offline, `nice` + `taskset -c "$(python -m utils.core_split agent-cpus)"` + `scripts/ops/mem_cap.sh` beside a live run, never on CPU
   beside an X5 A/B arm. The in-trainer window is not built (U4).
 - **`ladder`** applies the same signals to `snapshot_ladder/games.jsonl` as of each check, plus the windowed size; `--tier1` adds a
   DESCRIPTIVE two-tier status: a free FIRST LOOK at a pinned run, never a decision, never the registered row.

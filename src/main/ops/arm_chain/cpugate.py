@@ -1,6 +1,6 @@
 """The GO's CPU gate (orchestrator ruling 2026-10-20 ~15:25), measured on the TRAINER cores, never ``load1``.
 
-THE CLASS BUG: ``load1 <= 12`` held GOs while agent jobs pinned to the agent cores (5-7,13-15) inflated the box-wide
+THE CLASS BUG: ``load1 <= 12`` held GOs while agent jobs pinned to the agent cores inflated the box-wide
 load without touching a single trainer core. The gate is now, over one sample window (default 60 s):
 
 (a) the trainer CPUs are at least ``idle_bar`` idle (idle + iowait jiffies over all jiffies, summed over them);

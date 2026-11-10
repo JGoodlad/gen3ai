@@ -41,10 +41,10 @@ from main.reads.assemble import AssembleError
 from main.reads import models as M
 from main.reads import supervisors as SV
 from main.reads.spec import ReadSpec, load as load_spec
+from utils import core_split
 from utils import git_sha
 from utils.filelock import try_exclusive
 
-CORES = "5-7,13-15"
 S_CAP_GB = 12
 S_UNIT_S = 2400
 S_WORKERS = 2
@@ -365,13 +365,13 @@ def s_unit_engines(spec: ReadSpec, state: Path, g: str, pending: Sequence[Tuple[
 
 
 def s_unit_argv(state: Path, g: str, engines: Sequence[str], box_s: int, *, deadline_epoch: float,
-                threads: int = S_THREADS, cap_gb: int = S_CAP_GB, cpus: str = CORES,
+                threads: int = S_THREADS, cap_gb: int = S_CAP_GB, cpus: Optional[str] = None,
                 py: str = sys.executable) -> List[str]:
     """ONE heavy-slot S unit (``mem_cap.sh --slot``: it waits for a slot and holds it for the box)."""
     from utils.paths import repo_path
 
     return [str(repo_path("scripts/ops/mem_cap.sh")), "--slot", "--name", "reads_s", str(cap_gb), "nice", "-n", "19",
-            "taskset", "-c", cpus, py, "-m", "main.reads", "s-unit", "--state", str(state), "--group", g,
+            "taskset", "-c", cpus or core_split.agent_cpus(), py, "-m", "main.reads", "s-unit", "--state", str(state), "--group", g,
             "--box-s", str(int(box_s)), "--deadline-epoch", str(int(deadline_epoch)), "--threads", str(threads),
             *[x for e in engines for x in ("--engine", e)]]
 

@@ -200,7 +200,12 @@ prechecks() {
   # --stage is only READ; a missing record is written to the scratch dir under the job dir, never into a checkout
   kit k9b-batch --stage "$STAGE" --models-dir "$MODELS" --out-dir "$K9B_OUT" > "$out.k9b.txt" 2>&1 \
     || hold "K9(b) arm-end: $(tr '\n' ' ' < "$out.k9b.txt")"
-  log "pre-checks PASS ($tag): pin ${PIN:0:8}, $(cat "$out.disk.txt"), lease: ${lease%%,*}"
+  # 12. the core split: the trainer list this launch would get, read without writing (the launch read below writes).
+  # A queued split that this launch would NOT get is a HOLD: the operator queued it for this launch.
+  local tc; tc=$(cd "$REPO" && PYTHONPATH="$REPO/src" "$PY" -m utils.core_split trainer-cpus --launch --dry-run 2> "$out.core_split.txt") \
+    && [ -n "$tc" ] || hold "utils.core_split named no trainer CPUs: $(tr '\n' ' ' < "$out.core_split.txt")"
+  ! grep -q "stays QUEUED" "$out.core_split.txt" || hold "the queued core split would NOT apply: $(tr '\n' ' ' < "$out.core_split.txt")"
+  log "pre-checks PASS ($tag): pin ${PIN:0:8}, $(cat "$out.disk.txt"), lease: ${lease%%,*}, trainer CPUs $tc"
 }
 
 kit describe --arm "$ARM" --seed "$SEED" --call "$R" "${P1ARG[@]}" > "$J/describe.$ARM.$SEED.json" \
@@ -245,7 +250,13 @@ log "START $RUN: ${A[*]} (pin ${PIN:0:8}, restart 24 h)"
 # signal to the GO's group (GNU `timeout` signals its whole group) must never reach the run: on 11-06 a `timeout 2400`
 # around GO SIGTERMed X60-T s3501 40 min in. The subshell is not a group leader, so setsid execs in place and $! stays
 # the launcher's pid.
-( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec setsid taskset -c 0-4,8-12 "$PY" -m main.launcher \
+# The trainer's CPUs are the core split's (utils.core_split, designs/ops/core_split.md): this read also makes a split
+# queued with `set --next-launch` active when no trainer is live, so the agents' list widens with the same write.
+TRAINER_CPUS=$(cd "$REPO" && PYTHONPATH="$REPO/src" "$PY" -m utils.core_split trainer-cpus --launch 2>> "$J/$RUN.core_split.txt") \
+  && [ -n "$TRAINER_CPUS" ] || hold "utils.core_split named no trainer CPUs (see $J/$RUN.core_split.txt)"
+! grep -q "stays QUEUED" "$J/$RUN.core_split.txt" || hold "the queued core split did NOT apply: $(tr '\n' ' ' < "$J/$RUN.core_split.txt")"
+log "trainer CPUs $TRAINER_CPUS (core split: $(tr '\n' ' ' < "$J/$RUN.core_split.txt"))"
+( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec setsid taskset -c "$TRAINER_CPUS" "$PY" -m main.launcher \
   --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) >> "$J/$RUN.launcher.log" 2>&1 < /dev/null &
 LP=$!; echo "$LP" > "$J/$RUN.pid"; LP_START=$(pid_start "$LP" 2>/dev/null || true)
 for _ in $(seq 36); do launcher_alive || break; sleep 5; done

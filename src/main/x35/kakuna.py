@@ -11,7 +11,7 @@ re-checked before EVERY unit: a moved team is a refusal, never a different read.
 
 A UNIT is one ``python -m main.anchors`` invocation of 20 role-balanced games with ``--team-seed = --seed-base =``
 the unit seed; the seeds 0-6 are SHARED across arms. It runs from the checkout ROOT (the pool source's CWD hazard,
-X26 read FINDING 1), under ``nice -n 19 taskset -c 5-7,13-15`` inside ``scripts/ops/mem_cap.sh`` (rule 5b), one lane.
+X26 read FINDING 1), under ``nice -n 19 taskset -c <the agent cores>`` inside ``scripts/ops/mem_cap.sh`` (rule 5b), one lane.
 It starts on the heavy slots' SHORT lane; one the lane kills past its bound (exit 88) and that is not counted is played
 ONCE more as a normal heavy-slot job (:func:`run_unit`). ``run`` is ONE supervisor per state PATH: the shared path lock
 outside the state, the ``/proc`` scan and the dir-identity stop of :mod:`main.reads.supervisors`, beside the in-state
@@ -122,11 +122,18 @@ PANEL_CELLS.update(DIAGNOSTIC_CELLS)
 UNFAMILIAR = ("heldout72_hpfix", "forum72", "p72")
 UNIT_SEEDS = tuple(range(7))
 UNIT_GAMES = 20
-CORES = "5-7,13-15"
+
+def agent_cores() -> str:
+    """The agent cores a unit runs on: the box's ACTIVE split (``utils.core_split``), read per unit."""
+    from utils import core_split
+
+    return core_split.agent_cpus()
+
+
 #: The supervisor's environment may name OTHER cores for its units (a cpu list, ``taskset -c``'s form): a read the
 #: owner gives the WHOLE box while no training run is live and the GPU is not leased (S′-HONEST's read,
 #: ``design_sprime_honest.md``), its K raised with ``$GEN3AI_HEAVY_SLOTS``. Whenever the heavy slots are wanted (a run
-#: live or a lease held: rule 5b) a NEW unit sets that shape aside (:func:`unit_shape`): it runs on :data:`CORES` and
+#: live or a lease held: rule 5b) a NEW unit sets that shape aside (:func:`unit_shape`): it runs on :func:`agent_cores` and
 #: queues for the box's own admission (``utils.heavy_admission``), so a run that starts mid-read meets at most the units
 #: already in flight and the jobs the box's rule admits. Cores and slots are scheduling only: the same units, seeds and records on any set.
 CORES_ENV = "GEN3AI_ANCHOR_CORES"
@@ -488,25 +495,25 @@ def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short:
 
 
 def unit_shape(env: Optional[Mapping[str, str]] = None, *, wanted: Any = None) -> Tuple[str, bool]:
-    """``(cores, set_aside)`` for a unit launched now: :data:`CORES`, or ``$GEN3AI_ANCHOR_CORES`` (:data:`CORES_ENV`)
+    """``(cores, set_aside)`` for a unit launched now: :func:`agent_cores`, or ``$GEN3AI_ANCHOR_CORES`` (:data:`CORES_ENV`)
     while the heavy slots are not wanted (``utils.heavy_slots.wanted``: no run live, no GPU lease). ``set_aside``: the
-    supervisor named a box shape that rule 5b now refuses, so the unit runs on :data:`CORES` and :func:`unit_env` drops
+    supervisor named a box shape that rule 5b now refuses, so the unit runs on :func:`agent_cores` and :func:`unit_env` drops
     the inherited ``$GEN3AI_HEAVY_SLOTS`` (it queues for the box's own count). A malformed list is refused. ``wanted``:
     a test's stand-in for that check."""
     import re
 
     v = str((os.environ if env is None else env).get(CORES_ENV) or "").strip()
     if not v:
-        return CORES, False
+        return agent_cores(), False
     if not re.fullmatch(r"\d+(-\d+)?(,\d+(-\d+)?)*", v):
-        raise KakunaError(f"${CORES_ENV}={v!r}: a cpu list (e.g. 0-15 or 5-7,13-15)")
+        raise KakunaError(f"${CORES_ENV}={v!r}: a cpu list, taskset's form (e.g. 0-15)")
     if wanted is None:
         from utils.heavy_slots import wanted
     why = wanted()
     if why:
-        print(f"[kakuna] ${CORES_ENV}={v} set aside: {why}; this unit runs on the agent cores {CORES} and queues for "
-              "the box's own heavy slots", flush=True)
-        return CORES, True
+        print(f"[kakuna] ${CORES_ENV}={v} set aside: {why}; this unit runs on the agent cores {agent_cores()} and queues "
+              "for the box's own heavy slots", flush=True)
+        return agent_cores(), True
     return v, False
 
 

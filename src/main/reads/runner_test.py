@@ -13,6 +13,7 @@ import pytest
 from main.reads import layout as LY
 from main.reads import runner as RN
 from main.x35.kakuna_test import install_fake_play
+from utils import core_split
 
 CODE = {"commit": "e05c45eeb" + "0" * 31, "dirty": False, "root": "/tmp/pin"}
 
@@ -289,7 +290,7 @@ def test_the_s_unit_and_play_many_argv_are_what_the_real_parsers_accept(tmp_path
 
     argv = RN.s_unit_argv(tmp_path, "pool", ["a:m1,m2"], 2400, deadline_epoch=2_000_000_000)
     assert argv[1:5] == ["--slot", "--name", "reads_s", "12"] and argv[5:11] == ["nice", "-n", "19", "taskset", "-c",
-                                                                                   RN.CORES]
+                                                                                   core_split.agent_cpus()]
     i = argv.index("main.reads")
     a = _parser().parse_args(argv[i + 1:])
     assert (a.cmd, a.group, a.box_s, a.deadline_epoch, a.engine) == ("s-unit", "pool", 2400, 2_000_000_000,

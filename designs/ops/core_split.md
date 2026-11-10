@@ -1,37 +1,62 @@
 # The core split: which CPUs the trainer gets and which the agents get
 
-**Status (2026-11-09): PROPOSED, not adopted.** The live split is unchanged: the trainer on CPUs `0-4,8-12` (5 physical
-cores), agent work on `5-7,13-15` (3 physical cores, root `CLAUDE.md` rule 5b). The split changes only on the
-orchestrator's decision. This document holds the measurement behind the proposal, the proposal, the A/B that decides
-it, the change list and the rollback. When a split is adopted, rewrite this document to state the split as it is.
+**Status (2026-11-09): the A/B is ADOPTED, the split is unchanged.** The orchestrator set the bar at **3 %** of
+projected steps per second and adopted the plan below. The active split is still `5+3`: the trainer on CPUs
+`0-4,8-12` (5 physical cores), agent work on `5-7,13-15` (3 physical cores, root `CLAUDE.md` rule 5b). It stays the
+default until the A/B of §5 has run on the next fresh training launch and its result is recorded. When a split is
+adopted, rewrite this status to state the split as it is.
 
-**The proposal in one paragraph.** The trainer uses 1.8 of its 10 threads on average and never more than 3.4 in any
-second, while the 6 agent threads are 93 % busy. Move the boundary at the next fresh launch: **4 + 4** (trainer
-`0-3,8-11`, agents `4-7,12-15`) is predicted to cost the trainer 0 to 1 % of its steps per second for a third more
-agent CPU; **3 + 5** (trainer `0-2,8-10`, agents `3-7,11-15`) is predicted to cost about 3 % for two thirds more. No
-measurement of steps per second against core count exists, so a 10-minute A/B on that launch picks between them by
-a rule fixed in advance (§5).
+**In one paragraph.** The trainer uses 1.8 of its 10 threads on average and never more than 3.4 in any second, while
+the 6 agent threads are 93 % busy. **4 + 4** (trainer `0-3,8-11`, agents `4-7,12-15`) is predicted to cost the trainer
+0 to 1 % of its steps per second for a third more agent CPU; **3 + 5** (trainer `0-2,8-10`, agents `3-7,11-15`) about
+3 % for two thirds more. No measurement of steps per second against core count exists, so a 10-minute A/B on the next
+fresh launch decides by a rule fixed in advance (§5): adopt the narrowest arm that passes.
 
 The box: one Ryzen 7 9800X3D, 8 physical cores, 16 threads; CPU n and n+8 are SMT siblings; one shared L3 cache. A split
 is always made of WHOLE physical cores.
 
-## 1. Where the split is set today
+## 1. The owner: `utils.core_split`
 
-Nothing owns it. Each side is a literal, repeated:
+Both lists live in ONE module, `src/utils/core_split.py`, and no other file may spell one
+(`src/core_split_literal_gate_test.py`, a static gate, fails on a literal; §6 lists what it exempts).
 
-- **The trainer's cores** are set by the launch kit, not by the launcher: `taskset -c 0-4,8-12` in front of
-  `python -m main.launcher` in `designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh`
-  (pinned by `src/main/x35/launch_x35_test.py`) and in each session's own launch script. The launcher only sets the
-  priority (the tree runs at nice 10). A live launcher keeps its CPUs until a new launcher starts; a child it restarts
-  inherits them.
-- **The agents' cores** are the string `5-7,13-15` in rule 5b, in 13 code files and 6 tests (§6), and twice in the
-  orchestrator's pin enforcer, a session script that, while a GPU lease is held, re-pins every nice-19 process of the
-  user to exactly that list every 30 s.
-- **The arm chain** reads both lists from a chain file's `cpu` block, defaulting to today's
-  (`src/main/ops/arm_chain/spec.py`). It uses them for its GO-time CPU gate and for the prefix of its own agent jobs;
-  it does not pin the trainer.
-- `utils.ship_gate` is the one reader that derives the agent set: beside a live run it takes every online CPU the
-  trainer is not pinned to.
+```bash
+python -m utils.core_split show                    # the active split, a queued one, live trainers and their CPUs, an A/B marker
+python -m utils.core_split agent-cpus              # the agent list in taskset's form: nice -n 19 taskset -c "$(… agent-cpus)" <cmd>
+python -m utils.core_split trainer-cpus            # the trainer list
+python -m utils.core_split trainer-cpus --launch   # a LAUNCH KIT's read: a queued split becomes active first (--dry-run: writes nothing)
+python -m utils.core_split set 4+4 --next-launch   # queue a split for the next launch (--note "<why>")
+python -m utils.core_split set 5+3                 # set it now: REFUSED while a trainer is live
+```
+
+- **The splits** are `5+3` (the default), `4+4` and `3+5`: trainer physical cores + agent physical cores, the trainer
+  taking the lowest. Python reads `core_split.agent_cpus()` / `trainer_cpus()` when it LAUNCHES a job, never at
+  import, so a long-lived supervisor follows a change without a restart.
+- **The state** is one JSON file, `~/.local/state/gen3ai/core_split.json`, under the home directory the password
+  database names for the user: `$HOME` and `$XDG_STATE_HOME` are not read, so two readers with different environments
+  cannot name two files (`$GEN3AI_CORE_SPLIT_STATE` names another; the test suite seals it to a path that does not
+  exist). No file is the default split, so a box that never ran `set` behaves as before the owner existed. A file that
+  cannot be parsed is an error in every reader, never a silent default.
+- **A live trainer** is a process whose python RUNS `-m main.launcher` (or that package by its path; not `--dry-run` / `--help`) or the trainer
+  script, read from its command line the way CPython reads it; a word in some other argv (`grep -m main.launcher`, an
+  editor on the script) is not one.
+- **The order is held by two refusals.** A live launcher keeps its CPUs until a new launcher starts (a child it
+  restarts inherits them), so agents that widen under it land on its cores. `set` is therefore refused while a
+  training launcher or trainer is live, and `set --next-launch` only queues: the split becomes active when a launch
+  kit reads `trainer-cpus --launch` with no trainer live, so the new tree starts narrow and the agents widen in the
+  same write. With a trainer live that read prints the active list and the queue stands. A CPU-only run an agent
+  started inside the agent list is agent work: it blocks nothing as long as the new split keeps its CPUs with the
+  agents.
+- **Beside a live run, the ship gate reads the trainer's own affinity** (`core_split.agent_ids_beside`): its CPUs are
+  the online CPUs in neither the trainer's affinity nor the active trainer list. A trainer narrowed for 8 s by the
+  A/B frees nothing.
+- **Who reads it.** The trainer's pin: `launch_x35.sh` (the launch kit; it HOLDs when the read fails, and logs the list it got and any note about a queued
+  split). The agent list: the arm chain's defaults
+  (`src/main/ops/arm_chain/spec.py`; a chain file's `cpu` block still overrides them), `main.x35.kakuna` (also the
+  default behind `$GEN3AI_ANCHOR_CORES`), `main.team_strength.kakuna_lane`, `main.reads.runner`,
+  `main.human_data.x59s_ops`, `utils.ship_gate`, `utils.gate_lock`, `utils.gate_lock_status`,
+  `utils.rebuild_main_rust` (and `scripts/ops/rebuild_main_rust.sh`), `utils.history_rewrite`.
+- **What does NOT read it yet** is §6.
 
 ## 2. What the trainer uses
 
@@ -87,76 +112,135 @@ Not in the model, all **UNVERIFIED:** the start-up of each launch and restart on
 only in steady state); the eval rollouts (about 1 iteration in 20); and what five loaded agent cores do to the trainer
 through the shared L3 and the all-core clock (X65-F1 saw nothing with three).
 
-## 5. The 10-minute A/B (designed, not run)
+## 5. The 10-minute A/B: `main.ops.core_split_ab`
 
-It runs on the next fresh launch, on the real run, by the session that launched it, on the orchestrator's go. It only
-narrows the run's own tree inside the CPUs it already has, so nothing else on the box moves, and it changes the run's
-timing, not its arithmetic. Agents stay on `5-7,13-15` throughout.
+It runs once, on the next fresh training launch, on the real run, by the session that launched it (procedure:
+`TRAINING_RUN_SOP.md` §2). It only narrows that run's own tree inside the CPUs it already has, so nothing else on the
+box moves, and it changes the run's timing, not its arithmetic. Agents stay on the active agent list throughout.
 
-- **Arms.** A = 5 cores `0-4,8-12` (control), B = 4 cores `0-3,8-11`, C = 3 cores `0-2,8-10`.
-- **Unit.** An 8-second segment of one rollout. A rollout is 25 s, so it holds three segments, one per arm. The order
-  rotates over 6 rollouts (ABC, BCA, CAB, CBA, ACB, BAC), so each arm sits in each position twice. The update between
-  them runs on arm A. Six cycles are 7.1 minutes; start after the third logged iteration, right after an eval
-  iteration, so no eval falls inside.
-- **Mechanism.** `taskset -a -cp <list> <pid>` on every process of the launcher's tree at each segment boundary, and
-  the switch times written down. This needs a small driver (§6, step 2), which finds a rollout's start from the
-  workers' run state as `burst` does: 18 timed switches are not hand work.
-- **Meter.** `python -m main.ops.trainer_cpu_profile burst` recording the whole A/B. Per segment, drop the first
-  second after a switch, then take the mean time from one burst's start to the next (57 ms today; an 8 s segment holds
-  about 120). That period IS the rollout's speed: it carries the burst and anything the narrower mask does to the
-  learner's part. Per rollout, form period(B) / period(A) and period(C) / period(A); the result is the mean of each
-  ratio over the 6 rollouts and its standard error.
-- **Projection.** Loss of steps per second = 0.353 x (ratio - 1), 0.353 being the collect share of a cycle. The
-  control is `update_wall_s` of the six iterations against the three before.
-- **The rule, fixed before the run.** The orchestrator sets the bar first; the recommendation is **3 %**. An arm
-  PASSES at a projected loss of 2.5 % or less and FAILS at 3.5 % or more. Between the two it is INCONCLUSIVE and counts
-  as a fail. It is also INCONCLUSIVE when the standard error of its projected loss exceeds 0.5 %, when an eval landed
-  in a measured rollout, or when the control moved by more than 10 % (three times its standard error: `update_wall_s`
-  varies 4.7 % per iteration). **Adopt the narrowest arm that passes.**
-  The model puts arm C at 3.2 %, inside the band: expect the A/B, not the model, to decide 3 + 5.
+```bash
+A="$(python -m utils.core_split agent-cpus)"
+nice -n 19 taskset -c "$A" python -m main.ops.core_split_ab run --launcher-pid <pid> --out-dir <dir> --check   # refusals + plan, changes nothing
+setsid nohup nice -n 19 taskset -c "$A" python -m main.ops.core_split_ab run --launcher-pid <pid> --out-dir <dir> \
+  > <dir>.log 2>&1 &                                           # ~9 min: detached, then ONE watcher on its pid
+python -m main.ops.core_split_ab verdict <dir>/record.json     # re-read a record
+python -m main.ops.core_split_ab restore                       # only after the driver was SIGKILLed
+```
+
+The run is longer than a tool's foreground limit, and a driver cut mid-segment by its caller is exactly the case the
+restore exists for: start it detached and wait on its pid (after `setsid … &`, `$!` is not the driver: read the pid
+of the `python` process). **Never start it under anything that ends a job with SIGKILL** (`mem_cap.sh --max-s`,
+`timeout -s KILL`): a killed driver restores nothing and tells nobody. **The watcher ends with `restore`**
+(`timeout 3300 bash -c "while [ -d /proc/$P ]; do sleep 5; done"; python -m main.ops.core_split_ab restore`): after
+a clean exit it finds no marker and does nothing, after a kill it puts the lists back, and under a live driver it
+refuses.
+
+- **Arms.** A = the tree's own 5 cores `0-4,8-12` (control), B = 4 cores `0-3,8-11`, C = 3 cores `0-2,8-10`.
+- **Unit.** An 8-second segment of one rollout. A rollout is about 24 s (23.8 s on the live run of 2026-11-09), so
+  it holds three segments, one per arm. The order rotates over 6 rollouts (ABC, BCA, CAB, CBA, ACB, BAC), so each arm
+  sits in each position twice. The update between them runs on arm A. Six cycles are 7.1 minutes. A rollout ends with
+  its third segment, or at once when no worker was runnable for 0.3 s; the open segment ends THERE (the third one of
+  a 23.8 s rollout measures 6.8 s, not 7), never at the time planned for it, and a segment that never started makes
+  its arms INCONCLUSIVE.
+- **When to start it.** After the run's third logged iteration (the driver refuses earlier) and right after an eval
+  has logged, so no eval falls inside: an eval comes about once in 20 iterations. The driver does not wait for an
+  eval itself.
+- **Mechanism.** The driver sets the affinity of every thread of the launcher's tree at each segment boundary and
+  writes the switch times down. It finds a rollout's start from the run state of the TRAIN env's workers, read every
+  4 ms: the first runnable worker after 2 s with none, confirmed by 4 bursts in half a second (a blip inside an update
+  is not a rollout). The tree holds a second env process, the eval env, with workers of its own: the train env is the
+  env process with the most CPU time, and the driver refuses a tree where the runner-up has half of it or more.
+- **A segment counts only when its list was verified.** A switch reports whether its last walk found every thread on
+  the arm's list, and each segment's end reads every thread's list back before the next switch. A set the kernel
+  refused, or a list something else changed mid-segment, makes that arm INCONCLUSIVE; it is never booked as the arm.
+- **What it may touch.** One launcher's tree, by `sched_setaffinity` only, and only to a subset of that tree's own
+  CPUs. It refuses a pid that is not a `main.launcher`, a tree that is not uniformly on the `5+3` trainer list, a run
+  with fewer than three logged iterations, and a second A/B. It never signals, renices or widens anything.
+- **Restore.** The tree's original list goes back when the A/B ends, on any error, and on every catchable signal
+  that would end or stop the driver (the driver's `_HANDLED`: SIGTERM, SIGINT, SIGHUP, SIGQUIT, SIGUSR1/2, the
+  terminal stops, the timers, SIGXCPU, SIGIO, SIGPWR; a SIGHUP ignored under `nohup` stays ignored; the restore
+  cannot be interrupted by a second signal). It is tried up to three
+  times and counts only when a walk AFTER the last set found every thread on the original list. It reaches every
+  process a narrowing touched, in the tree or not: each is named (pid and start time) in a marker,
+  `core_split_ab.json` beside the state file, BEFORE it is narrowed (and a child born on a narrow list is named at
+  that segment's end), so a trainer whose launcher died mid-segment, or a child re-parented away, gets its list back
+  too, and a reused pid is never touched. The driver stops with "the
+  launcher is gone" within a second of that. The marker is removed only after a verified restore; until then
+  `utils.core_split show` reports it. A SIGKILL or an OOM kill cannot be caught: `restore` reads the marker and puts
+  the lists back, and refuses while the driver that wrote it is alive (SIGTERM that driver; SIGKILL it only if it does
+  not exit).
+- **Meter.** Its own recording, `<dir>/burst.jsonl`, in `main.ops.trainer_cpu_profile burst`'s format (that tool's
+  `summarize` reads it), on one clock with the switches. Per segment, drop the first second after a switch, then take
+  the mean time from one burst's start to the next (57 ms today; an 8 s segment holds about 120). That period IS the
+  rollout's speed: it carries the burst and anything the narrower mask does to the learner's part. Per rollout, form
+  period(B) / period(A) and period(C) / period(A); the result is the mean of each ratio over the 6 rollouts and its
+  standard error.
+- **Projection.** Loss of steps per second = 0.353 x (ratio - 1), 0.353 being the collect share of a cycle.
+- **The control** is `update_wall_s` of the six updates against the three before. The run's logger table lands within
+  half a second of a rollout's END and carries the update BEFORE that rollout (checked on `rb_x60t_s3507`, three
+  cycles), so the first table after the A/B's first rollout starts is the last "before" and the next six are the
+  A/B's.
+- **The rule (orchestrator, 2026-11-09; bar 3 %).** An arm PASSES at a projected loss of 2.5 % or less and FAILS at
+  3.5 % or more. Between the two it is INCONCLUSIVE and counts as a fail. It is also INCONCLUSIVE when the standard
+  error of its projected loss exceeds 0.5 %, when an eval landed in the measured window (an eval line in the log, or
+  a new row in the run's `eval_results.jsonl`), when the control moved by more than 10 % (three times its standard
+  error: `update_wall_s` varies 4.7 % per iteration), or when the recording is thin (next bullet). **Adopt the
+  narrowest arm that passes**; with none passing, the split stays `5+3`. The model puts arm C at 3.2 %, inside the
+  band: expect the A/B, not the model, to decide 3 + 5.
+- **A late reading is excluded, never tolerated.** The driver runs at nice 19 beside busy agent jobs. A
+  burst-to-burst interval holding a sampling gap over 12 ms (shorter than a burst, so none hides in an accepted gap)
+  is dropped; a segment with over 25 % of its intervals dropped, or fewer than 40 left, makes its arm INCONCLUSIVE.
+  A replay of the 215 s recording of §2 through the driver dropped 0 of about 120 intervals per segment.
+- **Known noise.** With no narrowing at all, the period drifts 1 to 2.7 % with a segment's position inside a rollout
+  (the same replay). The rotation puts each arm in each position twice, which balances it; what is left shows in the
+  standard error, which the rule bounds.
 - **Why the bar is 3 %.** 3 % is 43 minutes of GPU steps a day; two more agent cores are 48 core-hours a day on a box
   where CPU, not memory, is what agent work waits for.
 - **Why not whole iterations.** `collect_ms` varies 3.3 % from one iteration to the next. Resolving a 1 % change in it
-  needs about 22 iterations per arm, 80 minutes for three arms. That version needs no driver (three hand switches per
-  block) and is the fallback.
+  needs about 22 iterations per arm, 80 minutes for three arms. That version (three hand switches per block, by the
+  launching session on its own tree) is the fallback.
 - **What it cannot see.** The freed cores sit idle during the A/B, so it is optimistic about shared-cache and clock
   effects, and it does not cover start-up or evals. §7's check after the switch covers those.
 
-## 6. What must change
+## 6. What does not read the owner
 
-| step | what | where |
+| what | state | who acts |
 |---|---|---|
-| 1 | **One owner for the two lists** (a build unit, not done): one module holding the trainer and agent lists, a one-line CLI for shell scripts, and the rule `utils.ship_gate` already applies (beside a live run, agents = online CPUs minus the trainer's). Every site below reads it | new, under `src/utils/` |
-| 2 | the A/B driver (§5): timed `taskset` on one launcher's tree, refusing any pid outside it and any list outside the tree's own CPUs | new, under `src/main/ops/` |
-| 3 | the trainer's pin | the `taskset` literal of the launch kit in use (`launch_x35.sh` and `src/main/x35/launch_x35_test.py` for the X35 kit; each session launch script) |
-| 4 | the arm chain's defaults and every live chain file's `cpu` block; a running supervisor holds its values until it restarts, and its CPU gate names any agent job outside its agent list a hog | `src/main/ops/arm_chain/spec.py`, `cli.py`, `cpugate.py`, `runner_test.py` |
-| 5 | the agent list in code | `src/main/x35/kakuna.py` (also the default behind `$GEN3AI_ANCHOR_CORES`), `src/main/team_strength/kakuna_lane.py`, `src/main/reads/runner.py`, `src/main/human_data/x59s_ops.py`, `src/main/ops/rss_watch.py`, `src/utils/ship_gate.py` (its lease-only list), `src/utils/gate_lock_status.py`, `src/utils/rebuild_main_rust.py`, `scripts/ops/rebuild_main_rust.sh`, `src/utils/history_rewrite/__main__.py`, and their tests |
-| 6 | the pin enforcer: its list (twice) and its skip list. Left alone it puts every agent job back on `5-7,13-15` within 30 s whenever a lease is held, and the switch silently does nothing | the orchestrator's session script; the orchestrator edits and restarts it |
-| 7 | the rule and its echoes | root `CLAUDE.md` rule 5b; `designs/ops/testing.md`, `TRAINING_RUN_SOP.md`, `ORCHESTRATOR_SOP.md`; `designs/tools/reads.md`; `designs/training/eval_and_rating.md`; the `designs/endstate/` docs that quote a command |
+| **the pin enforcer** (the orchestrator's session script: while a GPU lease is held it re-pins every nice-19 process of the user to the agent list every 30 s) | spells the `5+3` agent list twice. Left alone it puts every agent job back on that list within 30 s, and an adopted split silently does nothing for the agents | the orchestrator patches it to read `python -m utils.core_split agent-cpus` once per cycle and restarts it BEFORE the launch that adopts a split. Its skip list needs no entry for the A/B driver: the trainer's tree runs at nice 10, which the enforcer never touches |
+| **a session's own launch script** outside the repo | spells the trainer list in its `taskset` | the launching session: `taskset -c "$(python -m utils.core_split trainer-cpus --launch)"`, and HOLD when the read prints nothing |
+| **frozen measurement kits** under `designs/research_state/` | keep their literals: they are records, and the gate exempts that tree. `launch_x35.sh` is the one kit there still in use; it reads the owner and the gate scans it (`LIVE_KITS`) | whoever runs another kit again converts it and names it in `LIVE_KITS` first |
+| **a chain file's `cpu` block** | an explicit list in a chain file overrides the owner | drop the block from a chain that should follow the split |
+| **a supervisor started before the owner landed** (a play lane on an old pin, an arm-chain supervisor) | holds the `5+3` agent list in its own code until it restarts. That list lies inside both wider agent sets, so it keeps working, on fewer cores than it could use | restart it to use the new cores |
 
-`utils.heavy_slots` and `mem_cap.sh` hold no core list. A play pin cut before the switch keeps `5-7,13-15`, which lies
-inside both proposed agent sets, so an old lane keeps working (the enforcer widens it). Frozen measurement kits keep
-their literals: they are records.
+The gate also exempts the append-only `designs/CHANGELOG.md` and any file whose name carries its date (a review or
+audit of that day). `utils.heavy_slots` and `mem_cap.sh` hold no core list.
 
 ## 7. The switch, the check, the rollback
 
-**Order matters. Narrow the trainer first, widen the agents second.** Agents that widen first land on cores the
-trainer still owns, and priority alone has not protected a run. A rollback runs in the reverse order: agents back to
-`5-7,13-15` first (and one enforcer cycle to confirm no nice-19 process is outside it), then the trainer widened.
+**Order matters: the trainer is narrow before the agents are wide.** Agents that widen first land on cores the
+trainer still owns, and priority alone has not protected a run. A live tree is never re-pinned in place: a split
+changes only at a launch, where one write does both sides.
 
-1. Launch on today's split. Run the A/B (§5), read the rule, then let the run log 10 iterations without an eval on
-   the old list: they are step 4's baseline.
-2. The launching session narrows its tree to the adopted list (one `taskset -a -cp` per process of the tree), and
-   the launch kit's literal changes in the same shipped change, so the next launch starts narrow.
-3. The agent side ships (steps 4 to 7 of §6); the orchestrator restarts the enforcer and any chain supervisor.
+1. **Launch on `5+3` and run the A/B** (§5). Keep `<dir>/record.json`; the verdict names the split to adopt, or says
+   to keep `5+3`. Let the run log 10 iterations without an eval: they are step 4's baseline.
+2. **Queue it:** `python -m utils.core_split set <split> --next-launch --note "A/B <dir>"`. Nothing changes yet. The
+   orchestrator patches and restarts the pin enforcer (§6) now.
+3. **It becomes active at the next launch through a kit**: the next run, or this run stopped and resumed (a resume is
+   a launch; the 6-hourly restart of the child inside a live launcher is not). `python -m utils.core_split show` then
+   names the new split and the tree on its trainer list. Jobs the agents start from then on take the wider list; the
+   enforcer moves the running ones.
 4. **Check, with the agent cores loaded:** every thread of the tree shows the new list; then 20 minutes of
    `trainer_cpu_profile sample` and 215 s of `burst`. Pass: the rollout's run-queue wait stays under 0.05 s per second
    (0.013 today); the burst-to-burst period is within the A/B's projection plus 1 %; over at least 30 iterations without
    an eval, the median `collect_ms` against step 1's baseline projects (ratio less 1, times 0.353) to a loss inside the
-   bar, and the mean `update_wall_s` is within 5 % of the baseline's. Check an arm chain's registered throughput floor against the projected loss before
-   step 2. Time the next restart from its start to its first trainer line against the last one on 5 cores.
+   bar, and the mean `update_wall_s` is within 5 % of the baseline's. Check an arm chain's registered throughput floor
+   against the projected loss before step 2. Time the launch from its start to its first trainer line against the last
+   one on 5 cores.
 5. **Roll back** when a check fails, when work the orchestrator marked BLOCKING is starved, or on the orchestrator's
-   word: the reverse order above, then one revert of the shipped change.
+   word, **agents first**: stop the run at a safe point, KEEPING the GPU lease (`TRAINING_RUN_SOP.md` §4); `python -m utils.core_split set
+   5+3` (accepted now that no trainer is live), so every new agent job takes the narrow list; wait until an enforcer cycle
+   (30 s; it runs while the GPU lease is held) adds no `pinned` line to its log, so no running job is left on the cores
+   the trainer is about to get; resume the run through its kit. No code is reverted: the split is state.
 
 ## 8. What it buys
 
@@ -180,7 +264,7 @@ trainer still owns, and priority alone has not protected a run. A rollback runs 
   ship gate (its `-n` is half the agent threads, so 3 becomes 4 or 5 by itself), measurement batteries, the S lane.
   Memory admission allows 4 heavy jobs at once; 4 or 5 cores are what lets four jobs run rather than share three.
 
-## 9. Considered, not proposed
+## 9. Considered, not adopted
 
 - **Lending idle trainer cores by scheduler class.** During the update (63 % of the time) all but one trainer core
   is idle. Agents in the idle scheduling class on those cores, with core-scheduling cookies so no agent thread

@@ -228,9 +228,10 @@ def inhouse_cells(students: Mapping[str, Any]) -> List[Dict[str, Any]]:
 
 def inhouse_argv(cell: Mapping[str, Any], ledger: Path, py: str = sys.executable,
                  label: str = "x59s_inhouse") -> List[str]:
+    from utils import core_split
     from utils.paths import repo_path
 
-    return ["nice", "-n", "19", "taskset", "-c", "5-7,13-15", str(repo_path("scripts/ops/mem_cap.sh")), "--name",
+    return ["nice", "-n", "19", "taskset", "-c", core_split.agent_cpus(), str(repo_path("scripts/ops/mem_cap.sh")), "--name",
             "x59s_h2h", "12", "timeout", "2700", py, "-m", "main.h2h", "play", "--player", cell["player"],
             "--opponent", cell["opponent"], "--panel", cell["panel"], "--pairs", str(PAIRS), "--seed",
             str(cell["seed"]), "--out", str(ledger), "--label", label, "--device", "cpu", "--threads", "2",

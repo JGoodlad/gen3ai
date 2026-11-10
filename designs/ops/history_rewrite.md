@@ -79,13 +79,13 @@ Do not start until every line is true. All are read-only checks.
 ## Steps
 
 `PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3`, `export PYTHONPATH=$PWD/src` from a worktree of the
-tooling, and rule 5b while a run is live: `--cpus 5-7,13-15` (the tool sets nice 19 itself). `$WORK` is a NEW directory
+tooling, and rule 5b while a run is live: `--cpus "$(python -m utils.core_split agent-cpus)"` (the tool sets nice 19 itself). `$WORK` is a NEW directory
 outside the repository (it will hold a full clone, ~0.6 GB, and the names' rules).
 
 ```bash
 $PY -m utils.history_rewrite names --out ~/.cache/gen3ai/history_rewrite/names.json         # counts only
 $PY -m utils.history_rewrite audit                                                          # where every name stands, by #NN
-$PY -m utils.history_rewrite --cpus 5-7,13-15 dryrun --work $WORK --gates                   # the whole rehearsal on a clone
+$PY -m utils.history_rewrite --cpus "$(python -m utils.core_split agent-cpus)" dryrun --work $WORK --gates                   # the whole rehearsal on a clone
 ```
 
 The dry run IS steps 1-5 below on a clone; the real rewrite repeats the same commands, so nothing new happens on the

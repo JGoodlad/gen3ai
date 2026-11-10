@@ -5,7 +5,7 @@ THE CELL. Side A (the reported side, ``--our-teamset away``) is Kakuna on a rate
 registered files, :func:`install`), and each unit's config names them; a unit is one ``python -m main.anchors``
 invocation of 20 role-balanced games (``--declare-asymmetric-teams``, greedy vs greedy, CPU, ``--team-seed =
 --seed-base =`` the plan's seed, ``--capture-dir``), run from a PINNED checkout root under ``nice -n 19 taskset -c
-5-7,13-15 scripts/ops/mem_cap.sh`` (rule 5b; the short lane first, :func:`run_unit`), one at a time, on a 95xx port
+<the agent cores> scripts/ops/mem_cap.sh`` (rule 5b; the short lane first, :func:`run_unit`), one at a time, on a 95xx port
 CLAIMED in the lock dir every Kakuna lane shares (:func:`claim_port`).
 
 WHO PLAYED WHICH TEAM. Metamon draws each side's team itself, so the record of a game is the front end's CAPTURE: its
@@ -31,9 +31,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.team_strength import panel as PN
+from utils import core_split
 
 GAMES = 20
-CORES = "5-7,13-15"
 MEM_GB = "12"
 #: The heavy slots' short lane and its overrun exit, and the long retry's bound: ``main.x35.kakuna``'s values.
 UNIT_MAX_S = 600
@@ -142,7 +142,7 @@ def argv_for(py: str, tree: Path, out: Path, seed: int, port: int, *, short: boo
          "--device", "cpu", "--port", str(port), "--nice", "19", "--out", str(out), "--capture-dir",
          str(out / "capture")]
     cap = ["--max-s", str(UNIT_MAX_S), MEM_GB] if short else [MEM_GB, "timeout", str(UNIT_LONG_S)]
-    return ["nice", "-n", "19", "taskset", "-c", CORES, str(tree / "scripts" / "ops" / "mem_cap.sh"),
+    return ["nice", "-n", "19", "taskset", "-c", core_split.agent_cpus(), str(tree / "scripts" / "ops" / "mem_cap.sh"),
             "--name", "tsr", *cap, *a]
 
 

@@ -10,6 +10,10 @@ from typing import Any, Dict, List, Optional, Tuple
 import pytest
 
 from main.ops import trainer_cpu_profile as T
+from utils import core_split
+
+TRAINER_LIST = core_split.DEFAULT.trainer_list
+TRAINER_IDS = list(core_split.DEFAULT.trainer_ids)
 
 HZ = 100
 LAUNCHER, TRAINER, ENV, COMPILE = 100, 200, 300, 400
@@ -58,7 +62,7 @@ class FakeProc:
             if tid == pid:
                 (self.root / str(pid) / "stat").write_text(_stat(pid, comm, ppid, self.ticks[tid], cpu))
                 (self.root / str(pid) / "cmdline").write_text(self.CMD[pid])
-                (self.root / str(pid) / "status").write_text("Name:\tx\nCpus_allowed_list:\t0-4,8-12\n")
+                (self.root / str(pid) / "status").write_text(f"Name:\tx\nCpus_allowed_list:\t{TRAINER_LIST}\n")
         lines = ["cpu  0 0 0 0 0 0 0 0"]
         for c in range(16):
             b, t = self.cpu_busy[c], self.cpu_total[c]
@@ -107,7 +111,7 @@ def test_the_tree_and_the_trainer_are_found(tmp_path):
     assert pids[0] == LAUNCHER and set(pids) == {LAUNCHER, TRAINER, ENV, COMPILE}
     assert T.trainer_pid(pids, LAUNCHER, str(tmp_path)) == TRAINER
     assert T.tree_pids(999, str(tmp_path)) == []
-    assert T.affinity(TRAINER, str(tmp_path)) == [0, 1, 2, 3, 4, 8, 9, 10, 11, 12]
+    assert T.affinity(TRAINER, str(tmp_path)) == TRAINER_IDS
 
 
 def test_a_thread_name_with_a_parenthesis_parses(tmp_path):
@@ -177,7 +181,7 @@ def test_percentile_is_nearest_rank():
 
 
 def test_summary_splits_phases_and_reads_the_peak_core():
-    head = {"header": 1, "affinity": [0, 1, 2, 3, 4, 8, 9, 10, 11, 12], "log_start": [1_000_000, 100.0]}
+    head = {"header": 1, "affinity": TRAINER_IDS, "log_start": [1_000_000, 100.0]}
     foot = {"footer": 1, "log_end": [1_140_000, 200.0]}
     rows = [head]
     rows += [_row(4.0, 1.0, {"0": 1.0, "8": 0.5, "1": 0.9, "5": 1.0, "13": 1.0}, wait=0.2) for _ in range(19)]

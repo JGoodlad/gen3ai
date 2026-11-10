@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from utils import core_split
 from utils.paths import repo_path
 
 SCRIPT = repo_path("designs", "research_state", "measurements", "x35_breakers_stage_2026-10-17", "launch_x35.sh")
@@ -112,7 +113,36 @@ def test_the_launcher_is_spawned_in_its_own_session():
     spawn = [ln for ln in TEXT.splitlines() if '"$PY" -m main.launcher' in ln and "--dry-run" not in ln
              and not ln.lstrip().startswith("#")]
     assert spawn, "the launcher spawn line is gone"
-    assert all("exec setsid taskset -c 0-4,8-12" in ln for ln in spawn), spawn
+    assert all('exec setsid taskset -c "$TRAINER_CPUS"' in ln for ln in spawn), spawn
+
+
+def test_the_trainer_pin_is_the_core_splits_read_at_launch(tmp_path):
+    """The kit spells no CPU list: it reads ``utils.core_split trainer-cpus --launch`` (the read that makes a queued
+    split active) after every pre-check and before the spawn, and HOLDs on an empty answer. Run for real against the
+    sealed default state, the read prints the default split's trainer list."""
+    code = "\n".join(ln for ln in TEXT.splitlines() if not ln.lstrip().startswith("#"))
+    assert not re.search(r"taskset -c [0-9]", code)
+    read = code.index('-m utils.core_split trainer-cpus --launch 2>>')
+    assert code.index("prechecks go") < read < code.index('exec setsid taskset -c "$TRAINER_CPUS"')
+    assert re.search(r'&& \[ -n "\$TRAINER_CPUS" \] \|\| hold ', code)
+    r = subprocess.run([sys.executable, "-m", "utils.core_split", "trainer-cpus", "--launch"], capture_output=True,
+                       text=True, timeout=60, env=dict(os.environ, GEN3AI_CORE_SPLIT_STATE=str(tmp_path / "s.json")))
+    assert r.returncode == 0 and r.stdout.strip() == core_split.DEFAULT.trainer_list and not (tmp_path / "s.json").exists()
+    # ...and every pre-check pass reads it first WITHOUT writing: an unreadable state, or a queued split this launch
+    # would not get, HOLDs before the once-only batch records are written, and again at the launch read itself
+    dry = code.index('-m utils.core_split trainer-cpus --launch --dry-run')
+    assert dry < code.index("\nprechecks go") and dry < code.index("kit pin-check --pin \"$PIN\" --side \"$SIDE\" --arm \"$ARM\" --stage \"$STAGE\" --models-dir \"$MODELS\" --write")
+    assert code.count(f'grep -q "{core_split.STAYS_QUEUED}"') == 2 and code.count("|| hold \"the queued core split") == 2
+    state = tmp_path / "q" / "core_split.json"
+    env = dict(os.environ, GEN3AI_CORE_SPLIT_STATE=str(state))
+    assert subprocess.run([sys.executable, "-m", "utils.core_split", "set", "4+4", "--next-launch"], env=env,
+                          capture_output=True, timeout=60).returncode == 0
+    before = sorted(x.name for x in state.parent.iterdir()), state.read_bytes()
+    r = subprocess.run([sys.executable, "-m", "utils.core_split", "trainer-cpus", "--launch", "--dry-run"], env=env,
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0 and r.stdout.strip() in (core_split.parse_split("4+4").trainer_list, core_split.DEFAULT.trainer_list)
+    assert (core_split.STAYS_QUEUED in r.stderr) == (r.stdout.strip() == core_split.DEFAULT.trainer_list), "the kit greps stderr"
+    assert before == (sorted(x.name for x in state.parent.iterdir()), state.read_bytes()), "a dry run writes nothing"
 
 
 def test_a_group_signal_to_go_does_not_reach_a_setsid_child(tmp_path):

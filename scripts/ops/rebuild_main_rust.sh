@@ -17,7 +17,7 @@ USAGE
     scripts/ops/rebuild_main_rust.sh --check    # refusal checks + verification of what is built now (no build)
     scripts/ops/rebuild_main_rust.sh --dry-run  # print the plan and the 4 commands
 
-Always acts on the MAIN checkout (from a worktree too). Builds run at nice 19 on cores 5-7,13-15 under
+Always acts on the MAIN checkout (from a worktree too). Builds run at nice 19 on the agent cores (python -m utils.core_split agent-cpus) under
 mem_cap.sh 8, GEN3AI_BLOCKING set, CARGO_TARGET_DIR unset. Exit: 0 ok; 2 usage; 3 refused (live process
 uses the target / target outside main); 4 main dirty; 5 build failed; 6 an artifact failed verification.
 On a refusal: report it and rebuild later; never kill the process, never force.

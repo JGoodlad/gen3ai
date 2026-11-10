@@ -358,7 +358,7 @@ scripts/ops/ship_gate.sh run              # --dry-run prints the resolved comman
 export PYTHONPATH=$PYTHONPATH:src && scripts/ops/gate_lock.sh \
   /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 6
 # BESIDE A LIVE TRAINING RUN (rule 5b — the usual state): low priority on the agent cores, -n 3
-nice -n 19 taskset -c 5-7,13-15 scripts/ops/gate_lock.sh \
+nice -n 19 taskset -c "$(python -m utils.core_split agent-cpus)" scripts/ops/gate_lock.sh \
   /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 3
 # Who holds the gate, since when, its ETA, and who is queued (no lock taken):
 scripts/ops/gate_lock.sh --status            # --json for an agent deciding whether to wait
@@ -376,8 +376,8 @@ kernel while re-trying the rest; a crashed holder's slot frees when it dies. Re-
 lock (`GEN3AI_GATE_LOCK_HELD=<pid>:<slot>`, verified against `/proc/locks`); all slots held by
 ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-s`, exit 4) and bounds the gate's own heavy-slot wait too. **No gate waits for a heavy slot while holding the gate lock** (the convoy, 2026-10-19/20: one gate idle on a 28 h job's slot blocked every gate for over an hour): the heavy slot is taken non-blocking after the gate slot, and a gate that finds none releases the gate slot, waits for a slot holding no lock (`heavy_slots.await_free_slot`) and queues for the gate again. Wait and
 acquisition time go to stderr. When a `train_rl_agent.py --run-dir` process is live, every take prints
-ONE line naming the run and the rule-5b shape — nice 19, `taskset -c` the agent cores (every cpu the
-trainer is NOT pinned to), `-n` = 0.5 x those cpus (`LEASED_WORKERS_PER_CPU`) — and what is wrong with
+ONE line naming the run and the rule-5b shape — nice 19, `taskset -c` the agent cores (every cpu in neither
+the trainer's affinity nor the active trainer list: `utils.core_split.agent_ids_beside`), `-n` = 0.5 x those cpus (`LEASED_WORKERS_PER_CPU`) — and what is wrong with
 THIS gate's shape (nice < 19, cpus overlapping the trainer's) (`gate_lock.live_run_warning`, from
 `utils.procfs.live_training_runs`); it never changes the command.
 
@@ -451,8 +451,8 @@ An explicit `$GEN3AI_HEAVY_SLOTS=N` is still the fixed count of N with NO memory
 box). Tune with `$GEN3AI_HEAVY_RESERVE_GB` / `$GEN3AI_HEAVY_MAX_SLOTS`; change the constants only with a new measurement.
 
 **What it does not buy.** Memory was not the binding limit; the 3 agent cores are. With both slots held on 11-09 the 6
-agent threads were 4.9 busy on average (20 min, 5 s samples) while the training run used 1.9 of its 10 (the trainer's per-phase profile, and the proposal to move the boundary
-between the two sets: [`core_split.md`](core_split.md)). Four jobs
+agent threads were 4.9 busy on average (20 min, 5 s samples) while the training run used 1.9 of its 10 (the trainer's per-phase profile, and the A/B that decides whether the boundary
+between the two sets moves: [`core_split.md`](core_split.md)). Four jobs
 mostly share the same cores: the queue wait becomes slower running, and the gain in work done is what the idle agent
 threads allow (a 20-game raw unit took 22-30 s beside one other job, n = 6, and a median 35 s, p90 44 s, on the 6-slot days,
 n = 1,113). **UNVERIFIED:**
@@ -554,13 +554,14 @@ knob. Tests: `src/utils/heavy_slots_lane_test.py` (ordering, the bound, real wai
 on it (never an outer `timeout`: § "A queued job: three rules"), extra pytest options go after `--`, no argument refuses). It RUNS
 EVERYTHING the routine gate runs — `-m "not slow and not e2e"` over all of `src/`, the static gates included
 (they deselect nothing) — and chooses only the SHAPE from the box: a live training run
-(`utils.procfs.live_training_runs`) ⇒ rule 5b, `nice -n 19`, pinned to every cpu the trainer is NOT pinned to,
-`-n` = 0.5 x those cpus (3 on this box); no live run ⇒ `-n 6`, normal priority. Always through `gate_lock.sh`
+(`utils.procfs.live_training_runs`) ⇒ rule 5b, `nice -n 19`, pinned to every cpu in neither the trainer's affinity
+nor the active trainer list (`utils.core_split`, the ONE owner of both lists: [`core_split.md`](core_split.md)),
+`-n` = 0.5 x those cpus (3 on the default split); no live run ⇒ `-n 6`, normal priority. Always through `gate_lock.sh`
 (one gate at a time) and `mem_cap.sh 24`, always with `CUDA_VISIBLE_DEVICES=""`. It never selects tests by the
 change (owner, 2026-09-30); it is fast because the routine set was RE-TIERED by measured cost.
 
-**Measured beside a live training run** (rule 5b shape, `nice 19 taskset -c 5-7,13-15 -n 3`, trainer on
-0-4,8-12, other agents' nice-19 jobs and the maturity queue's SCHED_IDLE slots on the same agent cores; walls
+**Measured beside a live training run** (rule 5b shape, `nice 19 taskset -c <the 5+3 agent cores> -n 3`, trainer on
+<the 5+3 trainer cores>, other agents' nice-19 jobs and the maturity queue's SCHED_IDLE slots on the same agent cores; walls
 are the gate-lock HELD time, queue wait excluded):
 
 | tree | tests | Σ test time | wall |
@@ -1270,7 +1271,7 @@ then waits at the barrier for a descheduled worker: py-spy (`--native`, 50 Hz) o
 margin and log-prob bit, every p2 decision of its 24-game OFF play) reproduce exactly at 1 thread and at 2; every
 other file compares plays inside one process at one compute, and passes.
 
-**Measured** (agent cores `taskset -c 5-7,13-15`, `nice 19`, a live training run on the other cores; one file alone
+**Measured** (agent cores `taskset -c <the 5+3 agent cores>`, `nice 19`, a live training run on the other cores; one file alone
 per run, `-p no:xdist`, beside at most one other such run; each run's own `utils.cpu_meter` window over those 6
 logical cpus, its own process tree subtracted; the before / after of a file are DIFFERENT windows, hence the factor
 on each). "÷ factor" is wall divided by the window's contention factor: a rough quiet-equivalent, NOT a quiet-box

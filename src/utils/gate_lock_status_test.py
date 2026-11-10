@@ -71,7 +71,7 @@ def test_history_appends_skips_torn_lines_and_trims(tmp_path):
 
 
 def test_cpu_list_compresses_ranges():
-    assert GS.cpu_list([5, 6, 7, 13, 14, 15]) == "5-7,13-15"
+    assert GS.cpu_list([4, 5, 6, 12, 13, 14]) == "4-6,12-14"
     assert GS.cpu_list([0, 2, 3]) == "0,2-3"
     assert GS.cpu_list([]) == ""
 

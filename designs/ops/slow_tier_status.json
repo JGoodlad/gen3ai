@@ -4807,34 +4807,34 @@
   },
   "src/main/team_strength/x26_lane_integration_test.py::test_a_unit_from_another_registration_is_refused": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
+   "commit": "7b130ce3a0d4dac91e159895a6a7d88d3a62190d",
+   "at": "2026-11-10T03:14:09Z",
    "duration_s": 0.0,
-   "contention": 1.94,
+   "contention": 3.48,
    "detail": ""
   },
   "src/main/team_strength/x26_lane_integration_test.py::test_every_pair_played_its_planned_teams_and_reads_as_games": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
+   "commit": "7b130ce3a0d4dac91e159895a6a7d88d3a62190d",
+   "at": "2026-11-10T03:14:09Z",
    "duration_s": 0.0,
-   "contention": 1.89,
+   "contention": 2.49,
    "detail": ""
   },
   "src/main/team_strength/x26_lane_integration_test.py::test_the_fit_reads_the_lane_into_per_team_and_per_set_ratings": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
+   "commit": "7b130ce3a0d4dac91e159895a6a7d88d3a62190d",
+   "at": "2026-11-10T03:14:09Z",
    "duration_s": 0.01,
-   "contention": 1.8,
+   "contention": 2.51,
    "detail": ""
   },
   "src/main/team_strength/x26_lane_integration_test.py::test_units_are_durable_and_a_rerun_resumes": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 256.48,
-   "contention": 1.58,
+   "commit": "7b130ce3a0d4dac91e159895a6a7d88d3a62190d",
+   "at": "2026-11-10T03:14:09Z",
+   "duration_s": 448.23,
+   "contention": 2.12,
    "detail": ""
   },
   "src/main/train/canary_shift_max_test.py::test_one_update_is_BIT_IDENTICAL_with_the_flag_at_two_values": {
@@ -5415,10 +5415,10 @@
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
    "status": "pass",
-   "commit": "2511a9793161a33e2c18ec3260aa8f897be40dd6",
-   "at": "2026-11-10T01:37:56Z",
-   "duration_s": 12.19,
-   "contention": 2.57,
+   "commit": "7b130ce3a0d4dac91e159895a6a7d88d3a62190d",
+   "at": "2026-11-10T03:14:09Z",
+   "duration_s": 10.14,
+   "contention": 1.73,
    "detail": ""
   },
   "src/main/x65/export_test.py::test_a_fold_trains_picks_and_exports_bit_identically": {
@@ -5766,5 +5766,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-10T03:03:38Z"
+ "last_written": "2026-11-10T03:14:09Z"
 }

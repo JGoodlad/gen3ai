@@ -26,7 +26,7 @@ is gone, or after ``--max-samples`` samples (36 at 5 min is the 3-hour bound).
 
 CPU only. Start it detached beside the launch, like the other watchers::
 
-    CUDA_VISIBLE_DEVICES="" nice -n 19 taskset -c 5-7,13-15 nohup setsid \\
+    CUDA_VISIBLE_DEVICES="" nice -n 19 taskset -c "$(python -m utils.core_split agent-cpus)" nohup setsid \\
         python -m main.ops.rss_watch --launcher-pid <pid> --run <name> --fork-step <N> \\
         --status-file <status.txt> --rows-dir <dir> &
 

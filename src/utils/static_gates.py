@@ -11,7 +11,7 @@ the declaration with an AST scan and ``static_gates_test.py`` holds every count 
 
 WHY ``--paths`` (2026-10-12). ``pytest src/ -m static`` COLLECTS the whole tree (~12,000 tests, ~50 s per
 process on the agent cores beside a live run) to keep 240; naming the 17 files collects only them. Measured
-on cores 5-7 / 13-15 at nice 19, warm caches, ``-n 2``: **64 s by file list against 102 s by marker, the
+on the agent cores at nice 19, warm caches, ``-n 2``: **64 s by file list against 102 s by marker, the
 identical 240 tests** (``--collect-only`` diffed). The two selections are equal only while no test OUTSIDE
 these files carries the marker — :func:`stray_static_marks` finds any, and ``static_gates_test.py`` fails
 on one.

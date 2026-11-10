@@ -36,11 +36,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
+from utils import core_split
 from utils.rust_env import columns
 from utils.rust_env import stamp as S
 
 #: Rule 5b's agent cores (CPU n and n+8 are SMT siblings): 3 whole physical cores.
-AGENT_CPUS = "5-7,13-15"
 NICE = 19
 MEM_CAP_GB = 8
 BLOCKING_WHY = "rebuild main's Rust target after a ship (rebuild_main_rust.sh)"
@@ -223,7 +223,7 @@ def build_env(environ: Optional[Dict[str, str]] = None) -> Dict[str, str]:
 
 def build_argv(b: Build, mem_cap: str, cargo: str) -> List[str]:
     """``nice`` and the pin OUTSIDE ``mem_cap.sh`` (a launched nice is inherited; renicing down is refused)."""
-    return ["nice", "-n", str(NICE), "taskset", "-c", AGENT_CPUS, mem_cap, str(MEM_CAP_GB), cargo, *b.cargo_args]
+    return ["nice", "-n", str(NICE), "taskset", "-c", core_split.agent_cpus(), mem_cap, str(MEM_CAP_GB), cargo, *b.cargo_args]
 
 
 def run_builds(builds: Sequence[Build], mem_cap: str, cargo: str, *,

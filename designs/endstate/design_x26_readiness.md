@@ -311,7 +311,7 @@ Engine start-up costs 10–22 s per check.
 **The pipelining, built and measured (T38, 2026-10-16;
 `../research_state/measurements/t38_parallel_batches_2026-10-16/`).** `main.plateau tick --inflight-batches K`
 (default 4) plays K 40-pair batches in ONE cycle; each batch keeps its own seed block and row, and the envs pull
-single pairs across the wave. Agent cores under rule 5b (`taskset -c 5-7,13-15`, `nice 19`, `mem_cap`), load ≈ 5–6,
+single pairs across the wave. Agent cores under rule 5b (`taskset -c <the 5+3 agent cores>`, `nice 19`, `mem_cap`), load ≈ 5–6,
 quieter than T33's 11–15, so the RATIO is the result, not the absolute rate:
 
 | network | the same games at each K | K = 1 | K = 2 | K = 4 | K = 8 |
@@ -376,7 +376,7 @@ used 1.1 cores; the env core was idle).
 - The procedure that measures it needs no GPU window and no lease, because it only reads `/proc` and queries
   `nvidia-smi`. While any production run is live, run `sampler.py <out> 300 <trainer pid> <rust_env_proc pid(s)>`
   beside `nvidia-smi --query-gpu=timestamp,utilization.gpu --format=csv,noheader -lms 500`, both for 5 min under
-  `taskset -c 5-7,13-15 nice -n 19`. Then run `phase_util.py`. That is ≤ 10 min in total.
+  `taskset -c "$(python -m utils.core_split agent-cpus)" nice -n 19`. Then run `phase_util.py`. That is ≤ 10 min in total.
 
 **The four placements, compared** (X26, production net):
 
@@ -977,7 +977,7 @@ paste.
 
 ### 5.3 The CPU / agent BUILD UNITS (in parallel; rule 5b while the GPU is leased)
 
-Each is a dispatchable brief. All agent CPU work runs `nice -n 19 taskset -c 5-7,13-15`, heavy jobs under
+Each is a dispatchable brief. All agent CPU work runs `nice -n 19 taskset -c "$(python -m utils.core_split agent-cpus)"`, heavy jobs under
 `mem_cap.sh` (rule 5b). They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as T30–T35.
 
 | unit | scope | files | tier | est. | depends on | dedupe |

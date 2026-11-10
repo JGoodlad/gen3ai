@@ -9,7 +9,7 @@ What it decides is only the SHAPE, from the box:
   the agent cores (every online cpu the trainer is NOT pinned to), ``-n`` = ``LIVE_WORKERS_PER_CPU`` x
   those cpus;
 * a GPU LEASE is held (no run live: a measurement battery owns the card and its CPU timing) ⇒ the SAME rule-5b shape
-  on :data:`AGENT_CPUS`. The predicate is ``utils.heavy_slots.wanted`` - the ONE definition of "rule 5b applies"
+  on the active split's agent cores (``utils.core_split``). The predicate is ``utils.heavy_slots.wanted`` - the ONE definition of "rule 5b applies"
   the heavy slots use too, so the two cannot drift;
 * no run is live and no lease is held ⇒ the quiet policy: ``-n`` = :data:`QUIET_WORKERS`, normal priority, no pin.
 
@@ -50,6 +50,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
+from utils import core_split
 from utils import heavy_slots as HS
 from utils import mem_cap
 from utils import procfs
@@ -62,9 +63,6 @@ MARKERS = "not slow and not e2e"
 QUIET_WORKERS = 6
 #: xdist workers per LOGICAL agent cpu beside a live run — MEASURED, designs/ops/testing.md "The SHIP GATE".
 LIVE_WORKERS_PER_CPU = 0.5
-#: The agent cores when rule 5b applies with NO trainer to read the complement from (a held GPU lease, no live run):
-#: this box's, CPU n and n+8 being SMT siblings (CLAUDE.md rule 5b). Filtered to the online cpus.
-AGENT_CPUS = (5, 6, 7, 13, 14, 15)
 #: The memory cap (GB) the gate runs under (scripts/ops/mem_cap.sh).
 MEM_CAP_GB = 24
 #: Where the last ship gate's 8 s-bar rows land (``utils.ship_bar``; per user, like the test-cost table).
@@ -99,11 +97,11 @@ def resolve_shape(runs: Optional[Dict[str, int]] = None, *, online: Optional[Seq
         return Shape({}, None, 0, QUIET_WORKERS)
     online = list(range(os.cpu_count() or 1)) if online is None else list(online)
     if not runs:                              # a lease and no run: no trainer pin to take the complement of
-        agent = [c for c in AGENT_CPUS if c in online] or online
+        agent = [c for c in core_split.agent_cpu_ids() if c in online] or online
         return Shape({}, agent, 19, max(1, int(len(agent) * LIVE_WORKERS_PER_CPU)), leased=why)
     if trainer_cpus is None:
         trainer_cpus = [c for pid in runs.values() for c in (affinity_of(pid) or [])]
-    agent = [c for c in online if c not in set(trainer_cpus)]
+    agent = core_split.agent_ids_beside(trainer_cpus, online)
     if not agent or set(trainer_cpus) >= set(online):
         raise SystemExit("REFUSING: a training run is live but pinned to EVERY cpu, so there are no agent "
                          "cores for rule 5b (designs/ops/TRAINING_RUN_SOP.md). Ask the orchestrator.")

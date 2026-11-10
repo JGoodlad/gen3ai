@@ -152,7 +152,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   actually bind, each with its own guard: ONE GPU lease (standing rule 5); ONE routine gate at a
   time (`scripts/ops/gate_lock.sh`); while a training run is live, the heavy CPU jobs whose declared caps fit the box's memory (≤ 4;
   `designs/ops/testing.md` "The heavy slots admit by MEMORY"; `python -m utils.heavy_slots --admission count` is the
-  fixed count of 2 again) on ≤ 3 whole physical cores, which are the limit that binds (rule 5b; the three rules for a queued job are the brief bullet below); no two agents on the same files (separate worktrees, disjoint scopes);
+  fixed count of 2 again) on the agent cores (3 whole physical cores on the default split; `python -m utils.core_split show`), which are the limit that binds (rule 5b; the three rules for a queued job are the brief bullet below); no two agents on the same files (separate worktrees, disjoint scopes);
   and quota (frugal, not stingy). Re-impose a cap only if stalls return (check
   `cc_keepalive_patch.py self`) — then measure, do not guess.
 - **Quota: the account is on the Max 20x plan — plenty, and never to be wasted** (owner,
@@ -627,6 +627,13 @@ notice it is gone. (The */15 watchdog cron is retired, layer 2.)
   background polls here are for THIS session's own dispatches (CPU probes, agents) only; a second set
   of arm-transition watchers is duplicate noise and duplicate chat events. This narrows the four-layer
   rule to this session's jobs; it does not relax it in `TRAINING_RUN_SOP.md`.
+- **The core split is this session's decision, and so is the pin enforcer** ([`core_split.md`](core_split.md)).
+  Which CPUs the trainer and the agents get lives in `utils.core_split` (`python -m utils.core_split show`). The
+  orchestrator gives the go for the one-time A/B on the next fresh launch, has the training session queue the
+  split its RESULT line names (`set <split> --next-launch`), and orders a rollback (agents first, §7 there). The
+  pin enforcer (this session's script: while a GPU lease is held it re-pins every nice-19 process to the agent
+  list every 30 s) reads `python -m utils.core_split agent-cpus` once per cycle and skips the cycle when the read
+  fails; a literal list in it silently undoes an adopted split for every agent job.
 - Retire a cron when its work lands. It is session-only and auto-expires in seven days, but a wake on
   finished work is noise: offer to remove it, then remove it on the word.
 - **Retire a monitor the moment its job's terminal line has fired, and never arm one whose filter can

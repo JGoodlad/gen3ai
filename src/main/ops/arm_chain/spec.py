@@ -23,6 +23,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
+from utils import core_split
+
 SCHEMA = "arm_chain_v1"
 _SHA40 = re.compile(r"[0-9a-f]{40}")
 _SHA_PREFIX = re.compile(r"[0-9a-f]{7,40}")
@@ -136,8 +138,8 @@ class ChainSpec:
     backend: Backend
     records_stage: str
     submodules: Tuple[str, ...]
-    agent_cores: str
-    trainer_cores: str
+    agent_cores_pin: Optional[str]
+    trainer_cores_pin: Optional[str]
     disk_headroom_gib: float
     items: Tuple[Item, ...]
     source: str = ""
@@ -152,8 +154,22 @@ class ChainSpec:
         """Where the chain's own transcripts, scratch stages and records go (inside the job dir, never main)."""
         return os.path.join(self.job_dir, "arm_chain", self.name)
 
+    @property
+    def agent_cores(self) -> str:
+        """The agent CPUs: the spec's ``cpu.agent_cores`` when it names one, else the box's ACTIVE split, read at each
+        use (``utils.core_split``): a chain outlives a launch, and a launch may change the split."""
+        return self.agent_cores_pin or core_split.agent_cpus()
+
+    @property
+    def trainer_cores(self) -> str:
+        return self.trainer_cores_pin or core_split.trainer_cpus()
+
     def arms(self) -> List[ArmItem]:
         return [i for i in self.items if isinstance(i, ArmItem)]
+
+
+def _opt_str(v: Any) -> Optional[str]:
+    return None if v in (None, "") else str(v)
 
 
 def _req(d: Mapping[str, Any], k: str, where: str) -> Any:
@@ -296,7 +312,7 @@ def parse(d: Mapping[str, Any], source: str = "") -> ChainSpec:
         python=str(_req(d, "python", "chain")), backend=backend,
         records_stage=str(_req(rec, "stage", "records")),
         submodules=_str_list(rec.get("submodules", []), "records.submodules"),
-        agent_cores=str(cpu.get("agent_cores", "5-7,13-15")), trainer_cores=str(cpu.get("trainer_cores", "0-4,8-12")),
+        agent_cores_pin=_opt_str(cpu.get("agent_cores")), trainer_cores_pin=_opt_str(cpu.get("trainer_cores")),
         disk_headroom_gib=float(d.get("disk_headroom_gib", 30)), items=tuple(items), source=source,
         extra={k: v for k, v in d.items() if k.startswith("x_")})
 

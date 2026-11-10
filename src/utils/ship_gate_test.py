@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import pytest
 
+from utils import core_split
 from utils import heavy_slots as HS
 from utils import ship_gate as SG
 
 _ONLINE = list(range(16))
-_TRAINER = [0, 1, 2, 3, 4, 8, 9, 10, 11, 12]
+_TRAINER = list(core_split.DEFAULT.trainer_ids)
+_AGENTS = list(core_split.DEFAULT.agent_ids)
 
 
 @pytest.fixture(autouse=True)
@@ -25,11 +27,22 @@ def test_quiet_box_runs_the_quiet_policy_unpinned_at_normal_priority() -> None:
 
 def test_a_live_run_takes_rule_5b_on_every_cpu_the_trainer_does_not_hold() -> None:
     shape = SG.resolve_shape({"/m/rb_x": 42}, online=_ONLINE, trainer_cpus=_TRAINER)
-    assert shape.cpus == [5, 6, 7, 13, 14, 15] and shape.nice == 19
+    assert shape.cpus == _AGENTS and shape.nice == 19
     assert shape.workers == int(6 * SG.LIVE_WORKERS_PER_CPU)
     argv = SG.build_argv(shape, "py")
-    assert argv[:5] == ["nice", "-n", "19", "taskset", "-c"] and argv[5] == "5-7,13-15"
+    assert argv[:5] == ["nice", "-n", "19", "taskset", "-c"] and argv[5] == core_split.DEFAULT.agent_list
     assert "rb_x" in shape.describe()
+
+
+def test_a_trainer_narrowed_below_the_split_frees_nothing_for_the_gate() -> None:
+    """The core-split A/B narrows the live tree for 8 s at a time (``main.ops.core_split_ab``). A gate that starts
+    inside a narrow arm must not take the cores the driver hands back: the gate reads ``core_split.agent_ids_beside``
+    (the trainer's affinity UNION the active trainer list). Fails on a revert to the bare complement."""
+    narrow = core_split.narrowed(_TRAINER, 2)
+    shape = SG.resolve_shape({"/m/rb_x": 42}, online=_ONLINE, trainer_cpus=narrow)
+    assert shape.cpus == _AGENTS and not set(shape.cpus) & set(_TRAINER)
+    wide = SG.resolve_shape({"/m/rb_x": 42}, online=_ONLINE, trainer_cpus=list(range(14)))
+    assert wide.cpus == [14, 15]                      # a trainer pinned WIDER than the split is still respected
 
 
 def test_a_trainer_pinned_to_every_cpu_is_refused_not_overlapped() -> None:
@@ -105,14 +118,14 @@ def test_a_held_gpu_lease_with_no_run_live_takes_the_rule_5b_shape(monkeypatch: 
     held). The shape follows `heavy_slots.wanted` - one predicate. Fails on a revert of the shared predicate."""
     monkeypatch.setattr(HS, "lease_reason", lambda: "the GPU is LEASED (lease owner 'battery')")
     shape = SG.resolve_shape({}, online=_ONLINE)
-    assert shape.nice == 19 and shape.cpus == [5, 6, 7, 13, 14, 15]
+    assert shape.nice == 19 and shape.cpus == _AGENTS
     assert shape.workers == int(6 * SG.LIVE_WORKERS_PER_CPU)
     argv = SG.build_argv(shape, "py")
-    assert argv[:5] == ["nice", "-n", "19", "taskset", "-c"] and argv[5] == "5-7,13-15"
+    assert argv[:5] == ["nice", "-n", "19", "taskset", "-c"] and argv[5] == core_split.DEFAULT.agent_list
     assert "LEASED" in shape.describe() and "battery" in shape.describe()
     # a live run still wins and keeps the complement-of-the-trainer rule
     live = SG.resolve_shape({"/m/rb_x": 42}, online=_ONLINE, trainer_cpus=_TRAINER)
-    assert live.leased == "" and live.cpus == [5, 6, 7, 13, 14, 15]
+    assert live.leased == "" and live.cpus == _AGENTS
     # the shape and the slots read ONE predicate: no lease and no run is quiet on both
     monkeypatch.setattr(HS, "lease_reason", lambda: None)
     assert HS.wanted(runs={}) is None and SG.resolve_shape({}, online=_ONLINE).cpus is None

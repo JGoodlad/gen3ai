@@ -539,7 +539,7 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
     - What refused a wide trunk was the probe battery's depth worker (`main.probe_battery depth`,
       `pin_worker.trunk_rounds`), a different tool. It now reads the width branch (`0ecad293a`), and its output on
       a plain toy is byte-identical to before.
-   - Its CPU work ran under `nice -n 19 taskset -c 5-7,13-15`, the battery under `mem_cap.sh --max-s 600`:
+   - Its CPU work ran under `nice -n 19 taskset -c <the 5+3 agent cores>`, the battery under `mem_cap.sh --max-s 600`:
      `main.checkargs` × 3, `main.launcher --dry-run` × 1, `main.capacity` and `power.py`.
    - `models/` was only read. The battery's output went to `/tmp`.
 11. **The S lane cannot play N4's finals as built** (2026-10-31).
