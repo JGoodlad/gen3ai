@@ -1,6 +1,8 @@
 # X66 ExIt-0H (2026-11-09): can P\* learn the honest search's choices? — REGISTERED
 
-**Status: REGISTERED 2026-11-09** ([`PREREG.md`](PREREG.md)). Nothing trained, scored or played. The roadmap's MF-1
+**Status: REGISTERED 2026-11-09** ([`PREREG.md`](PREREG.md)); **the bank is built and registered** (Amendment 1:
+188,297 label rows, 0 dropped, manifest `0812768c…5344`). No student trained, nothing scored or played; the GPU kit is
+ready for the lease holder. The roadmap's MF-1
 (`../../EXPERIMENT_BACKLOG.md` §2.0): three P\* students, each fine-tuned toward S′-HONEST's honest piKL targets on two
 panels' banked decisions, scored on the third panel by the delivery gate (Δagree, game-clustered LB > 0) before any
 Kakuna game; only on DELIVERED, a two-look read against Kakuna on the held-out panel's S′-HONEST deals with S′-HONEST's
@@ -15,6 +17,7 @@ banked P\* raw arm as the control.
 | [`delivery_by_hand.py`](delivery_by_hand.py) | the gate recomputed with loops of its own (X65's) |
 | [`read_spec_look1.json`](read_spec_look1.json), [`read_spec_look1_fresh.json`](read_spec_look1_fresh.json), [`read_spec_look2.json`](read_spec_look2.json) | the Kakuna read's specs (PENDING: the students, the pin, the bank sha256), written by [`make_specs.py`](make_specs.py) |
 | [`power.py`](power.py) → [`power.txt`](power.txt) | the two-look power of the Kakuna read |
+| [`smoke_train.py`](smoke_train.py) | Amendment 1's CPU smoke of the x66 trainer on the registered bank (3 steps) |
 | [`noise_ceiling.py`](noise_ceiling.py) → [`noise_ceiling.json`](noise_ceiling.json) | S′h's self-agreement under another key (stage 1b's 157 pairs): 61.8 %; a third of its departures reproduce |
 
 State: `~/gen3ai_archive/x66_exit0h_2026-11-09/` (`bank/`, `students/`, `delivery/`, `delivery.json`, `look1/`, …).

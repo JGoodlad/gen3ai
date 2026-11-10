@@ -1,7 +1,7 @@
 """Writes X66's three read specs (PREREG §5, §6): look 1 (the banked S'-HONEST raw control behind G-BANK), look 1 with
 a fresh control (only if G-BANK fails) and look 2 (the cumulative 700-784 pool, the raw arm banked throughout). Every
 value the registration fills later is the literal PENDING (main.reads.spec): the students' zips and sha256s (the
-students amendment), the play pin (e46e3ddf8, named by PREREG §5), the bank manifest sha256 (the bank amendment) and the earlier looks' spec sha256s.
+students amendment), the play pin (e46e3ddf8, named by PREREG §5), and the earlier looks' spec sha256s.
     python3 make_specs.py            # rewrites read_spec_look1.json, read_spec_look1_fresh.json, read_spec_look2.json
 """
 import json
@@ -12,6 +12,7 @@ P = "PENDING"
 X = "/home/goodlad/gen3ai_archive/x66_exit0h_2026-11-09"
 HON = "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06"
 HON_SPEC = "9222393a14c79ff52e2a2bd315864626a9f6ea68ffeea709352c40e79d618afa"
+BANK = "0812768c9fcecf586c5973e23ba600cc9b3da99a704b2aeab567e89e7a185344"   # PREREG Amendment 1
 PIN = None                 # e46e3ddf8 (PREREG §5): added with the students; a spec with no pin is reviewed by check-spec --pin-pending
 E6 = "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130"
 PANELS = ["heldout72_hpfix", "forum72", "p72"]
@@ -40,7 +41,7 @@ def params(look, seeds, control, groups, gbank):
             "groups": groups, "seeds": seeds, "control": control, "gbank": gbank, "engine": E6,
             "z_go": {"1": 2.576, "2": 2.0}, "z_null": 1.96, "null_bar_pp": 2.0,
             "bootstrap": {"B": 4000, "seed": 20261109}, "rule8_eps": 0.0005, "max_drop_frac": 0.005,
-            "delivery": {"path": f"{X}/delivery.json", "B": 4000, "seed": 20261105}, "bank_manifest_sha256": P}
+            "delivery": {"path": f"{X}/delivery.json", "B": 4000, "seed": 20261105}, "bank_manifest_sha256": BANK}
 
 
 def spec(read, note, anchor, prm):

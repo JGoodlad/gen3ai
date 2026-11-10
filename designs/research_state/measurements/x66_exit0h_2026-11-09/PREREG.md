@@ -6,7 +6,7 @@ design names as ExIt-0H ([`design_x65_exit0_search_distillation.md`](../../../en
 §4.4): X65's machinery with the label source changed, at the recipe the X65 learnability probe showed can move the
 network, so its leaky-label comparator is the probe's `curve` arms at that same recipe (one lever: the label source).
 
-**Status: REGISTERED 2026-11-09.** The question, the classes, the folds, the recipe, the gate, the deals, the
+**Status: REGISTERED 2026-11-09 (`a2dbc9616`); Amendment 1 (the bank, `0812768c…5344`) below.** The question, the classes, the folds, the recipe, the gate, the deals, the
 statistic and every bar are frozen here. Two blind amendments may follow, and neither may move a bar, a fold, a deal,
 a seed, z, β, the learning rate, the epoch budget, the pick rule or the class rule:
 - **Amendment 1 (the bank):** the bank's manifest sha256, its counts and drops, and a CPU smoke of the train command
@@ -368,7 +368,7 @@ deals would need a fresh raw arm on seeds no read has claimed.
   ```bash
   env -u CUDA_VISIBLE_DEVICES -u GEN3AI_TEST_ALLOW_GPU taskset -c 0-4,8-12 scripts/ops/gpu_lock.sh \
     "$PY" -m main.x65.student train --recipe x66 --bank ~/gen3ai_archive/x66_exit0h_2026-11-09/bank \
-    --bank-sha256 <Amendment 1> --fold heldout72_hpfix --lr 1e-4 \
+    --bank-sha256 0812768c9fcecf586c5973e23ba600cc9b3da99a704b2aeab567e89e7a185344 --fold heldout72_hpfix --lr 1e-4 \
     --init /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip \
     --out ~/gen3ai_archive/x66_exit0h_2026-11-09/students/s_h --device cuda --budget-min 50
   ```
@@ -407,6 +407,51 @@ deals would need a fresh raw arm on seeds no read has claimed.
   this exact recipe the leaky labels read ≤ 0 at every checkpoint.
 - Given DELIVERED: pooled Δagree +0.5 pp (0, +2); G_X +0.5 pp (−1, +2); P(GO) ≈ 0.15, P(NULL) ≈ 0.4, P(UNDECIDED)
   ≈ 0.45.
+
+## Amendment 1 (2026-11-09, after the bank was built, before any student trained or any student logit existed): the bank
+
+Blind: written from the bank's manifest alone (the builder is outcome-blind; no student, logit or game exists). It
+moves no bar, fold, deal, seed, z, β, learning rate, epoch budget, pick rule or class rule.
+
+- **The registered bank:** `~/gen3ai_archive/x66_exit0h_2026-11-09/bank/`, manifest sha256
+  **`0812768c9fcecf586c5973e23ba600cc9b3da99a704b2aeab567e89e7a185344`** (`bank check --manifest-sha256` OK; 510
+  shards, 226 MB). Built by `bank_build.sh` at the side pin `c0b95914e` (clean), engine E6, source `sprime_honest`,
+  search `r0s4_honest_inc@10`, S′-HONEST's `record.json` sha256 `b7b96569…1711`, P\*'s check against `814823c5…91ed`;
+  nine ≤ 44-min chunks, 2026-11-09 10:02–21:36 PST, no `HiddenInfoError`.
+- **Its size:** 10,197 counted units (every one placed: 0 game errors); **515,426 rows**, of which **188,297 label
+  rows**, every recorded searched decision kept:
+
+  | panel | label rows (recorded = kept) | rows: raw arm / searched arm | frames verified | P\* argmax ties excluded |
+  |---|---|---|---|---|
+  | H | 60,004 | 80,576 / 79,854 | 61,585 / 61,585 | 7 |
+  | F | 65,996 | 94,258 / 92,067 | 73,342 / 73,342 | 13 |
+  | P72 | 62,297 | 85,821 / 82,850 | 64,441 / 64,441 | 14 |
+
+- **Every guard:** label-row drops 0 on every panel (the VOID bar is 0.5 %); 199,368 / 199,368 recorded frames (every
+  searched and every excluded decision) rebuild bit for bit; the two-ordering cross-check, the log sha256, `at` /
+  `update`, the turn and the re-score samples' logs all 0 bad; P\*'s greedy action equals the recorded one on every
+  row outside the 34 near-ties (0 mismatches).
+- **Four label rows' π′ mode is not the played action** (H 3, P72 1; the manifest's `mode_bad`): each is a near-tie
+  of π′ from the records' 6-decimal `q` / `log_pi` (π′ of the played action 0.235403 against 0.235408, 0.235294 /
+  0.235299, 0.491617 / 0.491644, 0.337162 / 0.337173). They stay labels: π′ is a soft target, and the gate scores
+  `played`.
+- **The training folds** (inner validation withheld): S_H trains on F + P72's ≈ 128k label rows, S_F on H + P72's
+  ≈ 122k, S_P on H + F's ≈ 126k (each ≈ 90 % of it outside inner validation), ESTIMATE ≈ 430–455 steps an epoch,
+  ≈ 5,200–5,500 steps a student.
+- **The kits and specs carry the sha256** (`gpu_students.sh`, `gate.sh`, the three specs' `bank_manifest_sha256`;
+  `check-spec --pin-pending` exit 0 on all three at `e46e3ddf8`, the students and the pin still PENDING).
+- **The launch command, checked:** the kit's exact argv parses and refuses on a wrong bank sha256 (`VOID: the bank
+  manifest 0812768c9fce is not the registered ffffffffffff`) and on an unregistered learning rate (`1e-05 is not one
+  of the x66 recipe's registered (0.0001,)`), both exit 2, at the side pin. **The CPU smoke** ([`smoke_train.py`](smoke_train.py):
+  the same `student.train` the argv calls, recipe x66, fold H, lr 1e-4, `limit_steps=3`, CPU, 3 threads,
+  under `mem_cap` at nice 19 on the agent cores, 22:00–22:22 PST) stopped at step 3 with exit 3 as designed, peak
+  8.13 GB, 30 min in its slot. Its plan is the registered one: S_H, seed 6611, 114,554 training label rows and 318,806
+  anchor rows, 13,739 / 36,190 inner-validation label / anchor rows, 448 steps an epoch, 5,376 steps, 24 checkpoints;
+  step-0 inner-validation L 0.7626 (anchor KL 1.9e-10: the teacher is P\*). **The path check is exact:** on the
+  step-0 dump D = 0 and K = 1 on `train` (114,554 rows, 42,499 departures), `val` (13,739, 5,199) and `read` (60,004,
+  22,376), with no logit ties, and the trainer's P\* argmax equals the recorded `pi_argmax` on every row. The smoke's
+  state is `~/gen3ai_archive/x66_exit0h_2026-11-09/smoke/`, never `students/`. ESTIMATE on the GPU unchanged:
+  ≈ 5,400 steps at 0.33 s plus 25 dumps, ≈ 45 min a student.
 
 ## FINDINGs
 
