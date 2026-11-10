@@ -126,9 +126,16 @@ def move_units(logits: Mapping[str, np.ndarray], legal: np.ndarray, known_moves:
     For each revealed mon: U = its true moves, minus the Hidden Power family, minus the moves the observation
     already shows. ``moves_logp`` is the mean log σ(logit) over U; ``moves_prec`` the share of U among the |U|
     highest logits of the candidate moves (legal, not revealed, not Hidden Power). A unit whose U holds a move the
-    table calls unlearnable is excluded (``moves_truth_illegal``): no variant can score it."""
+    table calls unlearnable is excluded (``moves_truth_illegal``): no variant can score it.
+
+    ``moves_ll`` is the PROPER score of the same unit: the Bernoulli log-likelihood of the truth over the whole
+    candidate set, Σ over U of log σ(logit) + Σ over the other candidates of log σ(−logit), in nats a unit (a SUM,
+    not a mean over moves). ``moves_logp`` reads only U, so a belief that raises a move the mon does not carry costs
+    it nothing there; ``moves_ll`` charges it (the 2026-11-10 move-leg diagnosis: a head within 0.1 nats of another
+    on ``moves_logp`` was 9 to 12 nats a unit below the prior on this)."""
     rows: List[int] = []
-    cols: Dict[str, Dict[str, List[float]]] = {m: {v: [] for v in logits} for m in ("moves_logp", "moves_prec")}
+    cols: Dict[str, Dict[str, List[float]]] = {m: {v: [] for v in logits}
+                                               for m in ("moves_logp", "moves_ll", "moves_prec")}
     exc: Dict[str, List[int]] = {"moves_truth_illegal": [], "moves_prec_near_tie": []}
     n_moves = legal.shape[-1]
     hp = np.zeros(n_moves, dtype=bool)
@@ -152,10 +159,13 @@ def move_units(logits: Mapping[str, np.ndarray], legal: np.ndarray, known_moves:
             rows.append(r)
             ci = np.flatnonzero(candm)
             pos = np.searchsorted(ci, truth)
+            sign = -np.ones(ci.size)                       # +1 on a true move, −1 on a candidate the mon lacks
+            sign[pos] = 1.0
             tied = False
             for v, lg in logits.items():
                 x = lg[r, i].astype(np.float64)
                 cols["moves_logp"][v].append(float(log_sigmoid(x[truth]).mean()))
+                cols["moves_ll"][v].append(float(log_sigmoid(sign * x[ci]).sum()))
                 hit, tie = _top_hits(log_sigmoid(x[ci]), pos, int(truth.size))
                 cols["moves_prec"][v].append(hit)
                 tied = tied or tie
@@ -184,7 +194,7 @@ def item_units(logp: Mapping[str, np.ndarray], item_label: np.ndarray, item_mask
 
 
 #: metric -> the family whose unit it is a mean over (one count column per family).
-FAMILY_OF = {"species_logp": "species", "species_hit": "species", "moves_logp": "moves", "moves_prec": "moves",
-             "items_logp": "items", "items_top1": "items"}
+FAMILY_OF = {"species_logp": "species", "species_hit": "species", "moves_logp": "moves", "moves_ll": "moves",
+             "moves_prec": "moves", "items_logp": "items", "items_top1": "items"}
 METRICS = tuple(FAMILY_OF)
 FAMILIES = ("species", "moves", "items")

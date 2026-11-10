@@ -61,6 +61,21 @@ def test_an_arm_is_the_team_mean_of_its_checkpoints_and_pairs_with_the_reference
     assert "[[162, 163, 165, 166, 167, 168]]" in md                  # the semantics gap is on the page
 
 
+def test_a_column_an_older_score_file_lacks_is_named_absent_never_a_partial_row() -> None:
+    """A score file written before ``moves_ll`` existed has no sums for it. The table must still build (the banked
+    baseline scores stay readable), with that column ABSENT for every arm on the panel and said so on the page."""
+    old, new = _doc("old", -0.5), _doc("new", +0.2)
+    del old["panels"]["p72"]["sums"]["moves_ll"]
+    doc = T.build({"A": [old], "B": [new]}, versus="A")
+    cell = doc["panels"]["p72"]
+    assert cell["absent"] == {"moves_ll": ["old"]}
+    assert "moves_ll" not in cell["metrics"] and "moves_logp" in cell["metrics"]
+    md = T.markdown(doc)
+    assert "**moves_ll** is ABSENT: old were scored before the column existed." in md
+    full = T.build({"A": [_doc("a", -0.5)], "B": [new]}, versus="A")["panels"]["p72"]
+    assert full["absent"] == {} and full["metrics"]["moves_ll"]["arms"]["B"]["minus_A"]["mean"] == pytest.approx(0.7)
+
+
 def test_the_verdict_word_needs_the_whole_interval_on_one_side() -> None:
     assert T.verdict({"mean": 0.1, "lo": -0.01, "hi": 0.2}) == "NOT DETECTED"
     assert T.verdict({"mean": 0.1, "lo": 0.0, "hi": 0.2}) == "NOT DETECTED"      # touching zero is not a detection

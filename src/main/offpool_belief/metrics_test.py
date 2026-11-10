@@ -87,6 +87,27 @@ def test_move_unit_scores_only_the_unshown_non_hidden_power_truth() -> None:
     assert u.values["moves_prec"][M.PRIOR].tolist() == [1.0]
     assert u.excluded["moves_truth_illegal"].tolist() == [0]          # slot 3's move 6
     assert u.excluded["moves_prec_near_tie"].size == 0
+    # the proper score: the truths {3, 7} as present AND the other candidates {1, 5} as absent, summed
+    np.testing.assert_allclose(u.values["moves_ll"][M.POST], [ls(1.0) + ls(-1.0) + ls(-2.0) + ls(-0.0)])
+    np.testing.assert_allclose(u.values["moves_ll"][M.PRIOR], [ls(0.5) + ls(1.5) + ls(2.0) + ls(1.0)])
+
+
+def test_a_raised_move_that_is_not_there_costs_moves_ll_and_not_moves_logp() -> None:
+    """The blind spot the column exists for (the 2026-11-10 move-leg diagnosis): ``moves_logp`` reads only the true
+    moves, so an over-confident raise of a move the mon lacks is free there. Shown, legal-but-uncandidate and
+    Hidden Power moves stay outside both."""
+    known, ids, flag, legal, species = _moves_fixture()
+    calm = np.zeros((1, 6, 10))
+    calm[0, 0, [1, 3, 5, 7]] = [-2.0, 1.0, -2.0, 1.0]
+    loud = calm.copy()
+    loud[0, 0, 5] = 6.0                                   # candidate 5 is NOT one of slot 0's moves
+    loud[0, 0, [2, 9, 0]] = 9.0                           # shown (2), Hidden Power (9), unlearnable (0): not candidates
+    u = M.move_units({"calm": calm, "loud": loud}, legal, known, ids, flag, species, frozenset({9}))
+    assert u.values["moves_logp"]["calm"].tolist() == u.values["moves_logp"]["loud"].tolist()
+    assert u.values["moves_prec"]["loud"].tolist() == [0.5]             # the raise does take a top-2 place
+    ls = lambda x: -math.log1p(math.exp(-x))             # noqa: E731 - log sigmoid
+    gap = u.values["moves_ll"]["calm"][0] - u.values["moves_ll"]["loud"][0]
+    assert gap == pytest.approx(ls(2.0) - ls(-6.0), abs=1e-12) and gap > 5.8
 
 
 def test_item_unit_is_a_labelled_real_item_the_observation_does_not_state() -> None:

@@ -46,6 +46,7 @@ Higher is better for every column. A UNIT is what a number is the mean of.
 | `species_logp` | a decision row with ≥ 1 hidden opponent mon | mean log presence of the true hidden species (those inside the candidate set) |
 | `species_hit` | the same | share of the true hidden species among the top-k presences, k = the true hidden count |
 | `moves_logp` | a (row, REVEALED opponent mon) with ≥ 1 true move the observation has not shown | mean log σ(logit) over those moves |
+| `moves_ll` | the same | the Bernoulli log-likelihood of the truth over the mon's WHOLE candidate set (legal, unshown, not Hidden Power): Σ log σ(logit) over the true moves + Σ log σ(−logit) over the others, in nats a unit (a sum, not a mean) |
 | `moves_prec` | the same | share of them among the top-\|unshown\| of the legal, unshown candidates |
 | `items_logp` | a (row, revealed mon) holding an item the observation does not state | log probability of the true item |
 | `items_top1` | the same | whether the true item is the argmax |
@@ -53,10 +54,15 @@ Higher is better for every column. A UNIT is what a number is the mean of.
 - **The log columns are the meter's verdict numbers**; `species_hit` / `moves_prec` / `items_top1` are descriptive
   (a top-k boundary within 1e-6 in probability is COUNTED per team as `…_near_tie`, never excluded).
 - `species_logp` and `items_logp` compare beliefs of EQUAL total mass (the presences sum to the hidden count; the
-  item belief is a softmax). `moves_logp` does not: each move is its own Bernoulli, and the number scores only
-  the true moves, so a belief that puts more total mass on a mon's moves scores higher for that alone. Read it
-  with `moves_prec` (rank only, mass-free) beside it; the two agreed in sign on every panel of the 2026-11-09
-  baseline, and so did the full Bernoulli log-likelihood on a 768-row check.
+  item belief is a softmax). The move belief has no such constraint (each move is its own Bernoulli), so the move
+  leg has two log columns. **`moves_ll` is the proper score and the one a claim about the move belief reads**: it
+  charges a move raised on a mon that does not carry it. `moves_logp` scores only the true moves, so it is blind to
+  exactly that: X68's fine-tuned export is within 0.1 nats of P\* on `moves_logp` off the pool and 9 to 12 nats a
+  unit below the prior on `moves_ll` (P\*: 0.6 to 2.2 below;
+  `designs/research_state/measurements/move_leg_offpool_2026-11-10/README.md` §1, §5). `moves_logp` stays for
+  continuity with the 2026-11-09 baseline; `moves_prec` is rank only and mass-free.
+- **A score file written before a column existed does not carry it**: `table` then lists the column as ABSENT for
+  that panel, naming the files to re-score, and builds the rest (the 2026-11-09 banked scores predate `moves_ll`).
 - The Hidden Power family (move 237 and the typed nums) is outside the move metrics: the label carries the typed
   move, the head's table the untyped one.
 - Counted, never silently dropped: a true hidden species outside the candidate set (`species_off_support`), and a

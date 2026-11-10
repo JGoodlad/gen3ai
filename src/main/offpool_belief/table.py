@@ -23,6 +23,7 @@ METRIC_TITLES = {
     "species_logp": "hidden species: mean log presence of the true species",
     "species_hit": "hidden species: share of the true species in the top k",
     "moves_logp": "unshown moves of a revealed mon: mean log probability",
+    "moves_ll": "unshown moves of a revealed mon: log-likelihood of the whole candidate set, nats a unit",
     "moves_prec": "unshown moves of a revealed mon: precision at |unshown|",
     "items_logp": "unstated item of a revealed mon: log probability",
     "items_top1": "unstated item of a revealed mon: top-1 rate",
@@ -58,11 +59,18 @@ def build(arms: Mapping[str, Sequence[Mapping[str, Any]]], *, versus: Optional[s
         n_teams = len(ref["team_labels"])
         idx = S.boot_index(n_teams)
         cell: Dict[str, Any] = {"kind": ref["kind"], "held_out": ref["held_out"], "n_teams": n_teams,
-                                "bank": ref["bank"], "metrics": {}, "obs_gap": {}, "excluded": {}}
+                                "bank": ref["bank"], "metrics": {}, "obs_gap": {}, "excluded": {}, "absent": {}}
         for a, bs in blocks.items():
             cell["obs_gap"][a] = sorted({tuple(b["obs_gap"]["rows_between"] or ()) for b in bs})
             cell["excluded"][a] = {k: int(np.sum(v)) for k, v in bs[0]["excluded"].items()}
         for metric in M.METRICS:
+            # A score file written before a column existed does not carry it. The column is then ABSENT from this
+            # panel for every arm, by name, never a partial row and never a silent drop: re-score to read it.
+            lacking = sorted(d["label"] for docs in arms.values() for d in docs
+                             if metric not in d["panels"][panel]["sums"])
+            if lacking:
+                cell["absent"][metric] = lacking
+                continue
             row: Dict[str, Any] = {"units": int(np.sum(ref["units"][M.FAMILY_OF[metric]])), "arms": {}}
             base = arm_team_metric(blocks[versus], metric, M.POST) if versus is not None else None
             for a, bs in blocks.items():
@@ -140,4 +148,7 @@ def markdown(doc: Mapping[str, Any]) -> str:
         exc = next(iter(cell["excluded"].values()))
         if exc:
             lines += ["Units not scored / flagged (first arm): " + ", ".join(f"{k} {v}" for k, v in exc.items()), ""]
+        for metric, labels in cell.get("absent", {}).items():
+            lines += [f"**{metric}** is ABSENT: {', '.join(labels)} were scored before the column existed. "
+                      "Re-score them to read it.", ""]
     return "\n".join(lines).rstrip() + "\n"

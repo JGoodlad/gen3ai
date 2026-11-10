@@ -19,6 +19,8 @@ weights.
   the hidden count); ``species_hit`` — the share of the true hidden species among the top-k presences;
 * ``moves_logp`` / ``moves_prec`` — per revealed mon with unrevealed true moves, the mean log probability of those
   moves, and precision at their count (the Hidden Power family excluded: its type is its own head);
+  ``moves_ll`` — the same unit's log-likelihood over the WHOLE candidate set (the proper score: it also charges a
+  raised move the mon does not carry, which ``moves_logp`` cannot see);
 * ``items_logp`` / ``items_top1`` — per revealed mon whose item the observation does not yet state.
 
 **Team-clustered** (:mod:`.stats`): a row belongs to the panel team its seat faces; a panel's number is the mean
