@@ -1,0 +1,82 @@
+{
+  "kind": "burst",
+  "readings": 53678,
+  "period": 0.004,
+  "threads": {
+    "env_workers": 16,
+    "learner": 1,
+    "autograd": 1
+  },
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "phases": {
+    "rollout": {
+      "seconds": 72,
+      "readings": 17949,
+      "workers_runnable_share": {
+        "0": 0.7256,
+        "1": 0.0072,
+        "2": 0.0072,
+        "3": 0.0044,
+        "4": 0.0033,
+        "5": 0.0046,
+        "6": 0.0427,
+        "7": 0.0149,
+        "8": 0.19
+      },
+      "workers_runnable_mean": 1.952,
+      "threads_runnable_peak": 8,
+      "threads_runnable_mean": 2.676,
+      "learner_or_autograd_runnable_share": 0.7239,
+      "workers_and_learner_together_share": 0.0,
+      "bursts_per_s": 17.18,
+      "workers_active_share": 0.2744,
+      "burst_ms_mean": 15.97
+    },
+    "update": {
+      "seconds": 142,
+      "readings": 35479,
+      "workers_runnable_share": {
+        "0": 1.0
+      },
+      "workers_runnable_mean": 0.0,
+      "threads_runnable_peak": 2,
+      "threads_runnable_mean": 0.998,
+      "learner_or_autograd_runnable_share": 0.9974,
+      "workers_and_learner_together_share": 0.0,
+      "bursts_per_s": 0.0,
+      "workers_active_share": 0.0,
+      "burst_ms_mean": 0.0
+    },
+    "transition": {
+      "seconds": 1,
+      "readings": 250,
+      "workers_runnable_share": {
+        "0": 0.88,
+        "1": 0.004,
+        "2": 0.02,
+        "6": 0.008,
+        "7": 0.016,
+        "8": 0.072
+      },
+      "workers_runnable_mean": 0.78,
+      "threads_runnable_peak": 8,
+      "threads_runnable_mean": 1.66,
+      "learner_or_autograd_runnable_share": 0.88,
+      "workers_and_learner_together_share": 0.0,
+      "bursts_per_s": 7.0,
+      "workers_active_share": 0.12,
+      "burst_ms_mean": 17.14
+    }
+  }
+}

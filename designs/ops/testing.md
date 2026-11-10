@@ -451,7 +451,8 @@ An explicit `$GEN3AI_HEAVY_SLOTS=N` is still the fixed count of N with NO memory
 box). Tune with `$GEN3AI_HEAVY_RESERVE_GB` / `$GEN3AI_HEAVY_MAX_SLOTS`; change the constants only with a new measurement.
 
 **What it does not buy.** Memory was not the binding limit; the 3 agent cores are. With both slots held on 11-09 the 6
-agent threads were 4.9 busy on average (20 min, 5 s samples) while the training run used 1.9 of its 10. Four jobs
+agent threads were 4.9 busy on average (20 min, 5 s samples) while the training run used 1.9 of its 10 (the trainer's per-phase profile, and the proposal to move the boundary
+between the two sets: [`core_split.md`](core_split.md)). Four jobs
 mostly share the same cores: the queue wait becomes slower running, and the gain in work done is what the idle agent
 threads allow (a 20-game raw unit took 22-30 s beside one other job, n = 6, and a median 35 s, p90 44 s, on the 6-slot days,
 n = 1,113). **UNVERIFIED:**

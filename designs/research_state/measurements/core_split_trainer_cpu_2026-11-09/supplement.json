@@ -1,0 +1,211 @@
+{
+ "agent_cores": {
+  "agent_cpus": [
+   5,
+   6,
+   7,
+   13,
+   14,
+   15
+  ],
+  "intervals": 1199,
+  "busy_mean": 5.57,
+  "busy_p5": 4.706,
+  "busy_p50": 5.99,
+  "busy_p95": 6.0,
+  "share_of_intervals_at_or_over_5.7": 0.596,
+  "phase_sequence": "u23 t1 r25 u45 r24 u44 t1 r23 t1 u43 t1 r23 t1 u43 t1 r24 u45 t1 r24 t1 u50 t1 r24 u44 r24 t1 u45 r25 u44 r24 t1 u43 t1 r24 u44 t1 r24 u45 t1 r23 u44 r24 t1 u43 t1 r24 u45 t1 r23 u9 t6 r18 t1 u50 r24 t1 u1"
+ },
+ "kakuna_unit_scopes": {
+  "scope": "gen3ai-capped-x35kakuna-*",
+  "by_day": [
+   {
+    "day": "2026-11-04",
+    "units": 1735,
+    "cpu_s_median": 74,
+    "cpu_s_mean": 230,
+    "cpu_s_p90": 503,
+    "wall_s_median": 73,
+    "cpu_per_wall": 0.99,
+    "cpu_hours": 111.0,
+    "mem_peak_gib_max": 3.0
+   },
+   {
+    "day": "2026-11-05",
+    "units": 1184,
+    "cpu_s_median": 68,
+    "cpu_s_mean": 273,
+    "cpu_s_p90": 554,
+    "wall_s_median": 69,
+    "cpu_per_wall": 0.99,
+    "cpu_hours": 89.7,
+    "mem_peak_gib_max": 3.1
+   },
+   {
+    "day": "2026-11-06",
+    "units": 284,
+    "cpu_s_median": 170,
+    "cpu_s_mean": 211,
+    "cpu_s_p90": 300,
+    "wall_s_median": 144,
+    "cpu_per_wall": 1.09,
+    "cpu_hours": 16.6,
+    "mem_peak_gib_max": 3.3
+   },
+   {
+    "day": "2026-11-07",
+    "units": 4643,
+    "cpu_s_median": 77,
+    "cpu_s_mean": 227,
+    "cpu_s_p90": 458,
+    "wall_s_median": 72,
+    "cpu_per_wall": 1.01,
+    "cpu_hours": 292.6,
+    "mem_peak_gib_max": 2.5
+   },
+   {
+    "day": "2026-11-08",
+    "units": 5359,
+    "cpu_s_median": 74,
+    "cpu_s_mean": 216,
+    "cpu_s_p90": 462,
+    "wall_s_median": 70,
+    "cpu_per_wall": 1.01,
+    "cpu_hours": 320.9,
+    "mem_peak_gib_max": 2.5
+   },
+   {
+    "day": "2026-11-09",
+    "units": 293,
+    "cpu_s_median": 179,
+    "cpu_s_mean": 231,
+    "cpu_s_p90": 308,
+    "wall_s_median": 150,
+    "cpu_per_wall": 1.1,
+    "cpu_hours": 18.8,
+    "mem_peak_gib_max": 2.7
+   }
+  ]
+ },
+ "iterations": {
+  "log": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3507/launcher_child.full.log",
+  "iterations": 129,
+  "collect_ms_median": 24900.0,
+  "eval_iterations": 6,
+  "eval_collect_ms_mean": 58833,
+  "plain_collect_ms_mean": 24953,
+  "plain_collect_ms_sd": 824,
+  "plain_collect_cv_pct": 3.3,
+  "update_wall_s_mean": 44.17,
+  "update_wall_cv_pct": 4.72
+ },
+ "kakuna_units": {
+  "anchor_units": 2539,
+  "by_six_hours": [
+   {
+    "six_hours_from": "2026-11-04 10:00",
+    "units": 327,
+    "run_s_median": 64,
+    "run_s_p90": 600,
+    "slot_wait_s_median": 0,
+    "slot_wait_s_mean": 0
+   },
+   {
+    "six_hours_from": "2026-11-04 16:00",
+    "units": 527,
+    "run_s_median": 64,
+    "run_s_p90": 540,
+    "slot_wait_s_median": 0,
+    "slot_wait_s_mean": 0
+   },
+   {
+    "six_hours_from": "2026-11-04 22:00",
+    "units": 489,
+    "run_s_median": 65,
+    "run_s_p90": 535,
+    "slot_wait_s_median": 0,
+    "slot_wait_s_mean": 0
+   },
+   {
+    "six_hours_from": "2026-11-05 04:00",
+    "units": 472,
+    "run_s_median": 65,
+    "run_s_p90": 500,
+    "slot_wait_s_median": 0,
+    "slot_wait_s_mean": 0
+   },
+   {
+    "six_hours_from": "2026-11-05 10:00",
+    "units": 417,
+    "run_s_median": 86,
+    "run_s_p90": 625,
+    "slot_wait_s_median": 0,
+    "slot_wait_s_mean": 0
+   },
+   {
+    "six_hours_from": "2026-11-05 22:00",
+    "units": 4,
+    "run_s_median": 712,
+    "run_s_p90": 2025,
+    "slot_wait_s_median": 882,
+    "slot_wait_s_mean": 940
+   },
+   {
+    "six_hours_from": "2026-11-06 04:00",
+    "units": 1,
+    "run_s_median": 161,
+    "run_s_p90": 161,
+    "slot_wait_s_median": 669,
+    "slot_wait_s_mean": 669
+   },
+   {
+    "six_hours_from": "2026-11-06 10:00",
+    "units": 10,
+    "run_s_median": 122,
+    "run_s_p90": 148,
+    "slot_wait_s_median": 294,
+    "slot_wait_s_mean": 855
+   },
+   {
+    "six_hours_from": "2026-11-06 16:00",
+    "units": 118,
+    "run_s_median": 148,
+    "run_s_p90": 182,
+    "slot_wait_s_median": 146,
+    "slot_wait_s_mean": 242
+   },
+   {
+    "six_hours_from": "2026-11-08 22:00",
+    "units": 11,
+    "run_s_median": 150,
+    "run_s_p90": 176,
+    "slot_wait_s_median": 125,
+    "slot_wait_s_mean": 82
+   },
+   {
+    "six_hours_from": "2026-11-09 04:00",
+    "units": 104,
+    "run_s_median": 147,
+    "run_s_p90": 181,
+    "slot_wait_s_median": 145,
+    "slot_wait_s_mean": 258
+   },
+   {
+    "six_hours_from": "2026-11-09 10:00",
+    "units": 51,
+    "run_s_median": 161,
+    "run_s_p90": 193,
+    "slot_wait_s_median": 231,
+    "slot_wait_s_mean": 685
+   },
+   {
+    "six_hours_from": "2026-11-09 16:00",
+    "units": 8,
+    "run_s_median": 179,
+    "run_s_p90": 223,
+    "slot_wait_s_median": 1477,
+    "slot_wait_s_mean": 1547
+   }
+  ]
+ }
+}
