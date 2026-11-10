@@ -244,8 +244,9 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # Events panel echoes it, and metadata.json records it (+ spec_hash, the measurement-regime tag).
     # SPECIALIST MODE (--trainee-team) pins ONLY the trainee source; opponents keep the full pool.
     inherit_team_mix(args)
-    # THE HUMAN-DATA SWITCH (`main.train.human_data_setup`): the resume / fork refusal, the NOT-BUILT levers, one team
-    # lever per run, the corpus verified against its committed stub, and the `[HUMAN-DATA]` stamp. FATAL_CONFIG.
+    # THE HUMAN-DATA SWITCH (`main.train.human_data_setup`): the resume / fork refusal, one lever per run, the corpus
+    # or the human-trained model verified against its committed stub, an `opp` clause's derived stable-opponent
+    # flags, and the `[HUMAN-DATA]` stamp. FATAL_CONFIG.
     from main.train.human_data_setup import resolve as _resolve_human_data
     _resolve_human_data(args, emit=emit)
     try:
@@ -353,8 +354,10 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
             current_model_version as _current_model_version, load_foreign_opponent)
         _cv_stable = _current_model_version(mappings, **_run_arch_toggles(args))
         try:
+            from main.train.human_data_setup import allowed_stable_zip
             _fixed_opponents = resolve_stable_opponents(
                 args.stable_opponents, _cv_stable, default_temperature=args.stable_opponent_temp,
+                allow_human_model=allowed_stable_zip(args),   # an `opp` clause's own zip, nothing else
             )
             # Validate the WEIGHTS actually load here in the main process (resolve only reads the
             # config). A valid config + corrupt/unreadable zip would otherwise pass the gate and

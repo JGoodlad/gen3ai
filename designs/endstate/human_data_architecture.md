@@ -38,7 +38,7 @@ STATUS
   human vs self-play data (Q-H9, X59-S)         : SELF-PLAY-DATA-BETTER, Δ_data -7.28 pp [-10.29, -4.28]; in-house -9.06; closes NOTHING (Δ_restriction +2.85 [+0.14, +5.56])
   ≥ 1500 follow-up (Q-H15, in-house, N 270,260) : rating NOT-RESOLVED +1.33 pp [-2.76, +5.43]; ≥ 1500 vs self-play SELF-PLAY-DATA-BETTER -4.42 [-6.07, -2.76]
   evidence that human data helps goal (b)       : none; at matched volume human rows teach a fresh network LESS than our self-play rows
-  switch values                                 : teams = more teams in the pool (BUILT) | bc = an extra loss term (NOT BUILT) | kl = a pull toward a human model (NOT BUILT)
+  switch values                                 : teams = more teams in the pool | init = a fresh run starts from a registered human-replay clone | opp = the frozen clone joins the self-play opponents (all BUILT; no clone is registered, so init and opp have nothing to name yet)
   open                                          : whether human TEAMS help (X60-T: X59-S closed nothing, routes H-TEAMS first); whether rating matters at fixed slice (the ≥ 1500 follow-up: NOT-RESOLVED, +1.33 pp [−2.76, +5.43]); does ONE human lever raise P* (X60-T: look 1 CONTINUE 11-07, F +0.64 pp [−2.17, +3.45]; look 2 at 8 v 8 registered, AM-X60T-2; its GAIN-to-ADOPT guards and the pooled REPORTED Δs built, AM-X60T-3); how the spectator stream was selected (Q-H4)
 ```
 
@@ -48,7 +48,7 @@ data beats our self-play data (§7.1): 5 learn human decisions (S-H), 10 learn P
 S-P0), 5 learn self-play (S-S). None is a run under `models/` and none seeds one. Human data is nevertheless already
 in the system in four other forms (§2): the teams we train on were built by people, one evaluation panel was
 extracted from ladder replays, our external meters were trained on human replays, and every prior is Smogon's
-aggregate of human ladder games. The switch is built for human TEAMS only (`--human-data teams:`, §6); no run has used it yet, and its levers that would let human DECISIONS train the policy (`bc`, `kl`) are not built. **There is
+aggregate of human ladder games. The switch has three levers (§6): `teams` (human-built teams in the pool; X60-T's runs train under it), and, built 2026-11-10 and used by no run, `init` and `opp`, the two ways a network CLONED from human decisions can reach a run (as a fresh run's starting weights, or as a frozen self-play opponent). Neither can be typed yet: no clone is registered (§5). **There is
 no evidence yet, either way, that human data would help on unfamiliar teams:** the 15.9 % line says human teams
 REACH that region (coverage), the −0.503 line says human choices are LEARNABLE, and upstream's human-only models all
 lose to our P\* (Q-H10). **X59-S has now read inside our network, and the answer is no at this volume** (2026-10-30):
@@ -114,7 +114,7 @@ fill-artefact check. pp = percentage points; nats = natural-log units of predict
 | REPLAY-derived teams | **evaluation** | `heldout72_hpfix` = Metamon's `hl_05_26`: teams extracted from ladder replays, hidden sets filled from usage | none | a human-data lever trains on H's POPULATION: a gain on H alone is "learned the ladder", not generalisation (Q-H13) |
 | human AGGREGATES | **every prior** | Smogon usage / sets / teammates / spreads (`data/pokemon/`), read through `agents.gen3_data`; the C-GAME fill; P72's generator; the procedural corpora built from them (`n1_proc_v1`, X61, when `--team-mix` names it) | none | allowed by the root priors rule; P72 and every C-GAME fill draw from the SAME tables (Q-H13) |
 | human-TRAINED models | **evaluation**; offline | Kakuna (Superkazam: self-play + 4M human replays), `metamon:SmallRL`, `LargeRL` (human-only offline RL) and `LargeIL` (human-only imitation), PastaMittens (a Kakuna-family router) in `designs/ops/anchors.json`; the HOM and X59-S's S-H / S-P / S-P0 students, which learn from human rows (offline measurement only) | none | Kakuna is human-pretrained, so it is not a neutral meter for human-likeness (B-M6) |
-| human DECISIONS (rows) | **offline only**: the HOM (10-24) and X59-S's 5 S-H students (10-26); none in a run, an evaluation or play | `hr_spec_v1`, `hr_arch_2026-10-24`; rowset `hr_spec_v1.r2` | `--human-data`: `bc` **NOT BUILT** (only `teams` is built, and it adds teams, not decisions); the student trainer reads one registered rowset and nothing else reads it | the rest of this doc |
+| human DECISIONS (rows) | **offline only**: the HOM (10-24) and X59-S's 5 S-H students (10-26); none in a run, an evaluation or play | `hr_spec_v1`, `hr_arch_2026-10-24`; rowset `hr_spec_v1.r2` | `--human-data init:` / `opp:` (BUILT, §6): decisions reach a run only THROUGH a registered clone of them, never as rows in the loss; the student and clone trainers read one registered rowset and nothing else reads it | the rest of this doc |
 
 **The priors rule, stated once.** The root `CLAUDE.md` rule governs what the network READS: it traces to Smogon,
 ground-truth labels or ladder replays, and a team pool never ships as a prior. The human-data switch adds nothing the
@@ -136,7 +136,7 @@ Every hidden fact a replay lacks is filled from Smogon only, never from our pool
   SNAPSHOT (frozen logs) ──► ROWSET (filtered rows / teams) ──► MODEL (e.g. a HOM)
         each id registered in designs/research_state/human_replay_snapshots.json (§5)
         ▼
-  ONE switch per run, OFF by default (teams BUILT; bc, kl PROPOSED): bc:<rowset> | teams:<rowset> | kl:<model>  (§6)
+  ONE switch per run, OFF by default (BUILT): teams:<rowset> | init:<model> | opp:<model>  (§6)
   eval and play never read human decisions
 ```
 
@@ -179,7 +179,8 @@ only (an oracle leak otherwise, the reveal spec's territory). A source may never
 | (c-ours) eval traces | `python -m main.x50_r1.run` (spectator views and rows) and `python -m main.x50_r1.read_fr2` | none |
 | (d) self-play, as X59-S's comparison | `python -m main.human_data.ss_rule` (the panel rule on self-play team draws) | none |
 | human teams into training | `--team-mix` corpora (`src/utils/team_corpora/`: D1's forum corpus today); a REPLAY-built corpus only through the switch: the H-TEAMS LADDER corpus `hr_spec_v1.r3` (`python -m main.human_data.hteams`), its data in `~/gen3ai_archive/human_teams/<id>/` (never in git, never in `CORPORA`), its sha256 stub in `src/utils/team_corpora/human_corpora.json` (`python -m utils.team_corpora.human register <id>`) | `--team-mix`; `--human-data teams:<rowset>@<share>` (§6), and `--team-mix` refuses a `"human_data": true` corpus (REVIEW F F-M7: one corpus, one entry point) |
-| a human loss on a run | **none**: `--human-data`'s `bc` and `kl` are NOT BUILT (refused by name) | `--human-data bc:` / `kl:` (PROPOSED) |
+| rows → a CLONE a run may use | `python -m main.human_data.clone train \| export \| register` (§5.1): the convergence recipe, the battle-disjoint held-out split, the registered model in `~/gen3ai_archive/human_models/<id>/` behind a committed sha256 stub | `--human-data init:<model>@<dose>` / `opp:<model>@<share>` (§6) |
+| a human loss on a run | **none**, and none in the grammar: `bc` (a cloning term) and `kl` (a pull toward a human model) were never built and left the grammar 2026-11-10 | none |
 | human-trained opponents | `python -m main.anchors` and `python -m main.reads`'s anchor lane (Kakuna, Metamon's models; [`EXTERNAL_ANCHORS_SOP.md`](../ops/EXTERNAL_ANCHORS_SOP.md)) | none |
 
 **The (c1) intake (PROPOSED).** A person drops a replay plus their paste into `~/gen3ai_archive/human_snapshots/intake/`
@@ -196,8 +197,8 @@ the account is stored only as a salted hash; a per-account cap applies; it is ne
   ROWSET    training rows or teams          <snapshot>.r<n>  (rows manifest sha256)   registry "rowsets" (hr_spec_v1.r1, .r2, .r3)
      │  a fine-tune or a from-scratch fit on the rowset
      ▼
-  MODEL     e.g. a HOM                      hom_<rowset>  (checkpoint sha256)         registry "models" (empty)
-  the switch names the most-derived id it uses: bc:<rowset>@<coef> | teams:<rowset>@<share> | kl:<model>@<coef>
+  MODEL     a clone of the rowset's choices hclone_<rowset>_s<seed>  (checkpoint sha256)   registry "models" (empty)
+  the switch names the most-derived id it uses: teams:<rowset>@<share> | init:<model>@<dose> | opp:<model>@<share>
 ```
 
 A citation names the most-derived id it used; the registry resolves the chain down to the snapshot. **A new panel
@@ -232,8 +233,8 @@ checks it against `designs/research_state/heldout_panels.json`).
   | `hr_spec_v1.r2` | `hr_spec_v1` | r1 minus the quitter's last 10 decisions (a forfeit or timer loser's play degrades near the end) and minus the 11 accounts the audit's registered rule flagged (1.73 % of r1's rows) | 1,201,538 / 29,904 (7.7 % hidden-move rows; 77.5 % from 1300–1499 actors; 270,260 rows at ≥ 1500; endings: 45.9 % KO, 50.6 % forfeit, 2.9 % timer, 0.6 % tie) | `2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8` | measurement | X59-S: the S-H, S-P and S-P0 rows; S-S's row counts |
   | `hr_spec_v1.r3` (TEAMS) | `hr_spec_v1` | H-TEAMS (`main.human_data.hteams`): r2's kept battles, actor ≥ 1500, not on the audit's drop list, six mons seen; C-GAME's fill (r1's battle key; its counters re-run equal r1's), nickname dropped, Hidden Power repaired, validator-clean, level 100; the exact-set guard and m4's ≥ 3 net after the fill; at the side pin `f4b25238d` the pin's packer must pack the authored team and its engine must run every id; ≤ 5 teams per account. Seats 4,925 → completed 4,920 → validator / level 4,920 → nets 4,828 (m4: 92) → pin pack 4,770 (58 happiness-0 Frustration, 1.2 %) → pin engine 4,763 (Sky Attack, Snore, Macho Brace) → account cap 2,295 | 2,295 teams, 812 accounts (median rating 1547); label-path soak `gen3_team_corpus_soak_v2` PASS at the pin and at main, 22,950 battles each, 0 core errors | corpus manifest `71783ac88917a96a7ec0d61e3e29f17d1cdc2b3633edfd5cd9b00b55701d6bfb` (data `2e86457282f719eafaa75c6477c08420a03fafeb0e21f9ee5c24e1d2703afe88`) | measurement | X60-T's ON arm (`--human-data teams:`); R72 is drawn from it; local only |
 - **No student is a registered model.** X59-S's 20 students are offline measurement networks (their digests are in
-  the read's `students.json` under `~/gen3ai_archive/x59s/`); the model registry stays empty until a human-trained
-  model is used by a lever.
+  the read's `students.json` under `~/gen3ai_archive/x59s/`); the model registry is empty until the clone trainer
+  (§5.1) registers one.
 - **The durable copy.** Each snapshot's bytes lived once, in the main checkout's gitignored `replays/`. Each has a copy,
   `~/gen3ai_archive/human_snapshots/<id>/logs.tar.zst` beside its manifest (`hrq.py archive`), every member re-hashed
   after writing; both locations and the archive's sha256 are in the registry row. The originals were only read.
@@ -242,57 +243,99 @@ checks it against `designs/research_state/heldout_panels.json`).
 - **Accounts in committed artifacts are salted hashes** (`hrq.acct`); the salt and the name map stay in
   `~/gen3ai_archive/human_snapshots/`.
 
-## 6. The switch (BUILT for `teams`; `bc` and `kl` NOT BUILT)
+### 5.1 The clone: a rowset's choices in our network, trained to convergence (BUILT 2026-11-10; none trained)
 
-**The grammar, the one place it is defined:** `--human-data off` | `bc:<rowset>@<coef>` | `teams:<rowset>@<share>` |
-`kl:<model>@<coef>`.
+`python -m main.human_data.clone train | export | register` makes the MODEL of the chain. It is the X59-S student's
+network, loss (the set-label NLL), optimiser, batch (512) and fp32 precision, imported, with a different schedule:
+X59-S's students ran a fixed 3 epochs (7,041 steps, a cosine schedule ending at its floor) and all five human-label
+students were still improving at the end (held-out NLL fell a mean 0.023 nats over the last epoch, to 1.172–1.191;
+`~/gen3ai_archive/x59s/students/s_h_<seed>/state.pt`), so X59-S speaks for SHORT cloning only: where the NLL
+converges was never measured.
+
+| part | the registered recipe (`clone.REGISTERED`; any override makes a SMOKE model) |
+|---|---|
+| the data-quality filter | the rowset's own registered rule (r2's row in the table above), nothing looser; plus the layout guard: the rows' layout hash must be the code's, or the operator names the rowset's hash (`--accept-layout`, recorded in the manifest) |
+| the held-out split | validation is account-disjoint in the rowset but NOT battle-disjoint (REVIEW G: the other seat of most validation battles is a training row), so every training row of a validation battle is DROPPED; the validation battles are halved by the rank of their key: the STOP half steers the schedule, the REPORT half is read once on the exported checkpoint and is the number to quote |
+| the early-stop metric | action NLL on the STOP half, read every quarter epoch (top-1 on single-label rows beside it); a read improves when it is ≥ 0.001 nats under the reference |
+| the schedule | 1,000 warm-up steps, then a learning-rate ladder 3e-4 → 1.5e-4 → 7.5e-5 → 3.75e-5; four reads without an improvement (one epoch) step it down; a plateau on the last rung stops the run CONVERGED; the 40-epoch cap stops it BUDGET, recorded as NOT converged |
+| the model | the weights of the best STOP read, never the last; VOID unless that read beats the uniform policy by the student's 0.1-nat margin |
+| sized from r2 | 1,201,538 training rows = 2,347 steps an epoch before the split's drop; 225.6 ms a step solo on the box's RTX 3080 Ti (X59-S's passing pre-flight, `~/gen3ai_archive/x59s/results/cuda_preflight.json`; held-out reads excluded) ⇒ ≈ 8.8 GPU-min an epoch, ≈ 5.9 GPU-h at the cap; resumable in ≤ 50-minute chunks. **UNVERIFIED:** the clone trainer itself has run on the CPU only |
+
+`export` writes the checkpoint through the project's save path and a manifest (`human_model.json`: the rowset, the
+rows manifest sha256, the recipe, the stop, both held-out reads, and the TRAINED tensors: those whose bytes differ
+from the seed's fresh build). `register` installs it in `~/gen3ai_archive/human_models/<id>/`
+(`utils.paths.human_models_dir()`; never in git, never under `models/`) and writes its sha256 stub into the
+registry's `models` block; `utils.human_models.load` verifies the files against the stub on every use. Statuses:
+`measurement`, `reference`, `retired` (refused), `smoke` (a `--debug` run only). **A clone is human data one step
+removed: it is trained on the box's own GPU and its files never leave the box**, so a run that names it runs here.
+
+**Two earlier rulings the clone answers to** (`design_human_replay_lever.md` §5, REVIEW D M5). The first H-INIT, a
+fork of the human opponent model, was DROPPED because that model kept panel cores in its rows; it may return only
+on a model re-fitted on a registered rowset with account-disjoint early stopping, as a new registration: the clone
+is that model, and its arms are a FULL registration (the R9 card). And the human opponent model was REJECTED as a
+self-play opponent because the measured FACING deficit is about nothing (FACE_c +0.017 [−0.062, +0.095],
+`design_diversity_teams_opponents.md`): that is the prior the `opp` arm has to beat.
+
+## 6. The switch (BUILT: `teams`, `init`, `opp`)
+
+**The grammar, the one place it is defined:** `--human-data off` | `teams:<rowset>@<share>` | `init:<model>@<dose>` |
+`opp:<model>@<share>`.
 
 The module is `agents.info_levers.human_data` (parse, canonical text, hash, `record()`, the startup stamp); the trainer
-side is `src/main/train/human_data_setup.py`; the corpus behind `teams` is `src/utils/team_corpora/human.py`. Untyped
-means `off`.
+side is `src/main/train/human_data_setup.py`; the corpus behind `teams` is `src/utils/team_corpora/human.py`; the
+models behind `init` and `opp` are `src/utils/human_models.py`. Untyped means `off`.
 
 | place | today | with a lever on |
 |---|---|---|
 | the observation, inputs, priors | no human decisions; priors Smogon | unchanged, always |
-| the PPO loss | self-play | `bc`: + a BC term on a rowset's rows; `kl`: + a KL to a registered model on self-play states (both NOT BUILT: refused by name) |
-| the self-play team pool | the 719-team pool (+ `--team-mix` corpora) | `teams` (BUILT): + a rowset's human team corpus, drawn on BOTH sides with probability `share` in [0, 1], the whole corpus (exactly `--team-mix <corpus>@ALL:<share> --team-mix-sides both`); eval stays on the pool |
+| the PPO loss | self-play | unchanged: no lever adds a loss term |
+| the learner's starting weights | the run's seeded initialisation | `init`: a FRESH run's learner starts from a registered clone. Exactly the clone's TRAINED tensors are copied in (digest-checked against its manifest); every other tensor, the value head among them, keeps the run's own seeded initialisation. The dose is 1, or 0 (the null dose). Refused beside `--model`, except a restart or fork of a run that already carries the clause, where it copies nothing |
+| the self-play team pool | the 719-team pool (+ `--team-mix` corpora) | `teams`: + a rowset's human team corpus, drawn on BOTH sides with probability `share` in [0, 1], the whole corpus (exactly `--team-mix <corpus>@ALL:<share> --team-mix-sides both`); eval stays on the pool |
+| the self-play opponents | the run's own snapshots, the league, the bots | `opp`: the frozen clone joins them through the existing cross-run frozen-opponent path (exactly `--stable-opponents <its zip>:<id> --stable-opponent-selfplay-share <share>`, label `ext_<id>`; [`../training/self_play_and_pool.md`](../training/self_play_and_pool.md)). Needs `--self-play`; typing either stable-opponent flag beside it is refused. As every stable opponent, the clone is also one of the run's evaluation opponents, and it leaves the capped share for the bot floor once the learner beats it at ≥ 0.80 twice running |
 | search | our network as the judge | nothing: `judge` (the HOM as search's opponent likelihood) left the grammar when R-b2 read HOM-NONE; reopening it is a new registration |
-| eval, the panels, Kakuna | no human decisions | no human decisions, ever: eval and play honour only `off` |
+| eval, the panels, Kakuna, play | no human decisions | the agent being evaluated or played reads none, ever: eval and play honour only `off`. Under `opp` the run's own evaluation meets the clone as an OPPONENT, as it meets the human-trained anchors |
 | offline measurement | X50 reads, the card, drift, X59-S's students | any read citing its snapshot / rowset / model id |
 
-- **The complexity budget.** ONE clause per run; the clause's ONE parameter; every other knob (the filters, a
-  `coef(t)` schedule, a human-minibatch share, a per-account cap) lives in the ROWSET or in a pre-registration, never
-  on the command line. Two levers at once is a new registered lever value replacing a row, never a second flag. At most
-  three lever heads (`bc`, `teams`, `kl`); a new one replaces a row with a decision-record entry. A `teams` clause
-  beside a `--team-mix` (typed, or restored by a same-run resume) is refused: one team lever per run.
-- **The corpus lives outside git.** Its data is `~/gen3ai_archive/human_teams/<id>/` (`utils.paths.human_teams_dir()`:
-  `manifest.json` with `"human_data": true` and a tier `ALL` covering every row, `teams.jsonl.gz`,
-  `soak_selfcheck.json`); the commit holds only its stub in `src/utils/team_corpora/human_corpora.json` (the id, which
-  is the rowset id the clause names, the sha256 of the manifest, the data and the soak record, the counts), written by
-  `python -m utils.team_corpora.human register <id>` after the build. Loading verifies every sha256 and the count
-  against the stub and refuses (`FATAL_CONFIG`) on a miss or a mismatch. No stub is registered yet.
+- **The complexity budget.** ONE clause per run; the clause's ONE parameter; every other knob (the filters, the
+  clone's recipe, a per-account cap) lives in the ROWSET, the MODEL or a pre-registration, never on the command
+  line. Two levers at once is a new registered lever value replacing a row, never a second flag. At most three lever
+  heads (`teams`, `init`, `opp`); a new one replaces a row with a decision-record entry (2026-11-10: `init` and
+  `opp` replaced `bc` and `kl`, which were never built). A `teams` clause beside a `--team-mix` (typed, or restored
+  by a same-run resume) is refused: one team lever per run.
+- **The corpus and the models live outside git.** A corpus is `~/gen3ai_archive/human_teams/<id>/`
+  (`utils.paths.human_teams_dir()`: `manifest.json` with `"human_data": true` and a tier `ALL` covering every row,
+  `teams.jsonl.gz`, `soak_selfcheck.json`) behind its stub in `src/utils/team_corpora/human_corpora.json`
+  (`python -m utils.team_corpora.human register <id>`; `hr_spec_v1.r3` is registered). A model is §5.1's directory
+  behind its stub in the registry. Loading either verifies every sha256 against the stub and refuses
+  (`FATAL_CONFIG`) on a miss or a mismatch.
 - **Provenance.** The canonical text prints the parameter at up to four decimals (it must be a whole multiple of
   1/10,000); the hash is `sha256("human_data_v1:" + canonical)[:16]`. The resolved namespace's `_human_data` record
-  (the clause, its hash, the rowset, and the corpus's data, manifest and soak sha256s) is written to `metadata.json`
+  (the clause, its hash, the rowset, and the corpus's or the model's sha256s) is written to `metadata.json`
   through `cli_args` on every save; a new run's immutable lineage carries `human_data` (its clause) and
   `human_data_ancestor` (the nearest ancestor that trained under one). `main.checkargs` and the launcher's
-  `--dry-run` print the decision. The startup stamp is `[HUMAN-DATA] lever=… rowset=… rows_sha=…` (`rows_sha` = the
-  data file's sha256), the line X60's VOID check reads. The clause is NOT in `model_config.json`: that file is
-  `ModelVersion`'s, and an unknown key there makes a checkpoint unloadable by every commit that predates the switch,
-  X60's eval harness among them. A `main.lineage` view of the first human-data ancestor and a `main.baselines set`
-  refusal are PROPOSED.
+  `--dry-run` print the decision. The startup stamp is `[HUMAN-DATA] lever=… rowset=… rows_sha=…` (the line X60's
+  VOID check reads; `rows_sha` = the corpus's data file, or the clone's rows manifest), and a model clause appends
+  `model=<id> zip_sha=…`. The clause is NOT in `model_config.json`: that file is `ModelVersion`'s, and an unknown
+  key there makes a checkpoint unloadable by every commit that predates the switch, X60's eval harness among them.
+  A `main.lineage` view of the first human-data ancestor and a `main.baselines set` refusal are PROPOSED.
 - **Resuming or forking a run whose record or lineage carries a clause REFUSES unless `--human-data` is typed** (the
   clause or `off`), so nothing inherits or drops a lever silently. The launcher's restarts re-launch the RESUME-role
-  argv, which keeps the typed flag, so a 6-h restart neither trips the refusal nor drops the lever.
-- **One entry point per corpus (REVIEW F F-M7, BUILT).** Every team-corpus reader refuses a manifest that says
+  argv, which keeps the typed flag, so a 6-h restart neither trips the refusal nor drops the lever. An `opp` run's
+  restart restores the stable-opponent flags the clause derived; equal values pass, anything else is refused. **An
+  `init` or `opp` run needs its model's files in the store, unchanged, at every restart.**
+- **One entry point per corpus and per model (BUILT).** Every team-corpus reader refuses a manifest that says
   `"human_data": true` (`utils.team_corpora.refuse_human_data`), and `--team-mix` refuses a registered human id at
-  parse time; only the switch's loader is let through. Its test fails on revert.
+  parse time (REVIEW F F-M7). `--model`, `--stable-opponents` and `--exploiter` refuse a registered human model or
+  any path under the model store (`utils.human_models.refuse_human_model`), so a clone is never resumed, forked or
+  met outside the switch. Each guard's test fails on revert.
 - **What it is NOT.** It reveals nothing about the battle being played and is never combined with `--oracle-reveal`
-  (refused), `--exploiter` or a pinned `--trainee-team(s)` (refused for `teams`: it widens both sides).
-- **Off means off (BUILT gates).** With `off` no human corpus path is opened and the matchup is unchanged (tested);
-  `learner_golden` and the played-bits sentinel are unchanged by the build; a null-dose ON (`teams:<rowset>@0`)
-  loads, verifies and stamps the corpus, then installs no mix and consumes no draw, so its played bits are OFF's.
-  X60-T must re-run these AT its side pin (REVIEW F F-M3 fix 4).
+  (refused), `--exploiter` or a pinned `--trainee-team(s)` (refused for `teams`: it widens both sides). `init` is
+  not a critic: it copies no value head, and nothing warms the critic up before PPO starts on the cloned policy (a
+  warm-up phase is PROPOSED, to be decided by the registration that first uses `init`).
+- **Off means off (BUILT gates).** With `off` no human corpus or model path is opened and the matchup is unchanged
+  (tested); `learner_golden` and the played-bits sentinel are unchanged by the build; a null dose
+  (`teams:<rowset>@0`, `init:<model>@0`, `opp:<model>@0`) loads, verifies and stamps, then installs nothing and
+  consumes no draw, so its played bits are OFF's. X60-T must re-run these AT its side pin (REVIEW F F-M3 fix 4).
 - **Production:** `designs/production_config.json` has no `human_data` key, so production resolves `off`.
 
 ## 7. The questions and their current answers
@@ -410,7 +453,7 @@ How it was read (2026-10-27):
 | **Q-H11 DOES A LEVER HELP?** | Does ONE human-data clause added to P\* raise its win rate vs Kakuna on human-built teams it never trained on, without costing home72, and is the gain the human part? | unmeasured. X60 is REDESIGNED (the plan §6) with both routes written before X59-S was read: X60-B (H-BC against a P\*-label placebo) if X59-S routes "H-BC first" (it did NOT: OWN-LABELS-BETTER, 2026-10-30), none if it closes human data (it did NOT: Δ_restriction blocked the closure), X60-T (H-TEAMS against D1's forum corpus) otherwise. Primary: F alone against Kakuna (1,200 games a final, 5 seeds, the plain-continuation control shared); a gain needs the in-house meter (never trained on human data) to agree. **REVIEW F (READY-WITH-FIXES, 0 BLOCKERs, 9 MAJORs) is disposed in X60-T's REGISTERED PREREG (2026-11-06), with REVIEW I's fixes;** the list below is what it found. Four gate any build: the route is not frozen (the firing PREREG is written after X59-S's numbers and routes on prose strings); Kakuna's engine drifts under the imported control cells; the human team corpus is not checked at the side pin (the packer there mis-packs Frustration and Hidden Power IVs); one corpus has two entry points. Five gate the firing route's PREREG: the power headline, X60-B's delivery logic (its most damning null lands in "closes nothing"), the KAKUNA-SPECIFIC guard (it passes a Kakuna-only gain half the time), the CPU cost (X60-T's Kakuna games alone ≈ 70–95 h of wall), and X60-B's teacher (77.5 % rated 1300–1499). **Power, restated:** a +3 pp gain is found with probability 0.80 only at zero seed noise; 0.70 at the registered 1.0 pp floor, 0.43 at 2 pp, 0.27 at the measured upper bound of 2.75 pp. The packer fix (Q-H13) adds one rule: F games played after it cannot pool with C0's banked F cells | `hr_spec_v1` (rowset r2, or the route's new `hr_spec_v1.r<n>`) |
 | **Q-H12 TOGGLE INTEGRITY** | With every lever off, is the system unchanged? | yes on main, by the gates of §6 (built with the switch): `off` opens no corpus path, the null dose draws nothing, `learner_golden` and the played-bits sentinel are unchanged, and the `--team-mix` guard (REVIEW F F-M7) is built; at X60-T's side pin they must be re-run (F-M3 fix 4) | — |
 | **Q-H13 CONTAMINATION** | Which meters already carry human data, and what does a lever's gain on them mean? | Every panel is TEAM-clean once the ≥ 3-fit exclusion runs; POPULATION is what differs. H is the human levers' own population and construction (ladder sides with usage fills): a gain there alone is "learned the ladder". P72 is fill-adjacent (its generator draws from the Smogon tables C-GAME fills with). F (human-built forum teams) is the cleanest open panel, so X60's primary is F alone. Kakuna is human-pretrained, so a lever's Kakuna gain counts only if the in-house meter against our own reference population agrees. The sealed `forum216b` carries the clean claim at X54. **No panel is shown Kakuna-familiar** (Kakuna's replay data, up to 2025-08, predates H's source; H's own date window is UNVERIFIED; ladder near-copies, ≥ 4 shared sets: H 4.2 %, F 14 %, P72 0 %, home72 47 %; [`goal_b_panel_validity_2026-10-26`](../research_state/measurements/goal_b_panel_validity_2026-10-26/README.md)). **The Kakuna packer fix (`b0441623e`, 10-27):** Metamon's peer packed teams with an upstream packer that differs from Showdown's reading of a paste. Of the panels here only F (forum72) changed: its `sft431` Gyarados (`Happiness: 0`) played Frustration at base power 1, not 102 (`away` and two pool teams changed too; H, P72 and home72 pack identically). Every earlier Kakuna F read, X59-S's included, faced that small handicap on 1 team in 72, equal across a read's arms, so contrasts inside one read do not move; but a new F read is its own regime and an import of banked F rows across the fix REFUSES (`designs/tools/reads.md` §4) | — |
-| **Q-H14 PROVENANCE** | Given a checkpoint, did any ancestor train on human data, and on which rowset? | today: no run has (the `teams` lever is built and unused). The HOM and X59-S's 15 human-row students (S-H, S-P, S-P0) trained on `hr_spec_v1`'s rows but are offline and outside `models/`; none seeds a run. A run with a clause records it and its rowset in `metadata.json` (§6); a `main.lineage` view is PROPOSED | — |
+| **Q-H14 PROVENANCE** | Given a checkpoint, did any ancestor train on human data, and on which rowset? | today: only X60-T's side-pin runs, on human-built TEAMS under `teams:` (never on human decisions); no production run has. The HOM and X59-S's 15 human-row students (S-H, S-P, S-P0) trained on `hr_spec_v1`'s rows but are offline and outside `models/`; none seeds a run. A run with a clause records it and its rowset in `metadata.json` (§6); a `main.lineage` view is PROPOSED | — |
 | **Q-H15 TEACHER QUALITY** | How strong is the population we would imitate, against P\* and Kakuna? | upstream's human-only policies all lose to P\* (U 0.63–0.79 for P\*) and are 14–30 pp weaker than Kakuna; imitation is the weakest (LargeIL), offline RL the strongest (LargeRL). X59-S's rows are 77.5 % rated 1300–1499 (the card ranks that stratum "the comparator only"); the ≥ 1500 follow-up (270,260 rows an arm, in-house) reads rating NOT-RESOLVED, S-H≥1500 − S-H-mix +1.33 pp [−2.76, +5.43], and ≥ 1500 rows still lose to our self-play rows, −4.42 [−6.07, −2.76]. Human labels inside our architecture lose to P\*'s on the same states: X59-S Δ_labels −4.50 pp [−7.42, −1.58] (OWN-LABELS-BETTER) | `hr_spec_v1.r2` |
 
 ## 8. The drift policy
@@ -434,8 +477,11 @@ How it was read (2026-10-27):
    ≥ 1500 follow-up (≈ 1.5 GPU-h, in-house read) asks whether rating changes it at fixed slice and volume. H-BC is
    dropped, so X60-B is off the table; the closure was blocked (Δ_restriction > 0), so the registered route is X60-T,
    H-TEAMS first (§7.1).
-2. The switch is BUILT for `teams` with REVIEW F's `--team-mix` guard (2026-11-06); `bc`, `kl` and the consumer-side
-   snapshot check stay PROPOSED until a read routes a lever to them.
+2. The switch is BUILT for `teams` with REVIEW F's `--team-mix` guard (2026-11-06) and for `init` and `opp`
+   (2026-11-10, R9 of the 2026-11-09 independent review: a converged clone as a from-scratch initialisation and as a
+   frozen self-play opponent). No clone is trained: the clone run and its arms are the R9 card of
+   [`EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md), not registered and not launched. The
+   consumer-side snapshot check stays PROPOSED.
 3. X60 (X60-T REGISTERED 2026-11-06, not launched; REVIEW F and REVIEW I disposed in its PREREG): H-BC (with the P\*-label placebo) or H-TEAMS (with the D1
    contrast), per X59-S (the plan §6).
 4. A live spectator collector on the Rust live reader: read-only spectating needs the owner's word; not designed here.
@@ -475,3 +521,4 @@ How it was read (2026-10-27):
 | 2026-11-06 | **The switch BUILT for `teams`; F-M7's guard BUILT** | `agents.info_levers.human_data` (the one grammar, the hash, `record()`; `bc` / `kl` parsed and refused as NOT BUILT; eval and play honour `off` only); `teams:<rowset>@<share>` = the team-mix path, sides both, the whole corpus, share in [0, 1] (`@0` the null dose: loaded and stamped, never drawn); the human corpus outside git behind a committed sha256 stub; provenance in `metadata.json` (`cli_args`, lineage), NOT in `model_config.json`; the resume / fork refusal; the `[HUMAN-DATA]` stamp; `--team-mix` refuses a `"human_data": true` corpus | a clause field in `model_config.json` (an unknown key makes a checkpoint unloadable by every commit before the switch, X60's eval harness `de15dfc7b` among them); refusing `@0` (X60's C0 reuse check needs a null dose); the human corpus committed under `src/` (human data never leaves the box) | the switch's build commit |
 | 2026-11-06 | **The H-TEAMS corpus `hr_spec_v1.r3` BUILT (X60-T), local only** | §5's r3 row: 2,295 teams of 812 accounts from r2's kept battles (actor ≥ 1500, six seen), C-GAME's fill verified equal to r1's, both panel nets plus m4's ≥ 3 post-fill net, the side pin's pack identity and engine coverage as DROP rules, ≤ 5 per account, soaked at both pins; registered in the rowset registry; one id for H-TEAMS and `n1_hrep_v1` (§9 item 6); R72 drawn from it, not registered | keeping the pin's mis-packed Frustration teams (an input ON meets and C0 does not); a `--team-mix` entry (F-M7); committing the corpus (human data) | `~/gen3ai_archive/human_teams/hr_spec_v1.r3/manifest.json` `71783ac8…`; REVIEW F F-M3, F-M7, m4, m5 |
 | 2026-11-06 | **X60-T REGISTERED (not launched)** | Q-H11: the arm, its 8 seeds a side (F-M4's rule on X61P's 10 finals), the I_F 90 % LB guard (F-M6), the side pin `7fe15726c` (D1's pin + the switch + the corpus stub), resumes through the launcher with the seed typed (REVIEW I M2), the corpus named a loser-enriched slice (REVIEW I M4) | 5 seeds (σ̂'s upper bound 2.04 pp exceeds REVIEW F's 1.5 pp bar); the I_F point rule (it leaks a Kakuna-only gain half the time) | `measurements/x60t_h_teams_2026-11-06/PREREG.md`, `REVIEW_I.md` |
+| 2026-11-10 | **`init` and `opp` BUILT; the CLONE trainer BUILT; `bc` and `kl` left the grammar** (R9 of the 2026-11-09 independent review; orchestrator brief) | §5.1: `main.human_data.clone`, the X59-S student retrained to CONVERGENCE (a battle-disjoint held-out split in two halves, a plateau learning-rate ladder that ends in a stop, the best-read weights, a 40-epoch cap recorded as not converged), exported with the tensors its training moved and registered outside git behind a sha256 stub (`utils.human_models`); §6: `init:<model>@<dose>` copies those tensors into a FRESH learner, `opp:<model>@<share>` puts the frozen clone among the self-play opponents through the existing stable-opponent path; a human model is refused at `--model`, `--stable-opponents` and `--exploiter`. X59-S is relabelled a null on SHORT fresh-student cloning (3 epochs; its held-out NLL was still falling). Nothing is trained or launched | keeping `bc` / `kl` as refused heads (X59-S's read dropped H-BC, nothing routes to `kl`, and the budget is three heads); a second flag for the clone (one switch per run); a new frozen-opponent mechanism (`--stable-opponents` already loads a frozen checkpoint, builds it once per worker and caps its share); copying the whole state dict (the clone's untrained value and auxiliary heads are a different seed's noise); a clone under `models/` (human data stays out of git and out of the run archive) | this change; the CPU smoke on one shard of `hr_spec_v1.r2` (16,291 rows after the split's drop of 93; 64 steps in two chunks, so the resume ran: STOP-half NLL 1.853 → 1.697, top-1 0.137 → 0.317; REPORT-half NLL 1.635 against a uniform 1.804; exported, registered as a SMOKE model in a scratch store, and read back by `main.checkargs` under both levers; a `--debug --arch production` trainer smoke started from it under `init` copied 686 of 809 tensors, collected, ran one update and saved a checkpoint whose `metadata.json` carries the clause and the clone's sha256, and a resume of that checkpoint that does not type `--human-data` is refused); `src/main/human_data/clone_test.py`, `src/main/train/human_data_setup_test.py`, `src/utils/human_models_test.py` |

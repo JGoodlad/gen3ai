@@ -608,6 +608,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         )
         # (A `PBRS_GAMMA == model.gamma` assert lived here while the reward folded hand potentials;
         # it went with them in the shaped-reward deletion, 2026-09-26.)
+        # `--human-data init:<model>@1`: the registered clone's trained tensors, into the FRESH learner, before the
+        # env core copies the weights and before anything compiles (`human_data_setup.apply_init`; FATAL_CONFIG).
+        from main.train.human_data_setup import apply_init as _apply_human_init
+        _apply_human_init(model, args, version, emit=emit)
         _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
         _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
         _ledger.mark("rust env core (T2 slots, staging, arena)")

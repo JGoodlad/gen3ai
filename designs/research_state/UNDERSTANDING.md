@@ -642,7 +642,11 @@ registration) and what a deployable player needs (a game clock, the hardware) ar
   S-P read +2.85 pp [+0.14, +5.56] (restricting labels to the human's support costs a student; P\*'s unrestricted
   labels on human states, S-P0 0.393, teach as well as self-play, S-S 0.393), so human data is not closed and the route
   is H-TEAMS first (X60-T). It says nothing about adding human data to P\* (X60's
-  question). [SIGNIFICANT · Kakuna and in-house · `measurements/x59s_matched_students_2026-10-25/README.md`; ledger
+  question). **Its scope is SHORT cloning** (relabelled 2026-11-10 on the 2026-11-09 independent review's R9): the
+  students' schedule ended at 3 epochs with the S-H held-out NLL still falling in all five seeds (a mean 0.023 nats
+  over the last epoch), so it is a null on short fresh-student cloning, not on a clone trained to convergence, nor on a
+  clone used as a from-scratch initialisation or as a frozen self-play opponent (the kit for both is built, none is
+  trained: the R9 card of `EXPERIMENT_BACKLOG.md`). [SIGNIFICANT · Kakuna and in-house · `measurements/x59s_matched_students_2026-10-25/README.md`; ledger
   2026-10-30 · *X59-S*]
 - **Rating does not rescue it (X59-S's ≥ 1500 follow-up, 2026-11-03).** At a fixed slice and volume (270,260 rows an
   arm, 15 fresh students, in-house only), a student taught by ≥ 1500 players against one taught by the same slice's

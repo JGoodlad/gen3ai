@@ -329,6 +329,12 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "or a pinned --trainee-team(s) (an exploiter or a specialist pilots its own teams)"),
         exit_style="fatal_config"),
     CombinationCheck(
+        "human_data_opp_needs_self_play", ("human_data", "self_play"),
+        lambda a: _human_lever(a) == "opp" and not getattr(a, "self_play", False),
+        lambda a: (f"--human-data {a.human_data} needs --self-play: the frozen clone joins the SELF-PLAY opponents "
+                   "(without it a stable opponent is eval-only, so the lever would be silently inert)"),
+        exit_style="fatal_config"),
+    CombinationCheck(
         "human_data_vs_oracle_reveal", ("human_data", "oracle_reveal"),
         lambda a: _human_lever(a) != "off" and _val(a, "oracle_reveal", "off") != "off",
         lambda a: (f"--human-data {a.human_data} cannot combine with --oracle-reveal {_val(a, 'oracle_reveal', 'off')}: "

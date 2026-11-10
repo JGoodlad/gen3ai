@@ -278,7 +278,7 @@
 | `--trainee-teams` | — | 83 / 14 | MULTI-SPECIALIST mode (`main.promote_teams`) | **KEEP** |
 | `--team-mix` | — | 0 / 0 (new 2026-10-19) | X38 / D1's lever: widen the team draw with a pin-safe corpus (`design_diversity_teams_opponents.md` §4.2, §6.2 B-D2; `designs/training/team_curriculum.md` "The team mix") | **KEEP** |
 | `--team-mix-sides` | both | 0 / 0 (new 2026-10-19) | which side `--team-mix` widens (D1 = both, D2 = opponent; same design doc §4.2) | **KEEP** |
-| `--human-data` | — (off) | 0 / 0 (new 2026-11-06) | the human-data switch: X60-T's lever `teams:<rowset>@<share>` (`designs/endstate/human_data_architecture.md` §6; `design_human_replay_lever.md` §6.4) | **KEEP** |
+| `--human-data` | — (off) | 0 / 0 (new 2026-11-06) | the human-data switch: X60-T's lever `teams:<rowset>@<share>`, and since 2026-11-10 `init:<model>@<dose>` / `opp:<model>@<share>` for a registered human-replay clone (`designs/endstate/human_data_architecture.md` §5.1, §6; `design_human_replay_lever.md` §6.4) | **KEEP** |
 | `--allow-untaught-teacher` | false | 0 / 0 | the documented override of the untaught-slice guard (`matchup_setup`); the untaught meter is live | **KEEP** |
 
 ### env_core

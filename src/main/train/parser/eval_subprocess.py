@@ -384,13 +384,18 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--human-data", dest="human_data", type=_human_data_value, default=None,
                         metavar="CLAUSE",
                         help="THE HUMAN-DATA SWITCH (human_data_v1; designs/endstate/human_data_architecture.md "
-                             "§6): off | teams:<rowset>@<share> (BUILT: the rowset's human-built team corpus joins "
+                             "§6): off | teams:<rowset>@<share> (the rowset's human-built team corpus joins "
                              "the team draw on BOTH sides with probability SHARE in [0, 1], the whole corpus, as "
-                             "--team-mix <corpus>@ALL:<share> --team-mix-sides both would; 0 = the null dose) | "
-                             "bc:<rowset>@<coef> / kl:<model>@<coef> (NOT BUILT: refused). Untyped = off. A "
-                             "--model launch whose source run carries a clause REFUSES unless this is typed (the "
-                             "clause or off); the launcher's restarts re-pass it. Refused beside --team-mix. "
-                             "Stamped at startup as [HUMAN-DATA] lever=... rowset=... rows_sha=...")
+                             "--team-mix <corpus>@ALL:<share> --team-mix-sides both would; refused beside "
+                             "--team-mix) | init:<model>@<dose> (a FRESH run starts from the registered "
+                             "human-replay clone: the tensors its training moved are copied in; dose 1 or 0) | "
+                             "opp:<model>@<share> (the frozen clone joins the self-play opponents: derives "
+                             "--stable-opponents <its zip>:<id> --stable-opponent-selfplay-share SHARE; needs "
+                             "--self-play; type neither stable-opponent flag). A parameter of 0 is the null dose "
+                             "(verified and stamped, never applied). Untyped = off. A --model launch whose source "
+                             "run carries a clause REFUSES unless this is typed (the clause or off); the "
+                             "launcher's restarts re-pass it. Stamped at startup as [HUMAN-DATA] lever=... "
+                             "rowset=... rows_sha=...")
     parser.add_argument("--allow-untaught-teacher", dest="allow_untaught_teacher",
                         action="store_true",
                         help="RESEARCH override: allow --trainee-team(s) to pin a team that is a "

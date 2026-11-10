@@ -5,7 +5,7 @@ doc updates it in the same commit, and the Decision record at the end says what 
 
 **Status (2026-10-25): BUILT, one spec (`agents.info_levers`) and all three consumers: the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER
 (honest by default), the MODEL-INPUT INJECTION, the GENDER PAD, the AUDIT SUITE, and the TRAINING OBSERVATION's `--oracle-reveal <spec>` with its
-diagnostic-fork consent (§4, §6). Not built: the human-data switch `--human-data` (§13, PROPOSED).** Owner, 2026-10-12: "I want a single dried
+diagnostic-fork consent (§4, §6). The human-data switch `--human-data` (§13) is BUILT and owned by `human_data_architecture.md`.** Owner, 2026-10-12: "I want a single dried
 out implementation for giving both search and training additional information that would not generally be available
 so that we can understand what the ceilings are and what is our constraint and how much value there would be in
 improving determinization." It serves the hidden-information study ([`design_hidden_info_binding.md`](design_hidden_info_binding.md))
@@ -785,11 +785,11 @@ For a decision-level score IMP (the study's: win probability per decision over t
 
 ---
 
-## 13. THE HUMAN-DATA LEVERS (PROPOSED, NOT BUILT; REVISED DRAFT 2026-10-25)
+## 13. THE HUMAN-DATA LEVERS (BUILT; a pointer)
 
 The human-data switch `--human-data` is a second spec family beside the reveal spec, so one place answers "what did
-this run get that plain self-play does not". It reveals no hidden fact of the battle being played: it changes the LOSS
-or the POOL, never the observation, and never combines with `--oracle-reveal`. Its grammar, provenance, refusal rules
+this run get that plain self-play does not". It reveals no hidden fact of the battle being played: it changes the
+team POOL, a fresh run's STARTING WEIGHTS or the self-play OPPONENTS, never the observation, and never combines with `--oracle-reveal`. Its grammar, provenance, refusal rules
 and the snapshot → rowset → model chain have ONE home, [`human_data_architecture.md`](human_data_architecture.md) §6
 and §5; the plan is [`design_human_replay_lever.md`](design_human_replay_lever.md).
 
@@ -816,3 +816,4 @@ and §5; the plan is [`design_human_replay_lever.md`](design_human_replay_lever.
 | 2026-10-25 | **§13 reduced to a pointer** (REVIEW C F10: the grammar, the hash prefix and the provenance rules lived in three docs and had already drifted on inheritance) | §13 keeps the boundary (no hidden fact; never with `--oracle-reveal`) and points at `human_data_architecture.md` §5–§6, which owns the grammar (`judge` dropped, rowset / model ids, fork and resume refuse without a typed clause) | restating the grammar here (a second home drifts) | `measurements/human_replay_quality_2026-10-25/RESPONSE.md` |
 | 2026-10-25 | Status line made single (docs-health pass) | the 2026-10-25 and 2026-10-12 status blocks, run together in one paragraph, are one status: all three consumers BUILT (§4), `--human-data` PROPOSED and not built (`grep` finds no such flag under `src/`) | two stacked dated status blocks | §4; `src/agents/info_levers/`, `src/main/train/parser/env_core.py` |
 | 2026-11-05 | **The damage-roll cure narrowed; the residuals point at the full inventory** (S′-HONEST designer, orchestrator brief) | §7.5: tier A cures the REJECTION by the true roll, not its value (a site keeps the truth's roll whenever it prints the same thing: `src/rust_sim/src/rolls.rs`); the unnamed leaks are inventoried in `design_sprime_honest.md` §1 | calling the damage-roll leg cured | `design_sprime_honest.md` §1 (L1d, S′H-3) |
+| 2026-11-10 | **§13 and the status line brought current** (R9's build) | the switch is BUILT (`teams` 2026-11-06; `init` and `opp` 2026-11-10); §13 names what it can change (the team pool, a fresh run's starting weights, the self-play opponents) and still points at `human_data_architecture.md` §5–§6 for everything else | restating the grammar here (a second home drifts) | `human_data_architecture.md` Decision record 2026-11-10 |

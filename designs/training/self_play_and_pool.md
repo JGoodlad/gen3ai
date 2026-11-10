@@ -410,6 +410,11 @@ against in eval AND (under `--self-play`) played against in training. Design:
 `designs/ai_v5/design_stable_opponents.md`. Which FILE a run dir resolves to is the ONE rule above
 — the run's **LAST SNAPSHOT**, with `best_model/best_model.zip` as the last-resort fallback.
 
+**A human-trained model is refused here** (`utils.human_models.refuse_human_model`, also at `--exploiter` and
+`--model`): a registered human-replay clone becomes a stable opponent only through `--human-data
+opp:<model>@<share>`, which derives this flag and `--stable-opponent-selfplay-share` and records the clause in the
+run's lineage (`designs/endstate/human_data_architecture.md` §6); typing either flag beside it is refused.
+
 **Training-mix participation (Stage 2) — "tossed in like a sentinel, becomes a bot when mastered":**
 a stable opponent rides the *existing* pool-vs-heuristic split in the opponent sampler
 (`rust_env_opponents.py`), no new source-model abstraction:

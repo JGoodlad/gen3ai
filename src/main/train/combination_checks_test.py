@@ -161,6 +161,7 @@ ARGVS: dict[str, list[str]] = {
     # human_data_v1 (`--human-data`): parse-time syntax only, so no human corpus is read here
     "human_data_teams_vs_team_mix": ["--human-data", "teams:hr_t.r1@0.5", "--team-mix", "w_forum_v1:0.5"],
     "human_data_teams_vs_trainee_side_pins": ["--human-data", "teams:hr_t.r1@0.5", "--trainee-team", "t.txt"],
+    "human_data_opp_needs_self_play": ["--human-data", "opp:hclone_t@0.2"],
     "human_data_vs_oracle_reveal": ["--human-data", "teams:hr_t.r1@0.5", "--oracle-reveal", "species"],
     "fork_lr_is_resume_only": ["--fork-lr", "1e-5"],
     "fork_lr_freeze_needs_fork_lr": ["--fork-lr-freeze"],

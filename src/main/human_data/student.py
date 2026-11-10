@@ -39,7 +39,6 @@ reloaded checkpoint gives the in-memory logits bit for bit.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import io
 import json
 import math
@@ -181,13 +180,9 @@ def precision_flags() -> Dict[str, Any]:
 
 
 def _state_digest(sd: Dict[str, Any]) -> str:
-    import torch as th
+    from utils.human_models import state_digest
 
-    h = hashlib.sha256()
-    for k in sorted(sd):
-        h.update(k.encode())
-        h.update(th.as_tensor(sd[k]).detach().cpu().contiguous().numpy().tobytes())
-    return h.hexdigest()
+    return state_digest(sd)
 
 
 def _atomic_save(obj: Any, p: Path) -> None:
@@ -335,9 +330,12 @@ def train(arm: str, rows: Path, labels: Optional[Path], seed: int, out: Path, ep
     return 0
 
 
-def export(out: Path, yardsticks: Optional[Dict[str, Tuple[Path, str]]] = None) -> Dict[str, Any]:
+def export(out: Path, yardsticks: Optional[Dict[str, Tuple[Path, str]]] = None,
+           state: Optional[Dict[str, Any]] = None, name: Optional[str] = None) -> Dict[str, Any]:
     """The final student in the project's checkpoint format (module docstring), its sidecar, and the yardsticks:
-    ``{name: (rows dir, arm whose labels to read)}`` scored on each one's validation shard."""
+    ``{name: (rows dir, arm whose labels to read)}`` scored on each one's validation shard. ``state`` (default: the
+    saved ``state.pt``) and ``name`` (the checkpoint's file stem) let ``main.human_data.clone`` export its BEST
+    weights through this one save-and-reload path."""
     import torch as th
 
     from agents.model.model_version import ModelVersion
@@ -346,7 +344,7 @@ def export(out: Path, yardsticks: Optional[Dict[str, Tuple[Path, str]]] = None) 
     from main.policy_spectrum.reader import inference_globals, load_checkpoint, policy_logits
     from utils.git import get_git_hash
 
-    st = th.load(out / "state.pt", weights_only=False, map_location="cpu")
+    st = state if state is not None else th.load(out / "state.pt", weights_only=False, map_location="cpu")
     if not st["done"]:
         raise StudentError("the training has not finished")
     dst = out / "model"
@@ -355,7 +353,7 @@ def export(out: Path, yardsticks: Optional[Dict[str, Tuple[Path, str]]] = None) 
         model, args, pk = build_fresh_model(int(st["seed"]))
         model.policy.load_state_dict(st["model"])
         model.policy.eval()
-        name = f"student_{st['arm']}_{st['seed']}"
+        name = name or f"student_{st['arm']}_{st['seed']}"
         model.save(str(dst / name))
         version = ModelVersion.from_layout_and_policy_kwargs(
             pk["features_extractor_kwargs"]["layout"], pk, vf_coef=args.vf_coef,

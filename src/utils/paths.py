@@ -407,6 +407,13 @@ def human_teams_dir() -> Path:
     return gen3ai_archive_dir() / "human_teams"
 
 
+def human_models_dir() -> Path:
+    """Where HUMAN-TRAINED models a ``--human-data init: / opp:`` clause may name live:
+    ``<gen3ai_archive_dir()>/human_models/<id>/``, OUTSIDE git and outside ``models/`` (``utils.human_models`` holds
+    the loader; the committed sha256 stub is the ``models`` block of the human-replay registry)."""
+    return gen3ai_archive_dir() / "human_models"
+
+
 def run_skip_reason(run_name: str) -> str:
     """The message a test should skip with when :func:`trace_glob` returns ``None``."""
     return (

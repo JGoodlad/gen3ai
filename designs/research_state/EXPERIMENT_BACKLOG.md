@@ -66,6 +66,7 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 | **MF-5** | **BOUNDARY-1's from-scratch 2 × 2** (width × team breadth, three seeds a cell, twelve fresh runs to 100M): REGISTERED 2026-11-09 at pin `507d0c119`, AMENDED 2026-11-10 (Amendment 1: the third seed up front, the extension withdrawn, the pre-launch review's fixes), [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md); the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options | its §12 | its §12 | its §11 | — | X66 and X67 done; the `ent_coef` decision (an OPEN HOLD: X67's read AND the owner's yes); then its §18 single re-pin (the registered pin cannot launch three seeds); its §13 GPU checklist at that pin (the wide-arm pilot to trained weights, the CUDA-only slow tests); its §10 HOLD on X60-T reading ADOPT-CANDIDATE |
 | MF-6 | Breadth at the plateau: X62's recombined teams | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | X60-T not NO-TRANSFER / LOSS; PR-1′'s place is the orchestrator's |
 | MF-7 | The league's main exploiters (X35-A3) | ≈ 15 | ≈ 107 | +0.5 (−1, +2) vs Kakuna | ≈ 0.03 | its two-phase kit (T55) |
+| R9 | **A converged human-replay clone as a from-scratch initialisation and as a frozen self-play opponent** (unranked: the 2026-11-09 independent review's R9; the rank is the orchestrator's) | clone ≈ 1.5–3.5 (hard cap 5.9); arms ≈ 84 (two arms × two seeds to 100M), 42 at a 50M first look; ≈ 126 at BOUNDARY-1's amended three seeds an arm | 0 (clone); the arms' read rides BOUNDARY-1's frame | init 0 (−2, +2); opponent +0.3 (−1, +2) | ≈ 0.004 | the kit is BUILT (2026-11-10); after the BOUNDARY-1 launch; the arms need a FULL registration; local GPU only |
 
 **The recommendation.** Queue **MF-1** when X60-T's last final settles; **MF-3 step (b)** is screened out (X68 read DROP)
 and asks for nothing more. Between and after them the GPU's fill is the orchestrator's (MF-6's or MF-7's training, whose reads can wait for the lanes);
@@ -200,6 +201,45 @@ time.
   designs; they are here because they are model levers with a known price. X62's case rests on H-CTX SUPPORTED
   (`6f126c4af`) against four breadth misses at the plateau (D1, D3 UNDECIDED; N1-P NULL; X63 NOT PURSUED); A3's on
   R0's best responder (+11.1 pp [+8.3, +13.8], `c456b6a09`), with no evidence it moves the Kakuna meter.
+- **R9 A converged human-replay clone, as an initialisation and as an opponent (CARD; kit BUILT 2026-11-10, nothing
+  registered, nothing launched).** The 2026-11-09 independent review's R9: X59-S cloned for 3 epochs (7,041 steps)
+  with the held-out NLL still falling in all five seeds, so it is a null on SHORT fresh-student cloning; R9 asks
+  whether a clone trained to convergence helps (a) as a fresh run's starting weights and (b) frozen among the
+  self-play opponents ("opponent diversity that is not Kakuna-shaped").
+  - *Step 1, the clone run (a build with pre-stated checks, not an experiment):* `python -m main.human_data.clone
+    train --rows ~/gen3ai_archive/x59s/hr_spec_v1.r2/rows --seed 5901 --device cuda --accept-layout fbc5c674056d
+    --out <dir>` from a clean checkout of main (the manifest records the commit, not a dirty tree), in ≤ 50-minute
+    chunks under ONE GPU lease, then `export` and `register`
+    (`../endstate/human_data_architecture.md` §5.1 holds the recipe). Checks, all deterministic: the stop is
+    CONVERGED (a BUDGET stop at the 40-epoch cap is recorded as not converged and needs the orchestrator's word to
+    use); the export is not VOID; REPORTED: the REPORT-half NLL and top-1 beside X59-S's 3-epoch 1.172–1.191 (how
+    short X59-S was). Cost: 225.6 ms a step solo ⇒ ≈ 8.8 GPU-min an epoch; ≈ 1.5–3.5 GPU-h expected (10–24 epochs),
+    5.9 GPU-h at the cap; 0 lane-h. **Human data: the box's own GPU only, never a rented card.**
+  - *Step 2, the arms (a FULL registration: a fresh-run comparison):* in BOUNDARY-1's frame, width 256, the pool,
+    two seeds an arm: `--human-data init:<clone>@1` and `--human-data opp:<clone>@<share>` (share to be registered;
+    the stable-opponent default is 0.2), each against the fresh control. 21 GPU-h a run to 100M ⇒ ≈ 84 GPU-h for the
+    two arms (42 at a 50M first look), plus ≈ 42 for a control at the arms' pin unless BOUNDARY-1's width-256 pool
+    cell is shown to be the same experiment at that pin (a resolved-config diff, never assumed).
+    The seed count is the registration's: BOUNDARY-1's Amendment 1 (2026-11-10) moved its cells from two seeds to
+    three because two left its likeliest unclear outcome asking for a third anyway; at three an arm the two arms
+    cost ≈ 126 GPU-h (and a control ≈ 63), and the arms launch at BOUNDARY-1's launch pin (its §18 re-pin), not
+    at its registered one.
+  - *What the registration must decide (found while building):* (1) `init` copies the clone's TRAINED tensors only,
+    so the critic starts random under a competent policy; no critic warm-up exists, and PPO with a random critic may
+    erase the cloned policy in the first updates: register a guard on it or build the warm-up first. (2) `init`
+    needs the clone's architecture, so it cannot start BOUNDARY-1's width-128 arms. (3) r2's rows carry a stale
+    layout (0.60 % of rows differ from today's encoder, all in `context.volatiles`; X59-S Amendment 5.7): train
+    under the recorded waiver, or re-extract r2 first (a `data`-free CPU job). (4) Under `opp` the clone is also an
+    evaluation opponent of the run and leaves the capped share for the bot floor once the learner beats it at
+    ≥ 0.80 twice running, so its exposure ends early in a run that outgrows it: the read must report
+    `train/stable_fraction`. (5) Both arms need the clone's files on the box at every restart, so neither can run
+    on a rented card. (6) Two earlier rulings stand beside R9: REVIEW D M5 allowed an `init` lever back only on a
+    model re-fitted on a registered rowset with account-disjoint early stopping, as a new registration (the clone
+    meets the first two; this registration is the third), and the lever plan rejected a human model as a self-play
+    opponent because the measured FACING deficit is about nothing (FACE_c +0.017 [−0.062, +0.095]): the `opp` arm's
+    prior is a null.
+  - *Unlocks:* a human lever that does not go through the loss or the team pool; if the clone is a useful opponent,
+    one for the league (X35) that is not our own lineage.
 
 **X60-T's outcome branches** (its verdicts, PREREG §11):
 - **ADOPT-CANDIDATE** (a GAIN on F, I_F LB90 > 0, P non-inferior, guards PASS) → the re-read at the production

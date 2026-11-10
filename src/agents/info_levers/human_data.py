@@ -1,20 +1,29 @@
 """THE HUMAN-DATA SWITCH (``--human-data``, ``human_data_v1``): one clause saying which human data, if any, a run
 trains on. Design: ``designs/endstate/human_data_architecture.md`` §6 (the ONE grammar, provenance, the refusals);
-the experiment that uses it: ``designs/endstate/design_human_replay_lever.md`` §6.4 (X60-T).
+the experiments that use it: ``designs/endstate/design_human_replay_lever.md`` §6.4 (X60-T, ``teams``) and the R9 card
+in ``designs/research_state/EXPERIMENT_BACKLOG.md`` (``init`` / ``opp``).
 
 THE GRAMMAR (the architecture doc's §6 is the one place it is defined; ``LEVERS`` must equal its heads, pinned by
 ``src/human_data_doc_gate_test.py``)::
 
-    off | bc:<rowset>@<coef> | teams:<rowset>@<share> | kl:<model>@<coef>
+    off | teams:<rowset>@<share> | init:<model>@<dose> | opp:<model>@<share>
 
-* ``teams`` (BUILT): the rowset's human-built team corpus joins the self-play team draw on BOTH sides with
-  probability ``share`` in [0, 1], the whole corpus, exactly as ``--team-mix <corpus>@ALL:<share>
-  --team-mix-sides both`` would. ``share`` 0 is the NULL DOSE: the corpus is verified and stamped but never drawn
-  (the builder installs no mix and consumes no RNG, so its played bits are OFF's).
-* ``bc`` / ``kl`` (NOT BUILT): parsed, so the doc keeps one grammar, and REFUSED by name on every surface.
+* ``teams``: the rowset's human-built team corpus joins the self-play team draw on BOTH sides with probability
+  ``share`` in [0, 1], the whole corpus, exactly as ``--team-mix <corpus>@ALL:<share> --team-mix-sides both`` would.
+  ``share`` 0 is the NULL DOSE: the corpus is verified and stamped but never drawn (the builder installs no mix and
+  consumes no RNG, so its played bits are OFF's).
+* ``init``: a FRESH run starts from a registered human-replay clone (``utils.human_models``): the parameters the
+  clone's training moved are copied into the fresh network; everything else keeps the run's own fresh init. ``dose``
+  is 1 (copy) or 0 (the NULL DOSE: the model is verified and stamped, nothing is copied).
+* ``opp``: the registered clone, FROZEN, joins the self-play opponents through the stable-opponent path
+  (``--stable-opponents <clone zip>:<id> --stable-opponent-selfplay-share <share>``); ``share`` in [0, 1] is the cap
+  on the self-play episodes it takes; 0 is the NULL DOSE (verified and stamped, no opponent installed).
 
-Which surface honours what (:data:`HONOURED`): training honours ``off`` and ``teams``; eval and play honour ``off``
-only (no human decision is ever evaluated or played).
+Every head is BUILT (:data:`NOT_BUILT` is empty); ``bc`` (dropped by X59-S's read) and ``kl`` (never routed) left the
+grammar when ``init`` and ``opp`` took their rows (the doc's decision record, 2026-11-10).
+
+Which surface honours what (:data:`HONOURED`): training honours every head; eval and play honour ``off`` only (no
+human decision is ever evaluated or played by this switch).
 
 THE CANONICAL TEXT is ``off`` or ``<lever>:<id>@<param>`` with the parameter printed at up to four decimals (a
 parameter must be a whole multiple of 1/10,000, so ``0.50`` and ``.5`` are one clause). THE HASH is
@@ -35,11 +44,15 @@ from typing import Any, Dict, Mapping, Optional
 SCHEMA = "human_data_v1"
 OFF = "off"
 #: The lever heads of the one grammar, in its order.
-LEVERS = ("bc", "teams", "kl")
+LEVERS = ("teams", "init", "opp")
 #: Which lever heads each surface honours (``off`` is honoured everywhere).
-HONOURED: Dict[str, frozenset] = {"train": frozenset({"teams"}), "eval": frozenset(), "play": frozenset()}
+HONOURED: Dict[str, frozenset] = {"train": frozenset(LEVERS), "eval": frozenset(), "play": frozenset()}
 #: Heads in the grammar whose consumer does not exist yet: refused by name, never silently ignored.
-NOT_BUILT = frozenset({"bc", "kl"})
+NOT_BUILT: frozenset = frozenset()
+#: Heads whose target is a ROWSET id / a registered human-trained MODEL id (``utils.human_models``).
+ROWSET_LEVERS = frozenset({"teams"})
+MODEL_LEVERS = frozenset({"init", "opp"})
+GRAMMAR = "off | teams:<rowset>@<share> | init:<model>@<dose> | opp:<model>@<share>"
 #: The parameter's resolution: whole multiples of 1/10,000 (a value between two is refused, never rounded).
 PARAM_QUANTUM = 10_000
 
@@ -79,11 +92,11 @@ class Clause:
 
     @property
     def rowset(self) -> Optional[str]:
-        return self.target if self.lever in ("bc", "teams") else None
+        return self.target if self.lever in ROWSET_LEVERS else None
 
     @property
     def model(self) -> Optional[str]:
-        return self.target if self.lever == "kl" else None
+        return self.target if self.lever in MODEL_LEVERS else None
 
 
 def format_param(value: float) -> str:
@@ -105,8 +118,7 @@ def parse(text: Optional[str]) -> Clause:
         return Clause(OFF)
     m = _CLAUSE_RE.match(raw)
     if not m:
-        raise HumanDataError(f"--human-data {text!r}: expected off | bc:<rowset>@<coef> | teams:<rowset>@<share> | "
-                             "kl:<model>@<coef>")
+        raise HumanDataError(f"--human-data {text!r}: expected {GRAMMAR}")
     lever, target, praw = m.group("lever"), m.group("target"), m.group("param")
     if lever not in LEVERS:
         raise HumanDataError(f"--human-data {text!r}: unknown lever {lever!r} (the grammar's heads: "
@@ -117,8 +129,11 @@ def parse(text: Optional[str]) -> Clause:
         raise HumanDataError(f"--human-data {text!r}: the parameter {praw!r} is not a number") from None
     if not math.isfinite(value) or value < 0.0:
         raise HumanDataError(f"--human-data {text!r}: the parameter must be finite and >= 0, got {praw}")
-    if lever == "teams" and value > 1.0:
-        raise HumanDataError(f"--human-data {text!r}: a teams share must be in [0, 1], got {praw}")
+    if lever in ("teams", "opp") and value > 1.0:
+        raise HumanDataError(f"--human-data {text!r}: a {lever} share must be in [0, 1], got {praw}")
+    if lever == "init" and value not in (0.0, 1.0):
+        raise HumanDataError(f"--human-data {text!r}: an init dose is 1 (copy the clone) or 0 (the null dose), "
+                             f"got {praw}")
     scaled = value * PARAM_QUANTUM
     if abs(scaled - round(scaled)) > 1e-6:
         raise HumanDataError(f"--human-data {text!r}: the parameter must be a whole multiple of 1/{PARAM_QUANTUM:,} "
@@ -134,15 +149,17 @@ def honoured_or_refuse(clause: Clause, surface: str) -> Clause:
     if clause.is_off or clause.lever in HONOURED[surface]:
         return clause
     if clause.lever in NOT_BUILT:
-        raise HumanDataError(f"--human-data {clause.canonical}: the {clause.lever!r} lever is NOT BUILT (only "
-                             f"'teams' trains; designs/endstate/human_data_architecture.md §6)")
+        raise HumanDataError(f"--human-data {clause.canonical}: the {clause.lever!r} lever is NOT BUILT "
+                             "(designs/endstate/human_data_architecture.md §6)")
     raise HumanDataError(f"--human-data {clause.canonical}: {surface} honours only 'off' (no human data is ever "
                          f"{'evaluated' if surface == 'eval' else 'played'})")
 
 
-def record(clause: Clause, corpus: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+def record(clause: Clause, corpus: Optional[Mapping[str, Any]] = None,
+           human_model: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     """The provenance block of ``clause``. ``corpus`` is the verified corpus identity a ``teams`` clause resolved to
-    (:func:`utils.team_corpora.human.identity`); ``None`` for ``off``."""
+    (:func:`utils.team_corpora.human.identity`); ``human_model`` the verified model identity an ``init`` / ``opp``
+    clause resolved to (:func:`utils.human_models.load`), whose rowset the record then names; ``None`` for ``off``."""
     out: Dict[str, Any] = {"schema": SCHEMA, "label": clause.label, "canonical": clause.canonical,
                            "hash": clause.hash, "lever": clause.lever}
     if not clause.is_off:
@@ -150,7 +167,15 @@ def record(clause: Clause, corpus: Optional[Mapping[str, Any]] = None) -> Dict[s
                     "model": clause.model})
     if corpus is not None:
         out["corpus"] = dict(corpus)
+    if human_model is not None:
+        out["human_model"] = dict(human_model)
+        out["rowset"] = human_model.get("rowset")
     return out
+
+
+def is_null_dose(rec: Optional[Mapping[str, Any]]) -> bool:
+    """A recorded clause other than ``off`` whose parameter is 0: verified and stamped, never applied."""
+    return is_on(rec) and float(rec.get("param") or 0.0) == 0.0  # type: ignore[union-attr]
 
 
 def is_on(rec: Optional[Mapping[str, Any]]) -> bool:
@@ -162,11 +187,17 @@ def stamp_line(rec: Mapping[str, Any]) -> str:
     """The startup stamp (``[HUMAN-DATA] lever=… rowset=… rows_sha=…``); X60's VOID check reads its first three
     fields, so they keep this order and spelling."""
     corpus = rec.get("corpus") or {}
+    hm = rec.get("human_model") or {}
+    rows_sha = corpus.get("data_sha256") or hm.get("rows_manifest_sha256")
     head = (f"[HUMAN-DATA] lever={rec.get('lever', OFF)} rowset={rec.get('rowset') or '-'} "
-            f"rows_sha={corpus.get('data_sha256') or '-'}")
+            f"rows_sha={rows_sha or '-'}")
     tail = f" clause={rec.get('canonical', OFF)} hash={rec.get('hash')}"
     if corpus:
         tail += f" manifest_sha={corpus.get('manifest_sha256')} n={corpus.get('n')}"
         if rec.get("lever") == "teams" and float(rec.get("param") or 0.0) == 0.0:
             tail += " NULL-DOSE (loaded and stamped, never drawn)"
+    if hm:
+        tail += f" model={hm.get('id')} zip_sha={hm.get('checkpoint_sha256')}"
+        if float(rec.get("param") or 0.0) == 0.0:
+            tail += " NULL-DOSE (verified and stamped, never applied)"
     return head + tail

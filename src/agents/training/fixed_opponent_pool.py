@@ -439,8 +439,14 @@ def resolve_stable_opponents(
     spec: "str | None",
     current_version: ModelVersion,
     default_temperature: float = 1.0,
+    allow_human_model: "str | None" = None,
 ) -> list[FixedOpponentEntry]:
     """Resolve + VALIDATE a ``--stable-opponents`` string into ``FixedOpponentEntry`` objects.
+
+    A HUMAN-TRAINED model (``utils.human_models``) is refused here (``HumanModelError``, a ``ValueError``): its one
+    entry point is ``--human-data opp:<model>@<share>``, whose derived zip the trainer passes as
+    ``allow_human_model`` (``human_data_setup.allowed_stable_zip``). ``--exploiter`` resolves through this function
+    too and never passes it.
 
     For each spec: resolve the zip + its ``model_config.json``, then assert the opponent shares
     the live run's architecture family (``current_version.check_opponent_compatible`` — same
@@ -456,6 +462,9 @@ def resolve_stable_opponents(
     for raw in parse_stable_opponents(spec):
         ref = resolve_model_ref(raw["path"], raw["step"])
         zip_path, config_path, run_base = ref.zip_path, ref.config_path, ref.run_base
+        if not (allow_human_model and os.path.realpath(zip_path) == os.path.realpath(allow_human_model)):
+            from utils.human_models import refuse_human_model
+            refuse_human_model(zip_path, "a stable-opponent / exploiter target")
         foreign = ModelVersion.from_json_file(config_path)
         # Raises ModelVersionError on an arch_signature (obs-family) mismatch — the FATAL gate.
         current_version.check_opponent_compatible(foreign)

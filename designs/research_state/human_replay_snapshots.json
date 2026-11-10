@@ -211,5 +211,5 @@
  },
  "models": {},
  "rowsets_schema": "<snapshot>.r<n>: {snapshot, filter_spec, panel_exclusion_set (the held-out panels it excluded), rows_manifest_sha256, c_game_commit, extraction_commit, layout_hash, status}; a new held-out panel retires it",
- "models_schema": "hom_<rowset>: {rowset, checkpoint_sha256, recipe, status}"
+ "models_schema": "hclone_<rowset>_s<seed>: {rowset, rows_manifest_sha256, manifest_sha256, checkpoint_sha256, config_sha256, seed, recipe, held_out, stop, human_data, status (measurement | reference | retired | smoke), location, registered_at}; written only by python -m main.human_data.clone register (utils.human_models, schema gen3_human_model_v1); the files live outside git"
 }
