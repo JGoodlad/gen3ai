@@ -611,6 +611,11 @@ a save writes, the two sanitizers and the recorded-`critic` version gate:
 2. Bump `MODEL_CONFIG_VERSION`
 3. Add one `if version < N:` block in `_migrate_config()` with `data.setdefault(...)`
 
+**A new `OBS_SEMANTICS_HISTORY` row turns the routine `numerics_goldens_test.py` red** until the slow goldens in
+its registry (the reveal file, the overlap file) are run at the new tree and re-stamped
+(`agents/training/numerics_goldens.py`; `designs/ops/testing.md`, "Targeted sets before a ship"). A config-version
+bump that adds no row (a new per-run setting) does not.
+
 🚨 **Every value `--arch production` writes must be a `ModelVersion` field**, including a DERIVED
 row's enabling coefficient. A launcher restart strips `--arch` and inherits only what
 `model_config.json` records. `opp_intent_coef` was not recorded until v125, and every such restart

@@ -59,10 +59,13 @@ changes in the same commit as the code.
   after the first rollout is a typed fatal, and no global RNG is seeded after the freeze (a stream that must repeat
   owns its generator).
 - **Played bits:** a change to model numerics or engine-facing data moves `played_bits_sentinel_test.py`; re-record
-  by its docstring's procedure and run the slow reveal file too (`designs/ops/testing.md`).
+  by its docstring's procedure.
 - **K9:** `learner_golden_test.py` pins one update's bytes; re-record it (`python -m agents.training.learner_golden
   record --reason "..."`) only for a deliberate change. A non-finite loss, gradient or KL is
   `NonFiniteLearnerError`: never `nan_to_num` it or skip the step.
+- 🚨 **Re-recording either one, or raising `OBS_SEMANTICS_VERSION`, turns `numerics_goldens_test.py` red** until
+  every SLOW golden in the registry (`numerics_goldens.py`: the reveal file, the overlap file) is run, re-recorded
+  with its cause and re-stamped; never re-stamp a file you did not run (`designs/ops/testing.md`).
 
 ## Opponents, eval, ratings
 

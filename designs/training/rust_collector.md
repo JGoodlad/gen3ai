@@ -95,7 +95,9 @@ The measurements above are the whole staleness read: no remedy is built (per-gam
 
 Code: `rust_rollout/overlap.py` (`OverlapRunner`, `BehaviourSnapshots`, `judge_snapshot`, `proximal_transform`); the
 loop's two call sites are `instrumented_ppo/loop.py` (begin before the update, abort on an exception) and
-`rollout_probes._collect_rust` (join before `after_update`). Pins: `overlap_test.py`, `overlap_integration_test.py`.
+`rollout_probes._collect_rust` (join before `after_update`). Pins: `overlap_test.py`, `overlap_integration_test.py`
+(slow; its two flag-OFF goldens train through the model's forward, so they are registered in `numerics_goldens.py`
+and re-recorded with every intended change to the model's numerics).
 Measurement folder: [`../research_state/measurements/x14_overlap_2026-10-19/`](../research_state/measurements/x14_overlap_2026-10-19/README.md).
 
 **What it does.** With the flag ON, from the process's SECOND update on, the collector plays the NEXT rollout on a

@@ -92,6 +92,11 @@ PAIRS, N_ENVS = 12, 8
 #: confirmed by the file itself; the K9 learner golden and the played-bits sentinel were re-recorded for the same cause.
 OFF_BITS = "14223be7ce9d5111678e2ce414db4a8ab0bd9971d3edd3368ac1b7ecfceee502"
 OFF_OUTCOME_ALL = "0c27cfd7a5fedcd33ede6324927ab9104c1f6a55fab9f97bd9504bb566f876af"
+#: The registry's stamp (`agents.training.numerics_goldens`): the anchor of the obs-semantics marker and the ROUTINE
+#: goldens (the K9 learner golden, the played-bits sentinel) this file was last RUN under. The routine
+#: `numerics_goldens_test.py` is red while it is stale: run this file, re-record the two digests above if they moved,
+#: then set it to the anchor `python -m agents.training.numerics_goldens` prints. Never re-stamp without the run.
+NUMERICS_ANCHOR = "1ad595516a5fd453"
 
 
 def bits_digest(games):

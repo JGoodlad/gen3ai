@@ -28,8 +28,9 @@ RE-RECORD PROCEDURE (only for an INTENDED move — never to make a red go away u
   2. ``pytest src/agents/training/played_bits_sentinel_test.py -q`` — the failure line prints the new digest(s).
   3. Paste them below, and append a line to the RE-RECORDED log: the date, the cause (commit + what moved), the
      old digest's first 8 hex chars, and how it was verified.
-  4. Run the slow reveal file too (``pytest src/main/h2h/play_reveal_integration_test.py -m slow``) and re-record its
-     ``OFF_BITS`` / ``OFF_OUTCOME_ALL`` for the same cause, or say why it did not move.
+  4. Run every slow golden of ``numerics_goldens.SLOW_GOLDENS`` too (the reveal file's ``OFF_BITS`` /
+     ``OFF_OUTCOME_ALL``, the overlap file's two flag-OFF goldens), re-record each for the same cause or say why it
+     did not move, and re-stamp its ``NUMERICS_ANCHOR``: the routine ``numerics_goldens_test.py`` is red until then.
 
 RECORDED 2026-10-19 on ``803a13e3`` (+ this file): the production surface of that commit (T62's
 ``gen3_tau_fp64_solve_v1`` in), torch 2.8 CPU, 17 decisions, reproduced twice. VERIFIED to move, each alone:

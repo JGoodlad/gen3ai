@@ -68,6 +68,12 @@ versions, and appends an append-only `history` row carrying the diff it replaced
 interpreter that has an entry. `rebuild-buffer` (needs the `rust_env` self-check build) records a new
 buffer and invalidates every entry (they were computed on different input).
 
+**A re-record also owes the SLOW goldens.** `numerics_goldens.py` registers the slow goldens the model's numerics
+move (the reveal file's played bits, the overlap file's flag-OFF learn) and stamps each file with the
+obs-semantics marker and routine goldens it was last run under; `numerics_goldens_test.py` (routine) is red after a
+re-record or a raised `OBS_SEMANTICS_VERSION` until each is run, re-recorded where it moved and re-stamped (`designs/ops/testing.md`,
+"Targeted sets before a ship").
+
 **Scope limits.** Not pinned: the rollout and GAE (the buffer's advantages / returns are inputs), the
 KL→LR controller and every other callback (outside `train()`), CUDA / compiled numerics (the
 compile parity gate and K6's canary own those). When K10(a)'s recipe block lands, `RECIPE` should read

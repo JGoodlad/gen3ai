@@ -188,26 +188,44 @@ def _learn(spaces, *, overlap: bool, rollouts: int = 5, n_epochs: int = 2):
         env.close()
 
 
-#: THE OFF GOLDEN: `_learn(overlap=False, rollouts=3, n_epochs=1)`'s final-weights hash at the DEFAULT tau solve. Equal at
-#: HEAD = the flag-OFF loop (collect, update, the K9(b) probe, the fill) trains the same bytes as before the overlap
-#: existed. A DELIBERATE change to what a serial update trains moves it: re-record by printing `_learn(...)["hash"]` at
-#: the new commit, and say why here and in the commit.
+#: THE OFF GOLDEN: `_learn(overlap=False, rollouts=3, n_epochs=1)`'s final-weights hash at the DEFAULT tau solve. It
+#: pins what the flag-OFF loop (collect, update, the K9(b) probe, the fill) trains. A DELIBERATE change to what a serial
+#: update trains moves it: re-record by printing `_learn(...)["hash"]` at the new commit (both constants: the failing
+#: assert prints the hash), say why here and in the commit, and re-stamp NUMERICS_ANCHOR below.
 #:
-#: RE-RECORDED 2026-10-21, `541381a3...` -> `0f8c5209...`, because of `d4af9f1e2` (FP32_ALT, `gen3_tau_fp32_alt_v1`, config
-#: v160): it moved the DEFAULT tau solve from T62's float64 naive sum to the fp32 split residual, which changes every
-#: fixed-size tau in the policy's forward (T2's rollout and the learner's update alike), so the trained bytes moved. That
-#: commit re-recorded the learner golden, PLAYED_DIGEST and the reveal OFF_BITS and MISSED this one (a `slow` test: the
-#: routine gate never ran it; the slow-tier record's PASS at `731da3cc` went stale). Bisected on the CPU, one run per
-#: commit: `c9bdc9285` (d4af9f1e2's parent) reproduced `541381a3...`; `d4af9f1e2` and `f6c8c3096` gave `0f8c5209...`; and at
-#: `f6c8c3096` with EVERY tau solve forced to fp64 (the module-global seam below) the same learn gave `541381a3...` bit for
-#: bit. So the whole difference is the default solve and nothing else; the flag-OFF loop's equality with the pre-X14
-#: commit is pinned by PRE_X14_GOLDEN_FP64 (the next test), not lost with this re-record.
-OFF_GOLDEN = "0f8c52092c7f38bc0619552736ade8fb0e7904e77a499a1d1d6c260c2e7f9792"
+#: RE-RECORDED 2026-11-10, `0f8c5209...` -> `2653f6fd...` (fp64: `541381a3...` -> `52840c51...`), because of FOUR model
+#: commits, each of which changed what the policy's forward computes and none of which ran this `slow` file. Bisected on
+#: the CPU, one run per commit (default solve / fp64), every other stretch from the last banked pass (`d8d674b99`,
+#: 2026-10-26) to `ec1c3cbd6` having equal endpoints:
+#:   `83272a8f9` (config v165, our HP in exact points)             -> `33ff1404...` / `4f057928...`
+#:   `7a0153b46` (v166, the EV floor + Leech Seed's integer drain) -> `0ef6876e...` / `a508be5d...`
+#:   `566d878b2` (v167, the nature floor + the integer EOT chain)  -> `7dc88425...` / `e123b1d2...`
+#:   `3b1733f50` (v168, E13: their max HP as a Smogon distribution) -> `2653f6fd...` / `52840c51...`
+#: Why each is that commit's change and not the collector's: (a) each commit's runtime diff is inside
+#: `src/agents/model/` (no collector, loop or PPO file; v168 also touched the K9 golden's recorder, which this file never
+#: loads); (b) across each, the first flag-OFF rollout's init weights, observations, masks, actions, rewards and
+#: episode starts are byte-identical and ONLY the forward's outputs (log-probs, values) move: on 9
+#: of 96 rows (v165), on exactly the ONE row with a Leech-Seeded active (v166: why the K9 learner golden did not move),
+#: on all 96 (v167, v168); (c) at `83272a8f9`, with `our_hp_points` / `our_healed_hp` put back to the fractions, both
+#: old goldens came back bit for bit; (d) at `ec1c3cbd6` the flag-OFF learn equals, bit for bit, the same loop written
+#: with every X14 branch removed and runs no `overlap.py` code beyond three predicates (`runner_of`, `decoupled`,
+#: `validate_decl`); and a collector built ON and one built OFF hold byte-identical rollouts until the first overlapped
+#: play. Earlier: 2026-10-21, `541381a3...` -> `0f8c5209...`, `d4af9f1e2` (FP32_ALT: the default tau solve moved from
+#: T62's float64 sum to the fp32 split residual).
+OFF_GOLDEN = "2653f6fd68cfd191a2b7c53bd06e1520171aff73e579130ee4c300841509ac81"
 
-#: The golden RECORDED AT THE COMMIT BEFORE X14 (origin/main 2939cc96, with this file's helpers; the decl is built without
-#: the `overlap` field when OFF so the same helper runs there), when T62's float64 tau solve was the only solve. It is
-#: reproduced at HEAD by forcing that solve: the witness that overlap's flag-OFF path still trains the pre-X14 bytes.
-PRE_X14_GOLDEN_FP64 = "541381a30acdb2862c079a93600e3e16a16087b405710177f217f8de499beea9"
+#: The same learn with every tau solve forced to T62's float64 naive sum: a SECOND learner, pinned separately. Until
+#: 2026-11-10 this constant was literally the golden recorded at the commit before X14 (origin/main `2939cc96`,
+#: `541381a3...`). The four model commits above changed the forward itself, so those bytes are no longer reproducible
+#: at HEAD; what remains is a CHAIN OF CUSTODY from them (each link above was bisected under this solve too, and (c)
+#: reproduced `541381a3...` at `83272a8f9`), plus (d), the direct check made at the re-record.
+PRE_X14_GOLDEN_FP64 = "52840c5147f1dad7990209f09f3701e24f25a0ac5832925027587f8ca3b3c077"
+
+#: The registry's stamp (`agents.training.numerics_goldens`): the anchor of the obs-semantics marker and the ROUTINE
+#: goldens (the K9 learner golden, the played-bits sentinel) this file was last RUN under. The routine
+#: `numerics_goldens_test.py` is red while it is stale: run this file, re-record the two goldens above if they moved,
+#: then set it to the anchor `python -m agents.training.numerics_goldens` prints. Never re-stamp without the run.
+NUMERICS_ANCHOR = "1ad595516a5fd453"
 
 
 def test_flag_off_trains_the_same_bytes_as_before_the_overlap_existed(spaces):
@@ -217,10 +235,11 @@ def test_flag_off_trains_the_same_bytes_as_before_the_overlap_existed(spaces):
 
 
 def test_flag_off_under_the_T62_float64_tau_solve_trains_the_pre_X14_bytes(spaces, monkeypatch):
-    """The pre-X14 witness: with every tau solve forced to T62's float64 naive sum (the arithmetic the golden was recorded
-    under) the flag-OFF learn() gives the golden recorded at 2939cc96, byte for byte. The seam is the ONE call site every
-    model path shares: `hypothesis_set.fixed_mass_presence` calls `fixed_size_tau` through the module global, so the
-    replacement drops the caller's ``solve`` and passes fp64 (counted: a vacuous force FAILS)."""
+    """The float64 witness: with every tau solve forced to T62's float64 naive sum (the arithmetic the pre-X14 golden
+    was recorded under at 2939cc96) the flag-OFF learn() gives PRE_X14_GOLDEN_FP64, byte for byte: those bytes carried
+    through the deliberate model changes its comment lists. The seam is the ONE call site every model path shares:
+    `hypothesis_set.fixed_mass_presence` calls `fixed_size_tau` through the module global, so the replacement drops
+    the caller's ``solve`` and passes fp64 (counted: a vacuous force FAILS)."""
     import inspect
 
     from agents.model import hypothesis_set as HS
