@@ -19,7 +19,8 @@ report, read by every surface that launches.
     ``trunk_precision`` ``"bf16"`` (the bf16 strength A/B PASSED, 2026-10-14; ``--trunk-precision fp32``
     is the explicit opt-out), and two knobs RECORDED since: ``overlap_collect`` ``false`` (X14 stays OFF; a row so a
     resume or fork inherits it, core review 2026-10-20 C-2) and ``fork_fraction`` ``0.0`` (the fork arm stays OFF; a
-    row so `checkargs` shows it — the field route already inherited it), plus
+    row so `checkargs` shows it — the field route already inherited it) and ``magnet_kl_coef`` ``0.0`` (the trailing
+    magnet stays OFF; a row for the same reason), plus
     ``kl_controller``: the controller constants it ran with (not flags — pinned against the
     callbacks' own defaults by `recipe_surface_test`). A key that is ALSO a recorded top-level
     mirror field must EQUAL it (`production_recipe` refuses otherwise): one truth, two readers.
@@ -189,6 +190,13 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
     # show the RESOLVED fraction, a fork-arm fork reads INFO against production's 0, and a fresh `--arch production` argv
     # writes the OFF value like any other row. A typed `--fork-fraction` is the arm's lever (INFO).
     RecipeRow("fork_fraction", "--fork-fraction", 0.0, "gen3_fork_v1 — default OFF (branch rows in the PPO buffer)"),
+    # THE TRAILING MAGNET (`--magnet-kl-coef`, gen3_magnet_kl_v1): it changes the OBJECTIVE (a reverse-KL term toward a
+    # frozen copy of the policy, which also adds its weight to the entropy bonus's). Like `fork_fraction` it is a recorded
+    # `ModelVersion` field (v170, tri-state on the parser), so its route is `resume` and the row is for VISIBILITY:
+    # `checkargs` / `--dry-run` print the resolved β, a magnet arm (and its fork) reads INFO against production's 0, and a
+    # fresh `--arch production` argv writes the OFF value. The cadence (`--magnet-refresh-steps`) is inert at β = 0 and
+    # is no row.
+    RecipeRow("magnet_kl_coef", "--magnet-kl-coef", 0.0, "gen3_magnet_kl_v1 — default OFF (a reverse-KL term in the loss)"),
 )
 #: Every row the fresh recipe declares — ``recipe.sizing`` first, then ``recipe.fresh``.
 ROWS: Tuple[RecipeRow, ...] = SIZING_ROWS + FRESH_ROWS

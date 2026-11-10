@@ -319,6 +319,12 @@ combination check, and the extractor). No `ARCH_SIGNATURE` bump: 128 builds the 
 existing state dict and forward unchanged (pinned by `d_model_width_test.py` against 2551befed's signature); another
 width is gated by the field (the trunk_layers / trunk_ffn_dim precedent). No OBS_SEMANTICS or floor change.
 
+**v170 (`gen3_magnet_kl_v1`, 2026-11-10; CE-3d / X35-A4)** added two TRAINING-only fields, `magnet_kl_coef` (float, default
+0.0 = OFF) and `magnet_refresh_steps` (int, default 2,000,000): the trailing-magnet regulariser's weight and cadence
+(`--magnet-kl-coef`, `--magnet-refresh-steps`; `designs/training/magnet_kl.md`). Recorded for provenance and flagless
+read-back, never compared by `check_compatible` (the `training_coef` class: no forward pass or weight shape changes). A
+pre-v170 config migrates to 0.0 / 2,000,000. No `ARCH_SIGNATURE`, OBS_SEMANTICS or floor change.
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

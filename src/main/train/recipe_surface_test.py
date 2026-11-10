@@ -597,3 +597,39 @@ def test_fork_fraction_is_a_resume_route_row_and_a_fork_arm_run_s_fork_inherits_
     old = _fork_ns(parent)
     assert inherit_saved_flag(old, types.SimpleNamespace(), "fork_fraction", 0.0) is False and old.fork_fraction == 0.0
     assert "fork_fraction" not in {d.dest for d in rs.diff_against_production(old, kind="fork")}
+
+
+# ------------------------------------------------- the trailing magnet's `--magnet-kl-coef` is a recorded row (CE-3d)
+def test_magnet_kl_coef_is_a_resume_route_row_and_a_magnet_run_s_fork_inherits_it(tmp_path):
+    """`--magnet-kl-coef` changes the OBJECTIVE (a reverse-KL term toward a frozen copy of the policy). Like
+    `--fork-fraction` it is a recorded `ModelVersion` field (v170), so its route is `resume`; the row exists so that
+    `checkargs` shows the resolved coefficient and a magnet arm reads INFO against production's 0. Fails on revert (no
+    row: `checkargs --magnet-kl-coef 0.05` prints nothing about the lever)."""
+    from main.train.config import inherit_saved_flag
+    p = build_parser()
+    assert rs.production_recipe()["magnet_kl_coef"] == 0.0 and "magnet_kl_coef" in {r.dest for r in rs.FRESH_ROWS}
+    assert rs.restart_route("magnet_kl_coef", p.get_default("magnet_kl_coef"), rs._model_version_fields()) == "resume"
+    ns = _desugared(["--arch", "production"])
+    assert ns.magnet_kl_coef == 0.0 and "magnet_kl_coef" not in rs.typed_dests(ns)
+    arm = _check(["--arch", "production", "--magnet-kl-coef", "0.05"])["recipe"]             # the arm's lever: INFO
+    assert [(d.dest, d.source, d.resolved, d.production) for d in arm.diffs] \
+        == [("magnet_kl_coef", "argv", 0.05, 0.0)] and not arm.refuses
+    assert any("magnet_kl_coef" in line and "TYPED" in line for line in rs.report_lines(arm))     # checkargs shows it
+
+    # a fork (or a resume) of a magnet run keeps the coefficient from the parent's model_config.json; the recipe record
+    # path neither re-applies the row nor writes a token for it (a child pinned before the flag would not parse it)
+    parent = _run(tmp_path, "launcher --steps 9 --run-name parent", _PARENT_CLI)
+    fork = _fork_ns(parent)
+    got = {d for d, _v, _s in rs.inherit_recorded_recipe(fork, None, _SAVED)}
+    assert "magnet_kl_coef" not in got and fork.magnet_kl_coef is None
+    assert inherit_saved_flag(fork, types.SimpleNamespace(magnet_kl_coef=0.05), "magnet_kl_coef", 0.0) is True
+    assert fork.magnet_kl_coef == 0.05
+    out, added = rs.materialize_recorded_recipe(
+        ["--steps", "1", "--model", str(parent / "checkpoints" / "c.zip"), "--fork-lr", "3.6e-4"], None)
+    assert "--magnet-kl-coef" not in out and "magnet_kl_coef" not in {d for d, _v, _s in added}
+    diffs = {d.dest: d for d in rs.diff_against_production(fork, kind="fork", inherited=frozenset({"magnet_kl_coef"}))}
+    assert diffs["magnet_kl_coef"].source == "inherited" and diffs["magnet_kl_coef"].production == 0.0
+    # a parent from before the flag has no such field: OFF, neither refused nor injected
+    old = _fork_ns(parent)
+    assert inherit_saved_flag(old, types.SimpleNamespace(), "magnet_kl_coef", 0.0) is False and old.magnet_kl_coef == 0.0
+    assert "magnet_kl_coef" not in {d.dest for d in rs.diff_against_production(old, kind="fork")}

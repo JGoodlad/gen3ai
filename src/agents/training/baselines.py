@@ -998,6 +998,8 @@ _RUN_RECORD_ONLY_KEYS = frozenset({
     # this run's DECLARED GROWTH at its fork (config v159, B-GROW): provenance of how the run's network was grown
     # from its parent; a production mirror never carries it
     "growth",
+    # the trailing magnet (config v170, CE-3d): a training-only lever, OFF in production; the mirror never carries it
+    "magnet_kl_coef", "magnet_refresh_steps",
 })
 
 

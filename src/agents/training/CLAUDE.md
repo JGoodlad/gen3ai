@@ -29,6 +29,7 @@ changes in the same commit as the code.
 | TensorBoard: the census, the currencies, the WIN-PROB dashboard, capacity telemetry | `designs/training/telemetry_scalars.md` |
 | a supply guard (`FATAL_SUPPLY`) | `designs/training/supply_guards.md` |
 | the fork arm (`--fork-fraction`, OFF) | `designs/training/forks.md` |
+| the trailing magnet (`--magnet-kl-coef`, OFF) | `designs/training/magnet_kl.md` |
 | the Rust collector, the env core, the keyed draw, cadences | `designs/training/rust_collector.md` |
 | `--compile-trainer`, compile regions, the sentinel / canary / cache, `--trunk-precision` | `designs/training/compile_flags.md` |
 | `stats.py`, `main.policy_drift`, other offline meters | `designs/training/offline_meters.md` |

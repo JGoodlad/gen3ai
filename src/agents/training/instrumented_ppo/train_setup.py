@@ -274,6 +274,7 @@ class TrainSetup:
             intent_coef=float(getattr(self, "opp_intent_coef", 0.0)),
             bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
             win_prob_on=bool(f.win_prob_on),
+            magnet_coef=float(getattr(self, "magnet_kl_coef", 0.0) or 0.0),
         )
 
     def _micro_advantages(self, rollout_data: Any) -> Any:

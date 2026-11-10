@@ -74,6 +74,8 @@ from agents.training.instrumented_ppo.ridealong_terms import (RideAlongAccumulat
                                                              RideAlongTerms)
 from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
 from agents.training.instrumented_ppo.train_setup import TrainSetup
+from agents.training.magnet import MagnetError as _MagnetError
+from agents.training.magnet import TAG_KL as _MAGNET_TAG_KL
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe_from_stash
 from agents.training.instrumented_ppo.device_batches import install as _devb_install
@@ -120,6 +122,19 @@ def train_step_source() -> str:
 _R1_PROBE_TERMS = tuple(_row.probe for _row in _BELIEF_ROWS) + ("win_prob",)
 
 
+def _magnet_args(st, rollout_data):
+    """R1's optional tenth argument (`gen3_magnet_kl_v1`): the micro-batch's magnet column when `--magnet-kl-coef`
+    is on, nothing when it is off. On with no column (a buffer the collector's magnet pass did not fill) is a typed
+    error, never a silently unregularised update."""
+    if not st.magnet_coef > 0.0:
+        return ()
+    col = getattr(rollout_data, "magnet_logp", None)
+    if col is None:
+        raise _MagnetError("--magnet-kl-coef > 0 but the rollout buffer has no magnet column: the collector's fill "
+                           "writes it (`agents.training.magnet.fill_column`); this buffer was filled without one")
+    return (col,)
+
+
 def select_probe_terms(terms, present):
     """The R1 terms the grad-balance probe and K9(c)'s finiteness verdict see: every `_R1_PROBE_TERMS` name the
     micro-batch REGISTERED (`terms`) and SCORED (`present`), in registration order."""
@@ -149,6 +164,8 @@ def _micro_reader(packed, sink, last, box, *, epoch, approx_kl_divs, deferred):
         t, pres = rd.terms, rd.present
         terms = {"policy": t["policy"], "entropy": t["entropy"], "value": t.get("value", 0.0),
                  **select_probe_terms(t, pres)}
+        if "magnet" in t:
+            terms["magnet"] = t["magnet"]
         if "opp_intent" in t and pres.get("opp_intent", False):
             terms["opp_intent"] = t["opp_intent"]
         check_loss_finite_read(rd.loss_finite, rd.loss, terms, epoch=epoch,
@@ -364,9 +381,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             # a typed FATAL naming the field (the sentinel's guard dump is the backstop).
             from agents.model.compile_regions import check_r1_declared
             check_r1_declared(self, _micro_st)
+        # +MAGNET (gen3_magnet_kl_v1): each micro-batch's KL(π ‖ π_mag); empty (and no tag) with the magnet off
+        magnet_kls: list[float] = []
         _ppo_lists = {"pg_losses": pg_losses, "clip_fractions": clip_fractions,
                       "value_losses": value_losses, "entropy_losses": entropy_losses,
-                      "vf_clip_fractions": vf_clip_fractions}
+                      "vf_clip_fractions": vf_clip_fractions, "magnet_kl": magnet_kls}
         # +HOST READS (gen3_batched_host_reads_v1, T25 item 1): every device->host read the update can
         # DEFER — a micro-batch's metrics and its K9(c) verdicts, epoch 0's calibration rows, the noise
         # scale's small-batch norm — is queued as a device tensor and made in ONE transfer at the next
@@ -409,11 +428,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # the graphed route — decided HERE, before the call, from the probes' state.
                 _retains = _micro_retains_graph(
                     _ntg, grad_balance_pending=bool(shared_trunk and diag.grad_balance and not grad_balance))
+                # +MAGNET: the rows' magnet column is R1's tenth argument ONLY with the magnet on — off, the
+                # call (and the compiled region's signature) is the nine-argument one.
                 _mo = self._micro_region(_retains)(self.policy, rollout_data.observations,
                                          rollout_data.actions, rollout_data.action_masks,
                                          rollout_data.old_log_prob, rollout_data.old_values,
                                          self._micro_advantages(rollout_data), rollout_data.returns,
-                                         _micro_st)
+                                         _micro_st, *_magnet_args(_micro_st, rollout_data))
                 actions = (rollout_data.actions.long().flatten() if _micro_st.discrete
                            else rollout_data.actions)
                 values = _mo.values
@@ -535,7 +556,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # the non-finite term(s) on a failure.
                 if loss is not _mo.loss or not _mfinite:
                     check_loss_finite(loss, {"policy": _policy_grad_term, "entropy": _ent_term,
-                                             "value": _vf_term, **aux_probe_terms},
+                                             "value": _vf_term, **aux_probe_terms,
+                                             **{k: v for k, v in _mo.terms.items() if k == "magnet"}},
                                       epoch=epoch, micro=len(pg_losses) - 1)
                 if _ph is not None: _ph("loss")
 
@@ -708,6 +730,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self.logger.record("train/value_loss", np.mean(value_losses))
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
+        if magnet_kls:                  # +MAGNET: the update's mean KL(π ‖ π_mag) (every epoch's micro-batches)
+            self.logger.record(_MAGNET_TAG_KL, float(np.mean(magnet_kls)))
         # +PER-EPOCH (gen3_ppo_per_epoch_diag_v1): `train/approx_kl` above is the LAST epoch's mean
         # (stock SB3 resets its list per epoch) while `train/clip_fraction` pools EVERY epoch — the
         # per-epoch series is what shows how the policy drifts across the n_epochs passes.

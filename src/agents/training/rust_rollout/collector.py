@@ -155,6 +155,8 @@ class RustCollector:
         self.fork: Any = None
         #: X14's overlap runner (``overlap.OverlapRunner``), attached by ``build_collector`` when declared; None = OFF
         self.overlap: Any = None
+        #: CE-3d's T2 magnet slot (``build_collector``, ``agents.training.magnet``); None = OFF
+        self.magnet_slot: Optional[int] = None
         self.cur_route = np.zeros(self.n, dtype=np.int64)
         self.cur_model_id: List[Optional[str]] = [None] * self.n
 
@@ -450,6 +452,10 @@ class RustCollector:
             logger = getattr(model, "_logger", None)
             if logger is not None:
                 logger.record("overlap/prox_forward_ms", 1000.0 * (time.perf_counter() - t1))
+        if self.magnet_slot is not None:      # CE-3d: the magnet's log-probs of this buffer's rows, by T2's magnet slot
+            from agents.training import magnet as M
+
+            M.fill(self.svc, self.magnet_slot, model)
         self._record(model, snap)
         callback.on_rollout_end()
 
@@ -515,6 +521,10 @@ class RustCollector:
         if self.overlap is not None:          # X14: the weights T2 now serves, kept for K9(b) on the stale rows
             self.overlap.snapshots.take(model.policy, self.version)
             self.overlap.warm = True
+        if self.magnet_slot is not None:      # CE-3d: the magnet trails; at its boundary it becomes these weights
+            from agents.training import magnet as M
+
+            M.refresh_if_due(self.svc, self.magnet_slot, model)
         self.check_lifecycle()
 
     def check_lifecycle(self) -> Dict[str, int]:

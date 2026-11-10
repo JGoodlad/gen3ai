@@ -15769,3 +15769,24 @@ was downloaded or written under `data/`.
   production-surface arms and a legacy all-routes build, each with a forward and backward; the record, the gate, the
   migration, the resume inheritance, the round trip, T2's canonical fingerprint dropping the default);
   `projection_width_test.py` (two wide combos); `combination_checks_test.py` (the FFN floor). Each fails on revert.
+## 2026-11-10 — the trailing-magnet KL regulariser (`gen3_magnet_kl_v1`; config v170, two TRAINING-only fields `magnet_kl_coef` and `magnet_refresh_steps`; no network, observation or action-space change)
+
+- **Why.** CE-3d / X35-A4 (task T56) asks whether regularising the policy toward a frozen, trailing copy of itself damps
+  the self-play treadmill (Magnetic Mirror Descent's deep form; R-NaD's regularisation policy).
+- **What.** `--magnet-kl-coef β` adds `β · KL(π ‖ π_mag)` over the legal actions to R1's loss, beside the entropy
+  bonus; `--magnet-refresh-steps` (default 2,000,000) is the cadence at which the magnet is replaced by the current
+  weights. The magnet's log-probabilities come from one extra T2 slot, served once per rollout at the fill
+  (`RolloutBuffer.magnet_logp`), so R1 runs no second forward. The magnet is a sidecar `<checkpoint stem>.magnet.pt`,
+  written by `run_io.commit_checkpoint` after the zip and before the caller's sidecars and `latest.txt`. Tags
+  `train/magnet_kl`, `magnet/age_steps`, `magnet/refreshes`, `magnet/forward_ms`, emitted only with the magnet on.
+  Refused with `--fork-fraction` and with `--overlap-collect`. `magnet_kl_coef` joins the compile key only when set.
+  Owner doc: `designs/training/magnet_kl.md`.
+- **Migration.** v169 to v170 fills 0.0 and 2,000,000 (no past run had a magnet). Both fields are recorded for
+  provenance and read back on a flagless resume or fork, never compared by `check_compatible`.
+- **Default.** OFF (β unset = 0): no term, no magnet, no T2 slot, no sidecar; R1's call, its compile key and the K9
+  learner golden are unchanged. No run has trained with it; its GPU cost is UNVERIFIED.
+- **Two findings.** (1) KL(π ‖ π_mag) = −H(π) − Σ π · log π_mag, so β = 0.05 beside `ent_coef` 0.05 also doubles the
+  entropy gradient's weight (0.10): the arm is not a single lever, and a read of the pull alone needs an
+  entropy-matched control (`--ent-coef 0.10`, no magnet) or the swap `--ent-coef 0 --magnet-kl-coef 0.05`. (2) The lever
+  exists at main only; a fork of P* against the banked C0 controls runs at the production side pin `f4b25238`, so a
+  screen needs a backport side pin and a kit arm, neither built.

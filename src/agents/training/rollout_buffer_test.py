@@ -92,9 +92,10 @@ def test_get_draws_the_same_permutation_and_serves_the_same_micro_batches(batch)
         ref = list(theirs.get(batch))
         assert len(mine) == len(ref)
         for m, r in zip(mine, ref):
-            # sb3's fields, in sb3's order, plus X14's optional `is_weights` (absent here: None)
-            assert isinstance(m, RolloutSamples) and m._fields == r._fields + ("is_weights",)
-            assert m.is_weights is None
+            # sb3's fields, in sb3's order, plus X14's optional `is_weights` and the magnet's optional column
+            # (both absent here: None)
+            assert isinstance(m, RolloutSamples) and m._fields == r._fields + ("is_weights", "magnet_logp")
+            assert m.is_weights is None and m.magnet_logp is None
             for f in r._fields:
                 if f == "observations":
                     assert m.observations.keys() == r.observations.keys()
@@ -119,6 +120,27 @@ def test_x14_importance_weights_ride_get_beside_their_rows_and_reset_drops_them(
         assert s.is_weights is not None and th.equal(s.is_weights, 2.0 + s.advantages)
     ours.reset()
     assert ours.is_weights is None and ours.flat_fields() == RolloutBuffer.FLAT
+
+
+def test_the_magnet_column_rides_get_beside_its_rows_and_reset_drops_it():
+    """gen3_magnet_kl_v1: the column the collector's fill writes (``[n_steps, n_envs, n_actions]``) is flattened with
+    the FLAT arrays and served ``[batch, n_actions]``, row-aligned (here it is a function of the row's advantage and
+    of the action, so a misaligned gather or a wrong reshape shows); `reset()` clears it."""
+    ours, _ = _pair()
+    _fill([ours])
+    assert ours.magnet_logp is None and ours.flat_fields() == RolloutBuffer.FLAT
+    ramp = np.arange(1, ours.mask_dims + 1, dtype=np.float32)
+    ours.magnet_logp = (ours.advantages[..., None] * ramp).astype(np.float32)
+    assert ours.flat_fields() == RolloutBuffer.FLAT + ("magnet_logp",)
+    np.random.seed(5)
+    seen = 0
+    for s in ours.get(4):
+        assert s.magnet_logp is not None and s.magnet_logp.shape == (len(s.advantages), ours.mask_dims)
+        assert th.equal(s.magnet_logp, s.advantages[:, None] * th.as_tensor(ramp))
+        seen += len(s.advantages)
+    assert seen == ours.buffer_size * ours.n_envs
+    ours.reset()
+    assert ours.magnet_logp is None and ours.flat_fields() == RolloutBuffer.FLAT
 
 
 def test_reset_restores_the_unflattened_layout():

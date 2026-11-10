@@ -160,6 +160,29 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "is byte-identical. Must be in [0, 1]. TRAINING-only: "
                              "recorded in model_config.json and INHERITED on a flagless resume "
                              "(name it to change it on a resume/fork). Logged as hparams/gae_lambda.")
+    # --- gen3_magnet_kl_v1 (CE-3d, T56): THE TRAILING MAGNET -- a reverse-KL regulariser toward a frozen copy of the
+    #     policy (Magnetic Mirror Descent's deep form; R-NaD's regularisation policy). `agents.training.magnet`,
+    #     designs/training/magnet_kl.md ---
+    parser.add_argument("--magnet-kl-coef", "--magnet_kl_coef", dest="magnet_kl_coef",
+                        type=float, default=None, metavar="BETA",
+                        help="The trailing MAGNET's coefficient (gen3_magnet_kl_v1, config v170): loss += BETA * "
+                             "KL(pi || pi_mag) over each row's LEGAL actions, where pi_mag (the magnet) is a frozen "
+                             "copy of the policy, replaced by the current weights every --magnet-refresh-steps env "
+                             "steps. It sits BESIDE the entropy bonus (--ent-coef is unchanged); the KL's own entropy "
+                             "part adds BETA to that bonus's weight. UNSET resolves to 0.0 = OFF and bit-identical "
+                             "(no term, no magnet, no T2 slot, no sidecar). On, T2 serves the magnet from one extra "
+                             "slot at each fill (one extra pass over the buffer per rollout, no second forward in the "
+                             "update) and every checkpoint carries a <checkpoint>.magnet.pt sidecar. Must be >= 0. "
+                             "TRAINING-only: recorded in model_config.json and INHERITED on a flagless resume or fork "
+                             "(a fork seeds a NEW magnet at its loaded weights unless the checkpoint carries a "
+                             "sidecar). REFUSED with --overlap-collect and with --fork-fraction > 0. Logged as "
+                             "train/magnet_kl.")
+    parser.add_argument("--magnet-refresh-steps", "--magnet_refresh_steps", dest="magnet_refresh_steps",
+                        type=int, default=None, metavar="N",
+                        help="The magnet's refresh cadence in total ENV STEPS (gen3_magnet_kl_v1): the magnet becomes "
+                             "the current weights at the first update boundary at or after N steps since it was last "
+                             "set. UNSET resolves to 2,000,000. Must be > 0; inert while --magnet-kl-coef is 0. "
+                             "Recorded and INHERITED like --magnet-kl-coef. Logged as magnet/age_steps.")
     parser.add_argument("--diagnostics-every", "--diagnostics_every", dest="diagnostics_every",
                         type=int, default=None,
                         help="Run the OPTIONAL learner telemetry on every Nth PPO update only "

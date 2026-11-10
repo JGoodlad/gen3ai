@@ -97,6 +97,10 @@ class RustEnvDecl:
     #: X14 (``--overlap-collect``, gen3_overlap_collect_v1; default OFF): the next rollout is played on a worker
     #: thread while the learner updates (``overlap.OverlapRunner``, built here at startup). OFF builds none of it.
     overlap: bool = False
+    #: CE-3d (``--magnet-kl-coef`` > 0, gen3_magnet_kl_v1; default OFF): ONE more T2 slot of the trainee's slot group,
+    #: declared after every other slot, holds the trailing MAGNET's weights and serves the filled buffer's rows once
+    #: per rollout (``agents.training.magnet``). OFF declares no slot: the slot table is exactly as without it.
+    magnet: bool = False
 
     def __post_init__(self) -> None:
         if self.front not in FRONTS:
@@ -110,6 +114,8 @@ class RustEnvDecl:
                              "so --oracle-reveal != off cannot combine with --fork-fraction > 0")
         from agents.training.rust_rollout.overlap import validate_decl
         validate_decl(overlap=bool(self.overlap), fork=self.fork, device=str(self.device), backend=str(self.backend))
+        from agents.training.magnet import validate_decl as _magnet_validate
+        _magnet_validate(magnet=bool(self.magnet), fork=self.fork, overlap=bool(self.overlap))
 
     @property
     def resolved_buckets(self) -> Tuple[int, ...]:
@@ -340,8 +346,13 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
             templates[int(r.slot)] = sources.stable[r.family.split(":", 1)[1]]
         else:
             templates[int(r.slot)] = sources.exploiter
+    # CE-3d: the magnet's slot is the LAST declared (after eval's), of the trainee's architecture and so of its group
+    declared_extra = list(extra_slots) + ([("magnet", trainee_policy)] if decl.magnet else [])
     groups, trainee_slots, extra_ids = slot_groups_with_extra(plan, templates, trainee_policy,
-                                                              int(decl.trainee_slots), extra_slots)
+                                                              int(decl.trainee_slots), declared_extra)
+    magnet_slot: Optional[int] = extra_ids.pop() if decl.magnet else None
+    # the magnet serves whole rollouts, so it captures the trainee's full bucket (never a lead slot: it plays no game)
+    full_bucket_slots = list(trainee_slots) + ([magnet_slot] if magnet_slot is not None else [])
     n_slots = sum(g[1] for g in groups)
     lanes = int(decl.lanes) or (min(n_slots, 8) if str(decl.device).startswith("cuda") else 1)
     buckets = decl.resolved_buckets
@@ -352,7 +363,7 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     svc = svc if shared else InferenceService(ServiceSpec(
         groups=tuple(SlotGroupSpec(name, k, tpl) for name, k, tpl in groups), device=decl.device,
         backend=decl.backend, buckets=buckets, lanes=lanes,
-        slot_bucket_caps=decl.slot_bucket_caps(n_slots, trainee_slots),
+        slot_bucket_caps=decl.slot_bucket_caps(n_slots, full_bucket_slots),
         lead_slots=decl.lead_slots(trainee_slots),
         grouped_slots=decl.grouped_slots([g[1] for g in groups], int(plan.n_policy_slots)),
         # T2's startup CONCURRENT gate puts one full chunk of the largest bucket per slot into ONE flush,
@@ -419,6 +430,10 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
                                    obs_dim=int(obs_space.spaces[S.KEY_OBSERVATION].shape[0]), emit=emit)
     col.decl = decl
     col.extra_slots = extra_ids      # M5 Lane H: the declared eval slots (``extra_slots``' order)
+    col.magnet_slot = magnet_slot    # CE-3d: T2's magnet slot (None = OFF); its weights are the caller's to load
+    if magnet_slot is not None:
+        emit(f"🦀 [RUST ENV] MAGNET slot {magnet_slot} (--magnet-kl-coef, CE-3d): one more slot of the trainee's group "
+             f"at the full bucket {buckets[-1]}; it serves every row of the filled buffer once per rollout")
     if decl.overlap:                 # X14: the worker thread, its CUDA stream and the behaviour snapshots, at startup
         from agents.training.rust_rollout.overlap import OverlapRunner
 

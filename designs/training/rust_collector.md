@@ -315,6 +315,10 @@ EVAL's slots (M5 Lane H) are appended after the trainee's (`build_collector(extr
 eval slot, the sentinel slots, fixed opponents the plan does not already serve) — in the trainee's group
 when the architecture matches, so they reuse its compiled buckets; `col.extra_slots` names them and
 `col.evaluator` is the eval core built over the same service (`designs/training/eval_and_rating.md`).
+The TRAILING MAGNET's slot (`--magnet-kl-coef` > 0, OFF by default) is declared last, after eval's, in the trainee's
+group at the trainee's full bucket. `_fill` serves every row of the filled buffer through it once and writes
+`RolloutBuffer.magnet_logp`; `after_update` reloads it with the learner's weights when the cadence is due. The magnet
+is refused with `--fork-fraction` and with `--overlap-collect`. Detail: `designs/training/magnet_kl.md` §4, §5, §7.
 
 **Every slot serves the SAME full forward — an opponent slot computes a V nothing reads, and that is measured to be
 free.** A policy-only forward for the non-trainee slots (`ServiceSpec.value_slots`, a module without the critic tower,

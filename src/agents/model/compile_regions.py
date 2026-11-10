@@ -540,9 +540,20 @@ def _r1_advantages(model: Any, b: R1Batch) -> torch.Tensor:
     return decoupled_advantages(b.advantages, torch.ones_like(b.advantages), bool(model.normalize_advantage))
 
 
+def _r1_magnet_args(st: Any, b: R1Batch) -> Tuple[Any, ...]:
+    """CE-3d (`--magnet-kl-coef` > 0): R1's trailing magnet column for the gate's fixture rows — the masked-uniform
+    distribution over each row's own legal set (`agents.training.magnet.masked_uniform_logp`: the column's layout, a
+    deterministic function of the mask, a non-zero KL and gradient). OFF: nothing, R1 takes its nine arguments."""
+    if not float(getattr(st, "magnet_coef", 0.0)) > 0.0:
+        return ()
+    from agents.training.magnet import masked_uniform_logp
+    return (masked_uniform_logp(b.action_masks),)
+
+
 def _r1_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
+    st = _r1_static(model)
     return (model.policy, b.obs, b.actions, b.action_masks,
-            b.old_log_prob, b.old_values, _r1_advantages(model, b), b.returns, _r1_static(model))
+            b.old_log_prob, b.old_values, _r1_advantages(model, b), b.returns, st, *_r1_magnet_args(st, b))
 
 
 def _r1_arm(model: Any, fn: Callable[..., Any], args: Tuple[Any, ...]) -> Dict[str, torch.Tensor]:
@@ -905,7 +916,7 @@ def _r1_reference_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
         buf.observations = saved
     obs = {k: v for k, v in b.obs.items() if k not in keys}
     return (model.policy, obs, b.actions, b.action_masks,
-            b.old_log_prob, b.old_values, _r1_advantages(model, b), b.returns, st)
+            b.old_log_prob, b.old_values, _r1_advantages(model, b), b.returns, st, *_r1_magnet_args(st, b))
 
 
 def _r1_judged_set_rule(model: Any, b: R1Batch, run: Dict[str, torch.Tensor], names: List[str]) -> str:
@@ -1463,11 +1474,11 @@ def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: Optional[f
     The reference is R1's own eager body at the fp32 base classes (`trunk_precision.fp32_scope`; a no-op on an fp32
     trunk) — one forward, gradient mode as the arms run it (nothing saved for a backward that never runs), no backward;
     it runs R1's eager body once, outside every arm's independence window. ``args`` is `_r1_args`' tuple (old log-probs
-    at index 4, the static last)."""
+    at index 4, the static at index 8; CE-3d's magnet column, when on, follows it)."""
     from agents.model.trunk_precision import fp32_scope
     from agents.training.instrumented_ppo.micro_step import micro_step
     from agents.training.rust_rollout.consistency import _drop_saved, _never_unpacked
-    st = args[-1]
+    st = args[8]
     # gen3_gate_releases_memory_v1: this forward is NEVER backpropagated, so autograd keeps NOTHING for it
     # (`saved_tensors_hooks` that drop every saved tensor — K9(b)'s probe recipe, `gen3_probe_releases_graph_v1`: it
     # changes what autograd keeps, never a kernel or a value). Before, its outputs were STASHED on the policy (the

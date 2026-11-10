@@ -581,6 +581,15 @@ class ModelVersionFields:
     # recorded block; a plain fork of a grown run records None (its lineage names the grown ancestor). A pre-v159
     # config migrates to None — no run grew before v159.
     growth: Optional[Dict[str, Any]] = None
+    # ---- gen3_magnet_kl_v1 (config v170) — THE TRAILING MAGNET (CE-3d, T56; `agents.training.magnet`) --------------
+    # `--magnet-kl-coef β`: loss += β · KL(π ‖ π_mag) over the legal actions, π_mag a frozen copy of the policy
+    # replaced by the current weights at the first update boundary at or after `--magnet-refresh-steps` env steps of
+    # age. 0.0 = OFF: no term, no magnet, no T2 slot, no sidecar, and the update is bit-identical. The training-only
+    # provenance class: it adds a loss term, touches no forward pass and no weight shape, so both are recorded for
+    # PROVENANCE and flagless-resume read-back (`_resolve`) and never compared by check_compatible or any check_*
+    # (a frozen opponent never reads them). A pre-v170 config migrates to 0.0 / 2,000,000 — no run had a magnet.
+    magnet_kl_coef: float = 0.0
+    magnet_refresh_steps: int = 2_000_000
     # ---- gen3_tau_fp32_alt_v1 (config v160) — THE τ SOLVE (FP32_ALT; `designs/endstate/design_x5_belief_tokens.md` §3.2) --
     # `--tau-solve {fp32_alt,fp64}`: the arithmetic of X5's fixed-size shift τ (`hypothesis_set.fixed_size_tau`) in EVERY
     # forward the run builds (the learner, T2, eval, its snapshots: a deep copy or a rebuild from the saved kwargs both

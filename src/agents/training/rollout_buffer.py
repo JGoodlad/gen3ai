@@ -27,6 +27,10 @@ THE CONTRACT ``train()`` and the K9 golden rest on (each property is load-bearin
   `rust_rollout.overlap.proximal_transform`) BESIDE the raw advantages, never into them. While present they ride
   ``get()`` like a ``FLAT`` array (`flat_fields`) and each micro-batch carries its rows' weights as
   ``RolloutSamples.is_weights``; absent (every serial run) the buffer and its micro-batches are exactly as above.
+* **The magnet column** (``magnet_logp``, `gen3_magnet_kl_v1`, `agents.training.magnet`): ``None`` after every
+  ``reset()``; under ``--magnet-kl-coef > 0`` the collector's fill writes the magnet's masked log-probabilities of
+  every row (``[buffer_size, n_envs, n_actions]`` float32, 0.0 on illegal entries). While present it rides ``get()``
+  like a ``FLAT`` array and each micro-batch carries its rows as ``RolloutSamples.magnet_logp``.
 * **Window GAE** (``compute_returns_and_advantage``, the fixed-window trigger's fill and the toy
   collector): sb3's arithmetic, step for step, with ``returns = advantages + values``. The complete-game
   fill computes its own per game (``store.game_gae``, the same operations) and writes the arrays.
@@ -57,6 +61,9 @@ class RolloutSamples(NamedTuple):
     #: X14's per-row truncated importance weight w = min(pi_prox / mu, cap) (`gen3_overlap_norm_then_weight_v1`):
     #: None unless a decoupled-PPO update wrote ``RolloutBuffer.is_weights``. Not one of sb3's fields.
     is_weights: Optional[th.Tensor] = None
+    #: The magnet's masked log-probabilities of these rows, ``[batch, n_actions]`` (`gen3_magnet_kl_v1`): None unless
+    #: the collector filled ``RolloutBuffer.magnet_logp`` (`--magnet-kl-coef > 0`). Not one of sb3's fields.
+    magnet_logp: Optional[th.Tensor] = None
 
 
 class RolloutBufferLayoutError(TypeError):
@@ -81,9 +88,12 @@ class RolloutBuffer:
     FLAT = ("actions", "values", "log_probs", "advantages", "returns", "action_masks")
     #: The flat per-row array a decoupled-PPO update adds (module docstring); flattened only while present.
     IS_WEIGHTS = "is_weights"
+    #: The per-row array the magnet adds (module docstring); flattened only while present.
+    MAGNET_LOGP = "magnet_logp"
 
     observations: Dict[str, np.ndarray]
     is_weights: Optional[np.ndarray]
+    magnet_logp: Optional[np.ndarray]
 
     def __init__(self, buffer_size: int, observation_space: Any, action_space: Any, device: Any = "auto",
                  gae_lambda: float = 1, gamma: float = 0.99, n_envs: int = 1):
@@ -126,13 +136,16 @@ class RolloutBuffer:
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.is_weights = None
+        self.magnet_logp = None
         self.generator_ready = False
         self.pos = 0
         self.full = False
 
     def flat_fields(self) -> Tuple[str, ...]:
-        """``FLAT``, plus ``is_weights`` while a decoupled-PPO update has written them."""
-        return self.FLAT + ((self.IS_WEIGHTS,) if self.is_weights is not None else ())
+        """``FLAT``, plus ``is_weights`` while a decoupled-PPO update has written them and ``magnet_logp`` while
+        the collector has filled it."""
+        return (self.FLAT + ((self.IS_WEIGHTS,) if self.is_weights is not None else ())
+                + ((self.MAGNET_LOGP,) if self.magnet_logp is not None else ()))
 
     def size(self) -> int:
         return self.buffer_size if self.full else self.pos
@@ -216,4 +229,6 @@ class RolloutBuffer:
             action_masks=self.to_torch(self.action_masks[batch_inds].reshape(-1, self.mask_dims)),
             is_weights=(None if self.is_weights is None
                         else self.to_torch(self.is_weights[batch_inds].flatten())),
+            magnet_logp=(None if self.magnet_logp is None
+                         else self.to_torch(self.magnet_logp[batch_inds].reshape(-1, self.mask_dims))),
         )

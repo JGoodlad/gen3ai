@@ -41,12 +41,13 @@ from agents.training import belief_bank_static as _bbs
 from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.intent_fold import intent_fold
+from agents.training.magnet import reverse_kl_rows
 
 Metric = Tuple[th.Tensor, th.Tensor]
 
 #: Per-update metric LIST names the PPO core fills (`train()`'s locals of the same names).
 PPO_LISTS = ("pg_losses", "clip_fractions", "value_losses", "entropy_losses", "vf_clip_fractions",
-             "approx_kl")
+             "approx_kl", "magnet_kl")
 
 
 class MicroStatic(NamedTuple):
@@ -74,6 +75,8 @@ class MicroStatic(NamedTuple):
     intent_coef: float
     bot_label_weight: float
     win_prob_on: bool
+    #: `--magnet-kl-coef` (β): 0.0 = no magnet term and no magnet argument (`gen3_magnet_kl_v1`).
+    magnet_coef: float = 0.0
 
 
 class MicroOut(NamedTuple):
@@ -150,8 +153,11 @@ def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
 
 def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
                action_masks: Optional[th.Tensor], old_log_prob: th.Tensor, old_values: th.Tensor,
-               advantages: th.Tensor, returns: th.Tensor, st: MicroStatic) -> MicroOut:
-    """R1 — see the module docstring. ``st`` carries every static flag and coefficient."""
+               advantages: th.Tensor, returns: th.Tensor, st: MicroStatic,
+               magnet_logp: Optional[th.Tensor] = None) -> MicroOut:
+    """R1 — see the module docstring. ``st`` carries every static flag and coefficient. ``magnet_logp`` (the
+    buffer's magnet column for these rows) is passed ONLY when ``st.magnet_coef > 0``: with the magnet off the call
+    is the nine-argument one it always was."""
     note_eager_body("R1")      # a no-op under a dynamo trace; counts an EAGER run (gen3_no_silent_eager_v1)
     fe = policy.features_extractor
     mets: Dict[str, Metric] = {}
@@ -203,6 +209,17 @@ def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
     terms["entropy"], groups["entropy"] = ent_term, "entropy"
     if th.is_tensor(vf_term):
         terms["value"], groups["value"] = vf_term, "value"
+    if st.magnet_coef > 0.0:
+        # +MAGNET (gen3_magnet_kl_v1, `agents.training.magnet`): β · KL(π ‖ π_mag) over the legal actions, beside the
+        # entropy bonus (a regulariser of the same family: the noise scale's "entropy" group).
+        if logp is None or masks_bool is None or magnet_logp is None:
+            raise ValueError("--magnet-kl-coef > 0 needs the masked policy's log-probabilities and the buffer's "
+                             "magnet column (a stock sb3 policy, or a buffer the collector did not fill, has neither)")
+        magnet_kl = reverse_kl_rows(logp, masks_bool, magnet_logp).mean()
+        magnet_term = st.magnet_coef * magnet_kl
+        loss = loss + magnet_term
+        terms["magnet"], groups["magnet"] = magnet_term, "entropy"
+        mets["magnet_kl/"] = _m(magnet_kl)
     with th.no_grad():
         log_ratio = log_prob - old_log_prob
         mets["approx_kl/"] = _m(th.mean((th.exp(log_ratio) - 1) - log_ratio))

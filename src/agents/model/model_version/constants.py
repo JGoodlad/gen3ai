@@ -691,7 +691,13 @@ from typing import Any, Dict
 #   pre-v169 config migrates to its recorded `role_token_size` (128, the only width ever built). No ARCH_SIGNATURE bump
 #   (128 builds the same modules in the same order: every existing state dict and forward is unchanged; another width
 #   is gated by the field), no OBS_SEMANTICS or MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 169
+# v170 (gen3_magnet_kl_v1, 2026-11-10; CE-3d, T56): two TRAINING-ONLY fields, `magnet_kl_coef` (`--magnet-kl-coef`,
+#   float, default 0.0 = OFF) and `magnet_refresh_steps` (`--magnet-refresh-steps`, int, default 2,000,000): the
+#   trailing magnet, loss += β · KL(π ‖ π_mag) over the legal actions with π_mag a frozen copy of the policy refreshed
+#   on that cadence (`agents.training.magnet`). No forward pass, no weight shape, no observation: recorded for
+#   provenance and `_resolve` read-back, never compared by check_compatible. A pre-v170 config migrates to 0.0 /
+#   2,000,000 (no run had a magnet). No ARCH_SIGNATURE, OBS_SEMANTICS or MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 170
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

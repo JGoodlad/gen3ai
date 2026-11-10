@@ -77,6 +77,29 @@ def test_x14_importance_weights_ride_every_mode_bit_identically_beside_their_row
             _same(eh, ed)
 
 
+def test_the_magnet_column_rides_every_mode_bit_identically_beside_its_rows():
+    """gen3_magnet_kl_v1: the buffer's magnet column reaches each micro-batch in every mode, ``[batch, n_actions]``,
+    from the same permutation and row-aligned (a function of the row's advantage and of the action); absent, no mode
+    serves one (the bit-identity tests above)."""
+    model = _golden_buffer()
+    buf = model.rollout_buffer
+    ramp = np.arange(1, buf.mask_dims + 1, dtype=np.float32)
+    buf.magnet_logp = (buf.advantages[..., None] * ramp).astype(np.float32)
+    host, rng_host = _batches(buf, 16, 2, seed=11)
+    for e in host:
+        for s in e:
+            assert s.magnet_logp is not None and s.magnet_logp.shape == (len(s.advantages), buf.mask_dims)
+            assert torch.equal(s.magnet_logp, s.advantages[:, None] * torch.as_tensor(ramp))
+    for mode in ("resident", "staged"):
+        with DB.device_samples(buf, force=True, mode=mode):
+            dev, rng_dev = _batches(buf, 16, 2, seed=11)
+        assert rng_dev == rng_host
+        for eh, ed in zip(host, dev):
+            assert len(eh) == len(ed)
+            _same(eh, ed)
+            assert all(s.magnet_logp is not None for s in ed)
+
+
 def test_install_replaces_a_stale_gather_and_a_cpu_buffer_keeps_the_host_path():
     model = _golden_buffer()
     buf = model.rollout_buffer

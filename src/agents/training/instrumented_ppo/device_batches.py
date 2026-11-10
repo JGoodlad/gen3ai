@@ -20,7 +20,9 @@ shape).
 
 X14's importance weights (``RolloutBuffer.is_weights``, `gen3_overlap_norm_then_weight_v1`) are one more flat
 array while a decoupled-PPO update holds them (`RolloutBuffer.flat_fields`): every mode gathers them like the rest
-and serves them as ``RolloutSamples.is_weights``; absent, every mode is exactly as it was.
+and serves them as ``RolloutSamples.is_weights``; absent, every mode is exactly as it was. The magnet column
+(``RolloutBuffer.magnet_logp``, `gen3_magnet_kl_v1`) is the same kind of optional array, served as
+``RolloutSamples.magnet_logp``.
 
 Only the learner's `RolloutBuffer` on a CUDA device is served (``force`` is the CPU test seam); anything
 else — a CPU buffer — keeps the host path untouched.
@@ -39,6 +41,8 @@ from agents.training.rollout_buffer import RolloutBuffer, RolloutSamples
 _FLAT = RolloutBuffer.FLAT
 #: X14's optional flat array (`RolloutBuffer.flat_fields`): gathered only while present.
 _W = RolloutBuffer.IS_WEIGHTS
+#: The magnet's optional per-row array (`RolloutBuffer.flat_fields`): gathered only while present.
+_M = RolloutBuffer.MAGNET_LOGP
 
 
 def _servable(buffer: Any) -> bool:
@@ -83,6 +87,7 @@ class _DeviceGather:
             returns=f["returns"].index_select(0, idx).flatten(),
             action_masks=f["action_masks"].index_select(0, idx).reshape(-1, self.buffer.mask_dims),
             is_weights=(f[_W].index_select(0, idx).flatten() if _W in f else None),
+            magnet_logp=(f[_M].index_select(0, idx).reshape(-1, self.buffer.mask_dims) if _M in f else None),
         )
 
 
@@ -153,7 +158,8 @@ class _StagedGather:
             old_log_prob=f["log_probs"].flatten(), advantages=f["advantages"].flatten(),
             returns=f["returns"].flatten(),
             action_masks=f["action_masks"].reshape(-1, self.buffer.mask_dims),
-            is_weights=(f[_W].flatten() if _W in f else None))
+            is_weights=(f[_W].flatten() if _W in f else None),
+            magnet_logp=(f[_M].reshape(-1, self.buffer.mask_dims) if _M in f else None))
 
     def get(self, batch_size: Optional[int] = None) -> Iterator[Any]:
         """Installed as the buffer's `get`: the class's own generator (the permutation draw, the

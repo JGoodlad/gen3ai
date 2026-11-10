@@ -108,6 +108,11 @@ class PpoHyperparameters:
     move_belief_latent_coef: float = 0.0
 
     opp_intent_coef: float = 0.0
+    # gen3_magnet_kl_v1 (`agents.training.magnet`, CE-3d): β of loss += β · KL(π ‖ π_mag) over the legal actions, and
+    # the magnet's refresh cadence in env steps. 0.0 = OFF and the update is bit-identical (no term, no R1 argument,
+    # no buffer column). Training-only, recorded (config v170) and `_resolve`-inherited.
+    magnet_kl_coef: float = 0.0
+    magnet_refresh_steps: int = 2_000_000
     # gen3_intent_label_bot_weight_v1: per-sample weight on the opponent-intent label rows whose
     # opponent was a heuristic BOT (`opp_class == 0`); every other class stays 1.0. 1.0 = OFF and the
     # loss is bit-identical (the unweighted reduction is taken unchanged). Training-only,
@@ -192,6 +197,7 @@ class PpoHyperparameters:
                                                   "_rust_row_provenance",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
                                                   "_behaviour_snapshot_metrics", "_overlap_prox",
+                                                  "_magnet",
                                                   "_capacity_state",
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",
                                                   "collect_rollouts",

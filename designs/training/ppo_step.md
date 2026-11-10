@@ -269,6 +269,8 @@ Per minibatch (1 to 3a inside R1):
    `policy_loss` tensor is used, byte-identical to upstream, and 0.0 removes the policy-gradient
    term alone. Training-only, the `training_coef` provenance
    class: recorded, `_resolve`-inherited on a flagless resume, never gated)
+   An optional `+ β·KL(π‖π_mag)` term (`--magnet-kl-coef`, OFF by default, not part of the bit-identical default
+   path) joins the same loss beside the entropy bonus; `designs/training/magnet_kl.md` owns it.
 2. the belief bank — the hidden-team set BCE (X5), opponent intent (the flat pointer's CE), move / spread /
    nature-EV / HP-type / item belief, move-latent
 3. (3a) the win-prob BCE — the last R1 term

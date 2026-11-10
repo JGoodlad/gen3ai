@@ -261,7 +261,9 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             grouped_opponents=bool(args.t2_grouped_opponents),
             trainee_slots=int(args.trainee_slots), policy_seed=run_seed, fork=fork_decl_from_args(args),
             oracle_reveal=str(getattr(args, "oracle_reveal", None) or "off"),
-            overlap=bool(getattr(args, "overlap_collect", False)))
+            overlap=bool(getattr(args, "overlap_collect", False)),
+            # CE-3d: the learner's attached magnet (`agents.training.magnet.attach`, before this startup) declares the slot
+            magnet=getattr(model, "_magnet", None) is not None)
         sources = OpponentSources(self_play_fraction=float(self_play_fraction))
         if plan.pool_slots and snapshot_dir is not None:
             # device="cpu" (gen3_declared_slot_load_v1): a pool snapshot is only a WEIGHT SOURCE that T2 copies
@@ -299,6 +301,12 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
                               route_builders=route_builders,
                               team_wr_tracking=bool(getattr(args, "team_wr_tracking", True)), emit=emit,
                               extra_slots=extra)
+        if col.magnet_slot is not None:   # CE-3d: a RESUMED magnet's weights go into its slot now (startup)
+            from agents.training import magnet as _magnet
+
+            if _magnet.load_slot(col.svc, col.magnet_slot, model):
+                emit(f"🧲 [MAGNET] T2 slot {col.magnet_slot} loaded with {model._magnet.model_id()} "
+                     f"({model._magnet.origin})")
         col.evaluator = None
         if edecl is not None:
             from agents.training.rust_eval.build import build_eval_core, eval_builders
@@ -348,6 +356,7 @@ def env_core_stamp(decl: Any, col: Any) -> Dict[str, Any]:
         "target_samples": int(getattr(col.cfg.trigger, "target", 0) or 0),
         "trainee_slots": decl.trainee_slots,
         **({"overlap_collect": True} if decl.overlap else {}),     # gen3_overlap_collect_v1 (X14): ON only
+        **({"magnet": True} if decl.magnet else {}),               # gen3_magnet_kl_v1 (CE-3d): ON only
         "t2": {"backend": decl.backend, "device": decl.device, "buckets": list(decl.resolved_buckets),
                **({"lead_trainee": True} if decl.lead_trainee else {}),      # gen3_t2_lead_lanes_v1: ON only
                **({"grouped_opponents": True} if decl.grouped_opponents else {})},  # X45: ON only

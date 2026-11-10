@@ -613,6 +613,12 @@ def _migrate_config(data: dict) -> dict:
     if version < 169:
         data.setdefault("d_model", int(data.get("role_token_size", 128)))
         data["config_version"] = 169
+    # v170 (gen3_magnet_kl_v1, CE-3d) — the trailing magnet, two TRAINING-only fields: absent before, so every past
+    # run trained without one (coefficient 0.0; the cadence is the flag's default and inert at 0.0).
+    if version < 170:
+        data.setdefault("magnet_kl_coef", 0.0)
+        data.setdefault("magnet_refresh_steps", 2_000_000)
+        data["config_version"] = 170
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

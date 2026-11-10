@@ -35,12 +35,14 @@ formats are the callers' own, so no reader changed and old runs load as before.
 
 ## The commit order: `run_io.commit_checkpoint`
 
-Every path that saves a resumable zip runs the same three steps; an exception anywhere stops before the pointer moves:
+Every path that saves a resumable zip runs the same steps; an exception anywhere stops before the pointer moves:
 
 1. the zip, `atomic_save_model`;
-2. its sidecars (`record_checkpoint`: the `<ckpt>.json` and the `snapshot_history` entry; `save_model_snapshot`:
+2. when the run holds a trailing magnet (`--magnet-kl-coef` > 0), the magnet's sidecar `<ckpt>.magnet.pt`, atomic
+   (`designs/training/magnet_kl.md` §6: a resume of such a run refuses a checkpoint without one);
+3. the caller's sidecars (`record_checkpoint`: the `<ckpt>.json` and the `snapshot_history` entry; `save_model_snapshot`:
    `model_config.json` and `metadata.json`), each atomic;
-3. `latest.txt`, run-relative, LAST.
+4. `latest.txt`, run-relative, LAST.
 
 A failure after step 1 leaves a complete but unreferenced zip and the pointer on the previous target. For the
 interrupted save that makes the GPU window HOLD on "no checkpoint saved by the pause" (it reads the pointer's target and

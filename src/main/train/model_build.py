@@ -59,6 +59,7 @@ from utils.torch_state_guard import INIT_NUM_THREADS_ATTR, single_thread_build
 _PLAIN = None          # model.<x> = args.<x>
 _F0 = "f0"             # model.<x> = float(args.<x> or 0.0)  — None/"" coerce to 0.0
 _F0_OPT = "f0?"        # ...and tolerate a namespace that has no such dest at all
+_PLAIN_OPT = "plain?"  # model.<x> = args.<x> when the namespace has the dest and it is not None (else the class default)
 
 _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("grad_accum_steps",              _PLAIN),   # 1 = off; effective batch = batch_size·K
@@ -79,6 +80,9 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("fork_contested_absv",           _PLAIN),   # the |V-0.5| band; 0.0 = off (see the flag)
     ("fork_max_per_battle",           _PLAIN),   # forks per episode slice (inert at 0.0)
     ("fork_crn",                      _PLAIN),   # dice | dice_and_draws (inert at 0.0)
+    # gen3_magnet_kl_v1 — the trailing magnet (`agents.training.magnet`): β and the refresh cadence.
+    ("magnet_kl_coef",                _F0_OPT),  # 0.0 = OFF and bit-identical
+    ("magnet_refresh_steps",          _PLAIN_OPT),   # inert at 0.0
     ("opp_intent_coef",               _F0_OPT),
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. Folds NO loss term and
     # writes no `.grad`, so an ON run's parameter updates are bit-identical to an OFF one; these
@@ -105,6 +109,9 @@ def apply_training_hparams(model, args, *, mappings) -> None:
             setattr(model, name, float(getattr(args, name, 0.0) or 0.0))
         elif how is _F0:
             setattr(model, name, float(getattr(args, name) or 0.0))
+        elif how is _PLAIN_OPT:
+            if getattr(args, name, None) is not None:
+                setattr(model, name, getattr(args, name))
         else:
             setattr(model, name, getattr(args, name))
 
@@ -147,6 +154,18 @@ def apply_training_hparams(model, args, *, mappings) -> None:
     model.device_batch_mode = str(getattr(args, "device_batch", None) or _devb_default_mode)
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
     model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
+
+
+def _attach_magnet(model, args, model_dir, *, model_path) -> None:
+    """CE-3d (`--magnet-kl-coef`): build the trailing magnet at STARTUP (`agents.training.magnet.attach`) — from the
+    checkpoint's ``.magnet.pt`` sidecar on a resume, else the weights just built or loaded. It runs before the Rust
+    env's startup because the collector declares T2's magnet slot iff the learner holds a magnet. OFF: a no-op."""
+    from agents.training import magnet as _magnet
+    from main.train.fork_lr import is_same_run_checkpoint
+
+    _magnet.attach(model, model_path=model_path,
+                   same_run=bool(model_path) and is_same_run_checkpoint(model_path, model_dir),
+                   saved_coef=float(getattr(args, "_magnet_saved_coef", 0.0) or 0.0), say=emit)
 
 
 def _start_rust_env(env, model) -> None:
@@ -425,6 +444,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                   f"the reward config's copy follows it.")
             reward_config.gamma = float(model.gamma)
         _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
+        _attach_magnet(model, args, model_dir, model_path=model_path)   # CE-3d: BEFORE the collector declares its slots
         _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
         _ledger.mark("rust env core (T2 slots, staging, arena)")
         _maybe_compile_trainer(model, args)
@@ -599,6 +619,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             promotion_sprt=args.promotion_sprt,
             trunk_precision=args.trunk_precision,
             canary_shift_max=args.canary_shift_max,
+            magnet_kl_coef=args.magnet_kl_coef,
+            magnet_refresh_steps=args.magnet_refresh_steps,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
@@ -613,6 +635,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         from main.train.human_data_setup import apply_init as _apply_human_init
         _apply_human_init(model, args, version, emit=emit)
         _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
+        _attach_magnet(model, args, model_dir, model_path=None)   # CE-3d: BEFORE the collector declares its slots
         _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
         _ledger.mark("rust env core (T2 slots, staging, arena)")
         _maybe_compile_trainer(model, args)

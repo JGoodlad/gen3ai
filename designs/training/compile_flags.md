@@ -133,7 +133,7 @@ the root `conftest.py` sets `GEN3AI_SHARED_COMPILE_CACHE=0` so no test touches t
   `compile_trainer`, `device`, `device_batch`, `grad_checkpointing`, `learner_cudagraphs`, the `t2_*` keys, `trunk_precision`).
   A new trainer flag whose name says compile / precision / device / batch / T2 FAILS
   `test_every_compile_flag_is_keyed_or_declared_irrelevant` until it is keyed or declared irrelevant; a key added later enters
-  only when SET (`COMPILE_ARG_KEYS_WHEN_SET`), so existing runs keep their key. The compile REGIONS are code, named by the commit.
+  only when SET (`COMPILE_ARG_KEYS_WHEN_SET`: `t2_grouped_opponents` and `magnet_kl_coef`, the latter also appending a column to R1's call, `magnet_kl.md` §4), so existing runs keep their key. The compile REGIONS are code, named by the commit.
 
 **THE CLEAN RULE** (`workspace_state`, run in the CHILD's checkout, i.e. `repo_root()` of the imported code):
 
