@@ -438,6 +438,20 @@ supervised refitting, not PPO under a team-distribution shift. So the strategy t
 [MEASURED · DESCRIPTIVE · one lineage · `8bebdfe31`, `measurements/plasticity_check_2026-10-26/`; ledger 2026-10-27 ·
 *PLASTICITY CHECK*]
 
+**The saturated tower attenuates the policy gradient but is not dead, and it is the same off the pool
+(2026-11-09).** At P\* the first actor tanh layer has 0.897 of its activations at |a| > 0.99 on pool teams and 0.897
+on unfamiliar ones (per-unit rates correlate 0.982); the second layer has 0.235, and the projection is ReLU with no
+dead unit. The policy gradient reaching the projection is 15–18× smaller than under an identity backward pass, and
+71 of 512 first-layer units (13.9 %) are constants. Yet cutting the tower path leaves the trunk a third of its policy
+gradient (2.37 against 6.98), and from 270M to 280M the tower's weights moved further than the trunk's (relative
+displacement 0.067 against 0.040). The critic head is not linear as built (LayerNorm → Linear(128, 128) → ReLU →
+Linear(128, 1)), but its trained function is 98.9 % linear in its input and 36 % of its hidden units never fire.
+Over all decisions against Kakuna its error on U is a level (U − home bias +0.054 [+0.003, +0.108], present at
+turn 1, absent against PastaMittens) with ordering equal or better (AUC 0.813 against 0.781). Whether saturation
+costs strength is UNVERIFIED: no activation A/B exists.
+[MEASURED · DESCRIPTIVE · REPORTED, no verdict · one checkpoint, banked rows, a pseudo-loss for the gradients ·
+`measurements/arch_diag_2026-11-09/`; ledger 2026-11-09 · *ARCHITECTURE DIAGNOSIS*]
+
 ### 4.5 Beliefs: hypothesis tokens adopted; hidden facts are not a policy lever
 
 **X5 (look 3, final, 2026-10-07).** Hypothesis tokens ("fixed_mass": concrete weighted guesses of the opponent's

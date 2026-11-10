@@ -1,0 +1,766 @@
+{
+ "pairs": {
+  "20M -> 30M": {
+   "pre-trunk: embeddings": {
+    "rel_disp": 0.013953571424726969,
+    "rms_step_per_param": 0.013929879829694881,
+    "elements": 30720
+   },
+   "pre-trunk: pokemon_encoder": {
+    "rel_disp": 0.12132750410920086,
+    "rms_step_per_param": 0.014655434274082828,
+    "elements": 131424
+   },
+   "pre-trunk / operator / tokens: other extractor modules": {
+    "rel_disp": 0.1151739653990523,
+    "rms_step_per_param": 0.016491846604553658,
+    "elements": 57173
+   },
+   "trunk: team_transformer (attention + FFN over the 12 mon tokens)": {
+    "rel_disp": 0.11606604374804622,
+    "rms_step_per_param": 0.012472310671237281,
+    "elements": 401536
+   },
+   "pooling: cls_pool (three attention pools)": {
+    "rel_disp": 0.07486884254443801,
+    "rms_step_per_param": 0.007033874947456681,
+    "elements": 199296
+   },
+   "pooling: hidden_opp_belief": {
+    "rel_disp": 0.07998249782758172,
+    "rms_step_per_param": 0.007882056789879325,
+    "elements": 199808
+   },
+   "head: belief / intent stack": {
+    "rel_disp": 0.1648311849219344,
+    "rms_step_per_param": 0.015132292887790891,
+    "elements": 356774
+   },
+   "head: win_head (critic)": {
+    "rel_disp": 0.05101867535372038,
+    "rms_step_per_param": 0.007705254836299475,
+    "elements": 16897
+   },
+   "pooling: value_entity_pool (critic route)": {
+    "rel_disp": 0.14887827631962688,
+    "rms_step_per_param": 0.009184521710192859,
+    "elements": 42560
+   },
+   "post-pool flat: pre_proj_norm": {
+    "rel_disp": 0.013334354900521076,
+    "rms_step_per_param": 0.009471930132136298,
+    "elements": 2304
+   },
+   "post-pool flat: projection 1152->512 (ReLU)": {
+    "rel_disp": 0.23493552279369564,
+    "rms_step_per_param": 0.010243991493686011,
+    "elements": 590336
+   },
+   "other": {
+    "rel_disp": 0.07686880034611954,
+    "rms_step_per_param": 0.011808900774958634,
+    "elements": 4057656
+   },
+   "post-pool flat: actor MLP 512->512->512 (tanh)": {
+    "rel_disp": 0.14947367849271403,
+    "rms_step_per_param": 0.009531532975231616,
+    "elements": 525312
+   },
+   "head: pointer (policy)": {
+    "rel_disp": 0.18300395314587464,
+    "rms_step_per_param": 0.00994983392089449,
+    "elements": 55043
+   },
+   "ALL": {
+    "rel_disp": 0.07861355212518199
+   },
+   "mlp_extractor.policy_net.0.weight": {
+    "rel_disp": 0.1723363192345094,
+    "rms_step_per_param": 0.011029657026616355
+   },
+   "mlp_extractor.policy_net.2.weight": {
+    "rel_disp": 0.12202324291780363,
+    "rms_step_per_param": 0.007767610771394104
+   },
+   "features_extractor.projection.weight": {
+    "rel_disp": 0.23491833038190515,
+    "rms_step_per_param": 0.010247645323223638
+   },
+   "pointer_head.ctx_proj.weight": {
+    "rel_disp": 0.2705337126183053,
+    "rms_step_per_param": 0.007876638666641428
+   },
+   "tanh1_units": {
+    "corr_rowdisp_vs_sat_rate": 0.013924149905458597,
+    "corr_rowdisp_vs_mean_tanh_prime": -0.012567415798281458,
+    "rowdisp_units_sat_ge99pct": 0.16724844486021506,
+    "n_sat_ge99pct": 71,
+    "rowdisp_units_sat_lt50pct": null,
+    "n_sat_lt50pct": 0,
+    "rowdisp_all": 0.16930194902805257
+   }
+  },
+  "270M -> 280M (P*)": {
+   "pre-trunk: embeddings": {
+    "rel_disp": 0.002407895335428086,
+    "rms_step_per_param": 0.0024099499620792424,
+    "elements": 30720
+   },
+   "pre-trunk: pokemon_encoder": {
+    "rel_disp": 0.02812509923102019,
+    "rms_step_per_param": 0.003749884335183157,
+    "elements": 131424
+   },
+   "pre-trunk / operator / tokens: other extractor modules": {
+    "rel_disp": 0.024418233076683605,
+    "rms_step_per_param": 0.004013824645006018,
+    "elements": 57173
+   },
+   "trunk: team_transformer (attention + FFN over the 12 mon tokens)": {
+    "rel_disp": 0.04008232163544301,
+    "rms_step_per_param": 0.004588946503474598,
+    "elements": 401536
+   },
+   "pooling: cls_pool (three attention pools)": {
+    "rel_disp": 0.035415425968911736,
+    "rms_step_per_param": 0.003588224122273174,
+    "elements": 199296
+   },
+   "pooling: hidden_opp_belief": {
+    "rel_disp": 0.03635390022064894,
+    "rms_step_per_param": 0.003815423409708253,
+    "elements": 199808
+   },
+   "head: belief / intent stack": {
+    "rel_disp": 0.029179860760376857,
+    "rms_step_per_param": 0.0036372331746577125,
+    "elements": 356774
+   },
+   "head: win_head (critic)": {
+    "rel_disp": 0.015094150212628922,
+    "rms_step_per_param": 0.0022439811365572385,
+    "elements": 16897
+   },
+   "pooling: value_entity_pool (critic route)": {
+    "rel_disp": 0.05017248707705988,
+    "rms_step_per_param": 0.0037283693093238717,
+    "elements": 42560
+   },
+   "post-pool flat: pre_proj_norm": {
+    "rel_disp": 0.005629334475075464,
+    "rms_step_per_param": 0.004406533310133704,
+    "elements": 2304
+   },
+   "post-pool flat: projection 1152->512 (ReLU)": {
+    "rel_disp": 0.09469045594814854,
+    "rms_step_per_param": 0.006288193889917685,
+    "elements": 590336
+   },
+   "other": {
+    "rel_disp": 0.028990552277612068,
+    "rms_step_per_param": 0.0047441133609886455,
+    "elements": 4057656
+   },
+   "post-pool flat: actor MLP 512->512->512 (tanh)": {
+    "rel_disp": 0.06685928826325872,
+    "rms_step_per_param": 0.0052584204192558555,
+    "elements": 525312
+   },
+   "head: pointer (policy)": {
+    "rel_disp": 0.07168625743379067,
+    "rms_step_per_param": 0.006391311102591436,
+    "elements": 55043
+   },
+   "ALL": {
+    "rel_disp": 0.030372642480220723
+   },
+   "mlp_extractor.policy_net.0.weight": {
+    "rel_disp": 0.07278524757882734,
+    "rms_step_per_param": 0.006006395274448042
+   },
+   "mlp_extractor.policy_net.2.weight": {
+    "rel_disp": 0.0588131298601063,
+    "rms_step_per_param": 0.0043952798271414155
+   },
+   "features_extractor.projection.weight": {
+    "rel_disp": 0.0946846422675357,
+    "rms_step_per_param": 0.006290347110083158
+   },
+   "pointer_head.ctx_proj.weight": {
+    "rel_disp": 0.08459222306252615,
+    "rms_step_per_param": 0.005994810856665102
+   },
+   "tanh1_units": {
+    "corr_rowdisp_vs_sat_rate": -0.47879093977398196,
+    "corr_rowdisp_vs_mean_tanh_prime": 0.47527641404785054,
+    "rowdisp_units_sat_ge99pct": 0.026752723353183152,
+    "n_sat_ge99pct": 71,
+    "rowdisp_units_sat_lt50pct": null,
+    "n_sat_lt50pct": 0,
+    "rowdisp_all": 0.06929940322669507
+   }
+  },
+  "280M (P*) -> 290M": {
+   "pre-trunk: embeddings": {
+    "rel_disp": 0.0022347158562913876,
+    "rms_step_per_param": 0.0022365950164970555,
+    "elements": 30720
+   },
+   "pre-trunk: pokemon_encoder": {
+    "rel_disp": 0.026397098544932475,
+    "rms_step_per_param": 0.0035216604317590047,
+    "elements": 131424
+   },
+   "pre-trunk / operator / tokens: other extractor modules": {
+    "rel_disp": 0.02317146677623938,
+    "rms_step_per_param": 0.0038143590053984987,
+    "elements": 57173
+   },
+   "trunk: team_transformer (attention + FFN over the 12 mon tokens)": {
+    "rel_disp": 0.03677781792842596,
+    "rms_step_per_param": 0.004214058510276257,
+    "elements": 401536
+   },
+   "pooling: cls_pool (three attention pools)": {
+    "rel_disp": 0.03266162017168439,
+    "rms_step_per_param": 0.003312036124995065,
+    "elements": 199296
+   },
+   "pooling: hidden_opp_belief": {
+    "rel_disp": 0.03312643076534471,
+    "rms_step_per_param": 0.0034799157123577744,
+    "elements": 199808
+   },
+   "head: belief / intent stack": {
+    "rel_disp": 0.02644584472663455,
+    "rms_step_per_param": 0.0033062890339052072,
+    "elements": 356774
+   },
+   "head: win_head (critic)": {
+    "rel_disp": 0.013521750083035912,
+    "rms_step_per_param": 0.002009976329545179,
+    "elements": 16897
+   },
+   "pooling: value_entity_pool (critic route)": {
+    "rel_disp": 0.04256419148610915,
+    "rms_step_per_param": 0.0031686523058981663,
+    "elements": 42560
+   },
+   "post-pool flat: pre_proj_norm": {
+    "rel_disp": 0.004884362291624746,
+    "rms_step_per_param": 0.003829092614117658,
+    "elements": 2304
+   },
+   "post-pool flat: projection 1152->512 (ReLU)": {
+    "rel_disp": 0.0848945459491787,
+    "rms_step_per_param": 0.00566470829551149,
+    "elements": 590336
+   },
+   "other": {
+    "rel_disp": 0.026329815093343683,
+    "rms_step_per_param": 0.004312106330810589,
+    "elements": 4057656
+   },
+   "post-pool flat: actor MLP 512->512->512 (tanh)": {
+    "rel_disp": 0.0604886238185767,
+    "rms_step_per_param": 0.00477134909908898,
+    "elements": 525312
+   },
+   "head: pointer (policy)": {
+    "rel_disp": 0.06523472349699001,
+    "rms_step_per_param": 0.005866670310889483,
+    "elements": 55043
+   },
+   "ALL": {
+    "rel_disp": 0.02758284800327321
+   },
+   "mlp_extractor.policy_net.0.weight": {
+    "rel_disp": 0.06561065283987944,
+    "rms_step_per_param": 0.005431616638382734
+   },
+   "mlp_extractor.policy_net.2.weight": {
+    "rel_disp": 0.05355874566947538,
+    "rms_step_per_param": 0.004013116219146138
+   },
+   "features_extractor.projection.weight": {
+    "rel_disp": 0.08488907231531814,
+    "rms_step_per_param": 0.00566662921030987
+   },
+   "pointer_head.ctx_proj.weight": {
+    "rel_disp": 0.07560237127975632,
+    "rms_step_per_param": 0.005434829612453512
+   },
+   "tanh1_units": {
+    "corr_rowdisp_vs_sat_rate": -0.49871515093266156,
+    "corr_rowdisp_vs_mean_tanh_prime": 0.4941620332111278,
+    "rowdisp_units_sat_ge99pct": 0.023590462326981414,
+    "n_sat_ge99pct": 71,
+    "rowdisp_units_sat_lt50pct": null,
+    "n_sat_lt50pct": 0,
+    "rowdisp_all": 0.0623488423835402
+   }
+  },
+  "279M -> 280M (P*)": {
+   "pre-trunk: embeddings": {
+    "rel_disp": 0.0007922212211577109,
+    "rms_step_per_param": 0.0007928885790262782,
+    "elements": 30720
+   },
+   "pre-trunk: pokemon_encoder": {
+    "rel_disp": 0.009694846675031172,
+    "rms_step_per_param": 0.0012933219691897433,
+    "elements": 131424
+   },
+   "pre-trunk / operator / tokens: other extractor modules": {
+    "rel_disp": 0.008211513980940208,
+    "rms_step_per_param": 0.0013514542334774173,
+    "elements": 57173
+   },
+   "trunk: team_transformer (attention + FFN over the 12 mon tokens)": {
+    "rel_disp": 0.012602900357468486,
+    "rms_step_per_param": 0.0014439668816284184,
+    "elements": 401536
+   },
+   "pooling: cls_pool (three attention pools)": {
+    "rel_disp": 0.012048294479910543,
+    "rms_step_per_param": 0.0012216696769832766,
+    "elements": 199296
+   },
+   "pooling: hidden_opp_belief": {
+    "rel_disp": 0.011169951941045109,
+    "rms_step_per_param": 0.0011732718224924962,
+    "elements": 199808
+   },
+   "head: belief / intent stack": {
+    "rel_disp": 0.00942658150022163,
+    "rms_step_per_param": 0.001178227016026048,
+    "elements": 356774
+   },
+   "head: win_head (critic)": {
+    "rel_disp": 0.006248122999822808,
+    "rms_step_per_param": 0.0009286172942470667,
+    "elements": 16897
+   },
+   "pooling: value_entity_pool (critic route)": {
+    "rel_disp": 0.021923560879495083,
+    "rms_step_per_param": 0.0016326656740529612,
+    "elements": 42560
+   },
+   "post-pool flat: pre_proj_norm": {
+    "rel_disp": 0.0015912089818444026,
+    "rms_step_per_param": 0.0012472569305843483,
+    "elements": 2304
+   },
+   "post-pool flat: projection 1152->512 (ReLU)": {
+    "rel_disp": 0.02826939415053131,
+    "rms_step_per_param": 0.0018854639353778834,
+    "elements": 590336
+   },
+   "other": {
+    "rel_disp": 0.009072919318433577,
+    "rms_step_per_param": 0.0014857911596826599,
+    "elements": 4057656
+   },
+   "post-pool flat: actor MLP 512->512->512 (tanh)": {
+    "rel_disp": 0.020002080260108267,
+    "rms_step_per_param": 0.0015773624064210027,
+    "elements": 525312
+   },
+   "head: pointer (policy)": {
+    "rel_disp": 0.02150265083304452,
+    "rms_step_per_param": 0.0019320999922620668,
+    "elements": 55043
+   },
+   "ALL": {
+    "rel_disp": 0.00946298437591175
+   },
+   "mlp_extractor.policy_net.0.weight": {
+    "rel_disp": 0.021574249281874517,
+    "rms_step_per_param": 0.0017855189963937987
+   },
+   "mlp_extractor.policy_net.2.weight": {
+    "rel_disp": 0.017890364339329022,
+    "rms_step_per_param": 0.0013402244535521202
+   },
+   "features_extractor.projection.weight": {
+    "rel_disp": 0.028267696866665633,
+    "rms_step_per_param": 0.0018861117037178717
+   },
+   "pointer_head.ctx_proj.weight": {
+    "rel_disp": 0.02520686374932695,
+    "rms_step_per_param": 0.0018104443002961645
+   },
+   "tanh1_units": {
+    "corr_rowdisp_vs_sat_rate": -0.4999613444377011,
+    "corr_rowdisp_vs_mean_tanh_prime": 0.4958128325578379,
+    "rowdisp_units_sat_ge99pct": 0.007293816402176225,
+    "n_sat_ge99pct": 71,
+    "rowdisp_units_sat_lt50pct": null,
+    "n_sat_lt50pct": 0,
+    "rowdisp_all": 0.02046732609696749
+   }
+  },
+  "280M (P*) -> 281M": {
+   "pre-trunk: embeddings": {
+    "rel_disp": 0.0008036007167206414,
+    "rms_step_per_param": 0.0008042764601194526,
+    "elements": 30720
+   },
+   "pre-trunk: pokemon_encoder": {
+    "rel_disp": 0.010004359702012338,
+    "rms_step_per_param": 0.0013346905398595307,
+    "elements": 131424
+   },
+   "pre-trunk / operator / tokens: other extractor modules": {
+    "rel_disp": 0.008080365352246134,
+    "rms_step_per_param": 0.0013301451585212172,
+    "elements": 57173
+   },
+   "trunk: team_transformer (attention + FFN over the 12 mon tokens)": {
+    "rel_disp": 0.012808234134584687,
+    "rms_step_per_param": 0.001467587015670657,
+    "elements": 401536
+   },
+   "pooling: cls_pool (three attention pools)": {
+    "rel_disp": 0.012412221618735382,
+    "rms_step_per_param": 0.0012586554548306178,
+    "elements": 199296
+   },
+   "pooling: hidden_opp_belief": {
+    "rel_disp": 0.011344142722821311,
+    "rms_step_per_param": 0.0011916967687829977,
+    "elements": 199808
+   },
+   "head: belief / intent stack": {
+    "rel_disp": 0.00963935357041399,
+    "rms_step_per_param": 0.0012051227454911615,
+    "elements": 356774
+   },
+   "head: win_head (critic)": {
+    "rel_disp": 0.009378038352830735,
+    "rms_step_per_param": 0.0013940233321132723,
+    "elements": 16897
+   },
+   "pooling: value_entity_pool (critic route)": {
+    "rel_disp": 0.02426472129788873,
+    "rms_step_per_param": 0.0018063649844640751,
+    "elements": 42560
+   },
+   "post-pool flat: pre_proj_norm": {
+    "rel_disp": 0.001618056019329381,
+    "rms_step_per_param": 0.0012684739548224223,
+    "elements": 2304
+   },
+   "post-pool flat: projection 1152->512 (ReLU)": {
+    "rel_disp": 0.028773472141454644,
+    "rms_step_per_param": 0.0019199505045700022,
+    "elements": 590336
+   },
+   "other": {
+    "rel_disp": 0.009282860146047504,
+    "rms_step_per_param": 0.0015202795713487635,
+    "elements": 4057656
+   },
+   "post-pool flat: actor MLP 512->512->512 (tanh)": {
+    "rel_disp": 0.020237359560123187,
+    "rms_step_per_param": 0.0015963250808076587,
+    "elements": 525312
+   },
+   "head: pointer (policy)": {
+    "rel_disp": 0.022022140169512965,
+    "rms_step_per_param": 0.0019804887487672057,
+    "elements": 55043
+   },
+   "ALL": {
+    "rel_disp": 0.009672922689205228
+   },
+   "mlp_extractor.policy_net.0.weight": {
+    "rel_disp": 0.02170317168932198,
+    "rms_step_per_param": 0.0017967098840045315
+   },
+   "mlp_extractor.policy_net.2.weight": {
+    "rel_disp": 0.0182828160390873,
+    "rms_step_per_param": 0.0013699175486840674
+   },
+   "features_extractor.projection.weight": {
+    "rel_disp": 0.02877179623346501,
+    "rms_step_per_param": 0.001920613531551611
+   },
+   "pointer_head.ctx_proj.weight": {
+    "rel_disp": 0.025909002188664827,
+    "rms_step_per_param": 0.0018625211080089694
+   },
+   "tanh1_units": {
+    "corr_rowdisp_vs_sat_rate": -0.5059542016990987,
+    "corr_rowdisp_vs_mean_tanh_prime": 0.5007475865514947,
+    "rowdisp_units_sat_ge99pct": 0.006952909050072884,
+    "n_sat_ge99pct": 71,
+    "rowdisp_units_sat_lt50pct": null,
+    "n_sat_lt50pct": 0,
+    "rowdisp_all": 0.02049387440029283
+   }
+  },
+  "180M -> 280M (P*)": {
+   "pre-trunk: embeddings": {
+    "rel_disp": 0.012310622467727931,
+    "rms_step_per_param": 0.012321079271241452,
+    "elements": 30720
+   },
+   "pre-trunk: pokemon_encoder": {
+    "rel_disp": 0.10771581648927853,
+    "rms_step_per_param": 0.014186875075220585,
+    "elements": 131424
+   },
+   "pre-trunk / operator / tokens: other extractor modules": {
+    "rel_disp": 0.10214103211644694,
+    "rms_step_per_param": 0.01647138219120493,
+    "elements": 57173
+   },
+   "trunk: team_transformer (attention + FFN over the 12 mon tokens)": {
+    "rel_disp": 0.14672096518681574,
+    "rms_step_per_param": 0.016624429343239728,
+    "elements": 401536
+   },
+   "pooling: cls_pool (three attention pools)": {
+    "rel_disp": 0.1409238892737216,
+    "rms_step_per_param": 0.01407038876856665,
+    "elements": 199296
+   },
+   "pooling: hidden_opp_belief": {
+    "rel_disp": 0.1409598556927236,
+    "rms_step_per_param": 0.014613709934934526,
+    "elements": 199808
+   },
+   "head: belief / intent stack": {
+    "rel_disp": 0.16246959152019488,
+    "rms_step_per_param": 0.01941520493188652,
+    "elements": 356774
+   },
+   "head: win_head (critic)": {
+    "rel_disp": 0.06190762499020234,
+    "rms_step_per_param": 0.009209321639140696,
+    "elements": 16897
+   },
+   "pooling: value_entity_pool (critic route)": {
+    "rel_disp": 0.20284755726297732,
+    "rms_step_per_param": 0.01457846670369374,
+    "elements": 42560
+   },
+   "post-pool flat: pre_proj_norm": {
+    "rel_disp": 0.0306109609434284,
+    "rms_step_per_param": 0.023498367783577306,
+    "elements": 2304
+   },
+   "post-pool flat: projection 1152->512 (ReLU)": {
+    "rel_disp": 0.38698310574067096,
+    "rms_step_per_param": 0.02396974317997257,
+    "elements": 590336
+   },
+   "other": {
+    "rel_disp": 0.11681617271258954,
+    "rms_step_per_param": 0.018905503363792948,
+    "elements": 4057656
+   },
+   "post-pool flat: actor MLP 512->512->512 (tanh)": {
+    "rel_disp": 0.2675998159962069,
+    "rms_step_per_param": 0.02021448304545212,
+    "elements": 525312
+   },
+   "head: pointer (policy)": {
+    "rel_disp": 0.3558708254787015,
+    "rms_step_per_param": 0.028511869605338847,
+    "elements": 55043
+   },
+   "ALL": {
+    "rel_disp": 0.12230605645704451
+   },
+   "mlp_extractor.policy_net.0.weight": {
+    "rel_disp": 0.29537336078306514,
+    "rms_step_per_param": 0.023296249435570866
+   },
+   "mlp_extractor.policy_net.2.weight": {
+    "rel_disp": 0.23007518956454984,
+    "rms_step_per_param": 0.01661297239889125
+   },
+   "features_extractor.projection.weight": {
+    "rel_disp": 0.38695900520271864,
+    "rms_step_per_param": 0.02397804272695381
+   },
+   "pointer_head.ctx_proj.weight": {
+    "rel_disp": 0.45633678978614445,
+    "rms_step_per_param": 0.026917981771338282
+   },
+   "tanh1_units": {
+    "corr_rowdisp_vs_sat_rate": -0.5009068457382997,
+    "corr_rowdisp_vs_mean_tanh_prime": 0.502364845107843,
+    "rowdisp_units_sat_ge99pct": 0.1801647409933604,
+    "n_sat_ge99pct": 71,
+    "rowdisp_units_sat_lt50pct": null,
+    "n_sat_lt50pct": 0,
+    "rowdisp_all": 0.2871319460248356
+   }
+  },
+  "280M (P*) -> 380M": {
+   "pre-trunk: embeddings": {
+    "rel_disp": 0.006747185007703563,
+    "rms_step_per_param": 0.006752858678264882,
+    "elements": 30720
+   },
+   "pre-trunk: pokemon_encoder": {
+    "rel_disp": 0.066403494434789,
+    "rms_step_per_param": 0.008858949345643848,
+    "elements": 131424
+   },
+   "pre-trunk / operator / tokens: other extractor modules": {
+    "rel_disp": 0.06117201419650448,
+    "rms_step_per_param": 0.01006979944265187,
+    "elements": 57173
+   },
+   "trunk: team_transformer (attention + FFN over the 12 mon tokens)": {
+    "rel_disp": 0.09998663793474069,
+    "rms_step_per_param": 0.011456621578876744,
+    "elements": 401536
+   },
+   "pooling: cls_pool (three attention pools)": {
+    "rel_disp": 0.09408875695007608,
+    "rms_step_per_param": 0.009541025838169915,
+    "elements": 199296
+   },
+   "pooling: hidden_opp_belief": {
+    "rel_disp": 0.09564531446090711,
+    "rms_step_per_param": 0.010047494550910379,
+    "elements": 199808
+   },
+   "head: belief / intent stack": {
+    "rel_disp": 0.09690609274987261,
+    "rms_step_per_param": 0.012115307909027347,
+    "elements": 356774
+   },
+   "head: win_head (critic)": {
+    "rel_disp": 0.04144016827430349,
+    "rms_step_per_param": 0.006159983494164531,
+    "elements": 16897
+   },
+   "pooling: value_entity_pool (critic route)": {
+    "rel_disp": 0.1305390847308121,
+    "rms_step_per_param": 0.009717862771506262,
+    "elements": 42560
+   },
+   "post-pool flat: pre_proj_norm": {
+    "rel_disp": 0.01764169271677603,
+    "rms_step_per_param": 0.013830193431427426,
+    "elements": 2304
+   },
+   "post-pool flat: projection 1152->512 (ReLU)": {
+    "rel_disp": 0.24095086799410423,
+    "rms_step_per_param": 0.016077786452312146,
+    "elements": 590336
+   },
+   "other": {
+    "rel_disp": 0.07651672088180081,
+    "rms_step_per_param": 0.012531354107788347,
+    "elements": 4057656
+   },
+   "post-pool flat: actor MLP 512->512->512 (tanh)": {
+    "rel_disp": 0.17154483154215086,
+    "rms_step_per_param": 0.013531474610613346,
+    "elements": 525312
+   },
+   "head: pointer (policy)": {
+    "rel_disp": 0.2352444007455907,
+    "rms_step_per_param": 0.021155931498978816,
+    "elements": 55043
+   },
+   "ALL": {
+    "rel_disp": 0.0803008251026295
+   },
+   "mlp_extractor.policy_net.0.weight": {
+    "rel_disp": 0.18420411135302633,
+    "rms_step_per_param": 0.015249446130726381
+   },
+   "mlp_extractor.policy_net.2.weight": {
+    "rel_disp": 0.1546645053329908,
+    "rms_step_per_param": 0.011588894159478181
+   },
+   "features_extractor.projection.weight": {
+    "rel_disp": 0.2409375132049901,
+    "rms_step_per_param": 0.01608338403222563
+   },
+   "pointer_head.ctx_proj.weight": {
+    "rel_disp": 0.27903829133425256,
+    "rms_step_per_param": 0.020059232839934583
+   },
+   "tanh1_units": {
+    "corr_rowdisp_vs_sat_rate": -0.5344418441045554,
+    "corr_rowdisp_vs_mean_tanh_prime": 0.5302146450229727,
+    "rowdisp_units_sat_ge99pct": 0.0723932175690392,
+    "n_sat_ge99pct": 71,
+    "rowdisp_units_sat_lt50pct": null,
+    "n_sat_lt50pct": 0,
+    "rowdisp_all": 0.17555044233785905
+   }
+  }
+ },
+ "weight_norm": {
+  "20M": {
+   "mlp_extractor.policy_net.0.weight": 32.7683939329307,
+   "mlp_extractor.policy_net.2.weight": 32.592288320288056,
+   "features_extractor.projection.weight": 33.50181995352087,
+   "tanh1_bias_abs_mean": 0.004588025380389382
+  },
+  "30M": {
+   "mlp_extractor.policy_net.0.weight": 33.46421989567916,
+   "mlp_extractor.policy_net.2.weight": 33.024453136639494,
+   "features_extractor.projection.weight": 34.66483340780131,
+   "tanh1_bias_abs_mean": 0.0057419060219068285
+  },
+  "100M": {
+   "mlp_extractor.policy_net.0.weight": 37.626717809757096,
+   "mlp_extractor.policy_net.2.weight": 35.28667689790925,
+   "features_extractor.projection.weight": 42.29798842725422,
+   "tanh1_bias_abs_mean": 0.008580264199082421
+  },
+  "180M": {
+   "mlp_extractor.policy_net.0.weight": 40.38170429246335,
+   "mlp_extractor.policy_net.2.weight": 36.96983531484245,
+   "features_extractor.projection.weight": 47.58937398201805,
+   "tanh1_bias_abs_mean": 0.009802988783619071
+  },
+  "270M": {
+   "mlp_extractor.policy_net.0.weight": 42.25134189708687,
+   "mlp_extractor.policy_net.2.weight": 38.263280271751775,
+   "features_extractor.projection.weight": 51.021860196649044,
+   "tanh1_bias_abs_mean": 0.010716861062743277
+  },
+  "279M": {
+   "mlp_extractor.policy_net.0.weight": 42.3739298739626,
+   "mlp_extractor.policy_net.2.weight": 38.3555587356133,
+   "features_extractor.projection.weight": 51.243431514338056,
+   "tanh1_bias_abs_mean": 0.010828773336189812
+  },
+  "280M (P*)": {
+   "mlp_extractor.policy_net.0.weight": 42.386222335550656,
+   "mlp_extractor.policy_net.2.weight": 38.363771938998646,
+   "features_extractor.projection.weight": 51.26656605873273,
+   "tanh1_bias_abs_mean": 0.01086820642619557
+  },
+  "281M": {
+   "mlp_extractor.policy_net.0.weight": 42.39891700519409,
+   "mlp_extractor.policy_net.2.weight": 38.373972053959406,
+   "features_extractor.projection.weight": 51.289462242648206,
+   "tanh1_bias_abs_mean": 0.010854665240108474
+  },
+  "290M": {
+   "mlp_extractor.policy_net.0.weight": 42.50040279671575,
+   "mlp_extractor.policy_net.2.weight": 38.45247398688892,
+   "features_extractor.projection.weight": 51.47408295090142,
+   "tanh1_bias_abs_mean": 0.011000038055721806
+  },
+  "380M": {
+   "mlp_extractor.policy_net.0.weight": 43.2625846809744,
+   "mlp_extractor.policy_net.2.weight": 39.030242157545764,
+   "features_extractor.projection.weight": 52.8721239461744,
+   "tanh1_bias_abs_mean": 0.011606335453038241
+  }
+ }
+}

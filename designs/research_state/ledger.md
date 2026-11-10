@@ -30852,3 +30852,52 @@ intervals are analytic on 72 clusters a panel. (6) A future `searched_play` regi
 View: `UNDERSTANDING.md` (TL;DR items 2 and 10, §1, §4.7), `STATUS.md`, `../endstate/search_ledger.md`, `EXPERIMENT_BACKLOG.md`.
 
 Tag: **ADDENDUM · S′-HONEST clustering · REPORTED · gain +1.98 pp, LB ≥ +0.31 under every clustering · score [0.4942, 0.5353] our team, [0.4908, 0.5382] two-way · gain detected on P72 alone · registered verdict unchanged**
+
+### 2026-11-09 · MEASUREMENT (DESCRIPTIVE) · **ARCHITECTURE DIAGNOSIS of P\* (REPORTED, no verdict): the policy tower's first tanh layer is 0.897 saturated ON and OFF the pool and cuts the policy gradient 15–18×, but the tower is not dead; the critic head has a hidden layer it does not use; its error on unfamiliar teams is a level, not a ranking — nothing here supports a critic or activation change in BOUNDARY-1's shared base**
+
+**Question.** An independent review claimed (a) 15 % of P\*'s parameters are in the attention trunk and 43 % in flat post-pooling MLPs whose tanh units
+are 84–92 % saturated, so the tower is close to a lookup table that passes almost no gradient; (b) the value is a linear head on a 128-d vector,
+miscalibrated on unfamiliar teams; (c) the belief heads memorise the pool. BOUNDARY-1's draft found no measured evidence that any of it binds. This
+read measures each on P\* (`pstar_plateau`, config v158, read by its own pin `9c0334890`), CPU only, on banked rows: 3,349 on-pool and 10,989 unfamiliar-team
+self-play decisions with observations (`measurements/arch_generalisation_2026-10-26/`), 16,785 states of a P\* fork (`rb_x60t_s3502`), H-MID's stored
+value traces (1,600 games against Kakuna, 1,600 against PastaMittens) and ten X26 checkpoints' weights. No pre-registration; no verdict.
+
+**(a) Parameters and the tower.** The census matches `designs/ARCHITECTURE.md`: trunk 401,536 of 2,609,183 (15.39 %); flat policy tower 1,117,952
+(42.85 %: a ReLU projection 22.63 %, a two-layer tanh MLP 20.13 %). Saturation (|a| > 0.99) as a share of activations, home72 / piloting an unfamiliar
+team: tanh-1 0.897 / 0.897, tanh-2 0.235 / 0.229, the pointer head's tanh 0.695 / 0.693–0.704; the projection's ReLU is 0.552 zero with no dead unit.
+Per-unit tanh-1 rates correlate 0.982 between the two sets. In tanh-1 the median |pre-activation| is 13.7 and 71 of 512 units (13.9 %) are saturated
+on ≥ 99 % of rows. Replacing tanh-1 by its sign keeps P\*'s top action on 0.913 / 0.912 of decisions; replacing the tower's output by its mean keeps
+0.713 / 0.714. Gradients (256 rows, a policy pseudo-loss with random unit advantages): backward gain 0.525 through tanh-2 and 0.167 / 0.170 through
+tanh-1; the gradient at the projection's output is 18.2× / 15.0× smaller than under an identity backward pass. The trunk's policy-gradient norm is
+6.98 with the tower, 2.37 with the tower path cut, 120.7 with the identity pass. The 71 dead units carry 0.26 % of layer-1 gradient energy. Weights
+still move: relative displacement 270M → 280M is 0.067 in the actor MLP, 0.095 in the projection, 0.040 in the trunk, 0.030 over the whole model; the
+71 dead units' rows moved 0.39× as far as the average unit's.
+
+**(b) The value head.** It is LayerNorm → Linear(128, 128) → ReLU → Linear(128, 1), not linear. Its trained function is 98.9 % linear in its normalised
+input (held-out R² over games; mean |ΔV| 0.014) and 36 % of its hidden units never fire. Against Kakuna over all decisions (home72 16,857 rows, U
+62,794; 95 % bootstrap over games): bias V − win −0.026 / +0.028, U − home **+0.054 [+0.003, +0.108]**; expected calibration error 0.033 / 0.028; AUC
+0.781 [0.738, 0.820] / 0.813 [0.794, 0.831]; recalibration slope 0.774 / 0.942; intercept at slope 1, U − home −0.318 logit [−0.635, −0.023]. The level
+gap is there at turn 1 (+0.077 [+0.020, +0.136]) with equal AUC at turns 1, 10 and 20. Against PastaMittens the gap is +0.002 [−0.059, +0.057]. In
+self-play (48 games a panel) the bias is +0.126 piloting U and −0.084 facing U, with AUC 0.862 and 0.849 against 0.862 at home.
+
+**(c) Beliefs.** Not re-measured: 2026-10-26 H3 already reads the memorisation (unfamiliar-species log-presence −6.24 / −4.63 / −10.04 against the
+prior's −2.36 / −1.98 / −3.24) and the prior-mix reads its game cost NOT DETECTED (+1.50 pp [−2.74, +5.74]; −1.50 [−5.47, +2.47]).
+
+**What it licenses.** "The first actor layer is saturated and attenuates the policy gradient about 15–18×, equally on and off the pool"; "the critic
+head's hidden layer is unused"; "V's error on U against Kakuna is a level, with ordering intact". It does NOT license "saturation costs strength"
+(no activation A/B exists), "saturation explains the unfamiliar-team deficit" (it is identical on both sets), "a deeper critic would help", or any
+claim about V's ranking among a decision's sibling actions on U (unmeasured). The memo's recommendation for BOUNDARY-1: leave a critic layer, an
+activation change and a parameter rebalance out of both arms' base; the tower question is a later single-lever arm (`--policy-readout trunk` is
+built and unscreened; an activation flag is 0.5 agent-day).
+
+**FINDINGs.** (1) BOUNDARY-1's draft and the review call the critic "linear on 128"; it has a hidden layer. (2) The banked rows were encoded at later
+pins than P\*'s and read by P\*'s code; the width matches (2,845), field-level equality across the pins was not verified. (3) The gradient read is a
+pseudo-loss, not a PPO minibatch: ratios between paths are the claim. (4) On / off-pool rows with observations AND outcomes are 48 self-play games a
+panel; the powered calibration read has no observations. (5) This read's turn-10 Δbias is +0.081 [+0.029, +0.135] against H-MID's registered +0.076
+[+0.016, +0.139] (row selection and bootstrap differ); the registered number stays the record.
+
+**Record:** `measurements/arch_diag_2026-11-09/` (`README.md`, `scripts/common.py`, `scripts/model_read.py`, `scripts/value_read.py`,
+`scripts/drift_read.py`, `model_read.json`, `value_read.json`, `drift_read.json`).
+View: `UNDERSTANDING.md` (§4.4, after the plasticity check), `measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md` (§10, a pointer).
+
+Tag: **ARCHITECTURE DIAGNOSIS · P\* · REPORTED · DESCRIPTIVE · tanh-1 0.897 saturated on and off pool · policy gradient cut 15–18×, tower not dead · critic head 98.9 % linear, 36 % of hidden units dead · U − home bias +0.054 [+0.003, +0.108] vs Kakuna, AUC 0.813 vs 0.781 · no base change for BOUNDARY-1**

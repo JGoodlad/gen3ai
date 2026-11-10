@@ -359,7 +359,9 @@ GPU-h, enough for MF-1 and MF-3 (≈ 5 GPU-h), the entropy fork (≈ 12) and the
    The 2 × 2 tests exactly that, at the same price, and keeps the owner's one-lever rule for each factor.
 5. **The review's wider bundle** (critic layer, policy activation, entropy anneal, depth) is 3–5 agent-days of
    unbuilt structure with no measured evidence that any of it binds. Each can be a later single lever on the
-   winning width.
+   winning width. Read since on P\*, claim by claim (REPORTED):
+   [`../arch_diag_2026-11-09/README.md`](../arch_diag_2026-11-09/README.md). It leaves all three out of the base and
+   corrects §2's critic row: the head already has a hidden layer.
 
 ## 11. FINDINGs: the review against the record
 
