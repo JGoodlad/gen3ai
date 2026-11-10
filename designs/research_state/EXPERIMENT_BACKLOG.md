@@ -63,13 +63,13 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 | **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh runs) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built (`3b1733f50`, config v168); its forward census is not run |
 | **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | 0 | ≈ 8 CPU-min a checkpoint (the meter); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a DONE 2026-11-09 (baseline REPORTED); **step b SCREENED OUT 2026-11-09** (light screen X68 read DROP: screen evidence, never a verdict); no head reshape (`../endstate/design_offpool_belief.md`); the route left is breadth in the loop, tested by MF-5's 2 × 2 |
 | **MF-4** | **The value at the leaf on unfamiliar teams** | 0 until V-RANK fires; then ≈ 1–2 | ≈ 96 (V-RANK) + ≈ 300–600 (a searched game read; S′-LIVE took ≈ 315) | +0.3 (−0.5, +1.5), with search only | ≈ 0.05 after P(V-RANK fires) ≈ 0.3 | V-RANK's builds and PREREG |
-| **MF-5** | **BOUNDARY-1's from-scratch 2 × 2** (width × team breadth, two seeds a cell, eight fresh runs to 100M): REGISTERED 2026-11-09, pin `507d0c119`, [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md); the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options | its §12 | its §12 | its §11 | — | X66 and X67 done; its §13 GPU checklist (the wide-arm pilot, the CUDA-only slow tests at the pin); its §10 HOLDs (X60-T reads ADOPT-CANDIDATE; the owner changes `ent_coef` after X67) |
+| **MF-5** | **BOUNDARY-1's from-scratch 2 × 2** (width × team breadth, three seeds a cell, twelve fresh runs to 100M): REGISTERED 2026-11-09 at pin `507d0c119`, AMENDED 2026-11-10 (Amendment 1: the third seed up front, the extension withdrawn, the pre-launch review's fixes), [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md); the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options | its §12 | its §12 | its §11 | — | X66 and X67 done; the `ent_coef` decision (an OPEN HOLD: X67's read AND the owner's yes); then its §18 single re-pin (the registered pin cannot launch three seeds); its §13 GPU checklist at that pin (the wide-arm pilot to trained weights, the CUDA-only slow tests); its §10 HOLD on X60-T reading ADOPT-CANDIDATE |
 | MF-6 | Breadth at the plateau: X62's recombined teams | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | X60-T not NO-TRANSFER / LOSS; PR-1′'s place is the orchestrator's |
 | MF-7 | The league's main exploiters (X35-A3) | ≈ 15 | ≈ 107 | +0.5 (−1, +2) vs Kakuna | ≈ 0.03 | its two-phase kit (T55) |
 
 **The recommendation.** Queue **MF-1** when X60-T's last final settles; **MF-3 step (b)** is screened out (X68 read DROP)
 and asks for nothing more. Between and after them the GPU's fill is the orchestrator's (MF-6's or MF-7's training, whose reads can wait for the lanes);
-**MF-5** launches the day its four prerequisites hold, and the owner is asked about it NOW because a card has a lead
+**MF-5** launches the day its prerequisites hold, and the owner is asked about it NOW because a card has a lead
 time.
 
 - **Why MF-1 first.** It is the only lever whose target carries a MEASURED game gain: P\* + S′h beats P\* alone against
@@ -189,8 +189,8 @@ time.
     the oracle leaf's value (W3). WEAKER THAN IT READS: a level bias common to every sibling cancels in a one-ply
     argmax, so H-MID is not evidence that the leaf mis-ranks siblings on U; that is V-RANK's unmeasured question.
 - **MF-5 BOUNDARY-1's from-scratch run: a pointer.** REGISTERED 2026-11-09 as the 2 × 2 the orchestrator adopted
-  (width × team breadth, two seeds a cell): [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md),
-  pin `507d0c119`. The arms, the seeds, the meters, the rules, the power, the costs, the GPU checklist and the launch block
+  (width × team breadth), amended 2026-11-10 to three seeds a cell: [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md),
+  registered at pin `507d0c119` and launched only at the pin its §18 re-pin sets. The arms, the seeds, the meters, the rules, the power, the costs, the GPU checklist and the launch block
   are there and nowhere else; [`DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md) stays as
   the record of the options and the sizing. The draft's §9.1 entropy screen is registered as **X67**
   ([`measurements/x67_entropy_screen_2026-11-09/PREREG.md`](measurements/x67_entropy_screen_2026-11-09/PREREG.md)): a PASS names `ent_coef` 0.0125 for the base of every arm,

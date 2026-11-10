@@ -103,14 +103,20 @@ its GO.
   loop is the measured route; BOUNDARY-1's 2 × 2 tests it.
 - **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
 - **MF-5: BOUNDARY-1's from-scratch 2 × 2**, width (128 against 2× `D_MODEL`, `--d-model`, `0220f8408`, config
-  v169) × team breadth (the pool against half procedural teams), two seeds a cell, eight fresh runs to 100M: REGISTERED
-  2026-11-09 at pin `507d0c119`, NOT LAUNCHED
+  v169) × team breadth (the pool against half procedural teams): REGISTERED 2026-11-09 at pin `507d0c119`,
+  **AMENDED 2026-11-10 to three seeds a cell, twelve fresh runs to 100M** (Amendment 1, after an independent
+  pre-launch review), NOT LAUNCHED
   ([`research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md));
-  the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options. ≈ 207 GPU-h (the wide arms'
-  share is a guess until the GPU pilot), launched after X66 and X67 and its GPU checklist. Width is decided on the
-  in-house cross over all four panels, breadth on forum72 alone and kept only if home72 pays no more than forum72
-  gains; Kakuna clustered by team confirms either. Honest power: a true +4 pp reads WIN 7 times in 10 if the seed
-  spread at 100M is the 1.76 pp measured at 15M, 1 in 2 at 2.5 pp; the seed spread on forum72 alone is unmeasured.
+  the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options. **Not launchable at the
+  registered pin:** the three-seed kit is newer, and ONE re-pin is taken after the `ent_coef` decision, an OPEN HOLD
+  (0.05 until X67 is read AND the owner says yes; a change is a new pin). ≈ 311 GPU-h (270–340: the wide arms' share
+  is a guess until the GPU pilot, which now runs to trained weights and rewrites the budget), ≈ 16 days from launch,
+  after X66, X67, the re-pin and its GPU checklist. Width is decided on the in-house cross over all four panels,
+  breadth on forum72 alone and kept only if home72 pays no more than forum72 gains; Kakuna clustered by team
+  confirms either. Honest power: a true +4 pp reads WIN 19 times in 20 if the seed spread at 100M is the 1.76 pp
+  measured at 15M, 4 in 5 at 2.5 pp, 5 in 8 at 3.1; a true zero reads "not shown at this size" 93 % of the time and
+  UNDECIDED 3 % (27 % at two seeds, which is why the third seed is bought up front and the extension withdrawn); the
+  seed spread on forum72 alone is unmeasured.
 - X60-T's verdict routes the next run's team mix (ADOPT-CANDIDATE ⇒ human teams in BOUNDARY-1's recipe).
 
 **Search engineering for goal (b): UN-PAUSED by S′-HONEST's GO-HONEST (2026-11-09), CPU-side and lower priority**
@@ -243,7 +249,9 @@ Every open owner question, in one place.
    alone, or as both crossed
    ([`research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)
    §0). **Registered 2026-11-09** as both crossed at two seeds a cell, the orchestrator's choice
-   ([`PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md), pin `507d0c119`). Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
+   ([`PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md), pin `507d0c119`), and
+   **amended 2026-11-10, before any launch, to three seeds a cell**: ≈ 311 GPU-h to the 100M look (≈ 16 days of our
+   card), launched at a new pin taken once, after the `ent_coef` decision. Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
    yes, staged, launched once X60-T's verdict and the boundary's fixes are in, so the owner's answer is needed before
    then.
