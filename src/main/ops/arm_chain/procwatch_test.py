@@ -14,7 +14,19 @@ pytestmark = pytest.mark.integration
 
 
 def sleeper(secs="30"):
-    return subprocess.Popen(["sleep", secs], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    """A ``sleep`` child whose argv ``/proc`` already shows. ``Popen`` returns once the exec cannot fail, an instant
+    before the kernel publishes the new argv: until then ``/proc/<pid>/cmdline`` reads ``''`` (``comm`` is already
+    ``sleep``), and ``signal_if`` rightly calls that an identity MISMATCH (a ship gate's red, 2026-11-10). Waits
+    (bounded) for the argv, so an identity test never rides that window."""
+    p = subprocess.Popen(["sleep", secs], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    t_end = time.monotonic() + 20
+    while not procfs.cmdline(p.pid):
+        if time.monotonic() > t_end or p.poll() is not None:
+            p.kill()
+            p.wait()
+            pytest.fail("the sleeper's argv never appeared in /proc")
+        time.sleep(0.001)
+    return p
 
 
 def reap(p):
