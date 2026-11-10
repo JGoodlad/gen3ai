@@ -102,7 +102,8 @@ its GO.
   better than P\* on F / H but still 0.74 / 0.68 below the prior (screen evidence, never a verdict). Breadth in the
   loop is the measured route; BOUNDARY-1's 2 × 2 tests it. The MOVE leg is diagnosed (ledger 2026-11-10): an
   over-confident species × move table held up by gradient that is not the label's; the training lever
-  `--belief-grad-mode move_label_only` is built off by default and unscreened.
+  `--belief-grad-mode move_label_only` is built off by default; its light screen X69 (three forks of P\*,
+  ≈ 12.3 GPU-h) is REGISTERED and not launched.
 - **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
 - **MF-5: BOUNDARY-1's from-scratch 2 × 2**, width (128 against 2× `D_MODEL`, `--d-model`, `0220f8408`, config
   v169) × team breadth (the pool against half procedural teams): REGISTERED 2026-11-09 at pin `507d0c119`,

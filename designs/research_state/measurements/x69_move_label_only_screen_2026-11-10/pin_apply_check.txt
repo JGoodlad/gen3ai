@@ -1,0 +1,8 @@
+$ cd <a worktree at the X69 pin 65c7374b8e17f3a14e693c084d2986da84e97e3b> && PYTHONPATH=$PWD/src CUDA_VISIBLE_DEVICES="" \
+    python pin_apply_check.py /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip
+  (2026-11-10, CPU, no lease; GEN3AI_SKIP_DEPS_GUARD=1: that worktree has no Showdown submodule and nothing here plays)
+loaded : shaping | move publication cut: False | {'hypothesis_builder': False, 'move_belief': False, 'item_belief_head': False, 'spread_belief': False}
+[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> 'move_label_only' (detach_read=off, publish_detach=on for the MOVE posterior only across the belief heads)
+applied: ('shaping', 'move_label_only') | move publication cut: True | {'hypothesis_builder': False, 'move_belief': True, 'item_belief_head': False, 'spread_belief': False}
+publish boundary detaches: True
+PIN APPLY CHECK OK
