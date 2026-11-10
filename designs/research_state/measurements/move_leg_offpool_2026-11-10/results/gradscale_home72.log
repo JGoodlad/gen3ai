@@ -1,0 +1,29 @@
+batch 0: move label BCE +2.44e-04; move latent +6.50e-06; species set +8.56e-05; item -7.58e-04; value 0.5*MSE +2.66e-03; entropy -0.05*H +3.51e-04; policy -2.60e-02
+batch 1: move label BCE +2.55e-04; move latent -6.78e-06; species set -1.76e-03; item +3.19e-04; value 0.5*MSE +1.96e-04; entropy -0.05*H -6.74e-04; policy -3.63e-02
+batch 2: move label BCE +2.50e-04; move latent -5.35e-04; species set +7.28e-04; item +2.10e-05; value 0.5*MSE +1.09e-03; entropy -0.05*H +1.64e-03; policy +2.65e-02
+batch 3: move label BCE +2.40e-04; move latent -8.98e-04; species set +5.84e-05; item +2.32e-05; value 0.5*MSE +1.70e-03; entropy -0.05*H +5.51e-04; policy +1.24e-02
+batch 4: move label BCE +2.57e-04; move latent -5.16e-06; species set +1.96e-03; item -6.89e-05; value 0.5*MSE +1.03e-03; entropy -0.05*H -2.87e-04; policy +5.01e-02
+batch 5: move label BCE +2.48e-04; move latent -1.74e-03; species set -1.58e-03; item +5.19e-05; value 0.5*MSE +9.63e-04; entropy -0.05*H -3.02e-03; policy -5.19e-03
+batch 6: move label BCE +2.43e-04; move latent -6.44e-06; species set +1.01e-03; item +1.53e-04; value 0.5*MSE +1.67e-05; entropy -0.05*H -7.73e-04; policy -1.94e-02
+batch 7: move label BCE +2.26e-04; move latent -4.66e-04; species set +5.50e-04; item +5.63e-04; value 0.5*MSE +1.91e-03; entropy -0.05*H -2.90e-04; policy -9.10e-03
+
+home72: 8 batches x 128 rows; |W| 14.261 |b| 2.096
+| term | d(term)/d(scale): mean [min, max] over batches | batches with a negative sign | mean batch |g| | |mean g| |
+|---|---|---|---|---|
+| move label BCE x0.05 | +2.455e-04 [+2.264e-04, +2.573e-04] | 0 / 8 | 1.804e-04 | 1.663e-04 |
+| move latent x0.05 | -4.559e-04 [-1.737e-03, +6.499e-06] | 7 / 8 | 7.410e-04 | 6.268e-04 |
+| species set x0.05 (moves_weight 1) | +1.309e-04 [-1.761e-03, +1.956e-03] | 2 / 8 | 9.237e-03 | 5.613e-03 |
+| item x0.05 | +3.814e-05 [-7.580e-04, +5.631e-04] | 2 / 8 | 3.508e-03 | 2.219e-03 |
+| value 0.5*MSE | +1.196e-03 [+1.667e-05, +2.664e-03] | 0 / 8 | 6.418e-03 | 3.777e-03 |
+| entropy -0.05*H | -3.123e-04 [-3.018e-03, +1.642e-03] | 5 / 8 | 6.731e-03 | 2.446e-03 |
+| policy (MC-advantage proxy) | -8.794e-04 [-3.627e-02, +5.008e-02] | 5 / 8 | 1.981e-01 | 5.794e-02 |
+| SUM of the seven | -3.748e-05 [-3.794e-02, +5.296e-02] | 5 / 8 | | 5.852e-02 |
+
+cosine(mean label gradient, mean gradient of ...):
+  move latent x0.05: -0.023
+  species set x0.05 (moves_weight 1): -0.003
+  item x0.05: +0.023
+  value 0.5*MSE: +0.072
+  entropy -0.05*H: -0.228
+  policy (MC-advantage proxy): -0.145
+  every consumer of the publication (species + item + value + entropy + policy proxy): -0.147; |mean consumer g| / |mean label g| = 351.95

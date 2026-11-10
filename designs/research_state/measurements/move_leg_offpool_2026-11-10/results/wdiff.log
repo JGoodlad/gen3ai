@@ -1,0 +1,61 @@
+changed tensors: 48
+  features_extractor.move_belief.move_head.weight                        shape (400, 128)  |a| rms 0.0630  |delta| rms 0.0496 max 0.2654
+  features_extractor.move_belief.move_head.bias                          shape (400,)  |a| rms 0.1048  |delta| rms 0.0543 max 0.1645
+  features_extractor.move_belief.norm.weight                             shape (128,)  |a| rms 1.0165  |delta| rms 0.1008 max 0.2377
+  features_extractor.move_belief.norm.bias                               shape (128,)  |a| rms 0.0409  |delta| rms 0.1442 max 0.2595
+  features_extractor.item_belief_head.norm.weight                        shape (128,)  |a| rms 1.4335  |delta| rms 0.0884 max 0.1887
+  features_extractor.item_belief_head.norm.bias                          shape (128,)  |a| rms 0.1353  |delta| rms 0.0455 max 0.0838
+  features_extractor.item_belief_head.item_head.weight                   shape (600, 128)  |a| rms 0.0327  |delta| rms 0.0675 max 0.2323
+  features_extractor.item_belief_head.item_head.bias                     shape (600,)  |a| rms 0.0200  |delta| rms 0.1133 max 0.1552
+  features_extractor.hypothesis_builder.delta_global.weight              shape (128, 145)  |a| rms 0.1437  |delta| rms 0.0404 max 0.1787
+  features_extractor.hypothesis_builder.delta_global.bias                shape (128,)  |a| rms 0.6800  |delta| rms 0.1288 max 0.1598
+  features_extractor.hypothesis_builder.delta_norm.weight                shape (256,)  |a| rms 1.6043  |delta| rms 0.1180 max 0.1750
+  features_extractor.hypothesis_builder.delta_norm.bias                  shape (256,)  |a| rms 0.1578  |delta| rms 0.0908 max 0.1471
+  features_extractor.hypothesis_builder.delta_hidden.weight              shape (96, 256)  |a| rms 0.1677  |delta| rms 0.0536 max 0.1897
+  features_extractor.hypothesis_builder.delta_hidden.bias                shape (96,)  |a| rms 0.0982  |delta| rms 0.0495 max 0.0782
+  features_extractor.hypothesis_builder.delta_out.weight                 shape (400, 96)  |a| rms 0.1041  |delta| rms 0.1137 max 0.3857
+  features_extractor.hypothesis_builder.delta_out.bias                   shape (400,)  |a| rms 0.1140  |delta| rms 0.3116 max 0.4405
+  pi_features_extractor.move_belief.move_head.weight                     shape (400, 128)  |a| rms 0.0630  |delta| rms 0.0496 max 0.2654
+  pi_features_extractor.move_belief.move_head.bias                       shape (400,)  |a| rms 0.1048  |delta| rms 0.0543 max 0.1645
+  pi_features_extractor.move_belief.norm.weight                          shape (128,)  |a| rms 1.0165  |delta| rms 0.1008 max 0.2377
+  pi_features_extractor.move_belief.norm.bias                            shape (128,)  |a| rms 0.0409  |delta| rms 0.1442 max 0.2595
+  pi_features_extractor.item_belief_head.norm.weight                     shape (128,)  |a| rms 1.4335  |delta| rms 0.0884 max 0.1887
+  pi_features_extractor.item_belief_head.norm.bias                       shape (128,)  |a| rms 0.1353  |delta| rms 0.0455 max 0.0838
+  pi_features_extractor.item_belief_head.item_head.weight                shape (600, 128)  |a| rms 0.0327  |delta| rms 0.0675 max 0.2323
+  pi_features_extractor.item_belief_head.item_head.bias                  shape (600,)  |a| rms 0.0200  |delta| rms 0.1133 max 0.1552
+  pi_features_extractor.hypothesis_builder.delta_global.weight           shape (128, 145)  |a| rms 0.1437  |delta| rms 0.0404 max 0.1787
+  pi_features_extractor.hypothesis_builder.delta_global.bias             shape (128,)  |a| rms 0.6800  |delta| rms 0.1288 max 0.1598
+  pi_features_extractor.hypothesis_builder.delta_norm.weight             shape (256,)  |a| rms 1.6043  |delta| rms 0.1180 max 0.1750
+  pi_features_extractor.hypothesis_builder.delta_norm.bias               shape (256,)  |a| rms 0.1578  |delta| rms 0.0908 max 0.1471
+  pi_features_extractor.hypothesis_builder.delta_hidden.weight           shape (96, 256)  |a| rms 0.1677  |delta| rms 0.0536 max 0.1897
+  pi_features_extractor.hypothesis_builder.delta_hidden.bias             shape (96,)  |a| rms 0.0982  |delta| rms 0.0495 max 0.0782
+  pi_features_extractor.hypothesis_builder.delta_out.weight              shape (400, 96)  |a| rms 0.1041  |delta| rms 0.1137 max 0.3857
+  pi_features_extractor.hypothesis_builder.delta_out.bias                shape (400,)  |a| rms 0.1140  |delta| rms 0.3116 max 0.4405
+  vf_features_extractor.move_belief.move_head.weight                     shape (400, 128)  |a| rms 0.0630  |delta| rms 0.0496 max 0.2654
+  vf_features_extractor.move_belief.move_head.bias                       shape (400,)  |a| rms 0.1048  |delta| rms 0.0543 max 0.1645
+  vf_features_extractor.move_belief.norm.weight                          shape (128,)  |a| rms 1.0165  |delta| rms 0.1008 max 0.2377
+  vf_features_extractor.move_belief.norm.bias                            shape (128,)  |a| rms 0.0409  |delta| rms 0.1442 max 0.2595
+  vf_features_extractor.item_belief_head.norm.weight                     shape (128,)  |a| rms 1.4335  |delta| rms 0.0884 max 0.1887
+  vf_features_extractor.item_belief_head.norm.bias                       shape (128,)  |a| rms 0.1353  |delta| rms 0.0455 max 0.0838
+  vf_features_extractor.item_belief_head.item_head.weight                shape (600, 128)  |a| rms 0.0327  |delta| rms 0.0675 max 0.2323
+  vf_features_extractor.item_belief_head.item_head.bias                  shape (600,)  |a| rms 0.0200  |delta| rms 0.1133 max 0.1552
+  vf_features_extractor.hypothesis_builder.delta_global.weight           shape (128, 145)  |a| rms 0.1437  |delta| rms 0.0404 max 0.1787
+  vf_features_extractor.hypothesis_builder.delta_global.bias             shape (128,)  |a| rms 0.6800  |delta| rms 0.1288 max 0.1598
+  vf_features_extractor.hypothesis_builder.delta_norm.weight             shape (256,)  |a| rms 1.6043  |delta| rms 0.1180 max 0.1750
+  vf_features_extractor.hypothesis_builder.delta_norm.bias               shape (256,)  |a| rms 0.1578  |delta| rms 0.0908 max 0.1471
+  vf_features_extractor.hypothesis_builder.delta_hidden.weight           shape (96, 256)  |a| rms 0.1677  |delta| rms 0.0536 max 0.1897
+  vf_features_extractor.hypothesis_builder.delta_hidden.bias             shape (96,)  |a| rms 0.0982  |delta| rms 0.0495 max 0.0782
+  vf_features_extractor.hypothesis_builder.delta_out.weight              shape (400, 96)  |a| rms 0.1041  |delta| rms 0.1137 max 0.3857
+  vf_features_extractor.hypothesis_builder.delta_out.bias                shape (400,)  |a| rms 0.1140  |delta| rms 0.3116 max 0.4405
+move_head row norms: P* median 0.28949788212776184 delta median 0.36903393268585205
+  ch 253: |w0| 0.429 |dw| 1.553 cos(w0,w1) -0.038 b0 -0.062 b1 +0.077
+  ch 325: |w0| 0.284 |dw| 1.423 cos(w0,w1) -0.560 b0 -0.032 b1 +0.132
+  ch 222: |w0| 0.246 |dw| 1.342 cos(w0,w1) -0.523 b0 -0.023 b1 +0.102
+  ch 214: |w0| 1.068 |dw| 1.129 cos(w0,w1) 0.707 b0 -0.388 b1 -0.245
+  ch 89: |w0| 1.475 |dw| 0.651 cos(w0,w1) 0.910 b0 +0.069 b1 +0.133
+  ch 157: |w0| 1.387 |dw| 0.440 cos(w0,w1) 0.950 b0 -0.079 b1 -0.127
+  ch 363: |w0| 0.000 |dw| 0.000 cos(w0,w1) 0.000 b0 +0.000 b1 +0.000
+  ch 355: |w0| 0.000 |dw| 0.000 cos(w0,w1) 0.000 b0 +0.000 b1 +0.000
+  ch 237: |w0| 1.015 |dw| 0.714 cos(w0,w1) 0.798 b0 -0.063 b1 -0.062
+largest row moves: [(253, 1.553, 0.429), (288, 1.486, 0.248), (325, 1.423, 0.284), (185, 1.391, 0.285), (222, 1.342, 0.246), (44, 1.283, 0.562), (102, 1.269, 0.923), (64, 1.233, 0.387), (31, 1.227, 0.31), (171, 1.194, 0.552), (300, 1.172, 0.419), (60, 1.163, 0.246), (23, 1.132, 0.458), (214, 1.129, 1.068), (13, 1.124, 0.027)]
+prior logit of typed HP channels (355-370): min -13.81551 max 2.9583428  of 237: max 4.53704

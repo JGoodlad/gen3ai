@@ -1,0 +1,3 @@
+torch 2.8.0+cu126
+move_label_only: compiled CPU forward+backward OK; 204 params compared, worst relative gradient error 1.180e-05; live/dead mismatches []; move_head eager [None, None] compiled [0.0, 0.0]
+shaping: compiled CPU forward+backward OK; 206 params compared, worst relative gradient error 1.180e-05; live/dead mismatches []; move_head eager [0.8394297361373901, 0.006147639825940132] compiled [0.8394298553466797, 0.006147640757262707]

@@ -1,0 +1,12 @@
+batch 0: hinge -9.053e-05 cosine +1.374e-05 sum -7.679e-05 | std 1.316, dims below 1: 0.03, hinge value 0.0004, 1-cos 0.0055
+batch 1: hinge -2.790e-04 cosine +1.300e-05 sum -2.660e-04 | std 1.309, dims below 1: 0.06, hinge value 0.0007, 1-cos 0.0055
+batch 2: hinge -1.014e-03 cosine +9.550e-06 sum -1.005e-03 | std 1.297, dims below 1: 0.16, hinge value 0.0015, 1-cos 0.0054
+
+home72: 3 batches x 1024 rows; revealed pin 10.0; each part is its share of the batch mean
+
+the two parts of 0.05 x the latent loss, d/d(scale): mean [min, max]; batches < 0
+| cosine part | +1.210e-05 [+9.550e-06, +1.374e-05] | 0 / 3 |
+| variance hinge | -4.612e-04 [-1.014e-03, -9.053e-05] | 3 / 3 |
+| the loss | -4.492e-04 [-1.005e-03, -7.679e-05] | 3 / 3 |
+| label BCE x 0.05 on the same slots (all 400 channels) | +2.318e-04 [+2.283e-04, +2.336e-04] | 0 / 3 |
+predicted-latent std over a batch's slots: mean 1.307; share of latent dims below the target 1.0: 0.08; loss values: hinge 0.0008, 1 - cosine 0.0054

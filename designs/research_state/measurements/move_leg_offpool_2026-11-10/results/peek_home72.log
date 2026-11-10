@@ -1,0 +1,23 @@
+units 28057 ll change from non-truths, mean a unit: -9.423668865419524 pstar: 0.1848508231582751
+top moves by harm (move id, share of the harm, mean prior p on its candidates, mean post p x68ft, mean post p pstar, n cand, truth rate):
+  move 203 share 0.074 prior p 0.024 x68ft p 0.160 pstar p 0.020 n 27964 truth rate 0.003
+  move 189 share 0.043 prior p 0.020 x68ft p 0.159 pstar p 0.022 n 22872 truth rate 0.000
+  move 289 share 0.040 prior p 0.020 x68ft p 0.506 pstar p 0.058 n 3121 truth rate 0.000
+  move  31 share 0.038 prior p 0.020 x68ft p 0.836 pstar p 0.001 n 3303 truth rate 0.000
+  move 214 share 0.037 prior p 0.029 x68ft p 0.139 pstar p 0.025 n 27874 truth rate 0.006
+  move  85 share 0.036 prior p 0.160 x68ft p 0.279 pstar p 0.104 n 7177 truth rate 0.215
+  move 102 share 0.034 prior p 0.020 x68ft p 0.134 pstar p 0.013 n 28057 truth rate 0.000
+  move 249 share 0.033 prior p 0.020 x68ft p 0.114 pstar p 0.020 n 22574 truth rate 0.000
+  move  64 share 0.026 prior p 0.020 x68ft p 0.559 pstar p 0.001 n 4446 truth rate 0.000
+  move 171 share 0.026 prior p 0.020 x68ft p 0.318 pstar p 0.005 n 7058 truth rate 0.000
+  move 253 share 0.024 prior p 0.020 x68ft p 0.321 pstar p 0.001 n 3230 truth rate 0.000
+  move  92 share 0.024 prior p 0.112 x68ft p 0.133 pstar p 0.096 n 23475 truth rate 0.122
+  move 300 share 0.023 prior p 0.020 x68ft p 0.793 pstar p 0.006 n 2396 truth rate 0.000
+  move  44 share 0.019 prior p 0.020 x68ft p 0.168 pstar p 0.002 n 8182 truth rate 0.000
+  move 222 share 0.019 prior p 0.020 x68ft p 0.913 pstar p 0.002 n 1118 truth rate 0.000
+r=0 units 3097 mean non-truth ll change x68ft -12.42  mass x68ft 7.67 pstar 4.45 prior 4.42
+r=1 units 11297 mean non-truth ll change x68ft -10.37  mass x68ft 6.27 pstar 3.40 prior 3.65
+r=2 units 8854 mean non-truth ll change x68ft -8.33  mass x68ft 5.15 pstar 2.86 prior 3.25
+r=3 units 4809 mean non-truth ll change x68ft -7.28  mass x68ft 4.21 pstar 2.15 prior 2.83
+non-truth candidates with p>0.9 a unit: x68ft 1.8885483123641158 pstar 0.09616138575043662 prior 0.03150728873364936
+truth candidates with p>0.9 a unit: x68ft 0.7679010585593613 pstar 0.634066364900025 prior 0.2957194283066614

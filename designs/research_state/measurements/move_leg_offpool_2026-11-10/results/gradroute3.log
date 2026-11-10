@@ -1,0 +1,32 @@
+batch 0: values 0.006..0.999 mean 0.546; won share 0.555; move BCE 0.01201; value MSE 0.1835
+  [live] label 0.05*BCE      : |g| 1.747e-04  median row 1.42e-07  row237 2.94e-05  rows>0: 384  top [(56, 5.87e-05), (182, 5.6e-05), (269, 4.51e-05), (349, 3.71e-05)]
+  [live] value 0.5*MSE       : |g| 6.183e-03  median row 1.10e-06  row237 2.22e-03  rows>0: 227  top [(237, 0.00222), (226, 0.002), (56, 0.00195), (156, 0.00183)]
+  [live] policy mean logp(a*) : |g| 1.579e-01  median row 2.32e-05  row237 9.79e-02  rows>0: 227  top [(237, 0.0979), (182, 0.0489), (65, 0.0369), (202, 0.0357)]   (sensitivity; PPO weights it by the advantage)
+  [live] entropy 0.05*H      : |g| 6.120e-03  median row 1.00e-06  row237 3.51e-03  rows>0: 227  top [(237, 0.00351), (182, 0.0017), (157, 0.00151), (65, 0.00151)]
+  [live] |value| / |label| = 35.39; cosine(label, value) = +0.114
+[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> 'move_label_only' (detach_read=off, publish_detach=on for the MOVE posterior only across the belief heads)
+  [CUT ] label 0.05*BCE      : |g| 1.747e-04  median row 1.42e-07  row237 2.94e-05  rows>0: 384  top [(56, 5.87e-05), (182, 5.6e-05), (269, 4.51e-05), (349, 3.71e-05)]
+  [CUT ] value 0.5*MSE       : NO PATH
+  [CUT ] policy mean logp(a*) : NO PATH   (sensitivity; PPO weights it by the advantage)
+  [CUT ] entropy 0.05*H      : NO PATH
+[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> 'shaping' (detach_read=off, publish_detach=off across the belief heads)
+batch 1: values 0.010..0.996 mean 0.510; won share 0.578; move BCE 0.01198; value MSE 0.1892
+  [live] label 0.05*BCE      : |g| 1.735e-04  median row 2.04e-07  row237 2.48e-05  rows>0: 384  top [(269, 5.49e-05), (182, 5.11e-05), (56, 5.1e-05), (89, 3.53e-05)]
+  [live] value 0.5*MSE       : |g| 5.185e-03  median row 1.19e-06  row237 2.45e-03  rows>0: 238  top [(237, 0.00245), (46, 0.00173), (156, 0.00145), (226, 0.00145)]
+  [live] policy mean logp(a*) : |g| 2.481e-01  median row 3.06e-05  row237 1.98e-01  rows>0: 238  top [(237, 0.198), (70, 0.0841), (92, 0.0336), (349, 0.0326)]   (sensitivity; PPO weights it by the advantage)
+  [live] entropy 0.05*H      : |g| 1.026e-02  median row 1.51e-06  row237 7.76e-03  rows>0: 238  top [(237, 0.00776), (70, 0.00394), (92, 0.00155), (251, 0.00147)]
+  [live] |value| / |label| = 29.88; cosine(label, value) = -0.069
+[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> 'move_label_only' (detach_read=off, publish_detach=on for the MOVE posterior only across the belief heads)
+  [CUT ] label 0.05*BCE      : |g| 1.735e-04  median row 2.04e-07  row237 2.48e-05  rows>0: 384  top [(269, 5.49e-05), (182, 5.11e-05), (56, 5.1e-05), (89, 3.53e-05)]
+  [CUT ] value 0.5*MSE       : NO PATH
+  [CUT ] policy mean logp(a*) : NO PATH   (sensitivity; PPO weights it by the advantage)
+  [CUT ] entropy 0.05*H      : NO PATH
+[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> 'shaping' (detach_read=off, publish_detach=off across the belief heads)
+  finetune objective [live] hidden_team_set : |g| 1.131e+00  median row 2.08e-04  row237 3.15e-01  rows>0: 249  top [(157, 0.463), (182, 0.442), (57, 0.361), (237, 0.315)]
+  finetune objective [live] move_belief     : |g| 4.629e-03  median row 7.15e-06  row237 8.07e-04  rows>0: 384  top [(89, 0.0013), (280, 0.00114), (174, 0.000972), (58, 0.000962)]
+  finetune objective [live] item            : |g| 1.375e-01  median row 3.08e-05  row237 9.18e-02  rows>0: 344  top [(237, 0.0918), (182, 0.0405), (43, 0.0258), (89, 0.0254)]
+[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> 'move_label_only' (detach_read=off, publish_detach=on for the MOVE posterior only across the belief heads)
+  finetune objective [CUT ] hidden_team_set : NO PATH
+  finetune objective [CUT ] move_belief     : |g| 4.629e-03  median row 7.15e-06  row237 8.07e-04  rows>0: 384  top [(89, 0.0013), (280, 0.00114), (174, 0.000972), (58, 0.000962)]
+  finetune objective [CUT ] item            : NO PATH
+[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> 'shaping' (detach_read=off, publish_detach=off across the belief heads)

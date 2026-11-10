@@ -1,0 +1,33 @@
+batch 0: hinge +0.000e+00 cosine +6.499e-06 sum +6.499e-06 | std 1.353, dims below 1: 0.00, hinge value 0.0000, 1-cos 0.0057
+batch 0: r=0 lat +1.69e-05 bce +5.63e-05; r=1 lat -1.50e-05 bce +5.34e-05; r=2 lat +4.72e-06 bce +8.26e-05; r=3 lat -8.35e-08 bce +3.17e-05; r=4 lat +1.98e-13 bce +3.88e-06
+batch 1: hinge +0.000e+00 cosine -6.781e-06 sum -6.781e-06 | std 1.356, dims below 1: 0.00, hinge value 0.0000, 1-cos 0.0056
+batch 1: r=0 lat +4.77e-06 bce +3.52e-05; r=1 lat -1.14e-05 bce +7.53e-05; r=2 lat -2.64e-07 bce +8.79e-05; r=3 lat +9.26e-08 bce +3.80e-05; r=4 lat +1.40e-10 bce +1.01e-05
+batch 2: hinge -5.534e-04 cosine +1.882e-05 sum -5.345e-04 | std 1.298, dims below 1: 0.06, hinge value 0.0012, 1-cos 0.0055
+batch 2: r=0 lat +1.61e-05 bce +3.58e-05; r=1 lat +2.71e-06 bce +7.06e-05; r=2 lat +2.05e-06 bce +7.59e-05; r=3 lat -2.02e-06 bce +3.37e-05; r=4 lat +8.59e-11 bce +7.14e-06
+batch 3: hinge -8.913e-04 cosine -6.197e-06 sum -8.975e-04 | std 1.292, dims below 1: 0.22, hinge value 0.0034, 1-cos 0.0056
+batch 3: r=0 lat +1.06e-05 bce +2.67e-05; r=1 lat -1.27e-05 bce +6.48e-05; r=2 lat -2.50e-06 bce +9.40e-05; r=3 lat -1.61e-06 bce +2.71e-05; r=4 lat +1.24e-13 bce +5.63e-06
+batch 4: hinge -8.220e-06 cosine +3.058e-06 sum -5.163e-06 | std 1.317, dims below 1: 0.06, hinge value 0.0006, 1-cos 0.0053
+batch 4: r=0 lat +9.53e-06 bce +3.12e-05; r=1 lat -4.20e-06 bce +7.51e-05; r=2 lat -8.62e-07 bce +7.77e-05; r=3 lat -1.52e-06 bce +3.26e-05; r=4 lat +1.12e-07 bce +9.62e-06
+batch 5: hinge -1.752e-03 cosine +1.451e-05 sum -1.737e-03 | std 1.274, dims below 1: 0.16, hinge value 0.0059, 1-cos 0.0051
+batch 5: r=0 lat +2.18e-05 bce +3.31e-05; r=1 lat -3.06e-06 bce +8.70e-05; r=2 lat -1.93e-06 bce +6.77e-05; r=3 lat -2.26e-06 bce +3.45e-05; r=4 lat +7.37e-14 bce +3.20e-06
+batch 6: hinge -1.156e-05 cosine +5.123e-06 sum -6.435e-06 | std 1.335, dims below 1: 0.03, hinge value 0.0001, 1-cos 0.0057
+batch 6: r=0 lat +1.78e-05 bce +3.22e-05; r=1 lat -9.78e-06 bce +8.66e-05; r=2 lat -1.81e-06 bce +7.46e-05; r=3 lat -1.10e-06 bce +3.02e-05; r=4 lat +1.70e-13 bce +3.14e-06
+batch 7: hinge -4.615e-04 cosine -4.366e-06 sum -4.659e-04 | std 1.286, dims below 1: 0.09, hinge value 0.0013, 1-cos 0.0052
+batch 7: r=0 lat +1.36e-05 bce +3.24e-05; r=1 lat -1.91e-05 bce +7.09e-05; r=2 lat +1.87e-06 bce +5.98e-05; r=3 lat -7.24e-07 bce +3.01e-05; r=4 lat +9.79e-11 bce +8.79e-06
+
+home72: 8 batches x 128 rows; revealed pin 10.0; each part is its share of the batch mean
+| revealed moves on the slot | slots | softmax mass off the pinned moves | cosine | d(0.05 x latent part)/d(scale): mean [min, max] | negative | d(0.05 x label BCE part)/d(scale): mean | negative |
+|---|---|---|---|---|---|---|---|
+| 0 | 559 | 1.0000 | 0.994 | +1.389e-05 [+4.773e-06, +2.177e-05] | 0 / 8 | +3.537e-05 | 0 / 8 |
+| 1 | 1800 | 0.1327 | 0.991 | -9.073e-06 [-1.914e-05, +2.707e-06] | 7 / 8 | +7.295e-05 | 0 / 8 |
+| 2 | 1297 | 0.0507 | 0.996 | +1.586e-07 [-2.502e-06, +4.716e-06] | 5 / 8 | +7.753e-05 | 0 / 8 |
+| 3 | 746 | 0.0161 | 0.998 | -1.154e-06 [-2.263e-06, +9.264e-08] | 7 / 8 | +3.223e-05 | 0 / 8 |
+| 4 | 304 | 0.0002 | 1.000 | +1.407e-08 [+7.369e-14, +1.122e-07] | 0 / 8 | +6.442e-06 | 0 / 8 |
+| all | 4706 | | | +3.832e-06 [-6.781e-06, +1.882e-05] | 3 / 8 | +2.245e-04 | 0 / 8 |
+
+the two parts of 0.05 x the latent loss, d/d(scale): mean [min, max]; batches < 0
+| cosine part | +3.832e-06 [-6.781e-06, +1.882e-05] | 3 / 8 |
+| variance hinge | -4.597e-04 [-1.752e-03, +0.000e+00] | 6 / 8 |
+| the loss | -4.559e-04 [-1.737e-03, +6.499e-06] | 7 / 8 |
+| label BCE x 0.05 on the same slots (all 400 channels) | +2.245e-04 [+2.020e-04, +2.466e-04] | 0 / 8 |
+predicted-latent std over a batch's slots: mean 1.314; share of latent dims below the target 1.0: 0.08; loss values: hinge 0.0016, 1 - cosine 0.0055

@@ -8,6 +8,10 @@ REPORTED (§3; ledger 2026-11-09). The post-hoc repair of P\* (MF-3 step b) is S
 and BOUNDARY-1's 2 × 2 tests it. Nothing here is a strength claim: no game read has yet DETECTED a win-rate effect of belief quality
 (ledger 2026-10-26, the belief-prior-mix reads at λ = 0.25 and λ = 1).
 
+**The MOVE leg (2026-11-10, §8): DIAGNOSED, and a training lever BUILT off by default.** The deficit is a
+species × move table that is over-confident against its own labels, held up by gradient that is not the label's.
+The lever is `--belief-grad-mode move_label_only`; its GPU read is not yet run.
+
 This doc answers MF-3 of [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md) and the
 review's lever R4 ([`../model/generalisation_review_2026-10-26.md`](../model/generalisation_review_2026-10-26.md)).
 
@@ -98,9 +102,9 @@ What it says:
    and P72, including on P72, the panel built by the same generator family N1-P trained on; X60-T's is 0.09 to 0.13
    nats better than C0's on H and P72 and still WORSE than the prior there. The gap is real on a
    proper score too (the full Bernoulli log-likelihood over a mon's candidate moves on P72: prior −5.7, P\* −7.8,
-   N1-P −7.5 a unit; a 768-row check), so it is not an artefact of scoring only the true moves. **UNVERIFIED:**
-   why. Candidates: a linear head on a token that the pool shaped; 20M steps too few to re-fit it; a difference
-   between `p72`'s and `n1_proc_v1`'s set generators. X68's fine-tune did not repair this leg either (§6).
+   N1-P −7.5 a unit; a 768-row check), so it is not an artefact of scoring only the true moves. **Why: §8**
+   (diagnosed 2026-11-10; the proper score puts the deficit at 0.6 to 2.2 nats a unit, 5 to 6 times the column
+   above). X68's fine-tune did not repair this leg either (§6).
 5. The item leg is at its prior off the pool for P\* and C0 (WORSE only on P72), and breadth moves it to BETTER on F
    and P72.
 
@@ -122,6 +126,8 @@ they can remove the harm and cannot be expected to add information about human t
 | 5 | A bounded residual: δ ← c · tanh(δ / c) | Caps how far one species' score can move from the prior. The same limit as 4, and it also caps the in-pool gain. | as 4 | SPECIFIED (§7), not built |
 | 6 | A penalty that pulls the residual to the prior (KL to prior, residual dropout) | Shrinks the residual everywhere, in the pool as much as off it: the network has no input that says "this team is unfamiliar", so it cannot shrink selectively. | a training flag | REJECTED |
 | 7 | An "unfamiliar team" input for the head to gate on | Would let the head choose the prior off the pool. It is a fact about OUR pool, not about the battle: it cannot be computed honestly at deployment, and the pool must not enter the model as a prior. | — | REJECTED |
+| 8 | **The move head trained by its labels alone** (`--belief-grad-mode move_label_only`): the losses that read the head's published posterior no longer send gradient into `move_head` | Removes a gradient two orders larger than the label's and unrelated to it (§8). The forward is unchanged, so a finished checkpoint can be forked with it. Cannot add information the pool's labels lack: its ceiling is the pool's own per-species table, at or above the prior on the proper score on H and F, below it on P72. | a value of an existing flag; no config version | BUILT 2026-11-10, off by default; unscreened |
+| 9 | **The move latent loss off** (`--move-belief-latent-coef 0`) | Removes the one loss term whose descent grows the residual: its variance hinge rewards a sharper move belief whatever the truth is (§8). Loses the "a near move grades as near" signal. | an existing training flag | BUILT (pre-existing); unscreened |
 
 ## 5. The decision
 
@@ -180,7 +186,9 @@ evidence, never a verdict and never quoted as a claim.
   (P\* itself: 23.55), on a shard of the training corpus's own family; later epochs rose while the training loss
   kept falling.
 - **The move leg is not repaired:** fine-tuned − prior is WORSE on all three held-out panels (−0.33 H, −0.14 F,
-  −0.37 P72).
+  −0.37 P72). On the full log-likelihood it is 9 to 12 nats a unit below the prior: the fine-tune's species and
+  item losses trained `move_head` through its published posterior (§8), so this line is not evidence about
+  training the head on its labels.
 - **The lesson.** Residual retraining on procedural labels does not reach the prior. Breadth in the loop is the
   measured route (§3), and BOUNDARY-1's 2 × 2 (its breadth cells) tests it; option 4 is the candidate if a later
   fresh pool-only run needs a bound (§7). Step (b) reopens only with a new label source. The fine-tuned
@@ -204,10 +212,58 @@ option 4, a trained-in floor, behind one model flag that is off in production:
   `src/agents/model/CLAUDE.md`.
 - **Why 4 over 5.** The floor bounds the LOSS a wrong residual can take (−log λ a unit) and is the form two game
   reads already used; the bounded residual bounds a logit and its loss bound depends on the prior's value.
+  (Written for the species leg. On the move leg the bounded residual is the better post-hoc transform on every
+  panel, §8; either changes the forward, so neither can be forked from a finished checkpoint.)
 - **Its registered test** is the meter of §3 on a matched fresh pair, never a fork: a floor changes what the
   residual learns from step 0.
 - **What would make us build it:** X68 DROP together with a game read that DETECTS a cost of the pool-only belief.
   The DROP exists (screen evidence, §6); the game read does not.
+
+## 8. The move leg: diagnosed, and a lever built (2026-11-10)
+
+The record is
+[`../research_state/measurements/move_leg_offpool_2026-11-10/README.md`](../research_state/measurements/move_leg_offpool_2026-11-10/README.md)
+(ledger 2026-11-10; CPU only, descriptive, no verdict). Numbers are belief − prior on home72 (in the pool) / H / F /
+P72, in nats a unit (a revealed opponent mon with a true move not yet shown).
+
+- **The deficit is larger than the meter shows.** `moves_logp` scores only the true moves. On the full Bernoulli
+  log-likelihood over a mon's candidate moves (a proper score: it also charges a raised move that is not there)
+  P\* reads +0.39 / −1.83 / −0.61 / −2.21, 5 to 6 times the meter's column off the pool, and F is below the
+  prior on it. The meter prints that score as `moves_ll` from this change on: a claim about the move leg reads it.
+- **What it is: the conditioning on species.** 83 % of `move_head`'s output is a fixed (species, move) offset that
+  does not depend on the battle, and that table alone carries half to two thirds of the deficit. 94 to 96 % of the
+  true unshown moves are (species, move) pairs the pool attests: the failure is familiar moves in unfamiliar
+  combinations, not unknown moves.
+- **It is not what memorising the pool gives.** The pool's own per-species move frequencies used as the belief (a
+  yardstick, never a prior) score +1.22 / +0.06 / +0.19 / −0.40: at or above the prior on H and F. P\*'s table
+  correlates ≈ 0.5 with it and is over-confident against its own labels: the residual scale that maximises the
+  log-likelihood is 0.5 in the pool and 0.125 to 0.375 off it, the move label loss's own descent shrinks the
+  residual on 8 of 8 in-pool batches, and the harm is in the raises (keeping only the lowerings beats the prior on
+  every panel).
+- **What holds it there: gradient that is not the label's.** Two measured candidates. (a) *The consumers.* The
+  policy, critic, species and item losses reach `move_head` through its published posterior with a mean gradient
+  ≈ 350 times the label's, at cosine −0.15 with it. X68's fine-tune shows what this route does when it is the only
+  strong signal: its species and item losses (244 and 30 times the label's gradient) raised moves that have 0
+  labels (Dugtrio's Explosion from a prior of 0.02 to 0.99), 9 to 12 nats below the prior. (b) *The move latent
+  loss's variance hinge* rewards predictions that differ more from slot to slot, whatever the truth is; along the
+  residual's scale it outweighs the label loss two to one, at 128 and at 1,024 rows a batch. Which of the two
+  holds PRODUCTION's over-confidence is not shown.
+- **What breadth can and cannot do.** N1-P recovers a fifth of the deficit on H and P72 on the proper score
+  (−1.40 / −1.86 against C0's −1.81 / −2.20). Even a perfect pool table is 0.15 to 0.27 nats below the prior on the
+  true moves off the pool: that part needs labels, as the species leg did.
+- **The levers (options 8, 9).** `--belief-grad-mode move_label_only` cuts (a) for the move head alone
+  ([`../model/phase_pipeline.md`](../model/phase_pipeline.md)); `--move-belief-latent-coef 0` removes (b). Both
+  leave the forward bit-identical, so a fork of P\* can carry them and the first read needs no fresh run.
+- **Not shown.** No training contrast exists: the routes are gradients at one checkpoint on in-pool rows, and the
+  policy term is a proxy. Nothing here is a strength claim, and option 8 removes a signal the policy sends to a
+  head it reads: production ran `label_only` on every belief head at gen-11 and is `shaping` today
+  ([`../model/op_contracts.md`](../model/op_contracts.md); the reads behind that return are pre-era and are not
+  re-derived here: a caution, not a comparator). The read of 2026-10-07 (ledger, MOTIVATED COGNITION) found a move
+  head below its prior on the pool in the blob arm and mapped `label_only` onto the per-mon move head.
+- **Post-hoc transforms of P\*'s residual, for the record** (full log-likelihood): × 0.25, +0.63 / +0.06 / +0.37 /
+  −0.04; bounded at one logit by tanh, +0.86 / +0.03 / +0.45 / −0.08; floored on the prior at 0.25, +0.72 / −0.47 /
+  +0.12 / −0.61. A bound beats a floor on this leg. Either is a structural change a fork cannot carry, and each
+  caps the symptom and leaves its cause.
 
 ## Decision record
 
@@ -217,3 +273,5 @@ option 4, a trained-in floor, behind one model flag that is off in production:
 | 2026-11-09 | **No head reshape; the fix is the labels** | team breadth in the loop for a fresh run (already in BOUNDARY-1's breadth arms); the meter as a REPORTED guard on BOUNDARY-1's finals | a prior + residual re-parameterisation: all three legs already have it (§2); a trained-in floor or a bounded residual in BOUNDARY-1's base: they bound a wrong residual and breadth removes it, the 0.25 floor on P\* is still WORSE than the prior, and no game effect of the belief is DETECTED; a pull-to-prior penalty or a familiarity input: §4 rows 6, 7 | §3's baseline; ledger 2026-11-09 (the baseline), 2026-10-26 (H3 and the two λ reads) |
 | 2026-11-09 | **MF-3 step (b) REGISTERED as the light screen X68** | P\*'s three residuals retrained on procedural-team labels, trunk frozen, read on the banked panels; CPU only | the ladder corpus as the label source: a human corpus enters training only through `--human-data`, and X60-T's finals already read human teams in the loop; a full pre-registration: the screen sets no direction and adopts nothing | `SCREEN.md`; `main.offpool_belief trainbank --check` / `finetune --check` |
 | 2026-11-09 | **MF-3 step (b) SCREENED OUT: X68 read DROP** | close the post-hoc repair for a frozen trunk at this size; breadth in the loop is the measured route and BOUNDARY-1's 2 × 2 tests it | repairing any pool-only checkpoint by this fine-tune: it stays 0.68 to 0.74 nats below the prior off the pool and loses the in-pool advantage; building option 4 now: no game read DETECTS a cost of the pool-only belief | `SCREEN.md` §9; ledger 2026-11-09 SCREEN (screen evidence, never a verdict) |
+| 2026-11-10 | **The move leg DIAGNOSED** (orchestrator brief: is it memorisation of pool movesets, the conditioning on species, or something else) | the conditioning on species is the carrier (a static species × move table, 83 % of the residual); the table is over-confident against its own labels, held up by the consumers' gradient through the publication and by the move latent loss's variance hinge; memorisation of the pool's sets is real and small | "the pool's movesets, so breadth fixes it": an ideal memoriser of the pool is at or above the prior on H and F, and N1-P recovers a fifth; "a mass effect of scoring only true moves": the belief puts less mass on a mon's moves than the prior, and the proper score makes the deficit larger | §8; `../research_state/measurements/move_leg_offpool_2026-11-10/README.md`; ledger 2026-11-10 |
+| 2026-11-10 | **A training lever BUILT, off by default: `--belief-grad-mode move_label_only`** (`gen3_move_label_only_v1`, a fourth value of an existing field; no config version) | cut the consumers' gradient into the MOVE head alone, forward bit-identical, so a fork of P\* can read it; the existing `--move-belief-latent-coef 0` is the second lever | `label_only` on every head: it also cuts the species and item heads, whose off-pool repair is breadth, and production left it after gen-11; a bounded residual or a trained-in floor on the move head: structural, needs a fresh pair and a config version, and caps the symptom; a breadth source for moves: N1-P already is one and recovers a fifth | §8; `src/agents/model/belief_label_only_gate_test.py`, `belief_grad_mode_test.py`; `designs/CHANGELOG.md` 2026-11-10 |

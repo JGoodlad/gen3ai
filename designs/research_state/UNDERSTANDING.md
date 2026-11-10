@@ -356,11 +356,24 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   [−8.84, −6.51] on P72** (nats, belief − prior; +1.22 in the pool), and a pool-only continuation keeps it. Broad
   teams in the loop bring it to the prior with the head unchanged: N1-P +0.04 / −0.07 / −0.13, X60-T −0.05 / −0.29 /
   −0.84. A 0.25 prior floor on P\* stays WORSE (−0.17 / −0.30 / −0.79). No arm beats the prior off the pool, and the
-  unshown-move leg is WORSE than its prior for every arm on H and P72 (cause UNVERIFIED). Every belief leg is already
+  unshown-move leg is WORSE than its prior for every arm on H and P72 (its cause: the next bullet). Every belief leg is already
   prior + a zero-initialised residual, so the defect is the label population, not the head: no head reshape for
   BOUNDARY-1 (`../endstate/design_offpool_belief.md`). Still no strength claim: the two game reads above are NOT
   DETECTED. [MEASURED · DESCRIPTIVE · `python -m main.offpool_belief`; ledger 2026-11-09 · *OFF-POOL BELIEF
   BASELINE*; `measurements/offpool_belief_baseline_2026-11-09/`]
+- **The move leg's deficit is an over-confident species × move table, not the pool's movesets (2026-11-10,
+  REPORTED).** On the full Bernoulli log-likelihood over a mon's candidate moves (a proper score, the meter's
+  `moves_ll`; its `moves_logp` scores only the true moves and is blind to a raised move that is not there) P\* is **+0.39 in the
+  pool and −1.83 / −0.61 / −2.21 nats a unit below its prior on H / F / P72**. 83 % of the head's residual is a fixed
+  (species, move) offset; the pool's own per-species move frequencies would score +1.22 / +0.06 / +0.19 / −0.40, so a
+  memoriser of the pool would sit at the prior on H and F; and the residual is over-confident against its own
+  labels where it trained (best scale 0.5 in the pool; the label loss's descent shrinks it on 8 of 8 batches). Two
+  measured gradients hold it up: the losses that read the head's published posterior (≈ 350 times the label's
+  gradient, unrelated in direction; X68's fine-tune drove the leg 9 to 12 nats below the prior through this route
+  alone) and the move latent loss's variance hinge. Which one holds production's table is NOT shown: no training
+  contrast exists. The lever `--belief-grad-mode move_label_only` (off by default) cuts the first for the move head
+  alone. No strength claim. [MEASURED · DESCRIPTIVE; ledger 2026-11-10 · *MOVE-LEG DIAGNOSIS*;
+  `measurements/move_leg_offpool_2026-11-10/`; `../endstate/design_offpool_belief.md` §8]
 - **Breadth at 10⁴ teams (N1-P / X61P) at the plateau: NULL (final), at a resolved in-pool cost.** Every system
   that generalises across teams trained on 10⁴–10⁵ of them; every breadth test here ran at 10³. A fork of P\* with half
   its teams from 12,000 procedural teams (`n1_proc_v1`), 5 seeds, read on F alone by D1's rule against C0 on one

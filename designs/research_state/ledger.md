@@ -31023,3 +31023,85 @@ read through the six warn-level `obs_gap` rows (162, 163, 165 to 168). (8) The v
 `a30954ca4857…`, `score_ft.json` sha256 `9f45dbabb567…`, `table.md`, `table.json` sha256 `e18618d0b0ce…`).
 
 Tag: **X68 · SCREEN · DROP · species log-presence FT − prior −0.74 [−1.05, −0.47] F / −0.68 [−0.94, −0.43] H (bar: lower bound ≥ −0.25); FT − P\* +3.23 [+2.23, +4.39] F / +2.32 [+1.30, +3.44] H · never a verdict, never quoted as a claim**
+
+### 2026-11-10 · MEASUREMENT (DESCRIPTIVE) · **MOVE-LEG DIAGNOSIS (REPORTED, no verdict): the unshown-move belief's off-pool deficit is 5 to 6 times larger on a proper score than the meter's column shows (P\* −1.83 / −0.61 / −2.21 nats a unit below its Smogon prior on H / F / P72, +0.39 in the pool); 83 % of the head's residual is a fixed species × move table that is OVER-CONFIDENT against its own labels where it trained, and an ideal memoriser of the pool would sit at the prior on H and F; the gradients that hold the table up are not the label's (the consumers of the published posterior, ≈ 350 times the label's; the move latent loss's variance hinge); the lever `--belief-grad-mode move_label_only` is built off by default**
+
+**Question.** The baseline of 2026-11-09 left the move leg below its prior off the pool, unrepaired by breadth and unexplained. Is the deficit
+memorisation of the pool's movesets, the conditioning on species, or something else? CPU only; no run trained, no game played; no pre-registration;
+no verdict; nothing here is a strength claim.
+
+**Method.** The meter's units and banks (`python -m main.offpool_belief`, the four banks of 2026-11-09): a (decision row, revealed opponent mon)
+with at least one true move not yet shown; 28,057 / 25,984 / 26,443 / 26,966 units on home72 (in the pool) / H / F / P72; 0 truth-illegal units,
+0 reveal mismatches; the per-unit dump reproduces the baseline's P\* row exactly. Three scores a unit, each as belief − prior: *truths-only* (the
+meter's `moves_logp`), the *full log-likelihood* (the Bernoulli log-probability of the truth summed over every candidate move, a proper score: it
+also charges a raised move that is not there), and *closed* (truths-only after the count closure the policy reads). Means over the 72 teams of
+team means; 95 % team-bootstrap intervals (10,000 draws, seed 20261109). The pool enters only as a YARDSTICK (the share of a species' pool sets that
+carry each move), never as a prior. Gradients are taken at P\* on in-pool rows. Checkpoints: P\* (`rb_x26_s2601` @280,000,170), C0
+(`rb_x35_c0_s3501`), N1-P (`rb_x35_n1p_s3501`), X68-FT (X68's fine-tuned export).
+
+**(1) The deficit, belief − prior (home72 / H / F / P72).** Prior level: truths-only −0.874 / −0.855 / −0.998 / −1.015; full log-likelihood −4.799 /
+−4.969 / −5.114 / −5.597 a unit.
+
+| checkpoint | truths-only | full log-likelihood |
+|---|---|---|
+| P\* | +0.14 / −0.33 / −0.05 / −0.34 | +0.39 [+0.01, +0.75] / −1.83 [−2.21, −1.46] / −0.61 [−1.07, −0.23] / −2.21 [−2.54, −1.90] |
+| C0 | +0.15 / −0.33 / −0.05 / −0.34 | +0.42 [+0.01, +0.78] / −1.81 [−2.20, −1.45] / −0.60 [−1.06, −0.21] / −2.20 [−2.52, −1.89] |
+| N1-P | +0.09 / −0.30 / −0.14 / −0.36 | +0.48 [+0.11, +0.81] / −1.40 [−1.74, −1.08] / −0.52 [−0.93, −0.20] / −1.86 [−2.18, −1.55] |
+| X68-FT | −0.00 / −0.33 / −0.14 / −0.37 | −9.22 [−9.86, −8.57] / −10.97 [−11.53, −10.42] / −10.34 [−11.12, −9.58] / −11.71 [−12.32, −11.10] |
+
+F, which the meter reads NOT DETECTED, is below the prior on the proper score. It is not a mass effect: P\*'s belief puts LESS total probability on a
+mon's candidates than the prior (3.50 / 3.66 / 3.61 / 3.72 against 3.85 / 3.83 / 3.83 / 3.88; the true count is 2.5). C0's residual correlates 0.99
+with P\*'s; N1-P's 0.89 to 0.91 (RMS difference ≈ 1.0 logit), and breadth recovers a fifth of the deficit on H and P72.
+
+**(2) What it is made of (P\*, H / F / P72).** True unshown moves whose (species, move) pair the pool attests: 95.8 / 94.5 / 94.1 % (truths-only
+−0.29 / −0.01 / −0.29); pair never in the pool: 1.9 / 4.2 / 4.5 % (−1.68 / −1.30 / −1.54); species absent from the pool: 2.3 / 1.3 / 1.5 %. Units
+whose full moveset IS a pool set (39 / 71 / 31 %) are still below the prior on H and P72 (−0.13 [−0.22, −0.04], −0.19 [−0.28, −0.10]).
+
+**(3) The residual is a species × move table, and it is over-confident.** Its RMS is 2.1 to 2.2 logits on every panel; 82 to 84 % of its mean square
+is a fixed (species, move) offset; the static table fitted on home72 alone carries 60 / 66 / 51 % of the log-likelihood deficit on H / F / P72. The
+IDEAL pool marginal used as the belief scores +1.22 [+0.98, +1.46] / +0.06 [−0.09, +0.21] / +0.19 [−0.04, +0.40] / −0.40 [−0.62, −0.20] on the full
+log-likelihood: a memoriser of the pool would be at or above the prior on H and F and three times better than P\* in the pool. P\*'s residual
+correlates 0.45 to 0.56 with it. The residual scale that maximises the log-likelihood is 0.5 in the pool and 0.125 / 0.375 / 0.125 off it. Keeping
+only the residual's LOWERINGS beats the prior on every panel (+1.04 / +0.22 / +0.64 / +0.09); keeping only its RAISES is below it on every panel
+(−0.65 / −2.04 / −1.26 / −2.30). Post-hoc, for the record: residual × 0.25 reads +0.63 / +0.06 / +0.37 / −0.04; bounded at one logit by tanh +0.86 /
++0.03 / +0.45 / −0.08; floored on the prior at 0.25 +0.72 / −0.47 / +0.12 / −0.61.
+
+**(4) Which gradient does that (in-pool rows at P\*, into `move_head`).** The move label loss's descent SHRINKS the residual on 8 of 8 batches
+(d(0.05 × BCE) / d(scale) = +2.46e-04 [+2.26e-04, +2.57e-04]). The losses that read the head's PUBLISHED posterior (the policy, the critic, the
+species and item belief losses) send a mean gradient 352 times the label's, at cosine −0.15 with it; the value loss alone is 30 to 35 times the
+label's norm. The move LATENT loss is the one term whose descent consistently grows the residual (−4.56e-04, 7 of 8 batches below zero), and the
+part that does it is its VARIANCE HINGE (−4.60e-04 at 128 rows a batch, 6 of 8; −4.61e-04 at 1,024 rows, 3 of 3), not its cosine part (+3.8e-06);
+at production's coefficients (0.05 each) it outweighs the label BCE two to one along the scale direction. X68's fine-tune shows what the consumer
+route does alone: on its objective the species and item losses reach `move_head` at 244 and 30 times the label's gradient, and its export raised
+moves with 0 labels in its shards (Dugtrio: move 253 from a prior of 0.02 to 0.993), with 1.9 to 2.2 non-true candidates above 0.9 a unit against
+P\*'s 0.1 to 0.4.
+
+**What it licenses.** "The move leg's off-pool deficit is larger on a proper score than on `moves_logp`, and F is below the prior on it"; "most of
+the residual is a battle-independent species × move table"; "that table is over-confident against its own labels in the pool"; "an ideal memoriser
+of the pool's per-species move frequencies would be at or above the prior on H and F"; "the label loss does not ask for the over-confidence, and
+two other gradients into the head do push it"; "X68's move-leg line was a read of the consumer route, not of label training". It does NOT license
+"the consumer route is what holds PRODUCTION's table" (no training contrast; the policy term is a Monte-Carlo-advantage proxy on greedy rows whose
+sign is noise over 8 batches; the scale is one direction of the gradient), any strength claim, or "the lever repairs the leg".
+
+**What follows.** A training lever, off by default: `--belief-grad-mode move_label_only` (`gen3_move_label_only_v1`) cuts the consumers' gradient
+into the move head alone, forward bit-identical, so a fork of P\* can carry it; `--move-belief-latent-coef 0` (an existing flag) removes the latent
+loss. Their GPU read is a light screen, registered separately. `designs/endstate/design_offpool_belief.md` §8.
+
+**FINDINGs.** (1) `moves_logp` is blind to a belief that raises moves that are not there: X68-FT is within 0.1 nats of P\* on it off the pool and 9
+to 12 nats below the prior on the proper score. `main.offpool_belief` printed no proper score when this was measured; it gains the column
+`moves_ll` beside this record, and that column is what a later read of the move leg uses. (2) X68 picked its epoch on the summed
+validation loss and its move head was trained through the publication, so its "move leg not repaired" line is not evidence about label training.
+(3) Under `--move-set-closure on` (production) `MoveBelief.publish_detach` alone cuts no gradient: the reinjection is handed explicit weights; the
+lever cuts at an extractor-level boundary. (4) The variance hinge is not cut by `move_label_only` and confounds any read of it; the first
+hypothesis for the latent loss's push, the reveal pin (10.0) in its softmax, is refuted in size (8 times smaller than the label BCE on the slots
+where its sign is right). (5) Not measured: the true PPO policy gradient; the routes of the spread, Hidden Power type and latent-predictive
+losses; off-pool rows through the gradient scripts; production's 2,048-row micro-batch for the hinge; the CUDA compiled learner under the new
+mode (the CPU compile matches eager to 1.2e-05). (6) On this leg a bounded residual beats a prior floor post-hoc on every panel, against the
+design's preference written for the species leg. (7) The rows are P\*'s greedy self-play states, read through the same `obs_gap` rows as the
+baseline.
+
+**Record:** `measurements/move_leg_offpool_2026-11-10/` (`README.md`, `scripts/`, `results/`); per-unit dumps and the pool tables in
+`~/gen3ai_archive/move_leg_diag_2026-11-10/` (held-out material, outside every checkout).
+View: `UNDERSTANDING.md` (§4, after the off-pool baseline), `designs/endstate/design_offpool_belief.md` (§8), `EXPERIMENT_BACKLOG.md` (MF-3).
+
+Tag: **MOVE-LEG DIAGNOSIS · REPORTED · DESCRIPTIVE · full log-likelihood − prior: P\* +0.39 / −1.83 / −0.61 / −2.21 (home72 / H / F / P72), ideal pool marginal +1.22 / +0.06 / +0.19 / −0.40, X68-FT −9.2 / −11.0 / −10.3 / −11.7 · 83 % static species × move table, best scale 0.5 in the pool · consumer gradient 352× the label's, latent variance hinge −4.6e-04 against the label's +2.5e-04 along the scale · lever `move_label_only` built, off by default · no strength claim**
