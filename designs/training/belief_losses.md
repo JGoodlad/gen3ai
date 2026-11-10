@@ -298,7 +298,8 @@ Cross-cutting rule for **every** belief loss below (`gen3_belief_label_only_v1`)
 are **stop-grad publications** — that is how the mode stops the policy/value gradient reaching a
 belief head through any of its forward consumers. A supervised loss must therefore read its target
 through **`self.policy.features_extractor.belief_supervision("<key>")`**, which returns the LIVE
-tensor (and the identical object under `shaping`/`detached`).
+tensor (and the identical object under `shaping`/`detached`). `--belief-grad-mode move_label_only` makes
+`last_move_belief_logits` alone such a publication; every other stash stays the live object.
 
 A loss that reads the `last_*` attribute instead trains **nothing** under `label_only`, and does so
 **silently** — the loss value, its gradient norm and every `belief/*` metric look completely normal,

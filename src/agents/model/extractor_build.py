@@ -173,16 +173,25 @@ class ExtractorBuild(torch.nn.Module):
         # teaches the trunk to encode hidden state — which is the point: cutting BOTH B and C would leave
         # a probe on a trunk with no incentive to carry the information, still feeding the policy. That
         # fourth combination is deliberately NOT offered.
+        # `move_label_only` (gen3_move_label_only_v1) is `shaping` with route C cut for ONE head: the MOVE
+        # posterior alone is published stop-grad (`_publish_move_belief`: the typed posterior every consumer
+        # reads, the reinjection's weights, and the Hidden-Power presence the type reinjection gates by), so
+        # `move_head` is trained by its labels alone while the spread / item / pointer heads keep every route.
+        # The HP-type head keeps its own publication (`hp_type_logits`, the type reinjection) and loses the one
+        # route that ran THROUGH the move posterior's typed channels, which are that posterior. Why the move
+        # head: its residual at a plateau checkpoint is not at its own label optimum even on pool teams
+        # (measurements/move_leg_offpool_2026-11-10).
         #
         # B is applied per-head via `detach_read`, C via `publish_detach` on the extractor (a stop-grad at
         # the ONE publish boundary per head, so a future consumer is cut by construction rather than by
-        # remembering). detach() is value-preserving ⇒ the FORWARD is bit-identical in all three modes.
+        # remembering). detach() is value-preserving ⇒ the FORWARD is bit-identical in every mode.
         if belief_grad_mode not in BELIEF_GRAD_MODES:
             raise ValueError(f"belief_grad_mode must be one of {'|'.join(BELIEF_GRAD_MODES)}, "
                              f"got {belief_grad_mode!r}")
         self.belief_grad_mode = belief_grad_mode
         self._belief_detach = (belief_grad_mode == "detached")
         self._belief_label_only = (belief_grad_mode == "label_only")
+        self._move_publish_cut = belief_grad_mode in ("label_only", "move_label_only")
         # gen3_extractor_stashes_v1: ALL per-forward side values live in ONE typed container,
         # replaced at forward entry (see ExtractorStashes — the shape/consumer docs live on its
         # fields). Reads go through the read-only `last_*` properties below the ctor; writes go

@@ -468,6 +468,8 @@ class ModelVersionFields:
     #                  forward consumer: no POLICY/VALUE gradient reaches a belief head's parameters, so
     #                  the belief is trained by its supervised labels ALONE. The read stays LIVE, so the
     #                  label loss still shapes the trunk.
+    #   'move_label_only' — (gen3_move_label_only_v1; a new VALUE, no config bump) 'shaping' with the
+    #                  publication cut on the MOVE posterior alone: `move_head` is trained by its labels only.
     # detach() is value-preserving → the FORWARD (eval/inference/frozen-opponent) is bit-identical in every
     # mode; only the TRAINING gradient differs. So it is a RESUME-IMMUTABLE training hparam (the vf_coef
     # class): recorded here, enforced ONLY on the training-resume path via check_belief_grad_mode, and

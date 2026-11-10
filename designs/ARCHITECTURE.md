@@ -1415,8 +1415,9 @@ Belief heads run under `belief_grad_mode` **`shaping`** (production mirror `beli
 head AND shapes the shared trunk through the head's read, and the PPO loss reaches the head's
 parameters through the reinject write. The opponent-INTENT head is the exception and runs
 **`detached`** (`opp_intent_grad_mode: "detached"`): its trunk read is stop-grad, so the intent
-labels cannot reshape the trunk. `label_only` (publish stop-grad; labels alone train the head) is
-a built, non-default mode — see `designs/model/phase_pipeline.md` for the four-route table.
+labels cannot reshape the trunk. `label_only` (publish stop-grad; labels alone train the head) and
+`move_label_only` (the same cut on the move head alone) are built, non-default modes — see
+`designs/model/phase_pipeline.md` for the four-route table.
 
 ---
 

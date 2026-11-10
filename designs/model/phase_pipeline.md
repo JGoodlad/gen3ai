@@ -113,6 +113,14 @@ the extractor), so the belief is trained by its labels alone while the policy st
 read stays live under `label_only`, because cutting B and C together leaves a probe on a trunk with
 no incentive to encode hidden state — still feeding the policy. That combination is not offered.
 
+`move_label_only` (`gen3_move_label_only_v1`) is `shaping` with that cut on ONE head: the MOVE posterior alone
+leaves through `_publish_move_belief` (the typed posterior, the reinjection's closure weights, the Hidden-Power
+`presence`), so `MoveBelief.move_head` is trained by its labels alone and every other head keeps all four routes.
+Two facts the name does not carry: the head's own `publish_detach` cuts NOTHING under `--move-set-closure on`
+(the reinjection is handed explicit weights; the extractor-level boundary is the cut), and the HP-type head loses
+the one consumer route that ran through the move posterior's typed channels (its own publication stays live).
+Why it exists: `designs/research_state/measurements/move_leg_offpool_2026-11-10/README.md`.
+
 ### Scope, and why the mode is resume-immutable rather than weight-shape
 
 Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
@@ -126,7 +134,7 @@ so it feeds GAE, the value loss and (at `win_prob_mode shaping`, which the mode 
 Under the shaped critic (a pre-break checkpoint, run PINNED; not constructible at HEAD) it was label-only. The claim is mode-conditional, and
 reading it as unconditional would say the production critic cannot reach the objective.
 
-`detach()` is value-preserving ⇒ the forward is bit-identical in all three modes ⇒ this is a
+`detach()` is value-preserving ⇒ the forward is bit-identical in every mode ⇒ this is a
 resume-immutable training hparam (the `vf_coef` class), NOT weight-shape: no `ARCH_SIGNATURE` bump,
 excluded from `check_compatible`, enforced resume-only by `check_belief_grad_mode`
 (`--allow-belief-grad-mode-change` for an intentional migration). `BELIEF_GRAD_MODES` in
@@ -284,17 +292,17 @@ tiers as they are now.** Three rules about it live here:
 table before reasoning about either. Four routes exist between a state-prediction belief head and
 the rest of the network:
 
-| | route | `shaping` | `detached` | `label_only` |
-|---|---|---|---|---|
-| A | label loss → belief head params | on | on | on |
-| B | label loss → shared trunk (the head's READ) | on | **CUT** | on |
-| C | PPO loss → belief head params (the WRITE) | on | on | **CUT** |
-| D | PPO loss → shared trunk (normal training) | on | on | on |
+| | route | `shaping` | `detached` | `label_only` | `move_label_only` |
+|---|---|---|---|---|---|
+| A | label loss → belief head params | on | on | on | on |
+| B | label loss → shared trunk (the head's READ) | on | **CUT** | on | on |
+| C | PPO loss → belief head params (the WRITE) | on | on | **CUT** | **CUT for `MoveBelief` only** |
+| D | PPO loss → shared trunk (normal training) | on | on | on | on |
 
 **Two rules when touching this:**
 
 1. **A supervised loss reads `belief_supervision(name)`, never the `last_*` attribute.** Under
-   `label_only` the attribute is the stop-grad publication, so a loss reading it trains *nothing*
+   `label_only` (and, for the move posterior, `move_label_only`) the attribute is the stop-grad publication, so a loss reading it trains *nothing*
    — silently, since the loss value and every metric derived from it look normal. The accessor
    raises on an unknown key so a typo cannot degrade into that.
 2. **Detach the LOGITS, never the matmul output.** `soft_emb = sigmoid(logits) @ move_embedding.weight`

@@ -15790,3 +15790,35 @@ was downloaded or written under `data/`.
   entropy-matched control (`--ent-coef 0.10`, no magnet) or the swap `--ent-coef 0 --magnet-kl-coef 0.05`. (2) The lever
   exists at main only; a fork of P* against the banked C0 controls runs at the production side pin `f4b25238`, so a
   screen needs a backport side pin and a kit arm, neither built.
+
+## 2026-11-10 — the move belief can be trained by its labels alone (`gen3_move_label_only_v1`; a fourth VALUE of `belief_grad_mode`, no new field; no config / `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change)
+
+- **Why.** The move leg of the opponent belief is below its own Smogon prior off the pool and breadth does not repair
+  it. The diagnosis (`research_state/measurements/move_leg_offpool_2026-11-10/README.md`; ledger 2026-11-10): 83 % of
+  `move_head`'s residual is a fixed species × move table, and it is over-confident against its OWN labels in the pool
+  (the full log-likelihood is best at half the residual; the label loss's descent shrinks it on 8 of 8 batches). The
+  gradient the head receives through its PUBLISHED posterior (route C: the critic, the policy, the species and item
+  losses downstream) is two orders larger than its label gradient and unrelated to it in direction, and it is what
+  wrecked this leg in X68's fine-tune. The existing `label_only` cuts route C for every belief head at once.
+- **What.** `--belief-grad-mode move_label_only` (with `--allow-belief-grad-mode-change` on a resume or fork):
+  `shaping`, with route C cut for `MoveBelief` alone. The move posterior leaves through one extractor-level boundary,
+  `_publish_move_belief`: the typed posterior, the reinjection's closure weights and the Hidden Power `presence` are
+  stop-gradient copies; the live logits stay in the supervision stash, so `move_belief` and `move_latent` still train
+  the head and still shape the trunk. `label_only` cuts the move head through the same boundary. The boundary is
+  what cuts: under `--move-set-closure on` the head's own `publish_detach` cuts nothing (the reinjection is handed
+  explicit weights computed from the published posterior).
+- **Default.** Off: production stays `shaping`. The forward is bit-identical in every mode
+  (`test_forward_is_bit_identical_across_every_mode`), so no golden, no signature and no observation moves.
+- **The pin boundary.** No field was added, so the config version does not move (the precedent of
+  `model/versioning.md`'s value-set changes). Code older than this commit refuses a checkpoint RECORDED with the new
+  value (an unknown `belief_grad_mode`), which is the wanted failure. A fork of P\* runs at the production side pin,
+  so the lever reaches it as that pin plus this one commit.
+- **Not shown.** That route C is what holds the over-confidence in PRODUCTION training: the move LATENT loss's variance
+  hinge is the one term whose descent consistently grows the residual (twice the label loss's rate along the
+  residual's scale), and this mode does not cut it (`--move-belief-latent-coef 0` does). No training contrast exists
+  yet; the CUDA compiled learner under the new mode is UNVERIFIED (the CPU compile of forward + backward matches eager
+  to 1.2e-5). The Hidden Power type head loses its one consumer route through the move posterior's typed channels.
+- **Guards.** `belief_label_only_gate_test.py`: the consumer gradient reaches every other belief head and not
+  `move_head`; the label path survives and only the move posterior is published as a copy; the runtime setter applies
+  the mode to a checkpoint built under `shaping`; `label_only` still cuts the move head. `belief_grad_mode_test.py`:
+  the value set. Each fails on revert.

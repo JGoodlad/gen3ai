@@ -770,6 +770,8 @@ _BELIEF_GRAD_MODE_EFFECT = {
     "detached": "the belief-aux gradient now STOPS at the heads (the trunk is stop-grad on the read).",
     "label_only": "the belief heads are now trained by their SUPERVISED LABELS ALONE — no policy/value "
                   "gradient reaches them (their outputs are published stop-grad to every consumer).",
+    "move_label_only": "the MOVE head alone is now trained by its SUPERVISED LABELS ALONE (its posterior is "
+                       "published stop-grad to every consumer); every other belief head is as under 'shaping'.",
 }
 
 # Change this when the neural architecture changes structurally in a way that makes

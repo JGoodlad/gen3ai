@@ -120,11 +120,14 @@ class ExtractorApi(ExtractorBuild):
         self.belief_grad_mode = mode
         self._belief_detach = (mode == "detached")
         self._belief_label_only = (mode == "label_only")
+        self._move_publish_cut = mode in ("label_only", "move_label_only")
         self._stamp_belief_grad_flags()
         if changed:
+            _pub = ("on" if self._belief_label_only else "on for the MOVE posterior only" if self._move_publish_cut
+                    else "off")
             print(f"[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> {mode!r} "
                   f"(detach_read={'on' if self._belief_detach else 'off'}, "
-                  f"publish_detach={'on' if self._belief_label_only else 'off'} across the belief heads)")
+                  f"publish_detach={_pub} across the belief heads)")
 
     def set_oracle_reveal(self, spec: str) -> None:
         """Apply the RUN's resolved reveal mode to the live extractor after a load (gen3_reveal_provenance_v1).
@@ -189,6 +192,9 @@ class ExtractorApi(ExtractorBuild):
                     _item):
             if _bh is not None:
                 _bh.publish_detach = self._belief_label_only
+        _mv = getattr(self, "move_belief", None)  # `move_label_only`: this one head's reinjection, the others live
+        if _mv is not None:
+            _mv.publish_detach = self._move_publish_cut
 
     # Read-only forwarders for the shared embedding tables — they are a model-level concept
     # and several tests/inspectors reach for them by name. Properties add no state_dict keys.
@@ -305,6 +311,17 @@ class ExtractorApi(ExtractorBuild):
         FORWARD is bit-identical and only the backward differs.
         """
         return t.detach() if (self._belief_label_only and t is not None) else t
+
+    def _publish_move_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+        """`_publish_belief` for an output of the MOVE head (the typed move posterior, and the Hidden-Power
+        presence composed from it): stop-grad under `label_only` AND under `move_label_only`
+        (gen3_move_label_only_v1), the identical object otherwise.
+
+        One boundary, for the reason `_publish_belief` gives. It is what cuts the route, not the head's own
+        `publish_detach`: under `--move-set-closure on` the reinjection is handed explicit WEIGHTS computed from
+        the published posterior, so a stop-grad inside `reinject_moves` alone leaves the consumer gradient
+        exactly as it was (measured, the README of measurements/move_leg_offpool_2026-11-10)."""
+        return t.detach() if (self._move_publish_cut and t is not None) else t
 
     def belief_supervision(self, name: str) -> Optional[torch.Tensor]:
         """The LIVE (graph-carrying) belief output `name`, for the SUPERVISED aux losses ONLY.

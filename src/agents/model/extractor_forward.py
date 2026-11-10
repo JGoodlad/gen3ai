@@ -168,7 +168,7 @@ class ExtractorForward(ExtractorApi):
         self.stash.belief_supervision["move_belief_logits"] = logits
         self.stash.belief_supervision["hp_type_logits"] = hp_logits
         self.stash.hp_type_logits = self._publish_belief(hp_logits)
-        logits = self._publish_belief(logits)  # type: ignore[assignment]
+        logits = self._publish_move_belief(logits)  # type: ignore[assignment]
         hs_m: Optional[HypothesisSet] = None
         fm: Optional[FixedMassMoves] = None
         weights: Optional[torch.Tensor] = None
@@ -181,8 +181,8 @@ class ExtractorForward(ExtractorApi):
                 # gen3_move_set_closure_v1 (`--move-set-closure on`): every OTHER slot's row is its own fixed-mass
                 # presence too (k = 4 − revealed: a mon with four revealed moves reinjects only them, the rest
                 # renormalised to 4 − r) — through the graph, so the move head keeps the PPO route these rows had.
-                # `off` (production): the sigmoid inclusion weights (F-X5-33), the expression kept VERBATIM (dynamo
-                # names graph nodes after locals, so the production graph stays the parent's).
+                # `off`: the sigmoid inclusion weights (F-X5-33), the expression kept VERBATIM (dynamo names graph
+                # nodes after locals, so an `off` run's graph stays its parent's). Production is `on`.
                 if self.move_set_closure == "on":
                     assert self.hypothesis_builder is not None
                     closed, _rv, _sel = slot_move_presence(self.hypothesis_builder, logits,
@@ -200,8 +200,11 @@ class ExtractorForward(ExtractorApi):
         # attention already uses for type matchups. Revealed slots only. (No head under `flat` — the
         # typed move rows still ride the soft-embed above, which is the point of that ablation.)
         if self.hp_type_belief_head is not None:
+            # `presence` is the MOVE head's output (channel 237 through `compose_typed_hp`), so it leaves through the
+            # move head's publish boundary; `hp_post` is the type head's own and keeps its route under `move_label_only`.
             enriched = self.hp_type_belief_head.reinject(
-                enriched, hp_post, presence, (~ctx.opp_believed_mask).float(), self.embeddings)  # type: ignore[arg-type]
+                enriched, hp_post, self._publish_move_belief(presence),  # type: ignore[arg-type]
+                (~ctx.opp_believed_mask).float(), self.embeddings)
         return enriched, logits, hs_m, fm
 
     def _spread_hp_damage(self, opp_tokens: torch.Tensor, ctx: ExtractorContext,
