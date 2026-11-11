@@ -650,7 +650,7 @@ def test_x67_is_c0_plus_the_entropy_lever_and_nothing_else():
         assert on[:-2] == off[:cut] + list(K.X67_LEVER) + ["--seed", str(seed)]
         assert off[cut:cut + 2] == ["--seed", "3501"] and on[-2:] == ["--run-name", f"rb_x35_x67ent_s{seed}"]
     assert K.X67_LEVER == ("--ent-coef", "0.0125") and K.X67_SEEDS == X67_SEEDS
-    assert K.ARM_TYPED_RECIPE["x67"] == ("ent_coef", "0.0125", "--ent-coef") and "x67" not in K.ARM_GROWTH
+    assert K.ARM_TYPED_RECIPE["x67"] == (("ent_coef", "0.0125", "--ent-coef"),) and "x67" not in K.ARM_GROWTH
     d = K.describe("x67", 6702, call)
     assert d["side"] == "production" and d["delta_text"] == "+20,000,000 steps" and d["behaviour"] == "warn"
     assert d["parent_run_dir"].endswith("rb_x26_s2601") and d["k9b_ceilings"] is None

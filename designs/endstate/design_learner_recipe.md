@@ -491,8 +491,10 @@ matches its control at the SAME dose is its secondary read.
     β 0.05, with the magnet refreshed every 2M, BESIDE the unchanged uniform bonus. **2026-11-10 correction:** that is not
     one lever. KL(π ‖ π_mag) = −H(π) − Σ π · log π_mag, so β 0.05 beside `ent_coef` 0.05 also doubles the entropy gradient's weight (0.10), so a read of the pull alone needs an entropy-matched control (`--ent-coef 0.10`, no magnet) or the
     swap `--ent-coef 0 --magnet-kl-coef 0.05` (MMD's own form). T56 is BUILT (`--magnet-kl-coef`, OFF, main only;
-    `designs/training/magnet_kl.md`); an A4 fork against the banked C0 controls needs a backport side pin at `f4b25238`
-    and a kit arm, neither built. X23's replacement question (the bonus swapped for the magnet) stays X23's.
+    `designs/training/magnet_kl.md`); the backport pin (tag `ce3d-pin-333a73dd`) and the kit arm `ce3d_swap` are built
+    2026-11-11, and the registered screen is the swap on three forks of P\* against the banked C0 finals, not launched
+    (`../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`, Amendment 1). It moves no recipe.
+    X23's from-scratch replacement question (the bonus swapped for the magnet in a fresh run) stays X23's.
   - **FINDING:** the "exploration in the data / KL-to-magnet" direction was not recorded anywhere in
     the repo before this doc. This doc now records it as the owner's direction of 2026-09-29, as
     relayed by the orchestrator.

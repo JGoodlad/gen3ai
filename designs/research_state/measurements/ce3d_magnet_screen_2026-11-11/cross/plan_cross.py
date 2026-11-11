@@ -1,24 +1,23 @@
-"""CE-3d, the trailing-magnet screen (PREREG §5.2): the PLAN of the three head-to-head crosses.
+"""CE-3d, the trailing-magnet screen, Amendment 1 (PREREG §5.2): the PLAN of the head-to-head cross.
 
-* ``deciding``: rows = the three MAGNET forks ``rb_x35_ce3dmag_s7301..s7303``, columns = the three CONTROL forks
-  ``rb_x35_ce3dent_s7311..s7313``. All six are REQUIRED.
-* ``mag_vs_c0`` / ``ent_vs_c0`` (REPORTED): the same rows / the control forks as rows, against the C0 finals
-  ``rb_x35_c0_s3501..s3508``: the five banked (3501-3505) are REQUIRED; a top-up seed (3506-3508) with no
-  ``final_model.zip`` is left out and named, and one that has a final but fails a guard REFUSES the plan.
+Rows = the three SWAP forks ``rb_x35_ce3dswap_s7321..s7323`` (all REQUIRED). Columns = the C0 finals
+``rb_x35_c0_s3501..s3508`` that pass the guards when the plan is made: the five banked (3501-3505) are REQUIRED; a
+top-up seed (3506-3508) with no ``final_model.zip`` is left out and named, and one that has a final but fails a
+guard REFUSES the plan (a control that exists and is not clean is a question for the orchestrator, never a silent
+drop). X67's plan (``../../x67_entropy_screen_2026-11-09/cross/plan_cross.py``) with the row arm's pin and lever.
 
 Every run in the plan must have: ``final_model.zip``; a ``pin_history`` of exactly ONE entry at ITS pin (the CE-3d
-backport pin for the six forks, the production side pin for C0), from the fork step 280,000,170 to at least
+backport pin for a swap fork, the production side pin for C0), from the fork step 280,000,170 to at least
 300,000,170; the lineage record of a FORK of P* (the parent checkpoint's sha256); its own seed; ``n_epochs`` 10; its
-arm's ``ent_coef`` (magnet 0.05, control 0.1, C0 0.05) in ``metadata.json`` and its ``cli_args``; its arm's
-``magnet_kl_coef`` in ``model_config.json`` (magnet 0.05 with ``magnet_refresh_steps`` 2,000,000; control 0.0; C0:
-the key ABSENT, a v161 config written at the production pin); for a magnet fork, the committed final's magnet
-sidecar ``final_model.magnet.pt``; K9(b) PASS over its own rows (``main.x35.batch.k9b_read``, AM-6). All runs must
-share one ``torch_version`` and one ``init_num_threads``. REFUSES (exit 3) otherwise.
+arm's ``ent_coef`` (swap 0.0, C0 0.05) in ``metadata.json`` and its ``cli_args``; its arm's magnet record in
+``model_config.json`` (swap: ``magnet_kl_coef`` 0.05 with ``magnet_refresh_steps`` 2,000,000; C0: both keys ABSENT,
+a v161 config written at the production pin); for a swap fork, the committed final's magnet sidecar
+``final_model.magnet.pt`` (and none beside a C0 final); K9(b) PASS over its own rows (``main.x35.batch.k9b_read``,
+AM-6). All runs must share one ``torch_version`` and one ``init_num_threads``. REFUSES (exit 3) otherwise.
 
-Writes ``<out-dir>/cells_<cross>.json`` (the [player .zip, opponent .zip] lists ``main.h2h play-many --cells`` reads)
-and ``<out-dir>/shas.json`` (per cross: row and column sha256 lists, seeds and paths, for the reader). Stdout: the
-three cell counts. ``--columns-only`` checks the C0 columns alone and writes nothing (the registration's own check,
-run before any CE-3d fork exists).
+Writes ``--out`` (the [player .zip, opponent .zip] list ``main.h2h play-many --cells`` reads) and ``--shas`` (row and
+column sha256 lists and seeds for the reader). Stdout: the cell count. ``--columns-only`` checks the columns alone
+and writes nothing (the registration's own check, run before any CE-3d fork exists).
 
 Run with ``PYTHONPATH=<a checkout>/src`` (``main.x35.batch`` supplies the K9(b) read).
 """
@@ -41,14 +40,11 @@ N_EPOCHS = 10
 REFRESH_STEPS = 2_000_000
 #: arm -> (run-name format, seeds, required seeds, pin, ent_coef, magnet_kl_coef or None = the key must be absent)
 ARMS: Dict[str, Tuple[str, Tuple[int, ...], Tuple[int, ...], str, float, Optional[float]]] = {
-    "mag": ("rb_x35_ce3dmag_s{}", (7301, 7302, 7303), (7301, 7302, 7303), CE3D_PIN, 0.05, 0.05),
-    "ent": ("rb_x35_ce3dent_s{}", (7311, 7312, 7313), (7311, 7312, 7313), CE3D_PIN, 0.1, 0.0),
+    "swap": ("rb_x35_ce3dswap_s{}", (7321, 7322, 7323), (7321, 7322, 7323), CE3D_PIN, 0.0, 0.05),
     "c0": ("rb_x35_c0_s{}", (3501, 3502, 3503, 3504, 3505, 3506, 3507, 3508), (3501, 3502, 3503, 3504, 3505),
            SIDE_PIN, 0.05, None),
 }
-#: cross -> (row arm, column arm)
-CROSSES: Dict[str, Tuple[str, str]] = {"deciding": ("mag", "ent"), "mag_vs_c0": ("mag", "c0"),
-                                       "ent_vs_c0": ("ent", "c0")}
+ROW_ARM, COL_ARM = "swap", "c0"
 
 
 def sha(p: Path) -> str:
@@ -126,16 +122,18 @@ def collect(arm: str, fails: List[str], notes: List[str]) -> List[Tuple[int, Pat
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out-dir")
+    ap.add_argument("--out")
+    ap.add_argument("--shas")
     ap.add_argument("--columns-only", action="store_true")
     a = ap.parse_args()
-    if not a.columns_only and not a.out_dir:
-        ap.error("--out-dir is required unless --columns-only")
+    if not a.columns_only and not (a.out and a.shas):
+        ap.error("--out and --shas are required unless --columns-only")
     fails: List[str] = []
     notes: List[str] = []
-    got = {arm: collect(arm, fails, notes) for arm in (("c0",) if a.columns_only else ("mag", "ent", "c0"))}
+    cols = collect(COL_ARM, fails, notes)
+    rows = [] if a.columns_only else collect(ROW_ARM, fails, notes)
     for what in ("torch_version", "init_num_threads"):
-        seen = sorted({str(f[what]) for runs in got.values() for _, _, f in runs})
+        seen = sorted({str(f[what]) for _, _, f in cols + rows})
         if len(seen) > 1:
             fails.append(f"{what} differs across the runs: {seen}")
     for n in notes:
@@ -144,23 +142,16 @@ def main() -> int:
         print("REFUSED: " + "; ".join(fails), file=sys.stderr)
         return 3
     if a.columns_only:
-        print(f"columns OK: {[s for s, _, _ in got['c0']]} ({len(got['c0'])} C0 finals pass every guard)")
+        print(f"columns OK: {[s for s, _, _ in cols]} ({len(cols)} C0 finals pass every guard)")
         return 0
-    out = Path(a.out_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    shas = {arm: {"sha256": [sha(p) for _, p, _ in runs], "seeds": [s for s, _, _ in runs],
-                  "runs": [str(p) for _, p, _ in runs]} for arm, runs in got.items()}
-    doc: Dict[str, Any] = {"left_out": notes, "crosses": {}}
-    counts = []
-    for cross, (ra, ca) in CROSSES.items():
-        cells = [[r, c] for r in shas[ra]["runs"] for c in shas[ca]["runs"]]
-        (out / f"cells_{cross}.json").write_text(json.dumps(cells, indent=1))
-        doc["crosses"][cross] = {"rows": shas[ra]["sha256"], "cols": shas[ca]["sha256"],
-                                 "row_seeds": shas[ra]["seeds"], "col_seeds": shas[ca]["seeds"],
-                                 "row_runs": shas[ra]["runs"], "col_runs": shas[ca]["runs"]}
-        counts.append(f"{cross}={len(cells)}")
-    (out / "shas.json").write_text(json.dumps(doc, indent=1))
-    print(" ".join(counts))
+    cells = [[str(r), str(c)] for _, r, _ in rows for _, c, _ in cols]
+    Path(a.out).write_text(json.dumps(cells, indent=1))
+    Path(a.shas).write_text(json.dumps({
+        "rows": [sha(p) for _, p, _ in rows], "cols": [sha(p) for _, p, _ in cols],
+        "row_seeds": [s for s, _, _ in rows], "col_seeds": [s for s, _, _ in cols],
+        "row_runs": [str(p) for _, p, _ in rows], "col_runs": [str(p) for _, p, _ in cols],
+        "left_out": notes}, indent=1))
+    print(len(cells))
     return 0
 
 

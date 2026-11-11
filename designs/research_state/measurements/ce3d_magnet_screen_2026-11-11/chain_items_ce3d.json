@@ -1,5 +1,5 @@
 {
- "x_what": "CE-3d (PREREG.md beside this file): the six DRAFT arm items for the Training session's arm chain (schema arm_chain_v1, backend x35). Copy `items` into the chain file in this order (the arms alternate, so a drift over the six forks' ~26 GPU-h falls on both arms alike) and replace `go_by` with the orchestrator's GO and this registration's commit. Nothing here launches; `arm_chain_plan_ce3d.txt` is the plan these items produced at registration.",
+ "x_what": "CE-3d (PREREG.md beside this file, Amendment 1): the three DRAFT arm items for the Training session's arm chain (schema arm_chain_v1, backend x35): the ONE arm ce3d_swap (C0's argv + --ent-coef 0 --magnet-kl-coef 0.05) at seeds 7321-7323. Copy `items` into the chain file in this order and replace `go_by` with the orchestrator's GO and the amendment's commit. The registration's six items (ce3d_mag 7301-7303, ce3d_ent 7311-7313) were dropped before any launch and must never be chained. Nothing here launches; `arm_chain_plan_ce3d.txt` is the plan these items produced at the amendment.",
  "x_backend": {
   "kind": "x35",
   "launch_script": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh",
@@ -13,19 +13,20 @@
  "items": [
   {
    "kind": "arm",
-   "arm": "ce3d_mag",
-   "seed": 7301,
+   "arm": "ce3d_swap",
+   "seed": 7321,
    "pin": "333a73ddda7829b9ccdf9e17ef04624eb40edeba",
-   "run": "rb_x35_ce3dmag_s7301",
-   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)",
+   "run": "rb_x35_ce3dswap_s7321",
+   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 1, commit <sha>)",
    "thin": "planner",
    "flags": [
     "--thinning"
    ],
    "disk_need_gib": 16.0,
    "banner": {
-    "expect": "beside the entropy bonus (ent_coef 0.05; the KL's own entropy part adds 0.05 to that weight)",
+    "expect": "beside the entropy bonus (ent_coef 0; the KL's own entropy part adds 0.05 to that weight)",
     "void": [
+     "ent_coef   | 0.05 ",
      "ent_coef   | 0.1 ",
      "ent_coef   | 0.0125 ",
      "[ModelVersion] FATAL"
@@ -39,53 +40,24 @@
    },
    "on_void": "stop",
    "on_throughput_fail": "page",
-   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the magnet's attach line (the magnet built, beta 0.05, beside ent_coef 0.05) within 30 min; a table row ent_coef 0.1 or 0.0125 is VOID. At the arm's end the cross plan checks model_config magnet_kl_coef 0.05 / magnet_refresh_steps 2,000,000 and final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). disk_need_gib = the launcher's 14.33 + the magnet sidecars it does not count (<= 24 x <= 54.7 MiB x 1.25)."
+   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, either lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the magnet's attach line naming BOTH levers (the magnet built at beta 0.05, beside ent_coef 0) within 30 min; a hyperparameter-table row ent_coef 0.05, 0.1 or 0.0125 is VOID (the swap's own row reads `ent_coef   | 0`). At the arm's end the cross plan checks metadata ent_coef 0.0, model_config magnet_kl_coef 0.05 / magnet_refresh_steps 2,000,000 and final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). disk_need_gib = the launcher's 14.33 + the magnet sidecars it does not count (<= 24 x <= 54.7 MiB x 1.25)."
   },
   {
    "kind": "arm",
-   "arm": "ce3d_ent",
-   "seed": 7311,
+   "arm": "ce3d_swap",
+   "seed": 7322,
    "pin": "333a73ddda7829b9ccdf9e17ef04624eb40edeba",
-   "run": "rb_x35_ce3dent_s7311",
-   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)",
-   "thin": "planner",
-   "flags": [
-    "--thinning"
-   ],
-   "disk_need_gib": 14.33,
-   "banner": {
-    "expect": "ent_coef   | 0.1 ",
-    "void": [
-     "ent_coef   | 0.05 ",
-     "[MAGNET]",
-     "[ModelVersion] FATAL"
-    ],
-    "within_min": 30
-   },
-   "throughput": {
-    "min_steps_per_s": 1000,
-    "within_min": 60,
-    "first_line_within_min": 90
-   },
-   "on_void": "stop",
-   "on_throughput_fail": "page",
-   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's hparams table must print ent_coef 0.1 within 30 min; a row ent_coef 0.05 or any [MAGNET] line is VOID. At the arm's end the cross plan checks model_config magnet_kl_coef 0.0, metadata ent_coef 0.1 and no magnet sidecar. Canary family C0."
-  },
-  {
-   "kind": "arm",
-   "arm": "ce3d_mag",
-   "seed": 7302,
-   "pin": "333a73ddda7829b9ccdf9e17ef04624eb40edeba",
-   "run": "rb_x35_ce3dmag_s7302",
-   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)",
+   "run": "rb_x35_ce3dswap_s7322",
+   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 1, commit <sha>)",
    "thin": "planner",
    "flags": [
     "--thinning"
    ],
    "disk_need_gib": 16.0,
    "banner": {
-    "expect": "beside the entropy bonus (ent_coef 0.05; the KL's own entropy part adds 0.05 to that weight)",
+    "expect": "beside the entropy bonus (ent_coef 0; the KL's own entropy part adds 0.05 to that weight)",
     "void": [
+     "ent_coef   | 0.05 ",
      "ent_coef   | 0.1 ",
      "ent_coef   | 0.0125 ",
      "[ModelVersion] FATAL"
@@ -99,53 +71,24 @@
    },
    "on_void": "stop",
    "on_throughput_fail": "page",
-   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the magnet's attach line (the magnet built, beta 0.05, beside ent_coef 0.05) within 30 min; a table row ent_coef 0.1 or 0.0125 is VOID. At the arm's end the cross plan checks model_config magnet_kl_coef 0.05 / magnet_refresh_steps 2,000,000 and final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). disk_need_gib = the launcher's 14.33 + the magnet sidecars it does not count (<= 24 x <= 54.7 MiB x 1.25)."
+   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, either lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the magnet's attach line naming BOTH levers (the magnet built at beta 0.05, beside ent_coef 0) within 30 min; a hyperparameter-table row ent_coef 0.05, 0.1 or 0.0125 is VOID (the swap's own row reads `ent_coef   | 0`). At the arm's end the cross plan checks metadata ent_coef 0.0, model_config magnet_kl_coef 0.05 / magnet_refresh_steps 2,000,000 and final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). disk_need_gib = the launcher's 14.33 + the magnet sidecars it does not count (<= 24 x <= 54.7 MiB x 1.25)."
   },
   {
    "kind": "arm",
-   "arm": "ce3d_ent",
-   "seed": 7312,
+   "arm": "ce3d_swap",
+   "seed": 7323,
    "pin": "333a73ddda7829b9ccdf9e17ef04624eb40edeba",
-   "run": "rb_x35_ce3dent_s7312",
-   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)",
-   "thin": "planner",
-   "flags": [
-    "--thinning"
-   ],
-   "disk_need_gib": 14.33,
-   "banner": {
-    "expect": "ent_coef   | 0.1 ",
-    "void": [
-     "ent_coef   | 0.05 ",
-     "[MAGNET]",
-     "[ModelVersion] FATAL"
-    ],
-    "within_min": 30
-   },
-   "throughput": {
-    "min_steps_per_s": 1000,
-    "within_min": 60,
-    "first_line_within_min": 90
-   },
-   "on_void": "stop",
-   "on_throughput_fail": "page",
-   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's hparams table must print ent_coef 0.1 within 30 min; a row ent_coef 0.05 or any [MAGNET] line is VOID. At the arm's end the cross plan checks model_config magnet_kl_coef 0.0, metadata ent_coef 0.1 and no magnet sidecar. Canary family C0."
-  },
-  {
-   "kind": "arm",
-   "arm": "ce3d_mag",
-   "seed": 7303,
-   "pin": "333a73ddda7829b9ccdf9e17ef04624eb40edeba",
-   "run": "rb_x35_ce3dmag_s7303",
-   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)",
+   "run": "rb_x35_ce3dswap_s7323",
+   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 1, commit <sha>)",
    "thin": "planner",
    "flags": [
     "--thinning"
    ],
    "disk_need_gib": 16.0,
    "banner": {
-    "expect": "beside the entropy bonus (ent_coef 0.05; the KL's own entropy part adds 0.05 to that weight)",
+    "expect": "beside the entropy bonus (ent_coef 0; the KL's own entropy part adds 0.05 to that weight)",
     "void": [
+     "ent_coef   | 0.05 ",
      "ent_coef   | 0.1 ",
      "ent_coef   | 0.0125 ",
      "[ModelVersion] FATAL"
@@ -159,37 +102,7 @@
    },
    "on_void": "stop",
    "on_throughput_fail": "page",
-   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the magnet's attach line (the magnet built, beta 0.05, beside ent_coef 0.05) within 30 min; a table row ent_coef 0.1 or 0.0125 is VOID. At the arm's end the cross plan checks model_config magnet_kl_coef 0.05 / magnet_refresh_steps 2,000,000 and final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). disk_need_gib = the launcher's 14.33 + the magnet sidecars it does not count (<= 24 x <= 54.7 MiB x 1.25)."
-  },
-  {
-   "kind": "arm",
-   "arm": "ce3d_ent",
-   "seed": 7313,
-   "pin": "333a73ddda7829b9ccdf9e17ef04624eb40edeba",
-   "run": "rb_x35_ce3dent_s7313",
-   "go_by": "<orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)",
-   "thin": "planner",
-   "flags": [
-    "--thinning"
-   ],
-   "disk_need_gib": 14.33,
-   "banner": {
-    "expect": "ent_coef   | 0.1 ",
-    "void": [
-     "ent_coef   | 0.05 ",
-     "[MAGNET]",
-     "[ModelVersion] FATAL"
-    ],
-    "within_min": 30
-   },
-   "throughput": {
-    "min_steps_per_s": 1000,
-    "within_min": 60,
-    "first_line_within_min": 90
-   },
-   "on_void": "stop",
-   "on_throughput_fail": "page",
-   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's hparams table must print ent_coef 0.1 within 30 min; a row ent_coef 0.05 or any [MAGNET] line is VOID. At the arm's end the cross plan checks model_config magnet_kl_coef 0.0, metadata ent_coef 0.1 and no magnet sidecar. Canary family C0."
+   "x_registration": "CE-3d PREREG §8: VOID = not finished, K9(b) not PASS, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, either lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the magnet's attach line naming BOTH levers (the magnet built at beta 0.05, beside ent_coef 0) within 30 min; a hyperparameter-table row ent_coef 0.05, 0.1 or 0.0125 is VOID (the swap's own row reads `ent_coef   | 0`). At the arm's end the cross plan checks metadata ent_coef 0.0, model_config magnet_kl_coef 0.05 / magnet_refresh_steps 2,000,000 and final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). disk_need_gib = the launcher's 14.33 + the magnet sidecars it does not count (<= 24 x <= 54.7 MiB x 1.25)."
   }
  ]
 }

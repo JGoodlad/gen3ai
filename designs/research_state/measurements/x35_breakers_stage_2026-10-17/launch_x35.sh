@@ -22,10 +22,10 @@
 #          trunk_ffn_by_kind=on): x48 3501 3502 3503 (production pin; one look, no look 2)
 #          · X67, the entropy screen (PREREG x67_entropy_screen_2026-11-09, +20M, C0's argv + --ent-coef 0.0125):
 #          x67 6701 6702 6703 (production pin; one look, no look 2; read head to head against the banked C0 finals)
-#          · CE-3d, the trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, +20M): ce3d_mag 7301 7302 7303
-#          (C0's argv + --magnet-kl-coef 0.05) and its entropy-matched control ce3d_ent 7311 7312 7313 (C0's argv +
-#          --ent-coef 0.1), BOTH at their OWN pin batch.CE3D_PIN (the production pin + the magnet's code, tag
-#          ce3d-pin-333a73dd); one look, no look 2; the two arms are read head to head against each other
+#          · CE-3d, the trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11 Amendment 1, +20M, C0's argv +
+#          --ent-coef 0 --magnet-kl-coef 0.05, the magnet in place of the entropy bonus): ce3d_swap 7321 7322 7323
+#          at its OWN pin batch.CE3D_PIN (the production pin + the magnet's code, tag ce3d-pin-333a73dd); one look,
+#          no look 2; read head to head against the banked C0 finals
 #          · X63-C, the X63 control replicate (PREREG x63c_control_replicate_2026-10-28, +100M, X26c's argv with seed and
 #          run changed, starting at X26 @380M, not P*; pool checked against X26c's seed): x63c 6302 (production pin)
 #          · X63-U, the X63 treatment (PREREG x63_2026-10-29, +100M, X26c's argv + --team-mix x63_union_v1@ALL:0.8

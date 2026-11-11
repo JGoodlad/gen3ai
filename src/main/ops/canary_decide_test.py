@@ -49,12 +49,12 @@ def test_the_family_is_read_from_the_run_name(name, fam):
 #: PREREG's ruling (x48_kffn_production_2026-10-27 §7). X63-C (the X63 control replicate, X26c's argv from X26 @380M)
 #: is production C0's argv and architecture, so it takes C0's bar too, as does X63-U (the same + a team mix, as N1-P).
 #: X67 (the entropy screen: C0's argv + a smaller ``--ent-coef``, the same graph) takes C0's bar by its PREREG's ruling
-#: (x67_entropy_screen_2026-11-09 §8), and so does CE-3d's entropy-matched CONTROL (the same with ``--ent-coef 0.1``,
-#: ce3d_magnet_screen_2026-11-11 §8); CE-3d's MAGNET arm is in no family (below).
+#: (x67_entropy_screen_2026-11-09 §8). CE-3d's swap arm (the magnet in place of the entropy bonus) is in no family,
+#: and neither is any name of the two arms its Amendment 1 dropped (ce3d_magnet_screen_2026-11-11 §8; below).
 PRODUCTION_ARMS = ["rb_x35_c0_s3501", "rb_x35_a1arch_s3501", "rb_x35_sprt_s3503", "rb_x35_d1wide_s3505",
                    "rb_x35_d1wide_s3501.crashed-20261022", "rb_x35_x52prac_s3502", "rb_x35_d3mut_s3503",
                    "rb_x35_n1p_s3502", "rb_x35_lrfloor_s3501", "rb_x35_x48kffn_s3501", "rb_x63c_s6302", "rb_x60t_s3501",
-                   "rb_x63u_s2601", "rb_x35_x67ent_s6701", "rb_x35_ce3dent_s7311"]
+                   "rb_x63u_s2601", "rb_x35_x67ent_s6701"]
 
 
 @pytest.mark.parametrize("name", PRODUCTION_ARMS)
@@ -68,7 +68,7 @@ def test_every_production_x35_arm_is_judged_at_the_c0_bar(tmp_path, name):
 
 @pytest.mark.parametrize("name", ["rb_x35_r0_s3531", "rb_x35t_r0_s3631", "rb_x36_c0_s3601", "rb_x26_s2601",
                                   "xrb_x35_c0_s3501", "rb_x35_c0", "rb_x35_zzz_s3501", "rb_x35t_a1arch_s3601",
-                                  "rb_x35_ce3dmag_s7301"])
+                                  "rb_x35_ce3dswap_s7321", "rb_x35_ce3dmag_s7301", "rb_x35_ce3dent_s7311"])
 def test_an_unknown_run_name_holds_with_no_bar(tmp_path, name):
     assert cd.family_of(name) is None
     d = _go(tmp_path, name, compiled=0.1, eager=1.0)

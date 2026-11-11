@@ -8,51 +8,54 @@
   "cross_stat_df": 14
  },
  "x67_banked": {
+  "outcome": "PASS",
   "delta_hat_pp": 1.96875,
   "interval90_pp": [
    1.3455798837305855,
    2.5919201162694145
   ],
-  "df": 6.222222222222222
+  "df": 6.222222222222222,
+  "row_means_sd_pp": 0.3194844479783003,
+  "col_means_sd_pp": 0.5896721916885643
  },
  "cases": {
-  "PASS (+4, rows and columns +-1)": [
+  "PASS (+4, rows +-1)": [
    "PASS",
    [
-    2.259,
-    5.741
+    2.5,
+    5.5
    ],
-   4.0
+   3.53
   ],
-  "WORSE (-4, rows and columns +-1)": [
+  "WORSE (-4, rows +-1)": [
    "WORSE",
    [
-    -5.741,
-    -2.259
+    -5.487,
+    -2.513
    ],
-   4.0
+   3.57
   ],
-  "NOT-SHOWN (+1, rows and columns +-1)": [
+  "NOT-SHOWN (+1, rows +-2)": [
    "NOT-SHOWN",
    [
-    -0.741,
-    2.741
+    -2.169,
+    4.169
    ],
-   4.0
+   2.38
   ],
   "NOT-SHOWN (+4, rows +-4: a wide arm)": [
    "NOT-SHOWN",
    [
-    -2.453,
-    10.453
+    -2.621,
+    10.621
    ],
-   2.25
+   2.09
   ],
-  "floors (a flat matrix, +0.5)": [
+  "floor (identical rows, +0.6)": [
    "NOT-SHOWN",
    [
-    -0.294,
-    1.294
+    -0.29,
+    1.49
    ]
   ],
   "rule 8 (lower end = 0)": [
