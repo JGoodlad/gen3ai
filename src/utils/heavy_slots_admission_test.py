@@ -97,14 +97,49 @@ def _wait_for(pred, what: str, timeout: float = 20.0) -> None:
     raise AssertionError(f"timed out waiting for {what}")
 
 
+def _marker_slot(marker, what: str, timeout: float = 20.0) -> int:
+    """The slot number a taker wrote to its ``marker``, once it PARSES. The taker's ``write_text`` truncates and then
+    writes, so the file EXISTS (empty) for an instant before it holds the number: reading on ``exists()`` raised
+    ``ValueError: invalid literal for int(): ''`` in a ship gate (2026-11-10). Waits (bounded, scaled by contention) for
+    a parseable number and fails loudly past it."""
+    seen: list = []
+
+    def parsed() -> bool:
+        try:
+            seen[:] = [int(marker.read_text())]
+        except (OSError, ValueError):
+            return False
+        return True
+
+    _wait_for(parsed, what, timeout)
+    return seen[0]
+
+
+def test_the_marker_helper_waits_out_the_empty_file_and_fails_loudly(tmp_path):
+    """The helper itself: a marker that EXISTS but is empty (the taker's truncate-then-write window) is not read as a
+    slot; a number that arrives late is returned; one that never arrives is a loud failure."""
+    import threading
+    m = tmp_path / "m"
+    m.write_text("")
+    t = threading.Timer(0.3, lambda: m.write_text("3"))
+    t.start()
+    try:
+        assert _marker_slot(m, "a late number") == 3
+    finally:
+        t.join()
+    never = tmp_path / "never"
+    never.write_text("")
+    with pytest.raises(AssertionError, match="timed out waiting for a number that never comes"):
+        _marker_slot(never, "a number that never comes", timeout=0.2)
+
+
 def _holders(tmp_path, *caps):
     """Start one holder per cap, IN ORDER (each has its slot before the next starts); returns ``[(proc, slot), …]``."""
     out = []
     for i, cap in enumerate(caps):
         m = tmp_path / f"h{len(_PROCS)}"
         p = _taker(m, cap)
-        _wait_for(m.exists, f"holder {i} (cap {cap})")
-        out.append((p, int(m.read_text())))
+        out.append((p, _marker_slot(m, f"holder {i} (cap {cap})")))
     return out
 
 
@@ -338,8 +373,7 @@ def test_the_switch_back_binds_a_queued_job_and_memory_returns(box, tmp_path, ca
     q = _queued(tmp_path, 12)
     assert HS.admission(HS.lock_dir(), HS.slot_files(), 12.0, pid=q.pid).slot is None and not q.marker.exists()
     assert HS.main(["--admission", "memory"]) == 0          # no restart: the queued job reads the mode at its next poll
-    _wait_for(q.marker.exists, "the queued job to be admitted once the box is back on memory")
-    assert q.marker.read_text() == "1"
+    assert _marker_slot(q.marker, "the queued job to be admitted once the box is back on memory") == 1
     assert HS.main(["--admission", "sideways"]) == 2
     capsys.readouterr()
 
