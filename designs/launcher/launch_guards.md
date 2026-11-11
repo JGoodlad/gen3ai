@@ -229,9 +229,20 @@ has no check) only when the launcher process itself runs this code. Gate: `cuda_
 nice 19 to every GPU training launch: `_apply_nice` only moves the launcher's nice TOWARD `DEFAULT_NICE` (10) and an
 unprivileged process cannot lower its own, so the runs would have trained at nice 19. `main/launcher/nice_gate.py` reads
 the inherited nice (`os.getpriority`, read-only) and refuses `FATAL_CONFIG` (3) naming it when the launch is a REAL GPU
-run (explicit `cuda` / `cuda:N`, no `--debug`) and the nice exceeds `max(DEFAULT_NICE, --nice)` (a typed `--nice 19` is
+run (a device that RESOLVES to CUDA, no `--debug`) and the nice exceeds `max(DEFAULT_NICE, --nice)` (a typed `--nice 19` is
 deliberate). `run.main()` asks before `_apply_nice` and before `run()`, so nothing exists; it is not in `_prepare_session`
 because `--device` is per-launch (never inherited from a record) and the argv alone decides. `--dry-run` prints the same
-verdict (`inherited nice :` line, 7h) and fails. cpu / auto / `--debug` launches and a nice-0 or nice-10 driver are never
-refused: the nice-0 path (launcher renices to 10) is unchanged. Gate: `nice_gate_test.py` (pure verdict, `main()` with a
-monkeypatched `os.getpriority`, a genuinely niced subprocess, `--dry-run`).
+verdict (`inherited nice :` line, 7h) and fails. **The gate judges the RESOLVED device**: an explicit `cuda` / `cuda:N`
+stands; `--device auto` or no `--device` (the default) resolves by `desktop_gpu.resolve_device`, the trainer's own rule
+(`--debug` + auto = CPU, else CUDA iff `nice_gate.gpu_usable()`: `nvidia-smi` on PATH AND the launcher's env, which is
+the child's, does not hide every GPU), so an `auto` launch on a GPU box is refused like `--device cuda`, and an `auto`
+launch from a no-lease shell (`CUDA_VISIBLE_DEVICES=""`, which trains on CPU) is not. (The first version read the typed
+string only and let `auto` through: 2026-11-10.) The refusal and the `inherited nice :` line name `--device auto resolved
+to cuda`. cpu / `--debug` launches, `auto` that resolves to CPU, and a nice-0 or nice-10 driver are never refused: the
+nice-0 path (the drivers' explicit `--device cuda`; launcher renices to 10) is unchanged. Gate: `nice_gate_test.py`
+(pure verdict, the default resolver, `main()` with a monkeypatched `os.getpriority`, genuinely niced subprocesses for
+`cuda` and for `auto` beside a stub `nvidia-smi`, `--dry-run`; the box's GPU state is set by a fixture, never the host's).
+
+**The CUDA-visibility gate has no such gap.** It refuses only an explicit `cuda`: `auto` with every GPU hidden resolves to
+CPU in the trainer (a CPU run the caller asked for by hiding the GPUs), so its `auto` case is the `⚠ ... will run on CPU`
+note by design, not a refusal.
