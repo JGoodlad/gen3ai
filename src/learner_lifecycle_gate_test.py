@@ -106,6 +106,9 @@ STEP_MODULES: Dict[str, str] = {
                                         "update (gen3_batched_host_reads_v1; builds nothing)",
     "agents/training/opp_intent_labels.py": "the opponent-intent labels built per rollout/update",
     "agents/training/fork_arm.py": "the fork-arm PG mask read per minibatch",
+    "agents/training/magnet.py": "the trailing magnet (--magnet-kl-coef): its reverse-KL term per minibatch (R1) and "
+                                 "its T2 pass per fill; the magnet is a host copy of the weights, attached before "
+                                 "the env's startup and re-copied at a refresh (no module, optimizer or buffer)",
     "agents/training/scaffolding.py": "`reliability_table`, the win-prob calibration read's statistic "
                                       "(`instrumented_ppo/calibration.py`), computed per update",
     "agents/training/rust_rollout/consistency.py": "the behaviour-policy consistency gate, per update",

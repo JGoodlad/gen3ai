@@ -107,6 +107,8 @@ def resume_version_build(args: Any, *, mappings: Any = None,
         promotion_sprt=args.promotion_sprt,
         trunk_precision=args.trunk_precision,
         canary_shift_max=args.canary_shift_max,
+        magnet_kl_coef=args.magnet_kl_coef,
+        magnet_refresh_steps=args.magnet_refresh_steps,
         # B-GROW (config v159): the run's declared growth record (`grow_fork.enforce`; None outside a launch)
         growth=getattr(args, "_grow_record", None),
         capacity_telemetry=args.capacity_telemetry,

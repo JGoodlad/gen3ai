@@ -17,6 +17,13 @@ log-prob ``-log(n_legal)``) both arms ALSO run on a seeded in-place perturbation
 (`parity_probe.perturbed_parameters`, restored bit-exactly) and that verdict is judged with the
 vacuity guard ON, exactly as the learner gate does.
 
+SELECTION TIES (`gen3_t2_parity_tie_judge_v1`, root rule 8). A row whose eager forward sits within a rounding error
+of a selection cutoff resolves it either way under any other float arithmetic, a compiled graph's included, and then
+moves by far more than the bars while both forwards are correct (X60-T s3501's T2 FATAL, 2026-11-06). A failing
+verdict is re-judged once through K9(b)'s rule, the ONE implementation T2's gate shares
+(`tie_margins.resolve_ties`, row by row at B=1 like the arms): a flippable tied row passes against either
+resolution, any other tied row is excluded and counted on the PASS line, a row at no tie is judged as before.
+
 WHAT IT RAISES. The learner gate's own typed errors: `compile_trainer.CompileTrainerError`
 (`VacuousCompileParityError` for a comparison that cannot fail). NOT the opponent path's
 warn-and-fall-back: a timing miss costs throughput, a parity miss is a WRONG opponent (GIGO), and a
@@ -37,8 +44,9 @@ checkpoint (or a changed weight) is a different key and is checked. A failure is
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 
 #: Fixture rows the check reads, each at B=1. Enough to carry multi-action rows, switches and every
@@ -91,6 +99,80 @@ def _arm(model: Any, fe: Any, forward: Callable[[Any], Any], rows: Any, mask: An
     return {k: torch.cat([p[k] for p in per], dim=0) for k in per[0]}
 
 
+def _rows_within(a: Dict[str, torch.Tensor], b: Dict[str, torch.Tensor]) -> np.ndarray:
+    """[n] bool: every compared quantity of the row within its decision bar (`compile_trainer._FP32_TOL`)."""
+    from agents.model.compile_trainer import _FP32_TOL
+    ok: Optional[torch.Tensor] = None
+    for key, bar in _FP32_TOL.items():
+        if key in a and key in b:
+            d = (a[key].float() - b[key].float()).abs().reshape(a[key].shape[0], -1).amax(dim=1)
+            ok = (d < bar) if ok is None else ok & (d < bar)
+    assert ok is not None, "no compared quantity"
+    return ok.cpu().numpy()
+
+
+def _tie_rows(model: Any, fe: Any, original: Callable[[Any], Any], x: Any, m: Any,
+              eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor]
+              ) -> Optional[Tuple[Dict[str, torch.Tensor], np.ndarray, int, int]]:
+    """`tie_margins.resolve_ties` on each row at B=1 (the arms' own shape): ``(ref, judged rows, flip-judged,
+    excluded)``, or None when no row is tied. `TieMarginError` propagates (the caller keeps the first failure)."""
+    from agents.training.rust_rollout.tie_margins import resolve_ties
+
+    refs: List[Dict[str, torch.Tensor]] = []
+    judged: List[bool] = []
+    flipped = excluded = 0
+    tied_any = False
+    for i in range(len(x)):
+        def run(mode: Any, i: int = i) -> Dict[str, torch.Tensor]:
+            with mode:
+                return _arm(model, fe, original, x[i:i + 1], m[i:i + 1])
+        e_i = {k: v[i:i + 1] for k, v in eager.items()}
+        res = resolve_ties(1, run, {k: v[i:i + 1] for k, v in comp.items()}, e_i, _rows_within)
+        if res is None:
+            refs.append(e_i)
+            judged.append(True)
+            continue
+        tied_any = True
+        refs.append(res.ref)
+        judged.append(bool(res.judged[0]))
+        flipped += res.flipped
+        excluded += res.excluded
+    if not tied_any:
+        return None
+    return {k: torch.cat([r[k] for r in refs], dim=0) for k in eager}, np.asarray(judged), flipped, excluded
+
+
+def _verdicts(model: Any, fe: Any, original: Callable[[Any], Any], x: Any, m: Any, eager: Dict[str, torch.Tensor],
+              comp: Dict[str, torch.Tensor], *, allow_vacuous: bool = False) -> Tuple[List[str], str]:
+    """`decision_verdicts`, re-judged once with the rows' SELECTION TIES resolved when it fails on a real divergence
+    (module docs). Returns ``(rule lines, tie note)``; raises the first failure (naming the second) otherwise."""
+    from agents.model.compile_trainer import CompileTrainerError, VacuousCompileParityError, decision_verdicts
+    from agents.training.rust_rollout.tie_margins import TieMarginError
+
+    try:
+        return decision_verdicts(eager=eager, compiled=comp, allow_vacuous=allow_vacuous), ""
+    except VacuousCompileParityError:
+        raise
+    except CompileTrainerError as first:
+        try:
+            tied = _tie_rows(model, fe, original, x, m, eager, comp)
+        except TieMarginError as why:
+            raise CompileTrainerError(f"{first} (its selection ties could not be re-judged: {why})") from first
+        if tied is None:
+            raise
+        ref, judged, flipped, excluded = tied
+        sel = torch.as_tensor(judged)
+        try:
+            if not bool(sel.any()):
+                raise CompileTrainerError("every row sits at a selection tie the flip cannot express")
+            lines = decision_verdicts(eager={k: v[sel] for k, v in ref.items()},
+                                      compiled={k: v[sel] for k, v in comp.items()}, allow_vacuous=allow_vacuous)
+        except CompileTrainerError as second:       # a vacuous remainder is no pass either: the first failure stands
+            raise CompileTrainerError(f"{first} — and with its selection ties resolved by K9(b)'s rule ({flipped} "
+                                      f"row(s) flip-judged, {excluded} excluded): {second}") from first
+        return lines, f" [selection ties: {flipped} flip-judged / {excluded} excluded]"
+
+
 def check_opponent_parity(model: Any, original: Callable[[Any], Any],
                           compiled: Callable[[Any], Any], *, label: str = "opponent",
                           rows: int = ROWS) -> str:
@@ -99,8 +181,7 @@ def check_opponent_parity(model: Any, original: Callable[[Any], Any],
     ``fe.forward`` exactly as it found it and the weights bit-identical."""
     from agents.model.compile_gate_probe import has_policy_heads
     from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
-    from agents.model.compile_trainer import (_FP32_TOL, CompileTrainerError,
-                                              VacuousCompileParityError, decision_verdicts)
+    from agents.model.compile_trainer import _FP32_TOL, CompileTrainerError, VacuousCompileParityError
     from agents.model.parity_probe import (PERTURB_LADDER, fresh_reason, perturbed_parameters,
                                            rung_seed)
 
@@ -137,16 +218,17 @@ def check_opponent_parity(model: Any, original: Callable[[Any], Any],
                     with perturbed_parameters(policy, seed=rung_seed(k), scale=scale):
                         p_eager = _arm(model, fe, original, x, m)
                         p_comp = _arm(model, fe, compiled, x, m)
-                    try:
-                        rules = decision_verdicts(eager=p_eager, compiled=p_comp)
-                    except VacuousCompileParityError:
-                        if n_rung == len(PERTURB_LADDER) - 1:
-                            raise
-                        continue
-                    lines += [f"[fresh weights, seeded perturbation scale={scale:g} seed+{k}] " + r
+                        try:     # judged INSIDE the perturbation: a tie re-read runs the same weights
+                            rules, note = _verdicts(model, fe, original, x, m, p_eager, p_comp)
+                        except VacuousCompileParityError:
+                            if n_rung == len(PERTURB_LADDER) - 1:
+                                raise
+                            continue
+                    lines += [f"[fresh weights, seeded perturbation scale={scale:g} seed+{k}{note}] " + r
                               for r in rules]
                     break
-            lines += decision_verdicts(eager=eager, compiled=comp, allow_vacuous=fresh is not None)
+            rules, note = _verdicts(model, fe, original, x, m, eager, comp, allow_vacuous=fresh is not None)
+            lines += [r + note for r in rules]
         except CompileTrainerError as exc:
             raise type(exc)(f"{where}: {exc}") from exc
     line = f"parity PASS on {len(x)} REAL obs rows at B=1 — " + " | ".join(lines)

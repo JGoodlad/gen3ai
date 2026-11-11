@@ -622,6 +622,13 @@ from typing import Any, Dict
 #   expert. Gated in check_compatible (its text names --grow). A pre-v161 config migrates to off (the only possible
 #   past). No ARCH_SIGNATURE bump (off builds nothing: every existing state dict and forward is unchanged; the on path is
 #   gated by the field — the trunk_layers precedent), no OBS_SEMANTICS or MIGRATION_FLOOR change.
+# CE-3d BACKPORT (this side pin only; main carries the same two fields as v170, gen3_magnet_kl_v1): two
+#   TRAINING-ONLY fields, `magnet_kl_coef` (`--magnet-kl-coef`, float, default 0.0 = OFF) and `magnet_refresh_steps`
+#   (`--magnet-refresh-steps`, int, default 2,000,000), the trailing magnet (`agents.training.magnet`), are added
+#   WITHOUT a config-version bump: main's v162..v169 are not at this pin, so the number stays 161 (the X69 pin's
+#   precedent). A v161 config without them loads at their dataclass defaults (OFF); one WITH them loads on main
+#   through its v170 migration's `setdefault` (the recorded values survive) and is REFUSED by the plain side pin
+#   f4b25238 (an unknown key). No forward pass, weight shape or observation; never compared by check_compatible.
 MODEL_CONFIG_VERSION = 161
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES

@@ -112,6 +112,7 @@ SUBMODULE_PATHS = ("deps/pokemon-showdown",)
 #: flag forces a decision rather than slipping past the key.
 COMPILE_ARG_KEYS = ("batch_size", "compile_trainer", "device", "device_batch", "grad_checkpointing",
                     "learner_cudagraphs",
+                    "magnet_kl_coef",       # CE-3d: R1's trace gains the KL term and its column; T2 one more slot
                     "t2_backend", "t2_buckets", "t2_grouped_opponents", "t2_lanes", "t2_lead_trainee",
                     "t2_opponent_bucket_cap",
                     "trunk_precision")      # R1 traces the trunk rounds' bf16 / fp32 classes (T25 lever A)
@@ -119,7 +120,7 @@ NOT_COMPILE_ARG_KEYS = ("checkpoint_every_steps",)     # matched by the regex; a
 #: Compile keys added AFTER entries were already keyed: each enters the key only when SET (truthy), so a run
 #: that leaves it off keeps the key it had before the flag existed (X45, 2026-10-19: no cold compile for
 #: every live run's next restart).
-COMPILE_ARG_KEYS_WHEN_SET = ("t2_grouped_opponents",)
+COMPILE_ARG_KEYS_WHEN_SET = ("t2_grouped_opponents", "magnet_kl_coef")
 _ENV_PREFIXES = ("TORCHINDUCTOR_", "TORCHDYNAMO_", "TORCH_COMPILE", "TRITON_", "PYTORCH_",
                  "TORCH_CUDA_ARCH_LIST", "INDUCTOR_")
 _ENV_EXCLUDED = ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR")

@@ -210,6 +210,9 @@ ARGVS: dict[str, list[str]] = {
                                       "--rollout-target-samples", "100000"],
     # the ORACLE REVEAL (gen3_oracle_reveal_v1)
     "oracle_reveal_vs_fork_arm": ["--oracle-reveal", "species", "--fork-fraction", "0.1"],
+    # the trailing magnet (gen3_magnet_kl_v1): its column covers the played rows of a main-thread fill only
+    "magnet_kl_vs_fork_arm": ["--magnet-kl-coef", "0.05", "--fork-fraction", "0.1"],
+    "magnet_kl_vs_overlap_collect": ["--magnet-kl-coef", "0.05", "--overlap-collect"],
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],
     "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],

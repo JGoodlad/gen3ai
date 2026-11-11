@@ -549,6 +549,24 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: bool(_val(a, "promotion_sprt", False)) and _typed(a, "promote_threshold"),
         "--promote-threshold does nothing under --promotion-sprt (the SPRT decides; a typed threshold "
         "would be silently inert)"),
+
+    # ---- CE-3d THE TRAILING MAGNET (gen3_magnet_kl_v1; backported, no version at this pin): the collector shapes its column cannot serve ---------
+    # `RustEnvDecl.__post_init__` raises the same two (`agents.training.magnet.validate_decl`); these are the
+    # launch-time copies `main.checkargs` and `--dry-run` can see.
+    CombinationCheck(
+        "magnet_kl_vs_fork_arm", ("magnet_kl_coef", "fork_fraction"),
+        lambda a: _positive(_val(a, "magnet_kl_coef", 0.0)) and _positive(_val(a, "fork_fraction", 0.0)),
+        lambda a: (f"--magnet-kl-coef {_val(a, 'magnet_kl_coef', 0.0)} cannot combine with --fork-fraction "
+                   f"{_val(a, 'fork_fraction', 0.0)}: the magnet's log-probabilities are served for the buffer's "
+                   "PLAYED rows only, and the fork arm appends successor rows"),
+        exit_style="fatal_config"),
+    CombinationCheck(
+        "magnet_kl_vs_overlap_collect", ("magnet_kl_coef", "overlap_collect"),
+        lambda a: _positive(_val(a, "magnet_kl_coef", 0.0)) and bool(_val(a, "overlap_collect", False)),
+        lambda a: (f"--magnet-kl-coef {_val(a, 'magnet_kl_coef', 0.0)} cannot combine with --overlap-collect: the "
+                   "magnet's pass over the filled buffer runs on the main thread at the fill, while the overlap's "
+                   "worker thread owns the T2 flush"),
+        exit_style="fatal_config"),
 )
 
 

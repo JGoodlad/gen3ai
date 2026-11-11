@@ -13,6 +13,7 @@ from typing import Callable, Optional
 from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.snapshot import record_checkpoint
+from agents.training import magnet as _magnet
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
 from main.train.constants import checkpoint_due
@@ -165,6 +166,8 @@ def _model_hparams(model) -> dict:
         "fork_contested_absv": float(getattr(model, "fork_contested_absv", 0.0)),
         "fork_max_per_battle": int(getattr(model, "fork_max_per_battle", 1)),
         "fork_crn": str(getattr(model, "fork_crn", 'dice_and_draws')),
+        "magnet_kl_coef": float(getattr(model, "magnet_kl_coef", 0.0) or 0.0),
+        "magnet_refresh_steps": int(getattr(model, "magnet_refresh_steps", 2_000_000) or 2_000_000),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
         "n_steps": model.n_steps,
@@ -276,6 +279,8 @@ def commit_checkpoint(model, model_dir: str, zip_path: str, *,
     steps in this order, so `latest.txt` NEVER names a missing, partial or sidecar-less target.
 
     1. the zip, atomically (`atomic_save_model`): a failed or killed save leaves the previous file at that name;
+       then, on a `--magnet-kl-coef` run, the trailing magnet's ``<checkpoint>.magnet.pt``
+       (`agents.training.magnet.save_sidecar`), so a resume never meets a magnet run's zip without its magnet;
     2. ``sidecars(final_zip)``: whatever must sit beside the zip (`record_checkpoint`'s ``.json`` + history,
        `save_model_snapshot`'s ``model_config.json`` / ``metadata.json``), each itself atomic;
     3. ``latest.txt`` LAST, run-relative to ``model_dir``.
@@ -284,6 +289,7 @@ def commit_checkpoint(model, model_dir: str, zip_path: str, *,
     caller keep its own module-level `_write_latest_txt` patchable). Returns the final zip path.
     """
     final = atomic_save_model(model, zip_path)
+    _magnet.save_sidecar(model, final)     # CE-3d: `<checkpoint>.magnet.pt`, atomic; no file when the run has no magnet
     if sidecars is not None:
         sidecars(final)
     (pointer or _write_latest_txt)(model_dir, os.path.relpath(final, model_dir))

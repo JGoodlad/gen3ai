@@ -84,7 +84,7 @@ class DamageOperatorSpeed:
         if x5 is not None and x5.override is not None:
             tail = x5.species_probs.to(w.dtype) @ self.SPEED_MIX                               # [B,6,V]
             w = torch.where(x5.override.unsqueeze(-1), tail, w)
-        stage = torch.zeros(B, TEAM_SIZE, device=ctx.device)
+        stage = torch.zeros(B, TEAM_SIZE, device=ctx.device, dtype=ctx.opp_ctx_raw.dtype)  # the stage's dtype
         stage[ar, ctx.opp_active_local] = self._boost_stages(ctx.opp_ctx_raw)[4]
         if para is None:
             para = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
@@ -145,7 +145,7 @@ class DamageOperatorSpeed:
         and post-setup worlds."""
         B = ctx.batch_size
         ar = torch.arange(B, device=ctx.device)
-        rows = torch.zeros(B, TEAM_SIZE, device=ctx.device)
+        rows = torch.zeros(B, TEAM_SIZE, device=ctx.device, dtype=stage.dtype)    # the stage's dtype
         rows[ar, ctx.our_active_idx] = stage
         ours = self._our_speeds_exact(ctx, stage_rows=rows)[ar, ctx.our_active_idx]          # [B]
         return self._p_first_vs_six(ctx, ours, self._our_quick_claw(ctx)[ar, ctx.our_active_idx])

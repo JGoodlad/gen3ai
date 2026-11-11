@@ -589,6 +589,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # WHICH decisions are forked or WHAT the branches share — either would be a distribution shift
     # inside a single registered arm.
     _resolve("fork_fraction", 0.0)
+    # gen3_magnet_kl_v1 (CE-3d): the trailing magnet's coefficient and cadence. A fresh run takes OFF; a flagless
+    # resume or fork keeps what its checkpoint recorded, so a restart cannot silently drop (or change the cadence of)
+    # a registered arm's regulariser. A pre-v170 parent migrates to 0.0 / 2,000,000.
+    # what the CHECKPOINT recorded, before the flag overlays it: `magnet.attach` refuses a same-run resume of a magnet
+    # run whose sidecar is missing, and must not read that from a coefficient typed at this launch
+    args._magnet_saved_coef = float(getattr(_saved_ver, "magnet_kl_coef", 0.0) or 0.0) if _saved_ver is not None else 0.0
+    _resolve("magnet_kl_coef", 0.0)
+    _resolve("magnet_refresh_steps", 2_000_000)
     _resolve("fork_branches", 3)
     _resolve("fork_contested_gap", 0.40)
     _resolve("fork_contested_absv", 0.0)
@@ -730,6 +738,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         _k = getattr(args, _ra, None)
         if _k is not None and not 0 <= int(_k) <= 12:
             parser.error(f"--{_ra.replace('_', '-')} must be in [0, 12] members (0 = off)")
+    if not args.magnet_kl_coef >= 0.0:           # also refuses a NaN
+        parser.error("--magnet-kl-coef must be >= 0 (0 = off)")
+    if not int(args.magnet_refresh_steps) > 0:
+        parser.error("--magnet-refresh-steps must be a positive number of env steps")
+    if args.magnet_kl_coef > 0.0:
+        emit(f"🧲 [MAGNET] --magnet-kl-coef {args.magnet_kl_coef:g}, --magnet-refresh-steps "
+             f"{int(args.magnet_refresh_steps):,}: loss += β · KL(π ‖ π_mag) over the legal actions; the magnet is a "
+             f"frozen copy of the policy served by one extra T2 slot (`agents.training.magnet`)")
     if args.fork_fraction is not None and not (0.0 <= args.fork_fraction <= 1.0):
         parser.error("--fork-fraction must be in [0, 1] "
                      "(0 = off; it is a fraction of the buffer's decisions)")

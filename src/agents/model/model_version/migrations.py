@@ -572,6 +572,12 @@ def _migrate_config(data: dict) -> dict:
     if version < 161:
         data.setdefault("trunk_ffn_by_kind", "off")
         data["config_version"] = 161
+    # CE-3d BACKPORT (no version bump at this side pin; see constants.py) — the trailing magnet's two TRAINING-only
+    # fields: absent in every config written before this pin, so every such run trained without one (coefficient
+    # 0.0; the cadence is the flag's default and inert at 0.0). Unconditional: a v161 config has no later version to
+    # key the branch on, and `setdefault` never overwrites a recorded value.
+    data.setdefault("magnet_kl_coef", 0.0)
+    data.setdefault("magnet_refresh_steps", 2_000_000)
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -91,6 +91,7 @@
         "target_kl": 0.01
       },
       "lr": 0.0003,
+      "magnet_kl_coef": 0.0,
       "max_lr": null,
       "min_lr": 1e-05,
       "move_belief_coef": 0.05,

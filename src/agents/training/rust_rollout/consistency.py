@@ -805,7 +805,7 @@ def flip_judge(model: Any, rec: Any, obs: Dict[str, np.ndarray], acts: Any, mask
     (|Δ| of the other resolution, NaN where it was not run), and the ``behaviour/*`` flip ``metrics``."""
     import time
 
-    from agents.training.rust_rollout.tie_margins import TieFlip, TieMarginError
+    from agents.training.rust_rollout.tie_margins import TieMarginError, flip_forward
 
     eps = tie_eps()
     bar = min(c.bar for c in behaviour_gate() if c.statistic != "excluded_frac")
@@ -819,10 +819,8 @@ def flip_judge(model: Any, rec: Any, obs: Dict[str, np.ndarray], acts: Any, mask
     if need.any():
         t0 = time.perf_counter()
         try:
-            mode = TieFlip(rec.rows, rec.flip_plan(np.flatnonzero(need)), rec.call_sites)
-            alt, _full = probe_forward(model, obs, acts, masks, mode)
-            mode.check()
-            mode.check_applied()
+            alt, _full = flip_forward(rec, np.flatnonzero(need),
+                                      lambda mode: probe_forward(model, obs, acts, masks, mode))
             moved = ~excluded & ~(np.abs(alt - new) < bar)            # a row at no tie resolves alike
             if moved.any():
                 raise TieMarginError(f"[K9(b)] the flip forward moved {int(moved.sum())} row(s) it did not flip "
