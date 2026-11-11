@@ -1,0 +1,28 @@
+{
+ "schema": "gen3_x65_export_v1",
+ "student": "S_H",
+ "recipe": "x66",
+ "zip": "/home/goodlad/gen3ai_archive/x66_exit0h_2026-11-09/students/s_h/model/x66_S_H.zip",
+ "zip_sha256": "3ddc6955a7590ad5bbfce52c62959e89fca46b85e53147c4cdb3da9d99c475fb",
+ "picked": {
+  "lr": 0.0001,
+  "checkpoint": 4,
+  "step": 1120,
+  "path": "lr0.0001/ckpt_04.pt",
+  "policy_sha256": "47ff41927c5483a7cd6a43cafa1e7aa8697981535c1f7bd342509a3a5de59494",
+  "val_delta": -0.055972050367566806,
+  "val_ci": [
+   -0.05597205036756678,
+   -0.06516024167927714,
+   -0.04690005116358047
+  ]
+ },
+ "init_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+ "fixture_sha256": "bb4cf83d6650b70753c20916ec2ee2cb7cbe61ebd018b6244aed23f0d5eda5db",
+ "pin": "e46e3ddf8",
+ "pin_commit": "e46e3ddf82b7ee842a9104d59e72b41c36398c56",
+ "pin_loader": "bare",
+ "bit_identical": true,
+ "problems": [],
+ "smoke": null
+}

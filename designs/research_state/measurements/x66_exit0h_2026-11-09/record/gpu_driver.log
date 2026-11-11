@@ -1,0 +1,15 @@
+{"manifest_sha256": "0812768c9fcecf586c5973e23ba600cc9b3da99a704b2aeab567e89e7a185344", "rows": 515426, "label_rows": 188297, "source": "sprime_honest"}
+[2026-11-10T12:52:20-08:00] X66S: preconditions PASS: pin c0b95914e239ff8c66da5a06afe9b42a43d41cf6 on E6, bank 0812768c9fcecf586c5973e23ba600cc9b3da99a704b2aeab567e89e7a185344, P* 814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed
+[2026-11-10T12:52:20-08:00] X66S: s_h try 1: start
+[2026-11-10T13:42:27-08:00] X66S: s_h try 1: rc=3
+[2026-11-10T13:42:27-08:00] X66S: s_h try 2: start
+[2026-11-10T13:48:04-08:00] X66S: s_h try 2: rc=0
+[2026-11-10T13:48:04-08:00] X66S: s_f try 1: start
+[2026-11-10T14:38:11-08:00] X66S: s_f try 1: rc=3
+[2026-11-10T14:38:11-08:00] X66S: s_f try 2: start
+[2026-11-10T14:43:07-08:00] X66S: s_f try 2: rc=0
+[2026-11-10T14:43:07-08:00] X66S: s_p try 1: start
+[2026-11-10T15:33:41-08:00] X66S: s_p try 1: rc=3
+[2026-11-10T15:33:41-08:00] X66S: s_p try 2: start
+[2026-11-10T15:39:37-08:00] X66S: s_p try 2: rc=0
+[2026-11-10T15:39:37-08:00] X66S: DONE: every student trained; the read operator runs gate.sh (CPU)

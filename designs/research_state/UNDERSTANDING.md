@@ -142,7 +142,11 @@ under `measurements/`. A number with no pointer is not a measurement.
     not deliver them on unseen teams (X65 NOT-DELIVERED, pooled Δagree −1.26 pp [−1.40, −1.11]), and the learnability
     probe reads them unlearnable at this scale (a same-rate control target transfers, S′'s departures do not).
     [NOT-DELIVERED (registered) · offline · `measurements/x65_exit0_2026-11-05/`; DESCRIPTIVE ·
-    `measurements/x65_learnability_probe_2026-11-06/`]
+    `measurements/x65_learnability_probe_2026-11-06/`] Distilling the HONEST search's choices at the probe's stronger
+    recipe does not deliver them either (X66 NOT-DELIVERED, pooled Δagree −7.05 pp [−7.31, −6.78]); by its
+    registration that is no evidence about network size, because the labels are noisy (a third of S′h's departures
+    reproduce under another key) and the game gain behind them is one panel's.
+    [NOT-DELIVERED (registered) · offline · `measurements/x66_exit0h_2026-11-09/`]
 11. **Hidden information is a search lever, not a policy lever.** Telling the network the opponent's hidden facts
     for 3M steps buys nothing (moves −0.38 pp [−1.86, +1.10]) and makes it depend on them; perfect species knowledge
     buys ≈ +2.4 pp, within floor. [NULL · PROVISIONAL at 15M · `ffd2280ee`, `c344ccd1a`]
@@ -621,10 +625,33 @@ every search result updates it). The findings that steer it, all on search banks
     (stage 1b, `f7da935ab`). Every guard PASS (identity re-score 600 / 600 at the pin, rebuilding every carry).
   - [GO-HONEST + GOAL-B-REACHED (registered) · Kakuna · registered rule `searched_play` ·
     `measurements/sprime_honest_play_2026-11-06/`; ledger 2026-11-09 · *S′-HONEST: GO-HONEST*]
+- **X66 ExIt-0H, distilling the honest search S′h into P\* (2026-11-10): NOT-DELIVERED.**
+  - **What it measured:** X65's question on S′-HONEST's 188,297 honest labels, at the learnability probe's stronger
+    recipe (lr 1e-4, KL anchor to P\* at β = 0.1, 12 epochs, the checkpoint picked on the training panels' withheld
+    deals): three P\* students, each trained on two panels' banked decisions and scored on the third's. Does the
+    student's greedy choice match S′h's pick more often than P\*'s does?
+  - **The result:** pooled Δagree **−7.05 pp [−7.31, −6.78]**, every panel negative (H −6.48, F −7.16, P72 −7.50;
+    60k–66k label rows a panel). The students recover ≈ 16 % of S′h's departures from P\* and lose ≈ 20 % of the
+    1.7× more numerous decisions where S′h kept P\*'s choice. On unseen deals of familiar teams and on unseen teams
+    alike, Δagree is ≤ 0 at every one of 24 checkpoints; of a student's own departures, 21–24 % land on S′h's pick,
+    where a gain needs about half. No game was played.
+  - **Reported beside it (DESCRIPTIVE):** the honest students' precision equals the leak-inclusive probe arms' at
+    the same recipe (0.22–0.23), so honest labels were no more predictable from the observation. P\* already
+    agrees with S′h's pick (62.7–62.9 %) about as often as S′h agrees with itself under another search key (61.8 %
+    [54.0, 69.0], 157 pairs). The recipe moved the whole policy: before turn 10, where nothing is labelled, the
+    students pick P\*'s action on 74–75 % of rows.
+  - **What it does not claim (the registration's binding pre-commitments):** nothing about network size or the
+    scale bet, in either direction: a failure to distil cannot tell "the network is too small" from "the target is
+    mostly key noise, and its game gain lives on one panel". It plans no in-loop distillation (ExIt-1), and says
+    nothing about more labels, another recipe or a de-noised target. Whether P\*'s network can even memorise S′h's
+    departures in-sample is unmeasured (the students' training-row agreement at departures ends at 0.29 under the
+    anchor). S′-HONEST's game gain is untouched: this read measured agreement with the search's picks, not their value.
+  - [NOT-DELIVERED (registered) · offline, banked decisions · `measurements/x66_exit0h_2026-11-09/`; ledger
+    2026-11-10 · *X66 ExIt-0H: NOT-DELIVERED*]
 
 **The view.** A leak-honest one-ply search pays against the real bot at the game level (S′-HONEST; its point is
 about half the leak-inclusive S′'s, on other deals, unpaired), and it carries P\* over the goal-(b) bar in that
-regime as registered; clustered on teams the bar is not cleared, and the gain is detected on the procedural panel alone. The self-referee banks did not detect it, and the network cannot absorb S′'s choices by supervised distillation at this scale. The search
+regime as registered; clustered on teams the bar is not cleared, and the gain is detected on the procedural panel alone. The self-referee banks did not detect it, and supervised distillation delivered neither S′'s leak-inclusive choices (X65) nor S′h's honest ones (X66) to a P\* student on unseen teams, at the recipes tried (not a statement about network size: X66's registration). The search
 program for goal (b) is un-paused: what it costs (6.6 CPU-min a searched game; a cheaper budget or builder is a new
 registration) and what a deployable player needs (a game clock, the hardware) are the next questions (§6).
 
@@ -813,7 +840,7 @@ primary cannot be powered on the toy, and it costs more than the production read
 | Do a human's choices identify a human's team (L3-H)? | the L3 read on ladder states with a human opponent model |
 | Does one-ply search add to a best responder, or defend its target? | R0's search cells, DEFERRED (S′-HONEST un-paused search for goal (b) only) |
 | Can P\* + S′h's gain be bought cheaper, and played as a deployable player? | search ledger Q19: the player is designed (`../endstate/design_searched_player.md`) and its cost read DRAFTED, not registered; CPU-side, below the model-first GPU queue (owner, 2026-11-09; [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md) §2.0) |
-| Can the network absorb honest search's gain? | **ExIt-0H** (EXPERIMENT_BACKLOG §2.0 MF-1): P\* students fine-tuned toward S′h's 188k banked honest labels, a delivery gate on held-out panels before any Kakuna game. X65 answered only for the leak-inclusive labels (NOT-DELIVERED) |
+| Can the network absorb honest search's gain? | Supervised distillation at two recipes did not deliver the search's choices: X65 on the leak-inclusive labels and X66 (ExIt-0H) on S′h's 188k honest labels both read NOT-DELIVERED (§4). What stays open, each needing its own case and registration and none planned on X66 alone: a de-noised target (several search keys a decision; a third of S′h's departures reproduce under another key), whether the network can memorise the honest departures in-sample at all, more labels, an in-loop form (ExIt-1). X66 is not evidence for or against the scale bet |
 | Does the value pool need an explicit SIDE embedding on the 12 entity tokens? Today it separates ours from theirs only through content asymmetry (a probe reads own-team identity at 0.97 from `value_pooled`); belief machinery that makes opponent tokens look like ours would erode that. UNVERIFIED as a defect | first a test that swapping the two sides' tokens flips the value pool's "who is winning"; then, if it fails, a learned side embedding behind a flag in a fresh arm (an ARCH-surface build) |
 
 ---

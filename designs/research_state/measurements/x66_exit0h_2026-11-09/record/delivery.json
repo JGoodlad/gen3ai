@@ -1,0 +1,119 @@
+{
+ "schema": "gen3_x65_delivery_v1",
+ "bank_manifest_sha256": "0812768c9fcecf586c5973e23ba600cc9b3da99a704b2aeab567e89e7a185344",
+ "students": {
+  "heldout72_hpfix": {
+   "zip_sha256": "3ddc6955a7590ad5bbfce52c62959e89fca46b85e53147c4cdb3da9d99c475fb"
+  },
+  "forum72": {
+   "zip_sha256": "25b63f54c74e7b72b3c6c67e05fbc87193bcf2ce56cb349fdd217fe65aec8650"
+  },
+  "p72": {
+   "zip_sha256": "3db40d286c3c46e933e5dc111a8c5a46511e4525761aa674a93900b0858bd73f"
+  }
+ },
+ "per_panel": {
+  "heldout72_hpfix": {
+   "n_rows": 60004,
+   "n_deals": 1695,
+   "agree_student": 0.5623125124991667,
+   "agree_pstar": 0.627091527231518,
+   "delta": -0.06477901473235118
+  },
+  "forum72": {
+   "n_rows": 65996,
+   "n_deals": 1681,
+   "agree_student": 0.5576398569610279,
+   "agree_pstar": 0.6292351051578884,
+   "delta": -0.07159524819686042
+  },
+  "p72": {
+   "n_rows": 62297,
+   "n_deals": 1696,
+   "agree_student": 0.5521132638810857,
+   "agree_pstar": 0.6271249016806588,
+   "delta": -0.07501163779957301
+  }
+ },
+ "pooled": -0.07046196690959487,
+ "lb": -0.07311028977044273,
+ "B": 4000,
+ "seed": 20261105,
+ "delivered": false,
+ "boundary": false,
+ "reported": {
+  "heldout72_hpfix": {
+   "by_exposure": {
+    "attribution_miss": {
+     "rows": 0,
+     "delta": null
+    },
+    "rewritten_moves": {
+     "rows": 0,
+     "delta": null
+    },
+    "neither": {
+     "rows": 60004,
+     "delta": -0.06477901473235118
+    }
+   },
+   "departures": {
+    "rows": 22376,
+    "agree_student": 0.1567751161959242
+   },
+   "pre_turn10_agree_with_pstar": 0.7527820988392964,
+   "v_drift_mean_abs": 0.05090895621387614
+  },
+  "forum72": {
+   "by_exposure": {
+    "attribution_miss": {
+     "rows": 0,
+     "delta": null
+    },
+    "rewritten_moves": {
+     "rows": 0,
+     "delta": null
+    },
+    "neither": {
+     "rows": 65996,
+     "delta": -0.07159524819686042
+    }
+   },
+   "departures": {
+    "rows": 24469,
+    "agree_student": 0.16326780824716988
+   },
+   "pre_turn10_agree_with_pstar": 0.7423778693349029,
+   "v_drift_mean_abs": 0.044802258627013355
+  },
+  "p72": {
+   "by_exposure": {
+    "attribution_miss": {
+     "rows": 0,
+     "delta": null
+    },
+    "rewritten_moves": {
+     "rows": 0,
+     "delta": null
+    },
+    "neither": {
+     "rows": 62297,
+     "delta": -0.07501163779957301
+    }
+   },
+   "departures": {
+    "rows": 23229,
+    "agree_student": 0.15562443497352446
+   },
+   "pre_turn10_agree_with_pstar": 0.744115004492363,
+   "v_drift_mean_abs": 0.06681036861581192
+  },
+  "students": {
+   "heldout72_hpfix": "S_H",
+   "forum72": "S_F",
+   "p72": "S_P"
+  },
+  "ub": -0.06783010173271085,
+  "rule8_eps": 0.0005
+ }
+}

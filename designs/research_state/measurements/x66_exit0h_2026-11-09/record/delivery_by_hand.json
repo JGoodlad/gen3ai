@@ -1,0 +1,15 @@
+{
+ "by_hand": {
+  "delta": {
+   "heldout72_hpfix": -0.06477901473235118,
+   "forum72": -0.07159524819686042,
+   "p72": -0.07501163779957301
+  },
+  "pooled": -0.07046196690959487,
+  "lb": -0.07311028977044273,
+  "delivered": false,
+  "boundary": false
+ },
+ "agrees": true,
+ "problems": []
+}

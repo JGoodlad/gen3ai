@@ -31105,3 +31105,78 @@ baseline.
 View: `UNDERSTANDING.md` (§4, after the off-pool baseline), `designs/endstate/design_offpool_belief.md` (§8), `EXPERIMENT_BACKLOG.md` (MF-3).
 
 Tag: **MOVE-LEG DIAGNOSIS · REPORTED · DESCRIPTIVE · full log-likelihood − prior: P\* +0.39 / −1.83 / −0.61 / −2.21 (home72 / H / F / P72), ideal pool marginal +1.22 / +0.06 / +0.19 / −0.40, X68-FT −9.2 / −11.0 / −10.3 / −11.7 · 83 % static species × move table, best scale 0.5 in the pool · consumer gradient 352× the label's, latent variance hinge −4.6e-04 against the label's +2.5e-04 along the scale · lever `move_label_only` built, off by default · no strength claim**
+
+### 2026-11-10 · VERDICT · **X66 ExIt-0H: NOT-DELIVERED — the three P\* students distilled from the HONEST search's banked choices agree with it on their held-out panels LESS than P\* does (pooled Δagree −7.05 pp [−7.31, −6.78]; H −6.48, F −7.16, P72 −7.50); no Kakuna game is played; by pre-commitment this is NOT evidence for the scale bet (MF-5) and plans no ExIt-1**
+
+**Question** (PREREG `a2dbc9616` 2026-11-09, Amendment 1: the bank `0812768c…5344`, 188,297 label rows, 0 dropped;
+side pin `c0b95914e`, play pin `e46e3ddf8`, engine E6). Does a P\* student, fine-tuned offline toward S′h's honest
+piKL targets on two panels' banked decisions (S′h = `r0s4_honest_inc@10`, the search S′-HONEST played; KL anchor to
+P\* at β = 0.1, lr 1e-4, 12 epochs, the pick on inner-validation Δagree), agree with S′h on the third panel more
+often than P\* does, and does it then beat P\* against Kakuna there with no search at play time? First, the delivery
+gate (§4): on every label row of the read panel, Δagree = mean of 1[student's greedy = S′h's pick] − 1[P\*'s recorded
+greedy = S′h's pick]; DELIVERED iff the deal-bootstrap LB (B 4,000, `default_rng(20261105)`) > 0.
+
+**Verdict: NOT-DELIVERED.** Pooled Δagree **−7.05 pp [−7.31, −6.78]**; H −6.48 (S_H 0.5623 vs P\* 0.6271, 60,004
+rows, 1,695 deals), F −7.16 (S_F 0.5576 vs 0.6292, 65,996 rows, 1,681 deals), P72 −7.50 (S_P 0.5521 vs 0.6271,
+62,297 rows, 1,696 deals). LB −0.07311, not at the boundary. By hand (`delivery_by_hand.py`): equal. No VOID
+condition of §11 occurred: bank and students on their registered sha256s, the picks read `val` alone, all three
+exports bit-identical at the play pin.
+
+**What it licenses (§1).** "At this recipe and ≈ 113k honest labels a fold, a P\* student does not learn S′h's choices
+on unseen teams." NOT licensed, by the registration's binding pre-commitments (§0, §8.3): evidence for the scale bet
+(MF-5), since S′h's labels are only about a third reproducible under another key and the game gain being distilled
+is P72's alone, so a failure to distil cannot tell "the network is too small" from "the target is mostly noise";
+planning MF-1b (ExIt-1), which needs its own case whatever X66 read; anything about larger networks, more labels,
+another recipe or in-loop distillation. S′-HONEST's game result (+2.00 pp for the search at play time) is untouched:
+this read measured agreement with its picks, not their value.
+
+**Reported (§7), never decided.**
+- *The rows.* S′h leaves P\*'s greedy choice on ≈ 37 % of searched decisions. Each student recovers 15.6–16.3 % of
+  those departures and loses 19.7–21.2 % of the decisions where S′h kept P\*'s choice, 1.7 times as many.
+- *The curves* (`learnability_report.json`). The step-0 path check is exact (D = 0, K = 1). `val` (familiar teams,
+  unseen deals) and `read` (unseen teams) Δagree are ≤ 0 at every one of the 24 checkpoints of all three students;
+  `read` precision (the share of the student's own departures that land on S′h's pick) is 0.21–0.24, where Δagree > 0
+  needs about ½. The OPTIMISTIC best-on-`read` checkpoints are −6.30 / −6.50 / −6.95 pp. On their own `train` rows
+  the students are negative for ≈ 9 of 12 epochs and end at +1.4 to +1.8 pp (`train` D 0.29, precision 0.40–0.41).
+- *The probe's readings, applied.* Reading 2's curve row matches (held-out Δagree ≤ 0 throughout, precision ≈
+  0.2–0.3) with reading 3d's pattern (D drifts up, precision stays < ½, K falls: the students leave P\*'s choice on ≈
+  25 % of rows, close to unrelated to where S′h did). Readings 1 and 3c do not match (nothing is positive on `val`).
+  Reading 2's in-sample row (`train` D ≥ ½) is NOT shown on honest labels: the capacity arm was not re-run and the
+  students' `train` D ends at 0.29, so 3b cannot be applied.
+- *Honest against leaky, one recipe (DESCRIPTIVE, unpaired).* S_H −6.48 pp, D 0.157, precision 0.234 beside the X65
+  probe's curve_h −4.79 pp, D 0.119, precision 0.23; S_P −7.50 pp, D 0.156, precision 0.220 beside curve_p −5.16 pp.
+  Honest labels were no more predictable from the observation than leak-inclusive ones.
+- *The noise ceiling.* The students agree with S′h's pick on 55.2–56.2 % of `read` rows; P\* on 62.7–62.9 %; S′h
+  with itself under another key on 61.8 % [54.0, 69.0] (157 pairs).
+- *Drift.* Pre-turn-10 agreement with P\* 74.2–75.3 % (X65: 92.5–95.5 %); mean |V_student − V_P\*| 0.045–0.067
+  (X65: 0.002–0.004).
+
+**The picks.** S_H checkpoint 4 / step 1,120 (`val` −5.60 pp [−6.52, −4.69]), S_F 14 / 3,210 (−6.47 [−7.30, −5.65]),
+S_P 5 / 1,323 (−5.12 [−6.20, −4.09]): every candidate's `val` Δagree is negative, so each pick is the least negative.
+
+**Against the GUESSES (§13).** P(DELIVERED) ≈ 0.3 was guessed; it read NOT-DELIVERED.
+
+**Checks.** The gate (the exported zip at the side pin) and the report (the trainer's own dumps) give the same `read`
+Δagree to 1e-16 and the same agreement at departures on all three students. `gate.sh` ran unedited (sha256
+`2d778cf8…9c8e`), CPU only, every step exit 0.
+
+**FINDINGs** (README): X66-R1, `main.reads decide` was not run (the specs are PENDING by design; Amendment 2 is
+DELIVERED-only), the by-hand recompute is the second statement of the class; X66-R2, the gate's 2 h 20 min was
+heavy-slot queueing; X66-R3, a bare `python3` prints the frozen gate's last line (a JSON read); X66-R4, the recipe
+moved the whole policy and the value output, not only the searched decisions; X66-R5, in-sample memorisation of
+S′h's departures is unmeasured on honest labels (the registration's reason for dropping the capacity arm did not
+hold); X66-R6, P\*'s agreement with S′h is already inside S′h's self-agreement interval, so Δagree against a
+single-key pick may be a weak meter for this target (a description; licenses nothing about scale); X66-R7, nothing
+here bears on S′h's game gain. Not built or written, as registered: Amendment 2, the dose-matched student, the
+placebo; no plan, no game.
+
+**Record:** `measurements/x66_exit0h_2026-11-09/README.md` and `record/` (`delivery.json` sha256 `2cbc21bb…31bc`,
+`delivery_by_hand.json` `e127a853…5cc2`, `learnability_report.json` `d4f24f8b…cf22`, the picks, the exports,
+`gate.log` `765c72d1…853a`, `gpu_driver.log`); state `~/gen3ai_archive/x66_exit0h_2026-11-09/`. Exported zips: S_H
+`3ddc6955…75fb`, S_F `25b63f54…8650`, S_P `3db40d28…d73f`.
+View: `UNDERSTANDING.md` (TL;DR item 10, §4.7's X66 bullet and its view, §6's open question), `STATUS.md` (the
+landed row, the MF-1 bullet), `EXPERIMENT_BACKLOG.md` (MF-1 and MF-1b, the MF-1 card, §2 row 13, §3),
+`endstate/search_ledger.md` (the Priority block, the status block, Q18), `endstate/design_x65_exit0_search_distillation.md`,
+`endstate/design_searched_player.md` (one status clause), `endstate/README.md` (row 48).
+
+Tag: **VERDICT · X66 ExIt-0H · NOT-DELIVERED · pooled Δagree −7.05 pp [−7.31, −6.78] · every panel negative · held-out Δagree ≤ 0 at every checkpoint, precision 0.21–0.24 · no game played · not evidence for MF-5, no ExIt-1 planned (pre-commitments)**
