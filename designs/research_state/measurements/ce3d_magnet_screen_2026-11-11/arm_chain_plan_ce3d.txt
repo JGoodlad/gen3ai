@@ -1,0 +1,27 @@
+$ python -m main.ops.arm_chain plan <scratch chain: the six draft items of chain_items_ce3d.json, repo = this commit's tree> --check-pins --describe
+ 0. ARM ce3d_mag s7301 -> rb_x35_ce3dmag_s7301 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 1. ARM ce3d_ent s7311 -> rb_x35_ce3dent_s7311 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 2. ARM ce3d_mag s7302 -> rb_x35_ce3dmag_s7302 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 3. ARM ce3d_ent s7312 -> rb_x35_ce3dent_s7312 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 4. ARM ce3d_mag s7303 -> rb_x35_ce3dmag_s7303 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 5. ARM ce3d_ent s7313 -> rb_x35_ce3dent_s7313 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+    arm:rb_x35_ce3dmag_s7301: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_ce3dent_s7311: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_ce3dmag_s7302: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_ce3dent_s7312: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_ce3dmag_s7303: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_ce3dent_s7313: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+PLAN OK
+rc=0
+
+# a variant: the sixth item at seed 7314 (three seeds an arm are registered; no look 2)
+    arm:rb_x35_ce3dmag_s7303: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+REFUSED: arm:rb_x35_ce3dent_s7314: the kit refuses arm 'ce3d_ent' seed 7314 (rc 2): [x35 kit] REFUSED: seed 7314 is not registered for ce3d_ent ([7311, 7312, 7313])
+PLAN REFUSED (1 problem(s))
+rc=1
+
+# a variant: the first item at the plain production side pin f4b25238 (which has no magnet)
+PLAN OK
+rc=0
+# ^ NOT a refusal: `--check-pins` only resolves an item's pin. Whether a pin is the ARM'S OWN is judged by the launch
+#   script's `kit pin-check` (pre-check, and again at GO), which refuses this pin for a CE-3d arm: kit_checks_ce3d.txt.

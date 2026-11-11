@@ -1,0 +1,1 @@
+--model /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip --behaviour-check warn --steps 300000170 --checkpoint-every-steps 1000000 --device cuda --magnet-kl-coef 0.05 --seed 7301 --run-name rb_x35_ce3dmag_s7301

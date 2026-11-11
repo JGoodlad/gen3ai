@@ -48,6 +48,14 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   ``--ent-coef 0.0125`` (:data:`X67_LEVER`; a typed recipe knob on a fork is applied, an untyped one is inherited from
   P*'s run: 0.05), seeds 6701-6703 ONLY (one look), side-pinned at the production pin, read head to head against the
   banked C0 finals at the same pin;
+* CE-3d, THE TRAILING-MAGNET SCREEN (``EXPERIMENT_BACKLOG.md`` CE-3d / X35-A4, T56; ``designs/training/magnet_kl.md``;
+  PREREG ``ce3d_magnet_screen_2026-11-11/PREREG.md``): ``ce3d_mag`` -- C0's argv token for token + the ONE lever
+  ``--magnet-kl-coef 0.05`` (:data:`CE3D_MAG_LEVER`: a reverse-KL pull toward a frozen copy of the policy refreshed
+  every 2,000,000 steps, beside the inherited entropy bonus 0.05), seeds 7301-7303; and ``ce3d_ent``, its
+  ENTROPY-MATCHED CONTROL -- C0's argv + ``--ent-coef 0.1`` (:data:`CE3D_ENT_LEVER`: the magnet's KL carries 0.05 of
+  entropy weight of its own, so the control has the same 0.10 and no pull), seeds 7311-7313. One look. BOTH at the
+  one own pin ``batch.CE3D_PIN`` (the production side pin + the magnet's backport), read head to head against each
+  other (the deciding contrast) and against the banked C0 finals (reported);
 * X63-C, THE X63 CONTROL REPLICATE (``design_x63_long_breadth_continuation.md``; ``reviews/x63_review_2026-10-27.md``
   B1 fix 3; PREREG ``x63c_control_replicate_2026-10-28/PREREG.md``): ``x63c`` -- X26c's recorded argv token for token
   with only ``--seed`` (6302) and ``--run-name`` changed, +100M, side-pinned at the production pin. It has NO lever:
@@ -209,6 +217,15 @@ X48_GROWTH = "trunk_ffn_by_kind 'off' -> 'on'"
 #: 0.05 that P*'s run recorded and every C0 fork inherits. A fork applies a TYPED ``--ent-coef`` (``model_build``'s
 #: resume path sets ``model.ent_coef``); ``checkargs`` prints it as the arm's one recipe difference from its parent.
 X67_LEVER = ("--ent-coef", "0.0125")
+#: CE-3d's MAGNET lever (PREREG ``ce3d_magnet_screen_2026-11-11`` §2; ``designs/training/magnet_kl.md``): the loss
+#: gains 0.05 x KL(pi || pi_magnet) over the legal actions, pi_magnet a frozen copy of the policy replaced by the
+#: current weights every 2,000,000 env steps (the untyped ``--magnet-refresh-steps`` default: ten refreshes in +20M).
+#: The flag exists at ``batch.CE3D_PIN`` only; the entropy bonus stays the inherited 0.05.
+CE3D_MAG_LEVER = ("--magnet-kl-coef", "0.05")
+#: CE-3d's CONTROL lever (PREREG §2): KL(pi || pi_magnet) = -H(pi) - sum pi log pi_magnet, so the magnet arm's entropy
+#: gradient has weight 0.05 + 0.05. The control types that weight and no magnet, so the two arms differ by the pull
+#: toward the magnet alone. ``0.1`` is the spelling ``checkargs`` prints (the TYPED row is matched as text).
+CE3D_ENT_LEVER = ("--ent-coef", "0.1")
 #: N4's ONE lever (``design_n4_capacity_screen.md`` §2; B-FFNW, T69; PREREG ``n4_capacity_screen_2026-10-27`` §2): every
 #: trunk round's FFN grows 256 -> 1,024 hidden units as a branch whose output weights start at ZERO, so the grown toy
 #: starts as T*'s function bit for bit at the 64-row gate (``FATAL_CONFIG`` otherwise). +394,752 parameters on the toy.
@@ -238,7 +255,11 @@ ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH, "toy_n4f
 #: The ONE recipe knob a recipe-lever arm TYPES, as ``checkargs`` / ``--dry-run`` name it on the RECIPE SURFACE: both
 #: transcripts must print ``<knob> <value> (TYPED)`` (the lever reached the resolved config), and no other arm's argv
 #: may type the flag. "It launches" is not "it is the experiment": without this, X67's transcripts pass as C0's.
-ARM_TYPED_RECIPE: Dict[str, Tuple[str, str, str]] = {"x67": ("ent_coef", X67_LEVER[1], X67_LEVER[0])}
+ARM_TYPED_RECIPE: Dict[str, Tuple[str, str, str]] = {
+    "x67": ("ent_coef", X67_LEVER[1], X67_LEVER[0]),
+    "ce3d_mag": ("magnet_kl_coef", CE3D_MAG_LEVER[1], CE3D_MAG_LEVER[0]),
+    "ce3d_ent": ("ent_coef", CE3D_ENT_LEVER[1], CE3D_ENT_LEVER[0]),
+}
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
 #: (``x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`` §7, c9516bac / 96c663d4). The mechanism is the flag plus
 #: ceilings READ BY HAND (``main.ops.tb_read``, at every restart and daily); the trainer enforces none: STOP the arm on
@@ -272,6 +293,10 @@ X48_SEEDS = (3501, 3502, 3503)
 #: X67: ONE look at three NEW seeds (PREREG x67_entropy_screen_2026-11-09 §3: disjoint from every registered sibling's,
 #: C0's 3501-3508 included); more is a new registration
 X67_SEEDS = (6701, 6702, 6703)
+#: CE-3d: ONE look at three NEW seeds an arm (PREREG ce3d_magnet_screen_2026-11-11 §3: disjoint from every registered
+#: sibling's and from each other's, so every magnet fork meets every control fork); more is a new registration
+CE3D_MAG_SEEDS = (7301, 7302, 7303)
+CE3D_ENT_SEEDS = (7311, 7312, 7313)
 #: X63-C: one seed, the control replicate of X63 (review B1 fix 3); more is a new registration
 X63C_SEEDS = (6302,)
 #: X63-C's length: X63's +100M continuation from X26 @380M (X26c's own +100M).
@@ -305,6 +330,10 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("x48", "production", L_PROD, X48_SEEDS, "rb_x35_x48kffn_s{seed}", 0, "warn"),
     # X67, the entropy screen (PREREG x67_entropy_screen_2026-11-09): C0 + --ent-coef 0.0125, one look at s6701-s6703
     Arm("x67", "production", L_PROD, X67_SEEDS, "rb_x35_x67ent_s{seed}", 0, "warn"),
+    # CE-3d, the trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11), both at batch.CE3D_PIN, one look:
+    # the magnet (C0 + --magnet-kl-coef 0.05) and its entropy-matched control (C0 + --ent-coef 0.1)
+    Arm("ce3d_mag", "production", L_PROD, CE3D_MAG_SEEDS, "rb_x35_ce3dmag_s{seed}", 0, "warn"),
+    Arm("ce3d_ent", "production", L_PROD, CE3D_ENT_SEEDS, "rb_x35_ce3dent_s{seed}", 0, "warn"),
     # X63-C, the X63 control replicate (review B1 fix 3): X26c's argv, seed and run changed; start X26 @380M, not P*
     Arm("x63c", "production", L_X63C, X63C_SEEDS, "rb_x63c_s{seed}", 0, "warn"),
     # X63-U, the X63 treatment (PREREG x63_2026-10-29): X26c's argv + the union team mix; start X26 @380M; own pin
@@ -464,6 +493,10 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(X48_LEVER)
     elif arm == "x67":
         lever = list(X67_LEVER)
+    elif arm == "ce3d_mag":
+        lever = list(CE3D_MAG_LEVER)
+    elif arm == "ce3d_ent":
+        lever = list(CE3D_ENT_LEVER)
     elif arm == "toy_n4ffn":
         lever = list(N4_LEVER)
     elif arm in ("sprt", "toy_sprt"):
@@ -603,7 +636,8 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
     the arm's K9(b) mode, ``checkargs`` prints the same mode, the trainer's own arch check passed, and the DECLARED
     growth line is the arm's own (:data:`ARM_GROWTH`: X47's, X48's, N4's; in BOTH tools) and absent for every other arm (the
     always-printed "(child-only: a declared growth's …)" note is not a growth line); a recipe-lever arm's knob prints
-    TYPED at its value in BOTH tools (:data:`ARM_TYPED_RECIPE`: X67's)."""
+    TYPED at its value in BOTH tools (:data:`ARM_TYPED_RECIPE`: X67's and CE-3d's two), and no arm shows another
+    arm's typed knob."""
     probs: List[str] = []
     if rc_checkargs != 0:
         probs.append(f"checkargs exit {rc_checkargs}")
@@ -630,7 +664,7 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
         if got != want:
             probs.append(f"{tool} declared growth {got!r} != {want!r}")
     typed = ARM_TYPED_RECIPE.get(d["arm"])
-    for knob, _value, flag in ARM_TYPED_RECIPE.values():
+    for knob, flag in sorted({(k, f) for k, _value, f in ARM_TYPED_RECIPE.values()}):   # each knob once
         rx = re.compile(rf"^\s+{re.escape(knob)}\s+(\S+)\s+\(TYPED\)", re.M)
         if typed is not None and typed[0] == knob:
             for tool, text in (("dry-run", dryrun), ("checkargs", checkargs)):

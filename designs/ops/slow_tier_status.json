@@ -5511,10 +5511,10 @@
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
    "status": "pass",
-   "commit": "30480b5b5c57955ce50f01d620b4e6c51c6d77c5",
-   "at": "2026-11-10T15:55:43Z",
+   "commit": "aee363bc9875d09545bf7ff12ec95d1c575910d4",
+   "at": "2026-11-11T22:21:03Z",
    "duration_s": 10.13,
-   "contention": 1.69,
+   "contention": 1.83,
    "detail": ""
   },
   "src/main/x65/export_test.py::test_a_fold_trains_picks_and_exports_bit_identically": {
@@ -5862,5 +5862,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-10T23:28:44Z"
+ "last_written": "2026-11-11T22:21:03Z"
 }

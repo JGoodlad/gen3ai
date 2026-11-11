@@ -2,7 +2,10 @@
 
 **Owner of:** `src/agents/training/magnet.py` (the term, the magnet's state, the sidecar, the collector's side), the
 two flags, and the magnet's seams in the collector, the checkpoint commit and R1. Experiment CE-3d / X35-A4, task T56.
-**OFF by default; no run has trained with it.**
+**OFF by default; no run has trained with it.** Its screen is REGISTERED and not launched
+([`../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)):
+three forks of P\* with the magnet against three entropy-matched controls, both at a BACKPORT of this lever onto the
+production side pin (tag `ce3d-pin-333a73dd`, `main.x35.batch.CE3D_PIN`; config v161 there, the two fields un-versioned).
 
 ```
 loss += β · mean over rows of KL(π_θ(·|s) ‖ π_mag(·|s))       β = --magnet-kl-coef (unset = 0 = OFF)
@@ -36,8 +39,9 @@ KL(π ‖ π_mag) = −H(π) − Σ_a π(a) · log π_mag(a)
 
 so β is two things at once: **β more weight on the entropy bonus's own gradient**, and a cross-entropy pull toward the
 magnet. At the card's β = 0.05 beside `ent_coef` 0.05 the entropy gradient's weight is 0.10. An arm that reads the
-pull alone needs an entropy-matched control (`--ent-coef 0.10` and no magnet), or the swap `--ent-coef 0
---magnet-kl-coef 0.05` (MMD's own form: the uniform magnet replaced by the trailing one at the same weight).
+pull alone needs an entropy-matched control (`--ent-coef 0.10` and no magnet: the registered screen's), or the swap
+`--ent-coef 0 --magnet-kl-coef 0.05` (MMD's own form: the uniform magnet replaced by the trailing one at the same
+weight).
 `magnet_learner_test.py` pins the identity: against a masked-uniform magnet the term's gradient is the entropy
 bonus's at `ent_coef + β`.
 

@@ -1,0 +1,65 @@
+{
+ "self_check": "OK",
+ "problems": [],
+ "banked_8x8": {
+  "delta_hat_pp": 0.5960937500000014,
+  "se_pp": 0.7489845013103577,
+  "welch_df": 13.517571747511758,
+  "cross_stat_df": 14
+ },
+ "x67_banked": {
+  "delta_hat_pp": 1.96875,
+  "interval90_pp": [
+   1.3455798837305855,
+   2.5919201162694145
+  ],
+  "df": 6.222222222222222
+ },
+ "cases": {
+  "PASS (+4, rows and columns +-1)": [
+   "PASS",
+   [
+    2.259,
+    5.741
+   ],
+   4.0
+  ],
+  "WORSE (-4, rows and columns +-1)": [
+   "WORSE",
+   [
+    -5.741,
+    -2.259
+   ],
+   4.0
+  ],
+  "NOT-SHOWN (+1, rows and columns +-1)": [
+   "NOT-SHOWN",
+   [
+    -0.741,
+    2.741
+   ],
+   4.0
+  ],
+  "NOT-SHOWN (+4, rows +-4: a wide arm)": [
+   "NOT-SHOWN",
+   [
+    -2.453,
+    10.453
+   ],
+   2.25
+  ],
+  "floors (a flat matrix, +0.5)": [
+   "NOT-SHOWN",
+   [
+    -0.294,
+    1.294
+   ]
+  ],
+  "rule 8 (lower end = 0)": [
+   "NOT-SHOWN",
+   [
+    "lower end vs 0"
+   ]
+  ]
+ }
+}
