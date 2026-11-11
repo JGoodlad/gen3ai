@@ -1,7 +1,7 @@
 """CE-3d, the trailing-magnet screen (the SWAP): the REGISTERED decision rule, its self-check, and its design simulation.
 
-Registration: ``PREREG.md`` in this directory (REGISTERED 2026-11-11 and AMENDED the same day, Amendment 1, before
-any CE-3d step). The rule is X67's (``../x67_entropy_screen_2026-11-09/screen_rule.py``) with nothing changed:
+Registration: ``PREREG.md`` in this directory (REGISTERED 2026-11-11 and AMENDED the same day, Amendments 1 and 2,
+before any CE-3d step). The rule is X67's (``../x67_entropy_screen_2026-11-09/screen_rule.py``) with nothing changed:
 ``rect_stat`` and ``decide`` below are that file's (only the row arm's name in two strings differs), and the
 self-check reproduces X67's banked verdict from its record to 1e-9. A measurement's script is a frozen record, so the rule is
 copied here and never imported from X67's directory.
@@ -37,9 +37,21 @@ REPORTED beside the verdict, never deciding: the same interval with both varianc
 variance (1.76 pp)^2 (``../boundary1_scratch_2026-11-09/seed_spread.log``), and D over the banked columns
 (seeds 3501-3505) and over the top-up columns (3506-3508) separately.
 
-    python screen_rule.py self-check        # cross_stat on a banked 8 x 8, X67's banked verdict, + the hand cases
-    python screen_rule.py simulate          # the operating characteristics (PREREG §6), deterministic seed
-    python screen_rule.py decide <h.json>   # h.json = {"h_pp": [[...], ...], "col_seeds": [...]} -> one JSON verdict
+THE REPORTED CROSS AGAINST X67'S FINALS (Amendment 2, PREREG §5.4; it DECIDES NOTHING). A second matrix, rows = the
+same three swap forks, columns = X67's three finals ``rb_x35_x67ent_s6701..s6703`` (P* + 20M at ``ent_coef``
+0.0125, no magnet), read by ``report_x67``: the same ``rect_stat`` (r = c = 3, the same binomial floors, Welch df,
+90 % interval), NO class, and one of two registered READINGS, quoted only when the registered verdict above is PASS:
+* ``READ_ANCHOR``  iff the interval's LOWER end > 0 (rule 8 as above): evidence that the anchor adds something
+  beyond lower entropy.
+* ``READ_ENTROPY`` otherwise (D about 0, i.e. the interval holds 0, or D negative): the swap's gain over C0 is
+  plausibly the lower uniform push alone.
+Neither reading changes the verdict, a label or a licence. ``decide`` never sees this matrix.
+
+    python screen_rule.py self-check          # cross_stat on a banked 8 x 8, X67's banked verdict, + the hand cases
+    python screen_rule.py simulate            # the operating characteristics (PREREG §6), deterministic seed
+    python screen_rule.py simulate-x67        # the same simulation at 3 x 3: what the reported cross can see (§5.4)
+    python screen_rule.py decide <h.json>     # h.json = {"h_pp": [[...], ...], "col_seeds": [...]} -> one JSON verdict
+    python screen_rule.py report-x67 <h.json> # the reported 3 x 3 against X67's finals -> one JSON report, no class
 
 Run with ``PYTHONPATH=<a checkout>/src`` (``main.h2h.cross`` supplies ``t_ppf`` and ``RULE8_EPS``).
 """
@@ -65,6 +77,10 @@ CELL_VAR_PP2 = 2500.0 / (2 * PAIRS)          # 1.25: one cell's binomial varianc
 CI_LEVEL = 0.90
 FRESH_SEED_SD_PP = 1.76                      # the fresh-run seed SD: the REPORTED sensitivity line only
 TOPUP_SEEDS = (3506, 3507, 3508)
+#: the REPORTED cross against X67's finals (Amendment 2): its shape and its two readings. Not classes.
+X67_ROWS, X67_COLS = 3, 3
+READ_ANCHOR = "evidence that the anchor adds something beyond lower entropy"
+READ_ENTROPY = "the swap's gain over C0 is plausibly the lower uniform push alone"
 
 
 def _mean(xs: Sequence[float]) -> float:
@@ -137,10 +153,35 @@ def decide(h: Sequence[Sequence[float]], inconclusive: Sequence[str] = (),
     return out
 
 
+def report_x67(h: Sequence[Sequence[float]], inconclusive: Sequence[str] = ()) -> Dict[str, Any]:
+    """The REPORTED cross (rows = the swap forks, columns = X67's three finals; pp). It decides nothing: no class.
+
+    ``reading_if_pass`` is the registered sentence for this matrix, quoted only when the REGISTERED verdict (the
+    cross against C0) is PASS; with any other verdict there is no gain over C0 to attribute and only D and its
+    interval are reported. ``upper_end_below_0`` says the swap forks lost to X67's (still ``READ_ENTROPY``)."""
+    reasons: List[str] = list(inconclusive)
+    if not reasons:
+        if len(h) != X67_ROWS or any(len(line) != X67_COLS for line in h):
+            reasons.append(f"the reported cross is {X67_ROWS} x {X67_COLS} (the swap forks x X67's finals); "
+                           f"got {[len(line) for line in h]}")
+        elif not all(math.isfinite(x) and 0.0 <= x <= 100.0 for line in h for x in line):
+            reasons.append("a cell is not a finite score in [0, 100] pp")
+    if reasons:
+        return {"decides": "nothing", "read": False, "reasons": reasons}
+    st = rect_stat(h)
+    lo, hi = st["interval90_pp"]
+    near = [name for name, end in (("lower end vs 0", lo), ("upper end vs 0", hi)) if abs(end) <= RULE8_EPS]
+    above = lo > 0.0 and "lower end vs 0" not in near
+    return {"decides": "nothing", "read": True, "reading_if_pass": READ_ANCHOR if above else READ_ENTROPY,
+            "lower_end_above_0": above, "upper_end_below_0": hi < 0.0 and "upper end vs 0" not in near,
+            "near_boundary": near, **st}
+
+
 def self_check() -> Dict[str, Any]:
     """(1) On a banked 8 x 8 with no floor binding, D and V equal ``cross_stat``'s. (2) ``decide`` on X67's banked
     3 x 8 matrix reproduces X67's banked verdict (class, D, SE, df, interval, floors, the fresh-floor interval).
-    (3) Hand cases for each class, the rule-8 tie, the floors and the INCONCLUSIVE shapes."""
+    (3) Hand cases for each class, the rule-8 tie, the floors and the INCONCLUSIVE shapes. (4) ``report_x67``: its
+    two readings, the rule-8 tie, its refusals, and that ``decide`` refuses the 3 x 3 (it can never carry a class)."""
     probs: List[str] = []
     h8 = json.loads(BANKED_8X8.read_text())["h_pp"]
     ours, ref = rect_stat(h8), cross_stat(h8)
@@ -204,15 +245,45 @@ def self_check() -> Dict[str, Any]:
     if rep["delta_banked_cols_pp"] is None or rep["delta_topup_cols_pp"] is None or \
             abs(rep["delta_banked_cols_pp"] - (2.0 + _mean(cols8[:5]))) > 1e-9:
         probs.append(f"the banked / top-up split is wrong: {rep}")
+    # (4) the REPORTED 3 x 3 against X67's finals: a reading, never a class
+    cols3 = (-0.5, 0.0, 0.5)
+    x67_cases = {
+        "anchor (+4, rows +-1)": (grid(4.0, (-1.0, 0.0, 1.0), cols3), READ_ANCHOR, False),
+        "entropy (0, rows +-1)": (grid(0.0, (-1.0, 0.0, 1.0), cols3), READ_ENTROPY, False),
+        "entropy (+1, rows +-2: D > 0, the interval holds 0)": (grid(1.0, (-2.0, 0.0, 2.0), cols3), READ_ENTROPY, False),
+        "entropy (-4, rows +-1: the swap lost to X67's)": (grid(-4.0, (-1.0, 0.0, 1.0), cols3), READ_ENTROPY, True),
+    }
+    got_x67: Dict[str, Any] = {}
+    for name, (h, want, want_below) in x67_cases.items():
+        r = report_x67(h)
+        if not r["read"] or r["reading_if_pass"] != want or r["upper_end_below_0"] != want_below \
+                or r["lower_end_above_0"] != (want == READ_ANCHOR) or "outcome" in r:
+            probs.append(f"report_x67 {name}: {r}")
+        else:
+            got_x67[name] = [r["reading_if_pass"], [round(x, 3) for x in r["interval90_pp"]], round(r["df"], 2)]
+    base3 = grid(4.0, (-1.0, 0.0, 1.0), cols3)
+    lo3 = report_x67(base3)["interval90_pp"][0]
+    tie3 = report_x67([[x - lo3 for x in line] for line in base3])
+    if abs(tie3["interval90_pp"][0]) > RULE8_EPS or tie3["reading_if_pass"] != READ_ENTROPY or not tie3["near_boundary"]:
+        probs.append(f"report_x67 rule 8: a lower end of {tie3['interval90_pp'][0]!r} read {tie3['reading_if_pass']!r}")
+    got_x67["rule 8 (lower end = 0)"] = [tie3["reading_if_pass"], tie3["near_boundary"]]
+    for name, h in (("3 x 5", base), ("2 x 3", base3[:2]), ("ragged", [base3[0], base3[1], base3[2][:2]]),
+                    ("nan", [[float("nan")] * 3] * 3)):
+        if report_x67(h)["read"]:
+            probs.append(f"report_x67 {name}: read")
+    if report_x67(base3, inconclusive=["missing cell"])["read"]:
+        probs.append("report_x67 a missing cell: read")
+    if decide(base3)["outcome"] != INCONCLUSIVE:
+        probs.append("decide read the reported 3 x 3 as a class")
     return {"self_check": "OK" if not probs else "MISMATCH", "problems": probs, "banked_8x8": {
         "delta_hat_pp": ours["delta_hat_pp"], "se_pp": ours["se_pp"], "welch_df": ours["df"], "cross_stat_df": ref.df},
         "x67_banked": {"outcome": again["outcome"], "delta_hat_pp": again["delta_hat_pp"],
                        "interval90_pp": again["interval90_pp"], "df": again["df"],
                        "row_means_sd_pp": math.sqrt(again["s2_rows_raw"]), "col_means_sd_pp": math.sqrt(again["s2_cols_raw"])},
-        "cases": got}
+        "cases": got, "x67_reported_cases": got_x67}
 
 
-def simulate(reps: int = 50000, seed: int = 20261111) -> Dict[str, Any]:
+def simulate(reps: int = 50000, seed: int = 20261111, cols: Sequence[int] = (5, 8)) -> Dict[str, Any]:
     """P(PASS) / P(WORSE) under h_ij = 50 + D + a_i - b_j + e_ij, a ~ N(0, sig_R^2) (a swap fork's strength),
     b ~ N(0, sig_C^2) (a C0 final's), e ~ N(0, 1.05^2) (the cell noise the banked crosses measured: 0.80-1.10 pp;
     X67's own 3 x 8 is consistent with it).
@@ -221,7 +292,11 @@ def simulate(reps: int = 50000, seed: int = 20261111) -> Dict[str, Any]:
     G1 finals read a seed SD of 0.48 pp on S, X48 PREREG §6); (0.32, 0.59) is what X67's banked cross measured as
     the SD of its three row means and of its eight column means (the self-check prints both). sig_R is unknown for a
     fork with a trailing magnet and no entropy bonus, so it runs up to 1.76 pp, the fresh-run pooled figure
-    (``seed_spread.log``), the pessimistic case for a fork."""
+    (``seed_spread.log``), the pessimistic case for a fork.
+
+    ``cols=(3,)`` is the REPORTED cross against X67's three finals (§5.4): the same model and scenarios, where
+    "P(PASS)" is P(the interval's lower end > 0), the condition of ``READ_ANCHOR``. X67's forks read a row-mean SD
+    of 0.32 pp in their own cross, so sig_C = 0.5 is, if anything, wide for them."""
     import numpy as np
     from scipy.stats import t as student_t
 
@@ -230,7 +305,7 @@ def simulate(reps: int = 50000, seed: int = 20261111) -> Dict[str, Any]:
     deltas = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0]
     out: Dict[str, Any] = {"reps": reps, "seed": seed, "sigma_e": sig_e, "rows": r, "deltas_pp": deltas,
                            "scenarios": []}
-    for c in (5, 8):
+    for c in cols:
         for sig_r, sig_c in ((0.0, 0.0), (0.32, 0.59), (0.5, 0.5), (1.0, 0.5), (1.76, 0.5), (1.76, 1.76)):
             a = rng.normal(0, sig_r, (reps, r))
             b = rng.normal(0, sig_c, (reps, c))
@@ -258,11 +333,14 @@ def main(argv: Sequence[str]) -> int:
         res = self_check()
         print(json.dumps(res, indent=1))
         return 0 if res["self_check"] == "OK" else 1
-    if cmd == "simulate":
-        res = simulate()
-        print(f"reps {res['reps']}, rng {res['seed']}, cell noise SD {res['sigma_e']} pp, rows {res['rows']}")
-        print("cols  sig_R  sig_C  half-width  P(PASS) at D = " + " / ".join(f"{d:+g}" for d in res["deltas_pp"])
-              + "   P(WORSE) at 0 / -2")
+    if cmd in ("simulate", "simulate-x67"):
+        x67 = cmd == "simulate-x67"
+        res = simulate(cols=(X67_COLS,)) if x67 else simulate()
+        print(f"reps {res['reps']}, rng {res['seed']}, cell noise SD {res['sigma_e']} pp, rows {res['rows']}"
+              + (" (the REPORTED cross against X67's finals: no class)" if x67 else ""))
+        print("cols  sig_R  sig_C  half-width  " + ("P(lower end > 0)" if x67 else "P(PASS)") + " at D = "
+              + " / ".join(f"{d:+g}" for d in res["deltas_pp"])
+              + ("   P(upper end < 0) at 0 / -2" if x67 else "   P(WORSE) at 0 / -2"))
         for s in res["scenarios"]:
             print(f"{s['cols']:>4}  {s['sigma_rows']:>5.2f}  {s['sigma_cols']:>5.2f}  {s['median_half_width_pp']:>10.2f}  "
                   + " / ".join(f"{p:.3f}" for p in s["p_pass"])
@@ -271,6 +349,9 @@ def main(argv: Sequence[str]) -> int:
     if cmd == "decide":
         doc = json.loads(Path(argv[2]).read_text())
         print(json.dumps(decide(doc["h_pp"], col_seeds=doc.get("col_seeds")), indent=1))
+        return 0
+    if cmd == "report-x67":
+        print(json.dumps(report_x67(json.loads(Path(argv[2]).read_text())["h_pp"]), indent=1))
         return 0
     print(__doc__)
     return 2

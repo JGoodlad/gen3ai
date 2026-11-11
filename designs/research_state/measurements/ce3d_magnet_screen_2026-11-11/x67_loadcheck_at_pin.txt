@@ -1,0 +1,50 @@
+CE-3d, Amendment 2 (PREREG §5.4): the CPU LOAD CHECK of one X67 final at the CE-3d pin. 2026-11-11, no GPU lease
+(CUDA_VISIBLE_DEVICES=""), rule 5b (nice 19, the agent cores, mem_cap short lane). NOT a read: 4 pairs, purpose
+audit, a SCRATCH ledger (--out), GEN3AI_MODELS_DIR pointed at an empty scratch dir. No CE-3d family, request or
+run existed when it ran, and no swap final was involved. Its score is not a measurement and is quoted nowhere.
+
+checkout : a detached worktree at tag ce3d-pin-333a73dd, HEAD 333a73ddda7829b9ccdf9e17ef04624eb40edeba,
+           src/ and data/ clean, bootstrapped (scripts/bootstrap.sh), PYTHONPATH=<that checkout>/src
+command  : python -m main.h2h play --player models/rb_x35_x67ent_s6701/final_model.zip
+           --opponent models/rb_x35_c0_s3501/final_model.zip --pairs 4 --batch-pairs 4 --seed 0 --device cpu
+           --purpose audit --label ce3d_x67_loadcheck --out <scratch ledger> --oracle-reveal-mode off
+           --threads 3 --torch-threads 3
+exit     : 0
+
+---- stdout / stderr (paths under the scratch dir shortened to <scratch>) ----
+[heavy_slots] took heavy slot 3 of 4 after waiting 0.0 s (a training run is live (rb_x35_x69a_s6901): rule 5b) [cap 16.0 GiB, alone (a job alone always runs)] [SHORT lane: declared <= 420 s, hard timeout 450 s]
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-main.h2h-1686069.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] rb_x35_x67ent_s6701@300021355 vs rb_x35_c0_s3501@300061940: 4 pairs in 1 batch(es) of 4; 0 already recorded, 1 to play; schedule h2h:6bce7ca486732270 seed 0; request h2h:f140602f3e16b967 (adhoc, purpose audit) under <scratch>/a2_ledger
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 10.9 s (<pin checkout>/src/rust_env/target/release)
+[h2h] engine up in 6.6s: rb_x35_x67ent_s6701@300021355 vs rb_x35_c0_s3501@300061940; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 4 pairs / 8 games in 31.4s (0.25 games/s); W/L/D 7/1/0; pair counts [0, 0, 1, 0, 3]; near-tie games 0; digest 0ee47b0e1c68
+rb_x35_x67ent_s6701@300021355 vs rb_x35_c0_s3501@300061940: score 87.50% [66.28, 100.00] (pair-clustered 95%), SE 12.500 pp over 4 pairs / 8 games; W/L/D 7/1/0; pentanomial [0, 0, 1, 0, 3]; 0.25 games/s
+{"batches": 1, "d": 0, "devices": ["cpu/eager"], "games": 8, "games_per_s": 0.254841997961264, "l": 1, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_x35_c0_s3501@300061940", "opponent_sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303", "pair_counts": [0, 0, 1, 0, 3], "pair_sd": 0.25, "pairs": 4, "player": "rb_x35_x67ent_s6701@300021355", "player_sha256": "94f173f943d4a930ea5a523f6874d6cec7cb90d88c7646b923c7829c2d79f128", "purpose": ["audit"], "regime_id": "adfdbee824c9eb0a", "score": 0.875, "score_ci95": [0.6628237760728125, 1.0], "se_pp": 12.5, "w": 7, "wall_s": 31.392, "win_rate": 0.875}
+[mem_cap] done: gen3ai-capped-main.h2h-1686069.scope exit 0 · peak 0.93 GB of cap 16.00 GB (6%) · not OOM-killed
+[heavy_slots] released heavy slot 3 after 51 s
+
+---- what it shows ----
+ledger row field         this check (CE-3d pin)                       an X67 cross row (banked, f4b25238)          same
+commit                   333a73ddda7829b9ccdf9e17ef04624eb40edeba     f4b25238def57900c0305bb2a3a5a8f9edaef285     NO
+regime_id                adfdbee824c9eb0a                             adfdbee824c9eb0a                             yes
+team_set                 ts:1d637bee081f3aff                          ts:1d637bee081f3aff                          yes
+protocol                 gen3_eval_protocol_v1_h2h                    gen3_eval_protocol_v1_h2h                    yes
+play / opponent_play     greedy / greedy                              greedy / greedy                              yes
+seed_rule                gen3_eval_game_seed_v1                       gen3_eval_game_seed_v1                       yes
+mirror_rule              gen3_mirrored_pairs_v1                       gen3_mirrored_pairs_v1                       yes
+turn_limit               250                                          250                                          yes
+eval_core                rust                                         rust                                         yes
+Rust core src hash       7c53280566d666ae                             7c53280566d666ae                             yes
+Rust core nfiles         125                                          125                                          yes
+Rust core schema hash    0a6035e172e514b3                             0a6035e172e514b3                             yes
+device                   cpu                                          cpu                                          yes
+
+- The pin's loader built both policies from their v161 configs (107 keys each, no magnet_kl_coef and no
+  magnet_refresh_steps key; the pin's defaults for the two fields are 0.0 and 2,000,000) and the engine came up:
+  "engine up ... T2 eager on cpu". The player's sha256 94f173f9... is row 0 of X67's banked record/shas.json and the
+  opponent's 09a6a2df... is its column 0: the same two files X67's cross played.
+- The row the check wrote carries the SAME regime id, team set, seed rule, mirror rule and Rust core source and
+  schema hashes as the rows X67's cross banked at f4b25238; only the commit differs. That is the play regime's
+  identity, not a game-for-game comparison: no batch of X67's cross was replayed at this pin (PREREG §4.3's
+  "play pin" row stays UNVERIFIED on that point).
+- No play path printed a [MAGNET] line (a magnet is built by the trainer only).

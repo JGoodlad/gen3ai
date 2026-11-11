@@ -5,7 +5,7 @@ two flags, and the magnet's seams in the collector, the checkpoint commit and R1
 **OFF by default; no run has trained with it.** Its screen is REGISTERED and not launched
 ([`../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)):
 three forks of P\* with the magnet IN PLACE OF the entropy bonus (`--ent-coef 0 --magnet-kl-coef 0.05`, §2's swap),
-read against the banked C0 finals, at a BACKPORT of this lever onto the production side pin (tag
+read against the banked C0 finals (and, reported only, against X67's), at a BACKPORT of this lever onto the production side pin (tag
 `ce3d-pin-333a73dd`, `main.x35.batch.CE3D_PIN`; config v161 there, the two fields un-versioned).
 
 ```

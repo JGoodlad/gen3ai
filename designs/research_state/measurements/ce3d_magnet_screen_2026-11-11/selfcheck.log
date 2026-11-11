@@ -64,5 +64,45 @@
     "lower end vs 0"
    ]
   ]
+ },
+ "x67_reported_cases": {
+  "anchor (+4, rows +-1)": [
+   "evidence that the anchor adds something beyond lower entropy",
+   [
+    2.461,
+    5.539
+   ],
+   3.42
+  ],
+  "entropy (0, rows +-1)": [
+   "the swap's gain over C0 is plausibly the lower uniform push alone",
+   [
+    -1.539,
+    1.539
+   ],
+   3.42
+  ],
+  "entropy (+1, rows +-2: D > 0, the interval holds 0)": [
+   "the swap's gain over C0 is plausibly the lower uniform push alone",
+   [
+    -2.163,
+    4.163
+   ],
+   2.41
+  ],
+  "entropy (-4, rows +-1: the swap lost to X67's)": [
+   "the swap's gain over C0 is plausibly the lower uniform push alone",
+   [
+    -5.539,
+    -2.461
+   ],
+   3.42
+  ],
+  "rule 8 (lower end = 0)": [
+   "the swap's gain over C0 is plausibly the lower uniform push alone",
+   [
+    "lower end vs 0"
+   ]
+  ]
  }
 }

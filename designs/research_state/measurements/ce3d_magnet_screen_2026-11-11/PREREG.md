@@ -1,8 +1,9 @@
 # CE-3d — the trailing-magnet screen: PRE-REGISTRATION (2026-11-11)
 
-**Status: REGISTERED 2026-11-11 (`08b998d12`) and AMENDED the same day (Amendment 1, §13: ONE arm, the SWAP, read
-against the banked C0 finals with X67's cross and rule; the two arms first registered are dropped). Written blind,
-before any launch, any game and any read. NOT LAUNCHED** (no `rb_x35_ce3d*` run and no CE-3d ledger family exists).
+**Status: REGISTERED 2026-11-11 (`08b998d12`) and AMENDED twice the same day (Amendment 1, §13: ONE arm, the SWAP,
+read against the banked C0 finals with X67's cross and rule; the two arms first registered are dropped. Amendment
+2, §14: a REPORTED cross of the swap forks against X67's three finals, which decides nothing). Written blind, before
+any launch, any game and any read. NOT LAUNCHED** (no `rb_x35_ce3d*` run and no CE-3d ledger family exists).
 The launch is the orchestrator's GO through the Training session's kit (arm `ce3d_swap`); the hand-off is
 [`chain_items_ce3d.json`](chain_items_ce3d.json) (§7). Nothing below changes after the first fork launches except by
 a dated amendment, written before the cross is played, that says why.
@@ -11,7 +12,7 @@ a dated amendment, written before the cross is played, that says why.
 replaced, at the same weight, by a pull toward a trailing copy of the policy itself (a "magnet", refreshed every 2M
 steps)?
 
-**The tier is FULL** (`../../README.md` § Registration tiers). Its cost would fit a light screen (≈ 13 GPU-h, ≈ 23
+**The tier is FULL** (`../../README.md` § Registration tiers). Its cost would fit a light screen (≈ 13 GPU-h, ≈ 32
 CPU lane-h), but it is an amendment of a full registration, and its arm runs at a NEW pin carrying code that has
 never trained on the GPU. Its verdict adopts nothing (§10).
 
@@ -61,7 +62,7 @@ uniform policy never switches off; a pull toward the magnet is zero whenever π 
 the cross-entropy part of the KL cancel. So the swap also REMOVES the standing push toward uniform that C0 has, and
 X67 showed that a smaller push wins head to head. The screen therefore reads "the trailing anchor in place of the
 uniform one", and cannot by itself split that into "the anchor helps" and "less uniform push helps". §8's entropy
-label and §9's comparison with X67 are the registered evidence on which it is.
+label and §5.4's reported cross against X67's own finals are the registered evidence on which it is.
 
 **Prediction** (GUESS; it decides nothing): D ∈ [0, +2.5] pp; the swap forks end sharper than C0 (`ENT-LOW`, §8),
 with an end entropy between X67's 0.68 and C0's 1.01 nats. Nine refreshes in 20M steps is a short horizon for a
@@ -133,8 +134,9 @@ main is confounded with a 20M re-adaptation (X67 PREREG §4). `f4b25238` has no 
 
 **The config version stays 161.** The two fields (`magnet_kl_coef`, `magnet_refresh_steps`) are un-versioned
 additions with defaults 0.0 and 2,000,000; every run at this pin records them. Two consequences, both executed: the
-plain side pin REFUSES to load a config that carries them, so **the cross is played at the CE-3d pin**, which loads
-C0's finals as `f4b25238` does; and main loads a CE-3d config keeping the recorded values.
+plain side pin REFUSES to load a config that carries them, so **both crosses are played at the CE-3d pin**, which
+loads the v161 finals trained at `f4b25238` (C0's and X67's: neither config has a magnet key) as `f4b25238` does
+(§5.4's load check, one final of each); and main loads a CE-3d config keeping the recorded values.
 
 ### 4.2 Tested at the pin, CPU only (2026-11-11, rule 5b, no lease)
 
@@ -163,7 +165,7 @@ not a guard: nothing in the rule corrects for it, and the verdict is quoted with
 | the near-tie judge | parity judging in the T2 service (training and play), reached only after a parity judgement has failed; two `dtype=` arguments in the damage op's forward | the judge decides only whether a failed check is fatal and serves no logit; the two tensors were float32 with and without the arguments (§4.2's probe) | CPU only |
 | everything else in the learner | nothing: 44 paths, enumerated and checked | **with β = 0 the learner golden is bit-identical in bf16 and fp32 at the pin** | **CPU only; never run on the card** |
 | the day | C0 trained 2026-10-21 to 11-10; the swap after 11-11 | none (same card, same interpreter pin, one `torch_version` and `init_num_threads` enforced by the plan) | X67 carried the same difference |
-| the play pin | this cross is played at `333a73dd`; X67's was played at `f4b25238` | the row above; no play or inference path builds a magnet (the pin's h2h smoke printed none) | **UNVERIFIED**: no game was played at both pins |
+| the play pin | both CE-3d crosses are played at `333a73dd`; X67's was played at `f4b25238` | the row above; no play or inference path builds a magnet (the pin's h2h smoke printed none); a ledger row written at the pin carries the regime id, team set and Rust core source and schema hashes of X67's banked rows ([`x67_loadcheck_at_pin.txt`](x67_loadcheck_at_pin.txt)) | **UNVERIFIED**: no game was played at both pins |
 
 **Why this was judged acceptable for a one-arm read** (and not the fallback, a second arm of `--ent-coef 0.05` with
 no magnet at the CE-3d pin, ≈ 26 GPU-h in all): the only code the pin adds to a β = 0 learner changes no number
@@ -185,18 +187,20 @@ the GPU confirmation of the CPU evidence. It is not bought here, and §10 limits
 
 ## 5. The meter and the rule: X67's, unchanged
 
-### 5.1 The cross
+### 5.1 The crosses
 
-One cross, head to head, both sides greedy, the players' eval team builder, schedule seed 0, `--oracle-reveal-mode
-off`, protocol `gen3_eval_protocol_v1_h2h`, purpose `ab`, label `ce3d_magnet_screen`, played from a clean detached
-checkout **at the CE-3d pin** ([`cross/drive_cross.sh`](cross/drive_cross.sh)).
+Two crosses, **one that decides and one that is only reported**, with the same settings: head to head, both sides
+greedy, the players' eval team builder, schedule seed 0, `--oracle-reveal-mode off`, protocol
+`gen3_eval_protocol_v1_h2h`, purpose `ab`, label `ce3d_magnet_screen`, played from a clean detached checkout **at
+the CE-3d pin** ([`cross/drive_cross.sh`](cross/drive_cross.sh), whose fourth argument picks the cross).
 
 | rows × columns | pairs a cell | games | family / request | role |
 |---|---:|---:|---|---|
 | 3 swap forks × c C0 finals (5 ≤ c ≤ 8; 8 expected) | 1,000 mirrored | ≤ 48,000 | `ce3d_swap_vs_c0_h2h` / `ce3d_swap_vs_c0` | **DECIDES** |
+| 3 swap forks × X67's 3 finals (`rb_x35_x67ent_s6701`–`s6703`) | 1,000 mirrored | 18,000 | `ce3d_swap_vs_x67_h2h` / `ce3d_swap_vs_x67` | REPORTED (§5.4); decides nothing |
 
-This is X67's cross with the swap forks as its rows: the same columns, cell size, statistic and classes, so its D
-sits directly beside X67's +1.97 pp (§9).
+The deciding cross is X67's cross with the swap forks as its rows: the same columns, cell size, statistic and
+classes, so its D sits directly beside X67's +1.97 pp (§9). §5.2 and §5.3 are about it; §5.4 is the reported one.
 
 ### 5.2 The plan
 
@@ -208,6 +212,7 @@ top-up final that exists and fails a guard REFUSES the plan). Guards, every run:
 `magnet_kl_coef` 0.05 with `magnet_refresh_steps` 2,000,000; C0: both keys absent); `final_model.magnet.pt` present
 for a swap fork and absent for C0; K9(b) PASS; one `torch_version` and one `init_num_threads` across all. Executed
 2026-11-11: `--columns-only` → `columns OK`, all eight C0 finals; the full plan REFUSES (no swap final exists).
+`--cols x67` plans the reported cross with the same guards (§5.4).
 
 ### 5.3 The statistic and the classes ([`screen_rule.py`](screen_rule.py))
 
@@ -234,6 +239,81 @@ pessimistic reading, and D over the banked columns (3501–3505) and the top-up 
 and SE equal `main.h2h.cross.cross_stat`'s on a banked 8 × 8; **`decide` on X67's banked 3 × 8 matrix reproduces
 X67's banked verdict** to 1e-9 (PASS, D 1.96875, [1.3456, 2.5919], df 6.22, both floors binding, the fresh-floor
 interval); the hand cases for each class, the floor, the tie and the INCONCLUSIVE shapes read as registered.
+
+### 5.4 The REPORTED cross against X67's finals (Amendment 2). It decides nothing
+
+**Why.** §1 and limit 1 (§10): the swap adds the anchor AND removes the standing push toward uniform, and X67
+already showed that a smaller push wins. The deciding cross cannot split the two. X67's finals are the nearest
+banked policies that have the smaller push and no anchor (P\* + 20M at `ent_coef` 0.0125, no magnet), so the swap
+forks are played against them directly.
+
+**Shape.** 3 × 3: rows = the three swap forks, columns = `rb_x35_x67ent_s6701`, `s6702`, `s6703`, all REQUIRED,
+1,000 mirrored pairs a cell (18,000 games), every setting of §5.1, its own family and request so that the deciding
+family holds only the deciding cells. Played ONCE, after the third fork's arm-end checks, before or after the
+deciding cross: neither reads the other's cells. `drive_cross.sh <PIN_DIR> <WORK_DIR> cpu|cuda x67`, in a work
+directory of its own.
+
+**The pin it plays at, and why X67's finals load there.** The CE-3d pin, as the deciding cross and for the same
+reason (the swap forks' configs carry the magnet's two fields, which `f4b25238` refuses). X67's forks trained at
+`f4b25238` exactly as C0's did: a version-161 `model_config.json` of the same 107 keys with neither magnet key, and
+the pin's two new fields are un-versioned with defaults (0.0 and 2,000,000), so the pin builds the same network
+from it. **Executed** ([`x67_loadcheck_at_pin.txt`](x67_loadcheck_at_pin.txt), CPU, no lease, a scratch ledger):
+`main.h2h play` at the pin loaded `rb_x35_x67ent_s6701/final_model.zip` (sha256 `94f173f9…`, row 0 of X67's banked
+record) and `rb_x35_c0_s3501/final_model.zip`, brought the engine up and played 4 pairs, exit 0; the ledger row it
+wrote carries the regime id (`adfdbee824c9eb0a`), team set and Rust core source and schema hashes of the rows X67's
+cross banked at `f4b25238`. It is a load check, not a read: 4 pairs, purpose `audit`, quoted nowhere.
+
+**The plan** (`cross/plan_cross.py --cols x67`): §5.2's guards with X67's values. Each X67 final must have one
+`pin_history` entry at `f4b25238` from 280,000,170 to ≥ 300,000,170, the lineage of a FORK of P\*, its seed,
+`n_epochs` 10, `ent_coef` 0.0125 in both records, NO magnet key and NO sidecar, K9(b) PASS, and the swap forks'
+`torch_version` and `init_num_threads`. Executed 2026-11-11: `--columns-only --cols x67` → `columns OK: [6701,
+6702, 6703]`; the full plan REFUSES (no swap final exists).
+
+**What is reported** (`screen_rule.report_x67`, written to `report_x67.json`, never to a `verdict.json`): §5.3's
+statistic on the 3 × 3, unchanged — **D = mean(h) − 50** (the swap forks' lead over X67's), the same binomial floors
+(CELL_VAR / 3 on each side), Welch df, and **the 90 % interval**. No class. `decide` refuses a 3 × 3 (the self-check
+pins it), so this matrix cannot produce one by accident.
+
+**The reading rule, written now.** It is quoted only when the registered verdict (§5.3) is PASS; with any other
+verdict there is no gain over C0 to attribute, and D and its interval are reported with no reading.
+
+| the reported interval | the reading |
+|---|---|
+| its lower end > 0 (D > 0 and the interval above 0) | **evidence that the anchor adds something beyond lower entropy** |
+| otherwise: it holds 0 (D ≈ 0), or D is negative | **the swap's gain over C0 is plausibly the lower uniform push alone** |
+
+Rule 8: a lower end within 1e-9 pp of 0 is not above 0. An interval wholly below 0 is the second reading, and the
+report says the swap forks lost to X67's.
+
+**It decides nothing.** It changes no class, no label and no licence of §10; it is not a second look at the
+registered question; a missing or short cell leaves it unread (`"read": false`) and leaves the verdict untouched; it
+is not re-played, extended or given a substitute seed.
+
+**How much it can see** ([`power_x67.log`](power_x67.log): `screen_rule.py simulate-x67`, §6's model at 3 × 3,
+50,000 draws a row):
+
+| true seed SD of the swap forks / of X67's finals, pp | half-width, pp | P(lower end > 0) at D = +1 | +2 | +3 | at 0 |
+|---|---:|---:|---:|---:|---:|
+| 0.32 / 0.59 | 1.36 | 0.24 | 0.79 | 0.98 | 0.007 |
+| 0.5 / 0.5 | 1.38 | 0.23 | 0.78 | 0.98 | 0.007 |
+| 1.0 / 0.5 | 1.71 | 0.20 | 0.58 | 0.87 | 0.021 |
+| 1.76 / 0.5 (the swap forks spread like fresh runs) | 2.44 | 0.15 | 0.36 | 0.60 | 0.040 |
+
+Both sides carry their variance on 2 df. **A true +1 pp of the anchor reads as "lower push alone" three times in
+four**, and an anchor effect of X67's own size (+2 pp) is seen four times in five when the swap forks spread as
+X67's did, one time in three when they spread like fresh runs. X67's forks read a row-mean SD of 0.32 pp in their
+own cross, so the first two rows are the likely ones for the columns.
+
+**Its limits, stated before the number:**
+- **X67 is not the clean control.** It keeps a quarter of the bonus (`ent_coef` 0.0125); the swap has none. A D
+  above 0 is therefore also what "no standing push beats a small one" would give, and "evidence" in the first
+  reading means that and no more. The clean control is an `--ent-coef 0` arm with no magnet at the CE-3d pin, which
+  §10 names as the follow-up and this file does not register.
+- **The dose differs.** All three X67 forks are `LR-MOVED` (`lr_median` 0.00008372 against C0's 0.0001005); whether
+  the swap forks are is read at their end (§8) and quoted beside D.
+- **Pin and day** (§4.3, limit 2): X67's forks trained at `f4b25238` on 2026-11-10 and 11; the evidence that the
+  pin does not matter is CPU only.
+- Head to head between siblings (limits 3 and 6).
 
 ## 6. What the screen can see ([`power.log`](power.log): `screen_rule.py simulate`, 50,000 draws a row)
 
@@ -319,10 +399,13 @@ arithmetic does not count (one `<checkpoint>.magnet.pt` a checkpoint, each at mo
 production size is unmeasured). The thinning planner does not recognise the sidecars and keeps them, so up to
 ≈ 1.1 GiB a fork stays behind after thinning.
 
-**Not executed at the amendment:** `launch_x35.sh` itself (a run is live, so its pre-check 1 HOLDs, and its checks
-read the lease) and the cross's play command (it writes eval-ledger rows). The plan's column check, the rule and
-its self-check are executed; the driver's `family-register` line and `read_cross.py` are executed with the pin's
-code against an empty SCRATCH ledger (the read: INCONCLUSIVE, 24 missing cells), never on a played cell.
+**Not executed at either amendment:** `launch_x35.sh` itself (a run is live, so its pre-check 1 HOLDs, and its
+checks read the lease) and either cross's play command (it writes eval-ledger rows). Executed: the plan's column
+check for both crosses, the rule, the report and their self-check; the driver's `family-register` line for both
+families and `read_cross.py` for both crosses, with the pin's code against an empty SCRATCH ledger (the deciding
+read: INCONCLUSIVE, 24 missing cells; the reported one: `"read": false`, 9 missing cells), never on a played cell;
+and `drive_cross.sh` up to its HOLDs (a copy pointed at this amendment's files: each cross's plan REFUSES with no
+swap final, exit 3; a work directory used by the other cross, exit 5; a checkout not at the pin, exit 5).
 
 ## 8. VOID guards, labels, the canary family
 
@@ -368,9 +451,11 @@ on a bar typed by the Training session.
 - **The magnet's own meters**: `train/magnet_kl` (expected: a saw-tooth that rises toward each refresh and drops at
   it; its floor right after a refresh is §4.4's unverified bf16 number), `magnet/age_steps`, `magnet/refreshes`,
   `magnet/forward_ms` (the cost, against §11's + 3 % estimate).
+- **Against X67's finals, directly**: §5.4's reported cross, its D, 90 % interval and (with a PASS) its reading.
 - **Beside X67**: D and its interval next to X67's +1.97 pp [+1.35, +2.59], and the difference of the two D. No
   interval and no class is registered for that difference: the two crosses share their columns but were played at
-  different pins and on different days (§4.3).
+  different pins and on different days (§4.3). Where this indirect line and §5.4's direct cross point different
+  ways, both are quoted and neither is preferred.
 - **The pessimistic interval** and the banked / top-up column split (`decide`'s reported block).
 - No Kakuna game is planned. One that is played later carries its team-clustered interval and a dated NOTE here,
   written before any game, naming the finals, the panel and the count.
@@ -384,6 +469,8 @@ on a bar typed by the Training session.
   to be quoted, a C0-recipe control at the same pin (§4.3).
   - A PASS with `ENT-LOW` is reported as "the swap won and ended sharper; not separable from X67's effect here".
   - A PASS whose D is not above X67's +1.97 pp shows no gain over simply lowering `ent_coef`, and says so.
+  - A PASS is quoted with §5.4's reading of the cross against X67's finals, word for word. Neither reading widens
+    or narrows this licence: the follow-up it permits is the same, and the reading says which control it most needs.
   - A PASS with `LR-MOVED` goes to the orchestrator with both numbers.
 - **WORSE** ⇒ this spelling closes: the backlog row records it, and no magnet follow-up is queued unless a new case
   is made for a different form.
@@ -397,7 +484,8 @@ on nor informs the owner's decision on X67's PASS.
 
 **The limits, stated before the number:**
 1. **One loss term, two effects** (§1). The swap adds the pull toward the magnet AND removes the standing push
-   toward uniform. No class separates them; `ENT-LOW` and the comparison with X67 are evidence, not a test.
+   toward uniform. No class separates them; `ENT-LOW` and §5.4's reported cross against X67's finals are evidence,
+   not a test (X67 keeps a quarter of the bonus, and that cross sees a +1 pp effect one time in four).
 2. **The control was trained at another pin and on other days** (§4.3). The evidence that this does not matter is
    CPU only. A verdict from this screen is quoted with that caveat, and a claim that needs it removed needs the
    same-pin control.
@@ -414,19 +502,23 @@ on nor informs the owner's decision on X67's PASS.
 | item | GPU-h | CPU | note |
 |---|---:|---|---|
 | swap s7321–s7323, +20M each | **≈ 13** | — | ≈ 4.10 GPU-h a fork (the mean of the 20 X35 production forks' dose records, X60-T PREREG §5.1) + the magnet's pass (≈ +3 %, ESTIMATED, never measured) and a first compile of R1 with the magnet's argument |
-| the cross, ≤ 48,000 games | ≈ 0.35 in a GPU window | or ≈ 7.7 h on the three agent cores (≈ 23 lane-h) | from X67's cross: 48,000 games in 27,677 s on three threads; the GPU figure is X67's ESTIMATE |
+| the deciding cross, ≤ 48,000 games | ≈ 0.35 in a GPU window | or ≈ 7.7 h on the three agent cores (≈ 23 lane-h) | from X67's cross: 48,000 games in 27,677 s on three threads; the GPU figure is X67's ESTIMATE |
+| the reported cross against X67's finals, 18,000 games | ≈ 0.13 in a GPU window | or ≈ 2.9 h on the three agent cores (≈ 8.7 lane-h) | the row above scaled by 18,000 / 48,000; both figures ESTIMATED |
 | the pin checkout's Rust build | 0 | minutes, under `mem_cap` | once |
 | §9's reads, the dose read | 0 | seconds | |
 
-≈ 13 GPU-h in all. **Hard stop:** three forks, one cross, one read; nothing here extends.
+≈ 13 GPU-h in all, and ≈ 32 CPU lane-h (≈ 10.6 h on the three agent cores) when both crosses are played on the
+CPU. **Hard stop:** three forks, the deciding cross and its one read, the reported cross and its one report;
+nothing here extends.
 
 ## 12. What this file does NOT do
 
 It registers no magnet beside an entropy bonus, no `--ent-coef 0` arm without a magnet, no same-pin control, no
-second β or cadence, no fresh-run magnet arm, no cross against X67's finals, no exploitability read and no Kakuna
-game. It does not adopt or delay X67's PASS, amends no BOUNDARY-1 document, and changes no baseline and no
-production recipe. CE-3d has no `main.reads` rule or `reads/` record: its verdict is `cross/read_cross.py`'s
-`verdict.json`, written by `screen_rule.decide`.
+second β or cadence, no fresh-run magnet arm, no class or licence on the cross against X67's finals, no
+exploitability read and no Kakuna game. It does not adopt or delay X67's PASS, amends no BOUNDARY-1 document, and
+changes no baseline and no production recipe. CE-3d has no `main.reads` rule or `reads/` record: its verdict is
+`cross/read_cross.py`'s `verdict.json`, written by `screen_rule.decide`; the reported cross writes
+`report_x67.json` (`screen_rule.report_x67`) and no verdict.
 
 ## 13. Amendment 1 (2026-11-11, before any launch)
 
@@ -450,3 +542,25 @@ What changed against `08b998d12`, and why:
 
 Unchanged: the pin and its tag, the 44 paths, the dose, the stage `CE3D` and its one look, the play pin, the VOID
 guards other than the lever's, the hard stop's form, and every "moves no recipe" clause.
+
+## 14. Amendment 2 (2026-11-11, before any launch)
+
+**Blind.** Written the day of the registration and of Amendment 1 (`71c20b521`), before the first swap fork
+launches: no `rb_x35_ce3d*` directory in `models/`, no CE-3d family or request in the eval ledger, no cell played.
+The addition is the orchestrator's, on Amendment 1's own limit 1 and its "Beside X67" line (an indirect comparison
+with no interval).
+
+What changed against `71c20b521`, and why:
+
+| | Amendment 1 | Amendment 2 | why |
+|---|---|---|---|
+| crosses | one, against C0, which decides | the same one, which still decides, + a REPORTED 3 × 3 against X67's finals `rb_x35_x67ent_s6701`–`s6703` at 1,000 pairs a cell (§5.4) | the direct evidence on "the anchor" against "less uniform push"; Amendment 1 had only the difference of two D read at different pins |
+| the reported statistic | — | D = mean(h) − 50 and its 90 % interval, §5.3's estimator at r = c = 3; no class | the same meter as the decision, so the two D are comparable |
+| the reading | "evidence, not a test" | two sentences fixed now (§5.4), quoted only with a PASS; rule 8 on the bound | a reading chosen after the number is a story |
+| what it can change | — | nothing: no class, label or licence | 2 df a side, and X67 is not the clean control (§5.4's limits) |
+| the play pin | the CE-3d pin | the same, for both crosses; one X67 final and one C0 final loaded and played there on the CPU ([`x67_loadcheck_at_pin.txt`](x67_loadcheck_at_pin.txt)) | `f4b25238` refuses the swap forks' configs |
+| files | one-cross plan, reader and driver | the same three files take the cross as an argument (`--cols x67`, `shas.json`'s `cols_arm`, the driver's fourth argument); `screen_rule.report_x67` and `simulate-x67`; `power_x67.log`; the self-check extended and re-run at the pin (`power.log` reproduced byte for byte) | it fitted the existing plan and driver; `decide` is untouched |
+| cost | ≈ 13 GPU-h, ≈ 23 CPU lane-h | ≈ 13 GPU-h, ≈ 32 CPU lane-h (+ 18,000 games) | the second cross |
+
+Unchanged: the arm, its seeds and argv, the pin, the kit (`src/main/x35/`), the chain items, the deciding cross, its
+plan, rule, classes and power, every VOID guard and label, the licences, and every "moves no recipe" clause.

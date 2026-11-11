@@ -54,7 +54,7 @@ Read on the afternoon of 2026-11-11 from the orchestrator's log (`~/.claude/jobs
 | where | job | what decision it drives |
 |---|---|---|
 | GPU (since 11-11 04:43) | **X69, the move-belief LIGHT SCREEN** (`228dec074`): seeds 6901–6903, ≈ 12.3 GPU-h; `rb_x35_x69ab_s6903` ended clean 09:05 and `rb_x35_x69b_s6902` 13:16; the last fork, `rb_x35_x69a_s6901`, is up since 13:16 (early check OK 13:35), about 4.2 h a fork. | Does training the move belief by its labels alone repair the off-pool move leg? Then MF-5 (§3). |
-| GPU next (after X69) | **CE-3d, the trailing-magnet screen: REGISTERED 11-11 and AMENDED the same day, before any launch; not launched** ([PREREG](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md), Amendment 1, full tier). ONE arm, the swap: three P\* + 20M forks with the entropy bonus replaced at the same weight by a pull toward a trailing copy of themselves (`--ent-coef 0 --magnet-kl-coef 0.05`, seeds 7321–7323), ≈ 13 GPU-h, at the backport pin (tag `ce3d-pin-333a73dd`: the side pin `f4b25238` + the lever). The two arms first registered (seeds 7301–7303, 7311–7313) are dropped. The magnet has never trained on the GPU. | Do the swap forks beat the eight banked C0 finals head to head (3 × 8, 1,000 pairs a cell, X67's cross and rule)? C0 trained at `f4b25238` on earlier days, a reported caveat. A PASS licenses registering a follow-up only; it moves no recipe and never holds BOUNDARY-1. |
+| GPU next (after X69) | **CE-3d, the trailing-magnet screen: REGISTERED 11-11 and AMENDED twice the same day, before any launch; not launched** ([PREREG](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md), Amendments 1 and 2, full tier). ONE arm, the swap: three P\* + 20M forks with the entropy bonus replaced at the same weight by a pull toward a trailing copy of themselves (`--ent-coef 0 --magnet-kl-coef 0.05`, seeds 7321–7323), ≈ 13 GPU-h, at the backport pin (tag `ce3d-pin-333a73dd`: the side pin `f4b25238` + the lever). The two arms first registered (seeds 7301–7303, 7311–7313) are dropped. The magnet has never trained on the GPU. | Do the swap forks beat the eight banked C0 finals head to head (3 × 8, 1,000 pairs a cell, X67's cross and rule)? C0 trained at `f4b25238` on earlier days, a reported caveat. A second cross, against X67's three finals (3 × 3), is REPORTED and decides nothing. A PASS licenses registering a follow-up only; it moves no recipe and never holds BOUNDARY-1. |
 | GPU after CE-3d | **The BOUNDARY-1 GPU checklist.** Amendment 1 (`d0e0ad52e`, three seeds a cell, ≈ 311 GPU-h) is NOT launchable until ONE re-pin after the `ent_coef` decision: X67 read PASS with LR-MOVED (§2's landed row), so it waits on the orchestrator and the owner's yes (§6). | MF-5 (§3). |
 | CPU: the play lanes RUN | **X60-T look 2.** All six training runs ENDED 11-10 (X60Tb 3506–3508, C0b 3506–3508); the Kakuna play lanes are reading them now. Verdict about the weekend. | X60-T look 2: does H-TEAMS help on F against Kakuna? Routes the next run's team mix (§3). |
 
@@ -98,15 +98,18 @@ its GO.
   1.0047e-04). By its registration that names 0.0125 for the base recipe of every BOUNDARY-1 arm, but it first goes
   to the orchestrator with the LR label, and the registration stands at 0.05 until the owner's word, given as an
   amendment before launch (§6).
-- **CE-3d, the trailing-magnet screen: REGISTERED 2026-11-11, AMENDED the same day (Amendment 1), not launched**
+- **CE-3d, the trailing-magnet screen: REGISTERED 2026-11-11, AMENDED twice the same day (Amendments 1 and 2), not launched**
   ([`research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)):
   does a P\* + 20M fork get stronger when the entropy bonus is replaced, at the same weight, by `β · KL(π ‖ π_mag)`
   toward a copy of the policy that is replaced every 2M steps? The KL carries an entropy term of its own, so
   `--ent-coef 0 --magnet-kl-coef 0.05` keeps C0's entropy weight and adds one term to C0's loss; three such forks are
   read against the eight banked C0 finals with X67's cross and rule (3 × 8 at 1,000 pairs a cell). ≈ 13 GPU-h in the
   gap before BOUNDARY-1 (§2). Two limits are registered: the swap also removes the standing push toward uniform, and X67
-  showed that a smaller push wins, which no class separates from the pull; and C0 trained at another pin on earlier days. A PASS
-  licenses registering a follow-up with the separating control, never a recipe change.
+  showed that a smaller push wins, which no class separates from the pull; and C0 trained at another pin on earlier days. On the
+  first limit a second cross is REPORTED and decides nothing (Amendment 2): the swap forks against X67's three finals
+  (`ent_coef` 0.0125, no magnet), 3 × 3, with its reading fixed in advance (interval above 0 = evidence that the anchor
+  adds something beyond lower entropy; otherwise the gain is plausibly the lower push alone). A PASS licenses registering
+  a follow-up with the separating control, never a recipe change.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.
