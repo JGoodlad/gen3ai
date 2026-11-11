@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-11-09.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-10.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -46,20 +46,22 @@ X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side'
 The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
 [`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
-## 2. Running now (as of 2026-11-09)
+## 2. Running now (as of 2026-11-10)
 
-Read at 03:20 PST on 2026-11-09 from `~/.claude/jobs/x35/status.txt`, `utils.procfs.live_training_runs()`, the
-S′-HONEST state and `scripts/ops/mem_cap.sh --status`.
+Read on the evening of 2026-11-10 from the orchestrator's log (`~/.claude/jobs/x35/status.txt`),
+`utils.procfs.live_training_runs()` and `scripts/ops/mem_cap.sh --status`.
 
 | where | job | what decision it drives |
 |---|---|---|
-| GPU (since 11-09 03:04) | **X60Tb s3504** (`rb_x60t_s3504`, P\* + 20M with `--human-data teams:hr_spec_v1.r3@0.5`, pin 7fe15726, a side pin off main), the first of look 2's queue under AM-X60T-2 (`aea028c60`): the driver trains X60Tb seeds 3504–3508, then C0b seeds 3506–3508, each under the K9(b) guard. The look-2 plan and its play lanes wait for AM-X60T-3 (the orchestrator, 11-09). | X60-T look 2: does H-TEAMS help on F against Kakuna? |
-| CPU: the read lanes IDLE (11-09 03:00) | **S′-HONEST is DONE**: its last unit ended 11-09 00:44, the registered identity re-score PASSed at 02:59, the record was written 03:00. | Search: GO-HONEST, GOAL-B-REACHED (below). |
+| GPU (since 11-10 15:44) | **X67, the entropy screen** (`rb_x35_x67ent_s6701`): three forks of P\* at `--ent-coef 0.0125`, seeds 6701–6703, run one after another; s6701 is up, one T2 auto-resume allowed a seed; ≈ 12.3 GPU-h in all (PREREG [`x67_entropy_screen_2026-11-09/`](research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md)). | Does a quarter of the entropy bonus pass? A PASS plus the owner's yes names `ent_coef` 0.0125 for BOUNDARY-1 (§6). |
+| GPU next, armed | **X69, the move-belief LIGHT SCREEN** (`228dec074`): seeds 6901–6903, ≈ 12.3 GPU-h; its waiter starts it when X67 ends. Then the BOUNDARY-1 GPU checklist: Amendment 1 (`d0e0ad52e`, three seeds a cell, ≈ 311 GPU-h) is NOT launchable until ONE re-pin after the `ent_coef` decision, which needs X67's read and the owner's yes. | Does training the move belief by its labels alone repair the off-pool move leg? Then MF-5 (§3). |
+| CPU: the play lanes RUN | **X60-T look 2.** All six training runs ENDED 11-10 (X60Tb 3506–3508, C0b 3506–3508); the Kakuna play lanes are reading them now. Verdict about the weekend. | X60-T look 2: does H-TEAMS help on F against Kakuna? Routes the next run's team mix (§3). |
 
 ### Landed since 2026-11-01
 
 | when | job | result | what it decided |
 |---|---|---|---|
+| GPU / CPU 11-10 | **Model-first builds and ops fixes.** (a) **Move-leg lever** (`3c7f3bedd`..`228dec074`): the move-belief diagnosis (the unshown-move belief is 0.6–2.2 nats a unit below its Smogon prior off the pool), `--belief-grad-mode move_label_only` built off by default, the meter's `moves_ll` column (`811c08ddc`), and X69 registered. (b) **CE-3d magnet KL** (`251bbfb87`, v170): `--magnet-kl-coef`, off by default. (c) **R9 human clone kit** (`d0e2715d8`): `--human-data init:` / `opp:`. (d) **Core-split A/B**: no narrower arm passed, 5 + 3 kept (`1ffe6902b`). (e) **Ops**: one rule for "is a training run live" (`7c25230ba`), two static-gate blind spots (`b27c78383`), the launcher refuses a GPU launch from a shell above nice 10, judged on the resolved device (`6e4a0300e`, `d4b0576ea`), a flaky heavy-slots test (`f85f7f3dd`), and the overlap golden re-record with its numerics-goldens guard (`f819a7271`). | Nothing here is a verdict; every lever is off by default. | Feeds X69 and BOUNDARY-1's checklist; no run changes. |
 | GPU / CPU 11-10 18:00 PST | **X66 ExIt-0H: NOT-DELIVERED** (PREREG `a2dbc9616`, Amendment 1 the bank; MF-1). Three P\* students, each fine-tuned toward the HONEST search S′h's piKL targets on two panels' banked decisions (188,297 honest labels; the probe's stronger recipe), agree with S′h's pick on the panel they never saw LESS than P\* does: pooled Δagree **−7.05 pp [−7.31, −6.78]** (H −6.48, F −7.16, P72 −7.50). By hand equal; all three exports bit-identical at the play pin; no VOID. On unseen deals and unseen teams alike Δagree is ≤ 0 at every checkpoint, and 21–24 % of a student's own departures from P\* land on S′h's pick (a gain needs about half). No Kakuna game was played ([`x66_exit0h_2026-11-09/`](research_state/measurements/x66_exit0h_2026-11-09/README.md)). | At this recipe and ≈ 113k honest labels a fold, a P\* student does not learn S′h's choices on unseen teams. | By the registration's pre-commitments: NOT evidence for the scale bet (MF-5), and no ExIt-1 is planned on it. S′-HONEST's game gain is untouched. |
 | CPU 11-09 03:00 PST | **S′-HONEST: GO-HONEST, GOAL-B-REACHED** (PREREG `e81f80657`, pin `e46e3ddf8`, no amendment). P\* + S′h (`r0s4_honest_inc@10`: worlds built from what our side has seen alone, every eligible decision from turn 10) against P\* alone, both against the real Kakuna, on 5,097 fresh paired unfamiliar-team deals: **+2.00 pp [+0.34, +3.51]** (worst-case-imputed LB +0.32; reported panels P72 +4.69, H +1.32, F 0.00). The searched arm scores **0.5145 [0.5008, 0.5282]** over 5,100 deals, ties as non-wins (raw 0.4948). Every guard PASS (G-PREFIX 0 mismatches; the identity re-score 600 / 600 at the pin, rebuilding every carry; 3 drops, Kakuna's turn-cap fault). Exclusions 5.6 % (F 10.0 %), above stage 1b's projection, under every bound. 52 h on the whole box ([`sprime_honest_play_2026-11-06/`](research_state/measurements/sprime_honest_play_2026-11-06/README.md)). | "Goal (b) met with search": P\* + S′h beats Kakuna (checkpoint 34, greedy) on U = H, F, P72, in that regime only. **Clustering addendum (11-09, REPORTED; [`addendum_clustering/`](research_state/measurements/sprime_honest_play_2026-11-06/addendum_clustering/README.md)):** the gain holds under every team clustering (LB ≥ +0.31 pp); the score's 0.50 clearance does not ([0.494, 0.535] on our team, [0.491, 0.538] two-way), and the gain is detected on P72 alone. | The search program for goal (b) is un-paused: a cost read and the deployable player's design may be registered. No public play, no training or league change. |
 | CPU 11-07 00:47 PST | **X60-T look 1: CONTINUE** (`af57d4fd3`). P\* + 20M with human ladder TEAMS in the pool (H-TEAMS) against C0 on forum72 vs Kakuna: **+0.64 pp [−2.17, +3.45]** (X60-T 0.515 vs C0 0.508, 3,600 games an arm; per seed −0.42 / +0.17 / +2.17). Determinism guard PASS; every VOID gate PASS. | Neither a GAIN nor a NULL at look 1. | Look 2 licensed; registered by AM-X60T-2 (`aea028c60`); its training started 11-09 (§2). |
@@ -81,13 +83,13 @@ The owner's 2026-11-09 direction (§1) puts MODEL levers first on the GPU, ranke
 order after REVIEW_2 of the all-null strategy (`69c7cd34d`) with the verdicts since 10-27 applied. Every item needs
 its GO.
 
-**The GPU after X60-T's training (≈ 11-12): the model-first queue** (EXPERIMENT_BACKLOG §2.0; every effect a GUESS).
+**The GPU after X60-T's training (ended 11-10): the model-first queue** (EXPERIMENT_BACKLOG §2.0; every effect a GUESS).
 - **MF-1, ExIt-0H (X66): READ 2026-11-10, NOT-DELIVERED**
   ([`research_state/measurements/x66_exit0h_2026-11-09/README.md`](research_state/measurements/x66_exit0h_2026-11-09/README.md)):
   P\* students fine-tuned toward S′h's 188k banked HONEST labels agree with S′h on held-out panels less than P\* does
   (pooled Δagree −7.05 pp [−7.31, −6.78]); no Kakuna game was played. By its registration this is not evidence for
   MF-5 and plans no ExIt-1 (MF-1b): any follow-up needs its own case.
-- **X67, the entropy screen, in the gap after X60-T's and X66's training:** REGISTERED 2026-11-09, NOT LAUNCHED
+- **X67, the entropy screen:** REGISTERED 2026-11-09, RUNNING since 11-10 15:44 (§2)
   ([`research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md`](research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md)).
   Three P\* + 20M forks with a quarter of the entropy bonus (`ent_coef` 0.0125; ≈ 12.3 GPU-h) against the banked
   no-lever forks, head to head. A PASS names 0.0125 for the base recipe of every BOUNDARY-1 arm; the registration
@@ -104,7 +106,7 @@ its GO.
   loop is the measured route; BOUNDARY-1's 2 × 2 tests it. The MOVE leg is diagnosed (ledger 2026-11-10): an
   over-confident species × move table held up by gradient that is not the label's; the training lever
   `--belief-grad-mode move_label_only` is built off by default; its light screen X69 (three forks of P\*,
-  ≈ 12.3 GPU-h) is REGISTERED and not launched.
+  ≈ 12.3 GPU-h) is REGISTERED (`228dec074`) and queued after X67 (§2).
 - **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
 - **MF-5: BOUNDARY-1's from-scratch 2 × 2**, width (128 against 2× `D_MODEL`, `--d-model`, `0220f8408`, config
   v169) × team breadth (the pool against half procedural teams): REGISTERED 2026-11-09 at pin `507d0c119`,
@@ -132,7 +134,7 @@ its GO.
 - Distillation of S′'s leak-inclusive labels stops at this scale (X65 NOT-DELIVERED; the learnability probe's reading
   2); the honest-label rung is MF-1 above.
 
-**X60-T (H-TEAMS), look 2: TRAINING** (look 1 CONTINUE, `af57d4fd3`; AM-X60T-2 `aea028c60`; §2).
+**X60-T (H-TEAMS), look 2: training ENDED 11-10, play lanes reading** (look 1 CONTINUE, `af57d4fd3`; AM-X60T-2 `aea028c60`; §2).
 
 1. **Capacity at the plateau: CLOSED for growth.** X48 (production, per-kind FFN experts) READ 10-30, **NO-GO** (weak, `b01dc048b`); the N4 toy (FFN width 4×) READ 11-04, **NO-GO** ("used, buys nothing", §2). No N4-P on toy evidence; `D_MODEL` and from-scratch width (the scale bet) stay open, unqueued.
 2. **X63**, a long union continuation: **Stage A read NOT PURSUED (10-31)**, so X63 stops at Stage A
@@ -259,6 +261,11 @@ Every open owner question, in one place.
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
    yes, staged, launched once X60-T's verdict and the boundary's fixes are in, so the owner's answer is needed before
    then.
+6. **`ent_coef` 0.0125 for BOUNDARY-1** (2026-11-10). If X67 passes (§2), the owner's yes names 0.0125 for the base
+   recipe of every BOUNDARY-1 arm and the ONE re-pin is taken at it; without the yes it stays 0.05. Needed before
+   the boundary can launch.
+7. **The quota hook** (2026-11-10). It blocked every session from 10:28 to 12:59 when the Fable weekly window hit
+   100 %. A fix scoped to the model that is out of quota is proposed; it waits on the owner's yes.
 
 ## 7. The biggest risks and unknowns
 
