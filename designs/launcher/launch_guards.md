@@ -224,3 +224,14 @@ inherited env) and no opt-out. `--device auto` / `cpu` are never refused (auto f
 with a warning). The launcher stays CUDA-free: env only, no torch, no `nvidia-smi`. NOT checked: an index past the machine's
 device count, and `cuda:N` past the visible list. The check lives in the LAUNCHER, so it covers a pinned child (whose trainer
 has no check) only when the launcher process itself runs this code. Gate: `cuda_visibility_gate_test.py`.
+
+🚨 **THE INHERITED-NICE PREFLIGHT (2026-11-10).** A waiter armed under the agent-CPU prefix (`nice -n 19`) would have passed
+nice 19 to every GPU training launch: `_apply_nice` only moves the launcher's nice TOWARD `DEFAULT_NICE` (10) and an
+unprivileged process cannot lower its own, so the runs would have trained at nice 19. `main/launcher/nice_gate.py` reads
+the inherited nice (`os.getpriority`, read-only) and refuses `FATAL_CONFIG` (3) naming it when the launch is a REAL GPU
+run (explicit `cuda` / `cuda:N`, no `--debug`) and the nice exceeds `max(DEFAULT_NICE, --nice)` (a typed `--nice 19` is
+deliberate). `run.main()` asks before `_apply_nice` and before `run()`, so nothing exists; it is not in `_prepare_session`
+because `--device` is per-launch (never inherited from a record) and the argv alone decides. `--dry-run` prints the same
+verdict (`inherited nice :` line, 7h) and fails. cpu / auto / `--debug` launches and a nice-0 or nice-10 driver are never
+refused: the nice-0 path (launcher renices to 10) is unchanged. Gate: `nice_gate_test.py` (pure verdict, `main()` with a
+monkeypatched `os.getpriority`, a genuinely niced subprocess, `--dry-run`).

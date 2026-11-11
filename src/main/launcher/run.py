@@ -1273,6 +1273,16 @@ def main() -> None:
             gpu_window=known.gpu_window,
         ))
 
+    # THE INHERITED-NICE PREFLIGHT (`nice_gate`): a real GPU training launch from a nice > 10 shell would train at
+    # that nice (a process cannot lower its own). Before `_apply_nice` and before anything exists; FATAL_CONFIG.
+    from main.launcher.checkpoint import _peek_arg as _peek
+    from main.launcher.nice_gate import verdict_for_launch as _nice_verdict_for_launch
+    _nice = _nice_verdict_for_launch(_peek(child_args, "--device"), debug="--debug" in child_args,
+                                     nice_arg=known.nice)
+    if _nice.refused:
+        print(f"[launcher] ERROR: {_nice.reason}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
     # Deprioritise the whole run before anything is spawned, so the training child and
     # every worker it forks inherits it (see _apply_nice).
     _apply_nice(known.nice)

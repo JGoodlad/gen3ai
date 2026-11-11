@@ -30,6 +30,6 @@ fork) is `designs/ops/training_runbook.md` → *Launcher*; the pre-split leaf is
 | `pinned_argv.py` + `pinned_argv_probe.py` | validate the child argv against the PINNED commit's parser, not this tree's |
 | `dry_run.py` | `--dry-run`: resolve and print the launch, create nothing |
 | `gpu_window/` | the GPU window: `protocol.py` (the files), `controller.py` (the launcher's half, driven by `_supervise`), `cli.py` (`python -m main.launcher.gpu_window arm / guest / status / resume / preempt / cancel`) |
-| `disk_gate.py` / `submodule_gate.py` / `cuda_visibility_gate.py` | the launcher halves of the disk-space, Showdown-submodule and CUDA-visibility preflights |
+| `disk_gate.py` / `submodule_gate.py` / `cuda_visibility_gate.py` / `nice_gate.py` | the launcher halves of the disk-space, Showdown-submodule, CUDA-visibility and inherited-nice preflights |
 | `state.py`, `ipc.py`, `input.py`, `format.py` | the lock-protected state snapshot, child IPC, key dispatch, pure formatters |
 | `app.py` + `launcher.tcss` | the Textual UI (a `Gen3App` on the shared `src/main/tui/` base) |

@@ -1121,6 +1121,16 @@ def _the_disk_guard_never_reads_the_real_free_space(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _the_callers_nice_never_decides_a_launch_verdict(monkeypatch):
+    """`main.launcher.nice_gate` refuses a real GPU launch from a shell above nice 10, and agents and the ship gate run
+    tests under `nice -n 19` (rule 5b), so an in-process `--dry-run --device cuda` would pass or fail on the CALLER's nice.
+    The seam `nice_gate.inherited_nice` reads 0 here; `nice_gate_test.py` restores the real reading and sets the nice
+    explicitly in each case."""
+    import main.launcher.nice_gate as nice_gate
+    monkeypatch.setattr(nice_gate, "inherited_nice", lambda: 0)
+
+
+@pytest.fixture(autouse=True)
 def _the_desktop_gpu_check_never_reads_the_real_box(monkeypatch):
     """T23: no test reads the box's REAL display state. `--device auto` resolves to CPU for the
     desktop-GPU check (`utils.desktop_gpu.nvidia_gpu_visible` reads `nvidia-smi`) and the NVML listing

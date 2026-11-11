@@ -535,6 +535,13 @@ def dry_run(
     for line in cuda_vis.lines():
         out(f"  {line}")
 
+    # 7h. THE INHERITED-NICE PREFLIGHT - `nice_gate`, the verdict `run.main()` enforces before `_apply_nice`: a real GPU
+    #     launch from a nice > 10 shell would train at that nice. Read-only (`getpriority`); never advisory.
+    from main.launcher.nice_gate import verdict_for_launch as _nice_for_launch
+    nice_v = _nice_for_launch(_dev, debug=_dbg, nice_arg=nice)
+    for line in nice_v.lines():
+        out(f"  {line}")
+
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
     #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
@@ -593,6 +600,8 @@ def dry_run(
     if deps.refused:                              # printed at 7f
         failed = True
     if cuda_vis.refused:                          # printed at 7g
+        failed = True
+    if nice_v.refused:                            # printed at 7h
         failed = True
 
     if failed:
