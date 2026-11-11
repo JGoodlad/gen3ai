@@ -1,16 +1,17 @@
 # The core split: which CPUs the trainer gets and which the agents get
 
-**Status (2026-11-09): the A/B is ADOPTED, the split is unchanged.** The orchestrator set the bar at **3 %** of
-projected steps per second and adopted the plan below. The active split is still `5+3`: the trainer on CPUs
-`0-4,8-12` (5 physical cores), agent work on `5-7,13-15` (3 physical cores, root `CLAUDE.md` rule 5b). It stays the
-default until the A/B of §5 has run on the next fresh training launch and its result is recorded. When a split is
-adopted, rewrite this status to state the split as it is.
+**Status (2026-11-10): the A/B has RUN; the split stays `5+3`.** The trainer is on CPUs `0-4,8-12` (5 physical
+cores), agent work on `5-7,13-15` (3 physical cores, root `CLAUDE.md` rule 5b). The A/B of §5 ran once, on the fresh
+launch `rb_x35_x67ent_s6701`, and no narrower arm passed the 3 % bar (§5, "The result"); the orchestrator kept `5+3`
+by the registered rule, and an operator rule that freezes the split reads `5+3`. A re-measure is worth its 10 minutes
+only if agent CPU becomes the binding limit again. When a split is adopted, rewrite this status to state the split as
+it is.
 
 **In one paragraph.** The trainer uses 1.8 of its 10 threads on average and never more than 3.4 in any second, while
 the 6 agent threads are 93 % busy. **4 + 4** (trainer `0-3,8-11`, agents `4-7,12-15`) is predicted to cost the trainer
 0 to 1 % of its steps per second for a third more agent CPU; **3 + 5** (trainer `0-2,8-10`, agents `3-7,11-15`) about
-3 % for two thirds more. No measurement of steps per second against core count exists, so a 10-minute A/B on the next
-fresh launch decides by a rule fixed in advance (§5): adopt the narrowest arm that passes.
+3 % for two thirds more. A 10-minute A/B on a live fresh launch decided by a rule fixed in advance (§5): it measured
+**+2.88 %** for 4 + 4 (between the pass and fail lines) and **+8.71 %** for 3 + 5, so neither passed and `5+3` stays.
 
 The box: one Ryzen 7 9800X3D, 8 physical cores, 16 threads; CPU n and n+8 are SMT siblings; one shared L3 cache. A split
 is always made of WHOLE physical cores.
@@ -120,7 +121,7 @@ through the shared L3 and the all-core clock (X65-F1 saw nothing with three).
 
 ## 5. The 10-minute A/B: `main.ops.core_split_ab`
 
-It runs once, on the next fresh training launch, on the real run, by the session that launched it (procedure:
+It ran once (2026-11-10; the result closes this section), on the real run, by the session that launched it (procedure:
 `TRAINING_RUN_SOP.md` §2). It only narrows that run's own tree inside the CPUs it already has, so nothing else on the
 box moves, and it changes the run's timing, not its arithmetic. Agents stay on the active agent list throughout.
 
@@ -207,6 +208,15 @@ refuses.
   launching session on its own tree) is the fallback.
 - **What it cannot see.** The freed cores sit idle during the A/B, so it is optimistic about shared-cache and clock
   effects, and it does not cover start-up or evals. §7's check after the switch covers those.
+- **The result (2026-11-10, `rb_x35_x67ent_s6701`, launcher 209033, 16:37:58 to 16:47:41 PST, started right after
+  the 284,000,191 eval; no eval inside).** `RESULT: no narrower arm passed. Keep the split as it is (5+3).`
+  Arm B (4 trainer cores, `0-3,8-11`): INCONCLUSIVE, projected loss **+2.88 % ± 0.33 %** (period ratio 1.0817 over 6
+  rollouts), between the pass and fail lines. Arm C (3 trainer cores, `0-2,8-10`): INCONCLUSIVE, **+8.71 % ± 0.73 %**
+  (period ratio 1.2468), its standard error over the 0.5 % limit and its loss far past the fail line. Control
+  (`update_wall_s`, during vs before): +3.7 %. The driver restored `0-4,8-12`, verified on 68 threads. Decision
+  (orchestrator, 2026-11-10): KEEP `5+3`, no `set`. The model had put C at 3.2 %; the measurement is nearly three
+  times that, so §4's model understates what a narrower trainer costs. B sits just under the bar, so a re-measure is
+  worth it only if agent CPU becomes the binding limit again.
 
 ## 6. What does not read the owner
 
@@ -250,11 +260,11 @@ changes only at a launch, where one write does both sides.
 
 ## 8. What it buys
 
-| split | agent cores | agent threads | change | predicted cost in steps per second |
-|---|---|---|---|---|
-| today | 3 | 6 | | |
-| 4 + 4 | 4 | 8 | +33 %, +48 thread-hours a day | 0 to -1 % |
-| 3 + 5 | 5 | 10 | +67 %, +96 thread-hours a day | about -3 % (-3 to -5 %) |
+| split | agent cores | agent threads | change | predicted cost in steps per second | measured (§5, 2026-11-10) |
+|---|---|---|---|---|---|
+| today | 3 | 6 | | | |
+| 4 + 4 | 4 | 8 | +33 %, +48 thread-hours a day | 0 to -1 % | -2.88 % ± 0.33 % (not adopted) |
+| 3 + 5 | 5 | 10 | +67 %, +96 thread-hours a day | about -3 % (-3 to -5 %) | -8.71 % ± 0.73 % (not adopted) |
 
 - **In Kakuna terms.** A 20-game Kakuna unit cost a mean 231 CPU-seconds on 11-09 (median 179; 1.10 threads busy
   while it runs; systemd's accounting of 293 unit scopes). One unit stream running without a pause is one lane-hour per

@@ -629,8 +629,9 @@ notice it is gone. (The */15 watchdog cron is retired, layer 2.)
   rule to this session's jobs; it does not relax it in `TRAINING_RUN_SOP.md`.
 - **The core split is this session's decision, and so is the pin enforcer** ([`core_split.md`](core_split.md)).
   Which CPUs the trainer and the agents get lives in `utils.core_split` (`python -m utils.core_split show`). The
-  orchestrator gives the go for the one-time A/B on the next fresh launch, has the training session queue the
-  split its RESULT line names (`set <split> --next-launch`), and orders a rollback (agents first, §7 there). The
+  orchestrator gave the go for the one-time A/B (it ran 2026-11-10: `5+3` kept) and gives it for any re-measure,
+  has the training session queue the split its RESULT line names (`set <split> --next-launch`), and orders a
+  rollback (agents first, §7 there). The
   pin enforcer (this session's script: while a GPU lease is held it re-pins every nice-19 process to the agent
   list every 30 s) reads `python -m utils.core_split agent-cpus` once per cycle and skips the cycle when the read
   fails; a literal list in it silently undoes an adopted split for every agent job.

@@ -346,8 +346,9 @@ Which CPUs the trainer gets has ONE owner, `utils.core_split` ([`core_split.md`]
   prints nothing or says a queued split `stays QUEUED` (`launch_x35.sh` does all of it, and reads the list with
   `--dry-run` in its pre-checks first). That read is also what makes a queued split active, and only when no trainer
   is live. `python -m utils.core_split show` names the split and each live tree's CPUs.
-- **The A/B, ONCE, on the next fresh launch, on the orchestrator's go** (it decides whether the trainer gives one or
-  two of its five cores to the agents; rule and method: `core_split.md` §5). After the run's third logged iteration,
+- **The A/B ran ONCE (2026-11-10, `rb_x35_x67ent_s6701`: no narrower arm passed, `5+3` kept; `core_split.md` §5).
+  A re-measure runs only on the orchestrator's go**, on a fresh launch (it decides whether the trainer gives one or
+  two of its five cores to the agents). After the run's third logged iteration,
   right after an eval has logged (no eval may fall inside its 7 minutes):
 
   ```bash
