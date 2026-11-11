@@ -1,0 +1,48 @@
+{
+ "rows": [
+  "94f173f943d4a930ea5a523f6874d6cec7cb90d88c7646b923c7829c2d79f128",
+  "0b6bd3ffb3f6fe0198887466c432bba3480bb06b3129711581cf3d5aed257a4d",
+  "510182547f4e530a9f78d5201ffc7b623e5063776c423159e94b892895cdbbb3"
+ ],
+ "cols": [
+  "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+  "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+  "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+  "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+  "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+  "21409eee22839b3c6040c43b7b58d7886c49569d6dd288353beb36ec7976b560",
+  "455f73c8d2bd570bf3eca176e3e3953a9b9ac5c059ec35a9a40169a4da1687af",
+  "8db0a96e55b751fdfac18bc7fe2cbabf5dd5ce7eddd7560f04bea3fa41fb262e"
+ ],
+ "row_seeds": [
+  6701,
+  6702,
+  6703
+ ],
+ "col_seeds": [
+  3501,
+  3502,
+  3503,
+  3504,
+  3505,
+  3506,
+  3507,
+  3508
+ ],
+ "row_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6701/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6702/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6703/final_model.zip"
+ ],
+ "col_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3504/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3505/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3506/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3507/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3508/final_model.zip"
+ ],
+ "left_out": []
+}

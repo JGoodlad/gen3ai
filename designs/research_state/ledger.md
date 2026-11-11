@@ -31180,3 +31180,55 @@ landed row, the MF-1 bullet), `EXPERIMENT_BACKLOG.md` (MF-1 and MF-1b, the MF-1 
 `endstate/design_searched_player.md` (one status clause), `endstate/README.md` (row 48).
 
 Tag: **VERDICT · X66 ExIt-0H · NOT-DELIVERED · pooled Δagree −7.05 pp [−7.31, −6.78] · every panel negative · held-out Δagree ≤ 0 at every checkpoint, precision 0.21–0.24 · no game played · not evidence for MF-5, no ExIt-1 planned (pre-commitments)**
+
+### 2026-11-11 · VERDICT · **X67 the entropy screen: PASS — three P\* + 20M forks at a quarter of the entropy bonus (`ent_coef` 0.0125) beat the eight banked C0 forks (0.05) head to head, D +1.97 pp [+1.35, +2.59]; LR-MOVED on all three (the controller cut the rate twice, 8.372e-05 vs C0's 1.0047e-04); entropy 0.68 vs 1.01 nats; moves no recipe on its own**
+
+**Question** (PREREG `1bab9e87a` 2026-11-09, unamended; pin `f4b25238`). Does a plateau policy trained on with a
+quarter of P\*'s entropy bonus beat the same policy trained on with all of it? Rows: `rb_x35_x67ent_s6701..s6703`
+(P\* @280,000,170 + 20M, `--ent-coef 0.0125`). Columns: C0 `rb_x35_c0_s3501..s3508` (the five banked and X60-T's
+three top-up finals; `plan_cross.py` admitted all eight). 1,000 mirrored team pairs a cell, both sides greedy,
+schedule seed 0, oracle reveal off, played on CPU at the pin.
+
+**Verdict: PASS** (`screen_rule.decide`, `record/verdict.json`). D = mean(h) − 50 = **+1.969 pp**, 90 % interval
+**[+1.346, +2.592]** (SE 0.323, Welch df 6.22). Both binomial floors bound (rows: sample 0.102 pp² → 1.25/8; columns:
+0.348 → 1.25/3), so the forks' seed spread was within one cell's noise. Row means 52.34 / 51.79 / 51.78; 23 of 24
+cells above 50 (the lowest, s6702 vs s3505, 49.93). 48,000 games, every cell OK, 0 aborted, 0 timeouts, 210 draws.
+**Reported:** the fresh-run-floor (1.76 pp) interval [−0.65, +4.58] spans 0; the day split reads banked columns
++1.95 pp, top-up columns (trained within a day of X67) +2.00 pp.
+
+**VOID guards (§8): none fired, three valid forks.** rc 0, `Last step` ≥ 300,021,355, `final_model.zip`, the newest
+checkpoint within 61,788 steps; K9(b) PASS at arm end (max 4.31e-4 / 2.31e-4 / 2.09e-4); FORK of `rb_x26_s2601` at
+`f4b25238`; pool-seed PASS; `ent_coef` 0.0125 in the table, `metadata` and `cli_args`; 10 epochs, effective batch
+65,536; `sidecar_audit` one span, 0 PIN-SPLIT. s6701's one T2 near-tie stop (≈ 295.5M) was the pre-approved
+auto-resume from 295,000,204, not a VOID.
+
+**Labels.** `LR-MOVED` on every fork: `lr_median` 8.372e-05 (−16.7 %), dose rate 0.83× C0's. `ENT-UNMOVED`: no.
+
+**Reported (§9), never decided.** End entropy (mean of the last 20 points of −`entropy_loss`): X67 0.659 / 0.683 /
+0.687 (mean 0.676) against C0 1.004–1.018 (mean 1.010). It falls from ≈ 1.0 to ≈ 0.70 within ≈ 10M steps and then
+settles. approx KL median 0.0185–0.0188 against C0's 0.0179–0.0183, so the KL controller cut the rate a second time
+at 286–287M in every fork (C0: once). Greedy-minus-sampled and Kakuna on U were not run (both conditional; the agent
+cores held X60-T's play lanes).
+
+**Against the GUESS (§1).** D ∈ [−1, +2], most likely ± 1: it read at the top edge, outside ± 1.
+
+**What it licenses (§10).** `ent_coef` 0.0125 is named for the base recipe of BOTH BOUNDARY-1 arms in that
+PREREG's §10 fill, never one arm. Because the PASS carries LR-MOVED, it goes to the orchestrator with both numbers
+(D +1.97 pp [+1.35, +2.59]; `lr_median` 8.372e-05 vs 1.0047e-04) before the recipe moves. `production_config.json`
+and `design_learner_recipe.md` §3.22 are untouched; the owner's 2026-09-29 ruling stands until lifted in
+BOUNDARY-1's registration. **Limits, registered:** a late fork is not a fresh run; head to head against siblings is
+not strength against Kakuna; one dose.
+
+**FINDINGs** (README): X67-R1, the pessimistic interval spans 0; X67-R2, the dose differs (LR-MOVED); X67-R3, no
+outside evidence (§9's Kakuna read not run); X67-R4, the slim `launcher_child.log` no longer holds the
+hyperparameter table, only `launcher_child.full.log` does (the VOID check used it); X67-R5,
+`design_learner_recipe.md` §3.9's "REGISTERED, not run" is now stale and moves with BOUNDARY-1's registration.
+
+**Record:** `measurements/x67_entropy_screen_2026-11-09/README.md` and `record/` (`verdict.json`, `h.json`,
+`cells.json`, `cells_plan.json`, `shas.json`, `drive_cross.log`, `k9b_x67.json`, `dose_x67.txt`,
+`sidecar_audit_x67.txt`, `diag9_entropy.{py,json,txt}`). Eval ledger family `x67_entropy_screen_h2h`, request
+`x67_entropy_screen`.
+View: `UNDERSTANDING.md` (§4.15), `STATUS.md` (§2 GPU row, the landed X67 bullet, owner decision 6),
+`EXPERIMENT_BACKLOG.md` (the MF-5 note on X67).
+
+Tag: **VERDICT · X67 entropy screen · PASS · D +1.97 pp [+1.35, +2.59] (3 × 8, floors bound) · pessimistic [−0.65, +4.58] · banked +1.95 / top-up +2.00 · LR-MOVED ×3 (8.372e-05 vs 1.0047e-04) · entropy 0.68 vs 1.01 nats · licenses naming 0.0125 for BOUNDARY-1's base, after the orchestrator sees the LR label and the owner's yes**

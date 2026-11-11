@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-31,183-line file. **The ledger itself is append-only and is never edited by this**;
+31,235-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1004 headings · 949 dated · 2026-08-01 → 2026-11-10 · ledger 31,183 lines.**
+**1005 headings · 950 dated · 2026-08-01 → 2026-11-11 · ledger 31,235 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1024,3 +1024,4 @@ rename.
   - `L30976` · `2026-11-09` · SCREEN · **X68 reads DROP: P\*'s three belief residuals retrained on procedural-team labels with the trunk frozen are 2.3 / 3.2 nats better than P\* on H / F but still 0.68 / 0.74 nats below the Smogon prior (lower bounds −0.94 / −1.05 against the −0.25 bar); a light screen, never a verdict, adopts nothing**
   - `L31027` · `2026-11-10` · MEASUREMENT (DESCRIPTIVE) · **MOVE-LEG DIAGNOSIS (REPORTED, no verdict): the unshown-move belief's off-pool deficit is 5 to 6 times larger on a proper score than the meter's column shows (P\* −1.83 / −0.61 / −2.21 nats a unit below its Smogon prior on H / F / P72, +0.39 in the pool); 83 % of the head's residual is a fixed species × move table that is OVER-CONFIDENT against its own labels where it trained, and an ideal memoriser of the pool would sit at the prior on H and F; the gradients that hold the table up are not the label's (the consumers of the published posterior, ≈ 350 times the label's; the move latent loss's variance hinge); the lever `--belief-grad-mode move_label_only` is built off by default**
   - `L31109` · `2026-11-10` · VERDICT · **X66 ExIt-0H: NOT-DELIVERED — the three P\* students distilled from the HONEST search's banked choices agree with it on their held-out panels LESS than P\* does (pooled Δagree −7.05 pp [−7.31, −6.78]; H −6.48, F −7.16, P72 −7.50); no Kakuna game is played; by pre-commitment this is NOT evidence for the scale bet (MF-5) and plans no ExIt-1**
+  - `L31184` · `2026-11-11` · VERDICT · **X67 the entropy screen: PASS — three P\* + 20M forks at a quarter of the entropy bonus (`ent_coef` 0.0125) beat the eight banked C0 forks (0.05) head to head, D +1.97 pp [+1.35, +2.59]; LR-MOVED on all three (the controller cut the rate twice, 8.372e-05 vs C0's 1.0047e-04); entropy 0.68 vs 1.01 nats; moves no recipe on its own**

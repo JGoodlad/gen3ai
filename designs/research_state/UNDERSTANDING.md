@@ -103,7 +103,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) but has no Kakuna number; H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -782,6 +782,25 @@ state) and trained 70M steps against a same-pin control C0′, 3 + 3 seeds, ever
   longer dose.
 
 [MEASURED · S + Kakuna F (post-H22 pack) on `31bd9ced9`'s engine · `8ed8164ea`; ledger 2026-11-04 · *N4 (the toy capacity screen) LOOK 1*]
+
+### 4.15 A quarter of the entropy bonus at the plateau: the sharper forks beat their siblings (X67, 2026-11-11)
+
+X67 continued P\* 20M with `ent_coef` 0.0125 instead of 0.05 (three seeds), at the production side pin. It played
+every fork against all eight C0 finals head to head, both sides greedy (3 × 8 cells, 48,000 games). **PASS: D +1.97 pp
+[+1.35, +2.59]** (90 %). The forks' seed spread was within one cell's binomial noise, so the binomial floors set the
+width. The banked and the top-up columns read alike (+1.95 / +2.00). Under the fresh-run seed floor the interval
+would be [−0.65, +4.58].
+- **The lever acted.** End entropy 0.68 nats against C0's 1.01, reached within ≈ 10M steps.
+- **The dose differs (LR-MOVED).** The per-update policy change ran slightly higher (approx KL 0.0185–0.0188 vs
+  0.0179–0.0183), so the KL controller cut the rate once more (8.372e-05 vs 1.0047e-04; dose rate 0.83×). That is
+  the lever's own effect, but the forks did not learn at C0's rate.
+- **What it does not show.** A late fork is not a fresh run, and siblings are not Kakuna: no outside game was
+  played. One coefficient, one dose.
+- **What it moves.** By its registration a PASS names 0.0125 for the base of both BOUNDARY-1 arms. That waits on
+  the orchestrator, who weighs the LR label, and on the owner's yes. The owner's 2026-09-29 ruling ("no direct
+  adoption of a lower bonus") stands until then. No recipe has moved.
+
+[MEASURED · in-house head to head at pin `f4b25238`, CPU · ledger 2026-11-11 · *X67 the entropy screen: PASS*]
 
 ---
 
