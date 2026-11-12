@@ -209,7 +209,66 @@
    "use": "X60-T's H-TEAMS corpus (design_human_replay_lever.md \u00a76.4), = X61's n1_hrep_v1 under one id; reached only by --human-data teams:, never by --team-mix; R72 is drawn from it"
   }
  },
- "models": {},
+ "models": {
+  "hclone_hr_spec_v1_r2_s5901": {
+   "rowset": "hr_spec_v1.r2",
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "manifest_sha256": "433c06c980e90a4035f6dce4542626c929ab974a3c6f2725a88bd1e31db0230b",
+   "checkpoint_sha256": "83eabd00d6b21b89c5d62c43b4be1672c0a5de08345c690fa23ca35ca1f6551d",
+   "config_sha256": "8e8e8b9d13aad40ed28853e999c46ab24d72b265ff9cd455466330fc0347cc5a",
+   "seed": 5901,
+   "recipe": {
+    "max_epochs": 40,
+    "evals_per_epoch": 4,
+    "patience": 4,
+    "min_delta": 0.001,
+    "warmup": 1000,
+    "lr_ladder": [
+     0.0003,
+     0.00015,
+     7.5e-05,
+     3.75e-05
+    ],
+    "train_shards": null,
+    "held_out_rows": null,
+    "batch": 512,
+    "clip": 0.5,
+    "optimizer": "AdamW wd 1e-5 eps 1e-5",
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "smoke": false
+   },
+   "held_out": {
+    "stop": {
+     "rows": 14433,
+     "nll": 1.141444818945965,
+     "top1": 0.5516281868090547,
+     "top1_rows": 13297,
+     "uniform_nll": 1.8554257574675381
+    },
+    "report": {
+     "rows": 15471,
+     "nll": 1.1078130900108563,
+     "top1": 0.5556257901390644,
+     "top1_rows": 14238,
+     "uniform_nll": 1.838779963933362
+    }
+   },
+   "stop": {
+    "reason": "CONVERGED",
+    "converged": true,
+    "step": 26565,
+    "epochs": 11.5,
+    "rung": 3,
+    "best_step": 19635,
+    "best_stop_nll": 1.1414447776882393
+   },
+   "human_data": true,
+   "status": "measurement",
+   "location": "~/gen3ai_archive/human_models/hclone_hr_spec_v1_r2_s5901/",
+   "registered_at": "2026-11-12T02:57:45+00:00"
+  }
+ },
  "rowsets_schema": "<snapshot>.r<n>: {snapshot, filter_spec, panel_exclusion_set (the held-out panels it excluded), rows_manifest_sha256, c_game_commit, extraction_commit, layout_hash, status}; a new held-out panel retires it",
  "models_schema": "hclone_<rowset>_s<seed>: {rowset, rows_manifest_sha256, manifest_sha256, checkpoint_sha256, config_sha256, seed, recipe, held_out, stop, human_data, status (measurement | reference | retired | smoke), location, registered_at}; written only by python -m main.human_data.clone register (utils.human_models, schema gen3_human_model_v1); the files live outside git"
 }

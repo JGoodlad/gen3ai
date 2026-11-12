@@ -22,12 +22,12 @@ STATUS
   human decisions in training / eval / play     : X59-S's 5 S-H student networks only (offline) / none / none
   human-built teams in training                 : yes (the 719-team pool; --team-mix corpora when typed; a replay-built corpus only via --human-data teams:)
   replay-derived teams in eval                  : yes (heldout72_hpfix = Metamon hl_05_26)
-  human-trained models                          : Kakuna, SmallRL, LargeRL, LargeIL, PastaMittens (eval anchors); the HOM and X59-S's 15 human-row students S-H / S-P / S-P0 (offline only)
+  human-trained models                          : Kakuna, SmallRL, LargeRL, LargeIL, PastaMittens (eval anchors); the HOM, X59-S's 15 human-row students S-H / S-P / S-P0 and the R9 clone hclone_hr_spec_v1_r2_s5901 (offline only)
   human aggregates                              : Smogon usage / sets / spreads (every prior; the C-GAME fill)
   switch --human-data                           : BUILT
   snapshot hr_spec_v1                           : 376,410 logs; durable copy yes
   snapshot hr_arch_2026-10-24                   : 16,490 logs; durable copy yes
-  rowsets / models registered                   : 3 / 0
+  rowsets / models registered                   : 3 / 1
   H-TEAMS corpus (X60-T; local only)            : hr_spec_v1.r3, 2,295 teams / 812 accounts; built 11-06, trained on by rb_x60t_s3501-s3503 (look 1)
   rowset in use (X59-S)                         : hr_spec_v1.r2, 1,201,538 train / 29,904 validation rows
   informative rows, actor >= 1500               : 1.80M
@@ -38,7 +38,7 @@ STATUS
   human vs self-play data (Q-H9, X59-S)         : SELF-PLAY-DATA-BETTER, Δ_data -7.28 pp [-10.29, -4.28]; in-house -9.06; closes NOTHING (Δ_restriction +2.85 [+0.14, +5.56])
   ≥ 1500 follow-up (Q-H15, in-house, N 270,260) : rating NOT-RESOLVED +1.33 pp [-2.76, +5.43]; ≥ 1500 vs self-play SELF-PLAY-DATA-BETTER -4.42 [-6.07, -2.76]
   evidence that human data helps goal (b)       : none; at matched volume human rows teach a fresh network LESS than our self-play rows
-  switch values                                 : teams = more teams in the pool | init = a fresh run starts from a registered human-replay clone | opp = the frozen clone joins the self-play opponents (all BUILT; no clone is registered, so init and opp have nothing to name yet)
+  switch values                                 : teams = more teams in the pool | init = a fresh run starts from a registered human-replay clone | opp = the frozen clone joins the self-play opponents (all BUILT; one clone is registered, hclone_hr_spec_v1_r2_s5901 (11-11); no run names it yet)
   open                                          : whether human TEAMS help (X60-T: X59-S closed nothing, routes H-TEAMS first); whether rating matters at fixed slice (the ≥ 1500 follow-up: NOT-RESOLVED, +1.33 pp [−2.76, +5.43]); does ONE human lever raise P* (X60-T: look 1 CONTINUE 11-07, F +0.64 pp [−2.17, +3.45]; look 2 at 8 v 8 registered, AM-X60T-2; its GAIN-to-ADOPT guards and the pooled REPORTED Δs built, AM-X60T-3); how the spectator stream was selected (Q-H4)
 ```
 
@@ -48,7 +48,7 @@ data beats our self-play data (§7.1): 5 learn human decisions (S-H), 10 learn P
 S-P0), 5 learn self-play (S-S). None is a run under `models/` and none seeds one. Human data is nevertheless already
 in the system in four other forms (§2): the teams we train on were built by people, one evaluation panel was
 extracted from ladder replays, our external meters were trained on human replays, and every prior is Smogon's
-aggregate of human ladder games. The switch has three levers (§6): `teams` (human-built teams in the pool; X60-T's runs train under it), and, built 2026-11-10 and used by no run, `init` and `opp`, the two ways a network CLONED from human decisions can reach a run (as a fresh run's starting weights, or as a frozen self-play opponent). Neither can be typed yet: no clone is registered (§5). **There is
+aggregate of human ladder games. The switch has three levers (§6): `teams` (human-built teams in the pool; X60-T's runs train under it), and, built 2026-11-10 and used by no run, `init` and `opp`, the two ways a network CLONED from human decisions can reach a run (as a fresh run's starting weights, or as a frozen self-play opponent). One clone is registered (§5.1, `hclone_hr_spec_v1_r2_s5901`, 2026-11-11); no run names it yet. **There is
 no evidence yet, either way, that human data would help on unfamiliar teams:** the 15.9 % line says human teams
 REACH that region (coverage), the −0.503 line says human choices are LEARNABLE, and upstream's human-only models all
 lose to our P\* (Q-H10). **X59-S has now read inside our network, and the answer is no at this volume** (2026-10-30):
@@ -197,7 +197,7 @@ the account is stored only as a salted hash; a per-account cap applies; it is ne
   ROWSET    training rows or teams          <snapshot>.r<n>  (rows manifest sha256)   registry "rowsets" (hr_spec_v1.r1, .r2, .r3)
      │  a fine-tune or a from-scratch fit on the rowset
      ▼
-  MODEL     a clone of the rowset's choices hclone_<rowset>_s<seed>  (checkpoint sha256)   registry "models" (empty)
+  MODEL     a clone of the rowset's choices hclone_<rowset>_s<seed>  (checkpoint sha256)   registry "models" (1: hclone_hr_spec_v1_r2_s5901)
   the switch names the most-derived id it uses: teams:<rowset>@<share> | init:<model>@<dose> | opp:<model>@<share>
 ```
 
@@ -243,14 +243,15 @@ checks it against `designs/research_state/heldout_panels.json`).
 - **Accounts in committed artifacts are salted hashes** (`hrq.acct`); the salt and the name map stay in
   `~/gen3ai_archive/human_snapshots/`.
 
-### 5.1 The clone: a rowset's choices in our network, trained to convergence (BUILT 2026-11-10; none trained)
+### 5.1 The clone: a rowset's choices in our network, trained to convergence (BUILT 2026-11-10; one trained and registered 2026-11-11)
 
 `python -m main.human_data.clone train | export | register` makes the MODEL of the chain. It is the X59-S student's
 network, loss (the set-label NLL), optimiser, batch (512) and fp32 precision, imported, with a different schedule:
 X59-S's students ran a fixed 3 epochs (7,041 steps, a cosine schedule ending at its floor) and all five human-label
 students were still improving at the end (held-out NLL fell a mean 0.023 nats over the last epoch, to 1.172–1.191;
-`~/gen3ai_archive/x59s/students/s_h_<seed>/state.pt`), so X59-S speaks for SHORT cloning only: where the NLL
-converges was never measured.
+`~/gen3ai_archive/x59s/students/s_h_<seed>/state.pt`), so X59-S speaks for SHORT cloning only. The first registered clone, `hclone_hr_spec_v1_r2_s5901` (R9 step 1,
+2026-11-11, cuda), stopped CONVERGED at 11.5 epochs (LR rung 3; the best STOP read at step 19,635): REPORT half NLL
+1.1078, top-1 0.5556 (15,471 rows; uniform 1.8388), against the short students' 1.172–1.191.
 
 | part | the registered recipe (`clone.REGISTERED`; any override makes a SMOKE model) |
 |---|---|
@@ -259,7 +260,7 @@ converges was never measured.
 | the early-stop metric | action NLL on the STOP half, read every quarter epoch (top-1 on single-label rows beside it); a read improves when it is ≥ 0.001 nats under the reference |
 | the schedule | 1,000 warm-up steps, then a learning-rate ladder 3e-4 → 1.5e-4 → 7.5e-5 → 3.75e-5; four reads without an improvement (one epoch) step it down; a plateau on the last rung stops the run CONVERGED; the 40-epoch cap stops it BUDGET, recorded as NOT converged |
 | the model | the weights of the best STOP read, never the last; VOID unless that read beats the uniform policy by the student's 0.1-nat margin |
-| sized from r2 | 1,201,538 training rows = 2,347 steps an epoch before the split's drop; 225.6 ms a step solo on the box's RTX 3080 Ti (X59-S's passing pre-flight, `~/gen3ai_archive/x59s/results/cuda_preflight.json`; held-out reads excluded) ⇒ ≈ 8.8 GPU-min an epoch, ≈ 5.9 GPU-h at the cap; resumable in ≤ 50-minute chunks. **UNVERIFIED:** the clone trainer itself has run on the CPU only |
+| sized from r2 | 1,201,538 training rows = 2,347 steps an epoch before the split's drop; 225.6 ms a step solo on the box's RTX 3080 Ti (X59-S's passing pre-flight, `~/gen3ai_archive/x59s/results/cuda_preflight.json`; held-out reads excluded) ⇒ ≈ 8.8 GPU-min an epoch, ≈ 5.9 GPU-h at the cap; resumable in ≤ 50-minute chunks. Measured on the first clone: ≈ 205 ms a step, ≈ 8 GPU-min an epoch |
 
 `export` writes the checkpoint through the project's save path and a manifest (`human_model.json`: the rowset, the
 rows manifest sha256, the recipe, the stop, both held-out reads, and the TRAINED tensors: those whose bytes differ
@@ -522,3 +523,4 @@ How it was read (2026-10-27):
 | 2026-11-06 | **The H-TEAMS corpus `hr_spec_v1.r3` BUILT (X60-T), local only** | §5's r3 row: 2,295 teams of 812 accounts from r2's kept battles (actor ≥ 1500, six seen), C-GAME's fill verified equal to r1's, both panel nets plus m4's ≥ 3 post-fill net, the side pin's pack identity and engine coverage as DROP rules, ≤ 5 per account, soaked at both pins; registered in the rowset registry; one id for H-TEAMS and `n1_hrep_v1` (§9 item 6); R72 drawn from it, not registered | keeping the pin's mis-packed Frustration teams (an input ON meets and C0 does not); a `--team-mix` entry (F-M7); committing the corpus (human data) | `~/gen3ai_archive/human_teams/hr_spec_v1.r3/manifest.json` `71783ac8…`; REVIEW F F-M3, F-M7, m4, m5 |
 | 2026-11-06 | **X60-T REGISTERED (not launched)** | Q-H11: the arm, its 8 seeds a side (F-M4's rule on X61P's 10 finals), the I_F 90 % LB guard (F-M6), the side pin `7fe15726c` (D1's pin + the switch + the corpus stub), resumes through the launcher with the seed typed (REVIEW I M2), the corpus named a loser-enriched slice (REVIEW I M4) | 5 seeds (σ̂'s upper bound 2.04 pp exceeds REVIEW F's 1.5 pp bar); the I_F point rule (it leaks a Kakuna-only gain half the time) | `measurements/x60t_h_teams_2026-11-06/PREREG.md`, `REVIEW_I.md` |
 | 2026-11-10 | **`init` and `opp` BUILT; the CLONE trainer BUILT; `bc` and `kl` left the grammar** (R9 of the 2026-11-09 independent review; orchestrator brief) | §5.1: `main.human_data.clone`, the X59-S student retrained to CONVERGENCE (a battle-disjoint held-out split in two halves, a plateau learning-rate ladder that ends in a stop, the best-read weights, a 40-epoch cap recorded as not converged), exported with the tensors its training moved and registered outside git behind a sha256 stub (`utils.human_models`); §6: `init:<model>@<dose>` copies those tensors into a FRESH learner, `opp:<model>@<share>` puts the frozen clone among the self-play opponents through the existing stable-opponent path; a human model is refused at `--model`, `--stable-opponents` and `--exploiter`. X59-S is relabelled a null on SHORT fresh-student cloning (3 epochs; its held-out NLL was still falling). Nothing is trained or launched | keeping `bc` / `kl` as refused heads (X59-S's read dropped H-BC, nothing routes to `kl`, and the budget is three heads); a second flag for the clone (one switch per run); a new frozen-opponent mechanism (`--stable-opponents` already loads a frozen checkpoint, builds it once per worker and caps its share); copying the whole state dict (the clone's untrained value and auxiliary heads are a different seed's noise); a clone under `models/` (human data stays out of git and out of the run archive) | this change; the CPU smoke on one shard of `hr_spec_v1.r2` (16,291 rows after the split's drop of 93; 64 steps in two chunks, so the resume ran: STOP-half NLL 1.853 → 1.697, top-1 0.137 → 0.317; REPORT-half NLL 1.635 against a uniform 1.804; exported, registered as a SMOKE model in a scratch store, and read back by `main.checkargs` under both levers; a `--debug --arch production` trainer smoke started from it under `init` copied 686 of 809 tensors, collected, ran one update and saved a checkpoint whose `metadata.json` carries the clause and the clone's sha256, and a resume of that checkpoint that does not type `--human-data` is refused); `src/main/human_data/clone_test.py`, `src/main/train/human_data_setup_test.py`, `src/utils/human_models_test.py` |
+| 2026-11-11 | **The first clone REGISTERED: `hclone_hr_spec_v1_r2_s5901` (R9 step 1)** | the registered recipe, unchanged: `main.human_data.clone` on `hr_spec_v1.r2`, seed 5901, cuda; CONVERGED at 11.5 epochs (LR rung 3) | a BUDGET stop or a VOID export would have gone unregistered | §5.1: REPORT half NLL 1.1078 / top-1 0.5556 against X59-S's short students' 1.172–1.191; checkpoint sha256 `83eabd00…`; files only in `~/gen3ai_archive/human_models/`; no run names it yet |
