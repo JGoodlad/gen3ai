@@ -457,6 +457,16 @@ call, so `train/noise_scale_<group>` existed at 128 and silently did not at 256.
    gradient), so the CUDA cell runs its compared arms under `torch.use_deterministic_algorithms` and judges the
    bounded arm against the measured spread of four plain arms: zero spread demands bit identity, otherwise a
    relative-L2 distance within 4× of it passes, 16× or more fails, and between the two the cell is INCONCLUSIVE. One rule in bytes at every width; an arm that saves less is untouched.
+   **The ledger counts handles** (one host copy each; `saved_offload.LAST`), because autograd neither unpacks every
+   saved tensor nor unpacks it once: `offloaded == returned + never_unpacked + host_live`, with `unpacks ≥ returned`
+   the copies back (`saved_offload.unsettled`). A node the loss never reaches (read only through a `.detach()`) never
+   unpacks its copy; a tensor saved by several nodes is copied out once and back by each (the card at 2,048 rows,
+   2026-11-11: 451 out / 407 back with nothing kept, 99 out / 108 back at the default budget; both reproduced on the
+   CPU). The graph alone owns a host copy, so it is freed with its node. `host_live` at scope exit is what the
+   extractor's own graph-carrying stashes (`damage_op.stash`, `value_entity_pool.last_att`) still hold until the next
+   forward replaces them: 4 handles, 0.03 MiB at 64 rows forced on the CPU, never added to across canary calls or the
+   null's arms. A strided view the copy would re-lay out is refused and stays on the card OUTSIDE the budget
+   (`refused_mib`: 583 MiB at the default budget on the card, so the arm holds 2,048 + 583 MiB of saved tensors).
 
 **A probe can no longer vanish.** Nothing in the probe path is caught: an OOM inside the dry update is `UpdateWontFit`
 at startup, and a probe failure mid-run stops the run. A re-run that registers different terms from the real forward is

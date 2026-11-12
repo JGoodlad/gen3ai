@@ -13,11 +13,16 @@ identity; a non-zero spread, a distance inside 4x of it, with 4x-16x INCONCLUSIV
 Then the rule, on toys: what stays where it is (a CPU tensor, a small one, a parameter, an expanded view),
 the budget counted per STORAGE in forward order, one copy per tensor and version, a non-dense view refused,
 and the scope's ledger.
+
+THE LEDGER'S INVARIANT is per handle (one host copy): `offloaded == returned + never_unpacked + host_live`,
+and no host copy outlives the graph (`SO.unsettled`). The card's two readings that broke the old
+"returned >= offloaded" (451 out / 407 back; 99 out / 108 back) are reproduced here on toys and on the real
+learner: a saved tensor whose node the loss never reaches is never unpacked, and one tensor saved by several
+nodes is unpacked by each.
 """
 from __future__ import annotations
 
 import contextlib
-import functools
 import itertools
 import warnings
 
@@ -63,7 +68,9 @@ def test_a_forced_round_trip_leaves_the_gradient_bit_identical_and_really_happen
     off = _forced()
     got = _toy_grads(off)
     assert all(torch.equal(a, b) for a, b in zip(plain, got))
-    assert off.offloaded > 0 and off.returned >= off.offloaded and off.kept_bytes == 0
+    assert off.offloaded > 0 and off.returned == off.offloaded and off.kept_bytes == 0
+    assert off.unpacks > off.returned, "`h` is saved by tanh, the product and the sigmoid: unpacked by each"
+    assert SO.unsettled(off.ledger()) is None
     assert off.refused_layout == 2, "the strided slices `h[:, ::2]`, `h[:, 1::2]` are refused, never re-laid out"
 
 
@@ -87,6 +94,63 @@ def test_small_tensors_parameters_and_expanded_views_stay_where_they_are():
     held = off.pack(plain)
     assert isinstance(held, SO._Hosted) and off.offloaded == 1
     assert torch.equal(off.unpack(held), plain) and off.returned == 1
+    assert torch.equal(off.unpack(held), plain) and (off.returned, off.unpacks) == (1, 2)
+
+
+def _handle_states(off):
+    return (off.offloaded, off.returned, off.unpacks, off.never_unpacked, off.host_live)
+
+
+def test_a_saved_tensor_whose_node_never_runs_is_never_unpacked_and_freed_with_the_graph():
+    """The card's first reading (451 out, 407 back): a tensor read only through a `.detach()` was saved by
+    a node the loss never reaches. Its host copy waits for the graph and is booked `never_unpacked`."""
+    import weakref
+    off = _forced()
+    x, w1, _ = _toy()
+    with _hooks(off):
+        h = x @ w1                                                 # MmBackward saves x
+        gate = torch.tanh(h)                                       # TanhBackward saves its result ...
+        loss = (gate.detach() * h).sum()                           # ... and is not on the loss's graph
+        host = weakref.ref(off._seen[id(gate)][2]().host)          # x, gate, and the product's `gate.detach()`
+        assert _handle_states(off) == (3, 0, 0, 0, 3)
+        loss.backward()
+        # the two nodes that ran released their copies; the unreached node's copy still waits
+        assert _handle_states(off) == (3, 2, 2, 0, 1) and off.host_live_bytes == gate.numel() * 4
+        assert off.unpacks < off.offloaded, "the old `returned >= offloaded` is false here, as on the card"
+        assert "outlive the graph" in SO.unsettled(off.ledger())
+        assert SO.unsettled(off.ledger(), graph_freed=False) is None
+        assert host() is not None
+        del gate, loss, h                                          # the graph dies
+    assert _handle_states(off) == (3, 2, 2, 1, 0) and off.host_live_bytes == 0
+    assert off.never_unpacked_bytes == 64 * 48 * 4
+    assert host() is None, "the host copy outlived the graph"
+    assert SO.unsettled(off.ledger()) is None
+    assert torch.equal(w1.grad, x.t() @ torch.tanh(x @ w1).detach())
+
+
+def test_a_tensor_saved_by_several_nodes_is_one_handle_unpacked_by_each():
+    """The card's second reading (99 out, 108 back): one copy out, one copy back per node that runs."""
+    off = _forced()
+    x, w1, _ = _toy()
+    with _hooks(off):
+        h = torch.tanh(x @ w1)
+        loss = (h * h.sigmoid() + h.exp()).sum()                   # h: saved by tanh and twice by the product
+        assert off.offloaded == 4 and off.host_live == 4           # x, h, sigmoid(h), exp(h)
+        loss.backward(retain_graph=True)
+        assert (off.returned, off.unpacks, off.host_live) == (4, 6, 4), "h: one handle, three unpacks"
+        loss.backward()
+        assert (off.returned, off.unpacks, off.never_unpacked) == (4, 12, 0)
+        del h, loss
+    assert off.unpacks > off.offloaded and off.host_live == 0 and SO.unsettled(off.ledger()) is None
+
+
+def test_unsettled_names_each_broken_part_of_the_invariant():
+    led = {**_forced().ledger(), "offloaded": 5.0, "returned": 3.0, "unpacks": 4.0, "never_unpacked": 2.0}
+    assert SO.unsettled(led) is None
+    assert "!= returned" in SO.unsettled({**led, "never_unpacked": 1.0})          # a handle unaccounted for
+    assert "unpacks for" in SO.unsettled({**led, "unpacks": 2.0})
+    live = {**led, "never_unpacked": 1.0, "host_live": 1.0, "host_live_mib": 0.5}
+    assert "outlive the graph" in SO.unsettled(live) and SO.unsettled(live, graph_freed=False) is None
 
 
 def test_the_budget_is_counted_per_storage_in_forward_order():
@@ -114,6 +178,13 @@ def test_one_copy_per_tensor_and_per_version():
     second = off.pack(t)
     assert second is not first and off.offloaded == 2
     assert torch.equal(off.unpack(first) + 1, off.unpack(second))
+    # the graph alone owns a handle: when every node that saved the tensor is gone, so is the host copy,
+    # and a later save of the same tensor is a new one
+    assert off.host_live == 2
+    del first, second
+    assert (off.host_live, off.host_live_bytes, off.never_unpacked) == (0, 0, 0)
+    third = off.pack(t)
+    assert isinstance(third, SO._Hosted) and (off.offloaded, off.host_live) == (3, 1)
 
 
 def test_a_copy_whose_layout_differs_is_refused_and_the_original_kept():
@@ -143,7 +214,9 @@ def test_the_scope_is_fp32_scope_plus_the_hooks_and_publishes_its_ledger():
     assert [type(m) for m in model.policy.modules()] == before
     assert not off._seen, "the scope still holds the arm's tensors"
     assert SO.LAST == off.ledger() and SO.LAST["offloaded"] > 0 and SO.LAST["returned"] > 0
-    assert set(SO.LAST) == {"kept_mib", "offloaded_mib", "offloaded", "returned", "refused_layout",
+    assert SO.unsettled(SO.LAST) is None, "a toy graph is gone at scope exit: nothing may wait on the host"
+    assert set(SO.LAST) == {"kept_mib", "offloaded_mib", "offloaded", "returned", "unpacks", "never_unpacked",
+                            "never_unpacked_mib", "host_live", "host_live_mib", "refused_layout",
                             "refused_mib", "seconds", "budget_mib"}
 
 
@@ -157,13 +230,29 @@ def test_the_reference_arm_is_the_one_the_gate_and_the_canary_call_through_the_s
 
 
 # ── the guarantee, on the real learner ────────────────────────────────────────────────────────
-def _reference(model, args, monkeypatch, **forced):
+def _reference(model, args, monkeypatch, made=None, **forced):
+    """One reference arm -> (its numbers, its ledger AT SCOPE EXIT). ``made`` collects the arm's
+    `SavedOffload`, whose ledger can be read again once the model's next forward dropped the last of the
+    graph (`settled_after_the_next_forward`)."""
     from agents.model import compile_regions as cr
+    real = SO.SavedOffload
+
+    def build():
+        off = real(**forced)
+        if made is not None:
+            made.append(off)
+        return off
+
     with monkeypatch.context() as mp:
-        if forced:
-            mp.setattr(SO, "SavedOffload", functools.partial(SO.SavedOffload, **forced))
+        mp.setattr(SO, "SavedOffload", build)
         out = cr._r1_reference(model, args)
     return out, dict(SO.LAST)
+
+
+def settled_after_the_next_forward(offs):
+    """Each arm's ledger now that a LATER arm's forward has replaced the extractor's stashes — so the
+    caller runs one more arm after the last one judged. Returns {index: what is unsettled}; {} is the pass."""
+    return {i: bad for i, bad in ((i, SO.unsettled(off.ledger())) for i, off in enumerate(offs)) if bad}
 
 
 def _same(a, b):
@@ -184,17 +273,32 @@ def test_on_the_real_learner_the_offloaded_reference_arm_is_bit_identical(monkey
     assert all(_same(plain, again).values()), "the control: two plain arms differ, so nothing below means anything"
     assert led0["offloaded"] == 0 and led0["returned"] == 0, "a CPU learner's reference arm must be untouched"
     assert float(plain["grad"].abs().sum()) > 0
-    full, led = _reference(model, args, monkeypatch, force=True, budget_bytes=0, min_bytes=0)
+    offs: list = []
+    full, led = _reference(model, args, monkeypatch, offs, force=True, budget_bytes=0, min_bytes=0)
     assert _same(plain, full) == {"loss": True, "log_prob": True, "grad": True, "grad_sizes": True}
-    assert led["offloaded"] > 100 and led["returned"] >= led["offloaded"] and led["kept_mib"] == 0
+    assert led["offloaded"] > 100 and led["returned"] > 100 and led["kept_mib"] == 0
+    # both of the card's readings, on the real learner: handles never unpacked (nodes the loss does not
+    # reach), and more copies back than handles returned (a tensor saved by several nodes)
+    assert led["never_unpacked"] > 0 and led["returned"] < led["offloaded"]
+    assert led["unpacks"] > led["returned"]
+    assert SO.unsettled(led, graph_freed=False) is None
+    # at scope exit the extractor's stashes still hold a little of the graph: its copies are live, counted
+    assert 0 < led["host_live"] <= 8 and led["host_live_mib"] < 0.01 * led["offloaded_mib"]
     # a budget in the middle: some storages stay, the rest go, and the numbers are still the plain arm's
     half_bytes = int(led["offloaded_mib"] * MiB / 2)
-    half, led2 = _reference(model, args, monkeypatch, force=True, budget_bytes=half_bytes, min_bytes=0)
+    half, led2 = _reference(model, args, monkeypatch, offs, force=True, budget_bytes=half_bytes, min_bytes=0)
     assert all(_same(plain, half).values())
     assert 0 < led2["kept_mib"] * MiB <= half_bytes and 0 < led2["offloaded"] < led["offloaded"]
     # the production thresholds, forced: only tensors of >= 1 MiB are candidates
-    prod, led3 = _reference(model, args, monkeypatch, force=True, budget_bytes=0)
+    prod, led3 = _reference(model, args, monkeypatch, offs, force=True, budget_bytes=0)
     assert all(_same(plain, prod).values()) and led3["offloaded"] < led["offloaded"]
+    assert all(SO.unsettled(x, graph_freed=False) is None for x in (led2, led3))
+    # NOTHING ACCUMULATES: an earlier arm's last host copies went when the next forward replaced the
+    # stashes, and the last arm's go with one more forward
+    assert [off.host_live for off in offs[:2]] == [0, 0]
+    _reference(model, args, monkeypatch)
+    assert len(offs) == 3 and settled_after_the_next_forward(offs) == {}
+    assert sum(off.host_live_bytes for off in offs) == 0
 
 
 # ── the card's cell: judged against the measured control spread ───────────────────────────────
@@ -245,6 +349,24 @@ def judge_offload(arm, judged, n_control: int = 4):
 
 
 UNBOUNDED = dict(budget_bytes=1 << 60)
+
+
+def ledgers_settle(bounded_leds, offs, one_more_arm):
+    """The cell's ledger rule -> {what: why it fails}; {} is the pass. Each bounded arm's ledger at scope
+    exit really offloaded and returned, and accounts for every handle (`graph_freed=False`: the extractor's
+    stashes may still hold a few); then, after ``one_more_arm()`` has replaced those stashes, every arm's
+    `SavedOffload` in ``offs`` is fully settled: no host copy outlives its graph."""
+    bad = {}
+    for i, led in enumerate(bounded_leds):
+        why = SO.unsettled(led, graph_freed=False)
+        if not (led["offloaded"] > 0 and led["returned"] > 0):
+            why = f"nothing offloaded or nothing returned: {led}"
+        if why:
+            bad[f"bounded ledger {i} at scope exit"] = why
+    one_more_arm()
+    bad.update({f"arm {i} after the next forward": why
+                for i, why in settled_after_the_next_forward(offs[:-1]).items()})
+    return bad
 
 
 @contextlib.contextmanager
@@ -311,8 +433,10 @@ def test_the_cells_judgement_runs_on_the_real_learner_and_catches_a_moved_number
     args = cr._r1_args(model, cr.r1_batch(model, 64, 0))
     tamper = {"on": False}
 
+    offs: list = []
+
     def arm(**forced):
-        out, led = _reference(model, args, monkeypatch, force=True, **forced)
+        out, led = _reference(model, args, monkeypatch, offs, force=True, **forced)
         if tamper["on"] and forced != UNBOUNDED:
             out = {**out, "grad": out["grad"] * (1.0 + 1e-6)}
         return out, led, None
@@ -327,6 +451,10 @@ def test_the_cells_judgement_runs_on_the_real_learner_and_catches_a_moved_number
     for name in judged:
         assert got[name][0] == dict.fromkeys(KEYS, BIT), (name, got[name][:2])
     assert got["nothing kept"][2]["offloaded"] > 100
+    # 64 rows save less than the default budget, so only the arm with nothing kept has a ledger to judge
+    assert got["default budget"][2]["offloaded"] == 0
+    assert ledgers_settle([got["nothing kept"][2]], offs, lambda: arm(**UNBOUNDED)) == {}
+    assert sum(off.offloaded for off in offs) > 200 and sum(off.host_live for off in offs[:-1]) == 0
     assert moved["nothing kept"][0]["grad"] == DIFFERS and moved["nothing kept"][0]["loss"] == BIT
 
 
@@ -351,11 +479,13 @@ def test_on_the_card_the_bounded_reference_arm_matches_the_unbounded_one_and_pea
     model.policy.set_training_mode(True)
     args = cr._r1_args(model, cr.r1_batch(model, 2048, 0))
 
+    offs: list = []
+
     def arm(**forced):
         torch.cuda.synchronize(dev)
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats(dev)
-        out, led = _reference(model, args, monkeypatch, **forced)
+        out, led = _reference(model, args, monkeypatch, offs, **forced)
         torch.cuda.synchronize(dev)
         return out, led, torch.cuda.max_memory_allocated(dev) / MiB
 
@@ -375,7 +505,8 @@ def test_on_the_card_the_bounded_reference_arm_matches_the_unbounded_one_and_pea
     for name, (verdicts, dist, _led, _peak) in got.items():
         bad = {k: (v, dist[k], spread[k]) for k, v in verdicts.items() if v not in (BIT, WITHIN)}
         assert not bad, f"{name}: field -> (verdict, distance, control spread) {bad}"
-    led_j = got["nothing kept"][2]
-    assert led_j["offloaded"] > 0 and led_j["returned"] >= led_j["offloaded"]
-    assert led_b["offloaded"] > 0 and led_b["returned"] >= led_b["offloaded"]
+    # the ledger, per handle: every host copy returned, never unpacked or (at scope exit only) still held by
+    # the extractor's stashes; none left once one more arm's forward has replaced them
+    bounded = [got["nothing kept"][2], got["default budget"][2], led_b, led_d]
+    assert ledgers_settle(bounded, offs, lambda: arm(**UNBOUNDED)) == {}
     assert peak_b < peak_p - 0.25 * led_b["offloaded_mib"], (peak_b, peak_p, led_b)

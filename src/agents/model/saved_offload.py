@@ -43,8 +43,35 @@ ONE CHECK IS LOST INSIDE THE SCOPE: autograd cannot version-check a hooked saved
 write to a tensor after it was saved would be read silently here. R1's eager bf16 arm runs the same body
 without hooks in the same check and still raises on one.
 
-`LAST` holds the most recent scope's ledger (bytes kept / offloaded, seconds in the transfers), for the
-tests and the GPU validation; nothing reads it to decide anything.
+THE LEDGER COUNTS HANDLES, and a handle is one host copy (`_Hosted`). Autograd promises neither that a saved
+tensor is unpacked nor that it is unpacked once, so "copies back >= copies out" is not an invariant (on the
+card at B = 2,048, 2026-11-11: 451 out / 407 back with nothing kept, 99 out / 108 back at the default budget):
+
+  * NEVER unpacked: a node saves its tensors in the forward whether or not a backward will ever reach it,
+    and a node the loss does not reach never runs — everything computed with a graph and then read only
+    through a `.detach()`, or returned beside the loss (WHICH of the model's nodes these are was not
+    traced; the toy is `tanh(h).detach() * h`). Its copy just waits and is dropped with its node;
+  * unpacked MORE THAN ONCE: one tensor saved by several nodes is one handle (one copy out), and every node
+    that runs copies it back for itself (`h * h.sigmoid()`: `h` is saved by three nodes); a retained graph
+    backpropagated twice unpacks everything twice.
+
+So each handle is in exactly one state, and `offloaded == returned + never_unpacked + host_live`:
+`returned` = handles unpacked at least once, `never_unpacked` = handles dropped without an unpack,
+`host_live` = handles whose host copy still exists; `unpacks` (>= `returned`) is the copies back, the
+number the transfer seconds scale with. The graph is the ONLY owner of a handle (`_seen` holds it weakly), so
+a node's host copy is freed when the backward releases the node and all of them when the graph dies:
+`unsettled(ledger)` is None exactly when every handle is accounted for and nothing waits on the host.
+
+WHAT OUTLIVES THE SCOPE: only what the model itself keeps of the graph. The extractor stashes a few of its
+forward's tensors WITH their graph (`damage_op.stash`, `value_entity_pool.last_att`) until its next forward
+replaces them, and the nodes behind those that the loss never reached still hold their saved tensors — host
+copies here, device tensors in any other forward. `LAST["host_live"]` is that remainder at scope exit (CPU,
+64 rows, everything forced: 4 handles, 0.03 MiB; at 2,048 rows about 1 MiB), so `LAST` is judged with
+`graph_freed=False` and the handles' owner again after the next forward. It is one forward's remainder,
+replaced, never added to: nothing accumulates across canary calls or `canary_param_null`'s arms.
+
+`LAST` holds the most recent scope's ledger (bytes kept / offloaded, the handle states, seconds in the
+transfers), for the tests and the GPU validation; nothing reads it to decide anything.
 """
 from __future__ import annotations
 
@@ -69,12 +96,16 @@ LAST: Dict[str, float] = {}
 
 
 class _Hosted:
-    """One saved tensor waiting in host memory, and the device it returns to."""
+    """One saved tensor waiting in host memory, the device it returns to, and how often it has. Owned by the
+    graph alone; its death is booked on the `SavedOffload` that made it."""
 
-    __slots__ = ("host", "device")
+    __slots__ = ("host", "device", "nbytes", "unpacks", "_owner", "__weakref__")
 
-    def __init__(self, host: torch.Tensor, device: torch.device) -> None:
-        self.host, self.device = host, device
+    def __init__(self, host: torch.Tensor, device: torch.device, nbytes: int, owner: "SavedOffload") -> None:
+        self.host, self.device, self.nbytes, self.unpacks, self._owner = host, device, nbytes, 0, owner
+
+    def __del__(self) -> None:
+        self._owner._dropped(self)
 
 
 class SavedOffload:
@@ -86,12 +117,17 @@ class SavedOffload:
         self.budget_bytes, self.min_bytes, self.force = int(budget_bytes), int(min_bytes), bool(force)
         self.kept_bytes = 0            # storage bytes counted against the budget, on the device
         self.offloaded_bytes = 0       # copied to the host (each distinct tensor once)
-        self.offloaded = 0
-        self.returned = 0              # unpacks that copied a tensor back
+        self.offloaded = 0             # handles made: one per distinct tensor and version
+        self.returned = 0              # handles unpacked at least once
+        self.unpacks = 0               # copies back to the device (a handle may be unpacked by several nodes)
+        self.never_unpacked = 0        # handles dropped without one unpack (their node never read them)
+        self.never_unpacked_bytes = 0
+        self.host_live = 0             # handles whose host copy still exists
+        self.host_live_bytes = 0
         self.refused_layout = 0        # copies dropped because their strides differed
         self.refused_bytes = 0
         self.seconds = 0.0
-        #: id(tensor) -> (weak ref to it, its version, what the graph holds for it)
+        #: id(tensor) -> (weak ref to it, its version, weak ref to what the graph holds for it)
         self._seen: Dict[int, Tuple[Any, int, Any]] = {}
         #: storage address -> (weak ref to the storage, True = it stays on the device)
         self._storages: Dict[int, Tuple[Any, bool]] = {}
@@ -104,7 +140,9 @@ class SavedOffload:
             return t.detach()
         hit = self._seen.get(id(t))
         if hit is not None and hit[0]() is t and hit[1] == t._version:
-            return hit[2]
+            again = hit[2]()
+            if again is not None:      # else every node that saved it is gone: a new save is a new handle
+                return again
         held: Any
         if self._stays(t.untyped_storage()):
             held = t.detach()
@@ -119,9 +157,19 @@ class SavedOffload:
             else:
                 self.offloaded_bytes += nbytes
                 self.offloaded += 1
-                held = _Hosted(host, t.device)
-        self._seen[id(t)] = (weakref.ref(t), t._version, held)
+                self.host_live += 1
+                self.host_live_bytes += nbytes
+                held = _Hosted(host, t.device, nbytes, self)
+        self._seen[id(t)] = (weakref.ref(t), t._version, weakref.ref(held))
         return held
+
+    def _dropped(self, held: _Hosted) -> None:
+        """A handle died (its last node was released): its host copy is gone."""
+        self.host_live -= 1
+        self.host_live_bytes -= held.nbytes
+        if not held.unpacks:
+            self.never_unpacked += 1
+            self.never_unpacked_bytes += held.nbytes
 
     def _stays(self, storage: Any) -> bool:
         """Whether this storage's tensors stay on the device: decided once per storage, the first that fit."""
@@ -143,15 +191,37 @@ class SavedOffload:
         t0 = time.perf_counter()
         out = held.host.to(held.device, copy=True)
         self.seconds += time.perf_counter() - t0
-        self.returned += 1
+        self.unpacks += 1
+        if not held.unpacks:
+            self.returned += 1
+        held.unpacks += 1
         return out
 
     # ------------------------------------------------------------------ the ledger
     def ledger(self) -> Dict[str, float]:
         return {"kept_mib": self.kept_bytes / MiB, "offloaded_mib": self.offloaded_bytes / MiB,
                 "offloaded": float(self.offloaded), "returned": float(self.returned),
+                "unpacks": float(self.unpacks), "never_unpacked": float(self.never_unpacked),
+                "never_unpacked_mib": self.never_unpacked_bytes / MiB,
+                "host_live": float(self.host_live), "host_live_mib": self.host_live_bytes / MiB,
                 "refused_layout": float(self.refused_layout), "refused_mib": self.refused_bytes / MiB,
                 "seconds": self.seconds, "budget_mib": self.budget_bytes / MiB}
+
+
+def unsettled(ledger: Dict[str, float], graph_freed: bool = True) -> Optional[str]:
+    """None when a ledger is settled (module docs), else what is wrong: every handle is returned, never
+    unpacked or still live, with no fewer copies back than handles returned — and, once the arm's graph is
+    freed (``graph_freed``; False for a ledger read while something may still hold a piece of it), no host
+    copy is left."""
+    bad = []
+    if graph_freed and (ledger["host_live"] != 0 or ledger["host_live_mib"] != 0):
+        bad.append(f"{ledger['host_live']:.0f} host copies ({ledger['host_live_mib']:.1f} MiB) outlive the graph")
+    if ledger["returned"] + ledger["never_unpacked"] + ledger["host_live"] != ledger["offloaded"]:
+        bad.append(f"offloaded {ledger['offloaded']:.0f} != returned {ledger['returned']:.0f} + never unpacked "
+                   f"{ledger['never_unpacked']:.0f} + live {ledger['host_live']:.0f}")
+    if ledger["unpacks"] < ledger["returned"]:
+        bad.append(f"{ledger['unpacks']:.0f} unpacks for {ledger['returned']:.0f} returned handles")
+    return "; ".join(bad) or None
 
 
 @contextlib.contextmanager
@@ -164,6 +234,6 @@ def fp32_reference_scope(policy: Any, offload: Optional[SavedOffload] = None) ->
         with fp32_scope(policy), torch.autograd.graph.saved_tensors_hooks(off.pack, off.unpack):
             yield off
     finally:
-        off._seen.clear()              # the graph is gone: hold nothing past the arm
+        off._seen.clear()              # weak entries only; the graph owned the tensors and is gone
         LAST.clear()
         LAST.update(off.ledger())

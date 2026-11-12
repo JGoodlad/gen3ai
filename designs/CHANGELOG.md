@@ -15879,3 +15879,26 @@ was downloaded or written under `data/`.
   The CPU bit-identity test is unchanged.
 - **Not shown.** The cell on the GPU (built without a lease): whether every op has a deterministic CUDA
   implementation (the cell prints the ones that warn), the spread, the peaks.
+
+## 2026-11-12 — the reference offload's ledger counts handles, and a host copy dies with its node (`gen3_offload_ledger_handles_v1`; no config / `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change, training arithmetic and the reference arm's numbers untouched)
+
+- **Why.** On the card at `1fe7283f7` the CUDA cell's numerics all passed (control spread 0, both bounded arms
+  bit-identical, peaks 5,855 → 4,262 → 2,407 MiB) and its ledger assertion `returned >= offloaded` failed: 451 out /
+  407 back with nothing kept, 99 out / 108 back at the default budget. The assertion was never an invariant. `offloaded`
+  counted host copies (one per tensor and version) and `returned` counted unpack calls, and autograd neither unpacks
+  every saved tensor nor unpacks it once: a node the loss never reaches (its output read only through a `.detach()`)
+  saves in the forward and never runs; one tensor saved by several nodes is copied out once and back by each. The CPU
+  tests passed only because, with every tensor forced, the repeats outnumbered the never-unpacked.
+- **What.** A handle (`_Hosted`) is one host copy and is in exactly one state:
+  `offloaded == returned + never_unpacked + host_live`; `unpacks >= returned` is the copies back
+  (`saved_offload.unsettled`). `_seen` now holds what the graph holds WEAKLY, so the graph alone owns a host copy: it is
+  freed when the backward releases its node, not at scope exit, and a handle's death is booked. New ledger keys:
+  `unpacks`, `never_unpacked`, `never_unpacked_mib`, `host_live`, `host_live_mib`.
+- **No leak, and what is held.** At scope exit the extractor's graph-carrying stashes (`damage_op.stash`,
+  `value_entity_pool.last_att`) still own the nodes behind them that the loss did not reach, so a few handles are live
+  (CPU, 64 rows, forced: 4 handles, 0.03 MiB of 194) until the model's next forward replaces the stashes. Measured
+  over consecutive arms: every earlier arm's `host_live` is 0. One forward's remainder, never added to.
+- **Tests.** `saved_offload_test.py`: both card readings on toys (a never-unpacked handle, with a weak reference
+  proving its host tensor dies with the graph; a thrice-unpacked one) and on the real learner; the cell's ledger rule
+  (`ledgers_settle`) runs in the CPU mirror of the cell. The CUDA cell asserts that rule in place of the false one.
+- **Not shown.** The cell on the GPU (built without a lease).
