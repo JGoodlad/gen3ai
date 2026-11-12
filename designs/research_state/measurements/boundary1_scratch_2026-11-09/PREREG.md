@@ -2,13 +2,15 @@
 
 **Status: REGISTERED (tier FULL) before any launch, any game and any read; AMENDED 2026-11-10 (Amendment 1, §18:
 three runs a cell, twelve runs) and 2026-11-12 (Amendment 2, §18: every run types `--ent-coef 0.0125
---behaviour-check warn`, the look judges K9(b), the memory fit at width 256), both also before any launch, game or
-read. NOT LAUNCHED** (no `rb_b1*` run exists). **The LAUNCH pin is
+--behaviour-check warn`, the look judges K9(b), the memory fit at width 256) and again 2026-11-12 (Amendment 3,
+§18: a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint), all also
+before any launch, game or read. NOT LAUNCHED** (no `rb_b1*` run exists). **The LAUNCH pin is
 `15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
 nothing.**
-The launch is the orchestrator's GO through the Training session, after the re-pin record and after §13's GPU
-checklist at the launch pin is
-green, with its records in §18. Nothing below changes after the first run launches except by a dated amendment (§18), written before the look
+**§13's GPU items 1 to 7 are green at the launch pin (2026-11-12; §18, slots S1 to S7): ρ = 1.392, the EQ step is
+71,000,000, §12 is rewritten from ρ.** The launch is the orchestrator's GO through the Training session, after
+CE-3d's three forks finish; §13 items 8 and 9 are checked at the launch (slot S8).
+Nothing below changes after the first run launches except by a dated amendment (§18), written before the look
 it touches is played, that says why. **Once the first look has been played, no amendment touches §5, §6, §8 or §9**
 except by the owner, and it is then recorded as written after data.
 
@@ -321,8 +323,9 @@ agree?". Whether another 72 teams would agree is reported beside every full look
 - **The 75M look**: the same cross at 75M, played with the 100M look. No class.
 - **The equal-compute look (EQ):** the wide arms at an earlier step against the narrow arms at 100M, the same 54
   cells. The step is fixed BEFORE launch from §13 item 4's measured step-time ratio ρ: **eq step = 1,000,000 ×
-  ⌊100 / ρ⌋** (at most 99M), written into §18 when the pilot lands. No class: the entity toy led at equal compute
-  and lost at its plateau (`UNDERSTANDING.md` §4.9), so this is a cost statement. The realised GPU-hours of each run
+  ⌊100 / ρ⌋** (at most 99M), written into §18 when the pilot lands. **Measured 2026-11-12: ρ = 1.392, so the EQ
+  step is 71,000,000** (§18, slots S1 and S3; the look takes `--eq-step 71000000`). No class: the entity toy led
+  at equal compute and lost at its plateau (`UNDERSTANDING.md` §4.9), so this is a cost statement. The realised GPU-hours of each run
   are reported beside it.
 - **Every factor on every view** (N, home72, U, H, F, P72, HF), with intervals; breadth's on H, P72, U and N carry
   the M4 overlap and are labelled so.
@@ -466,6 +469,14 @@ two-stage rule) before any of it is played.
   the affected run or runs from scratch at the new pin; a look refuses a set of runs on more than one pin, so that
   amendment also says what becomes of the runs already trained and names the seeds and folders. A parity FATAL is
   not one of the two replacement causes below and does not spend seed 5109.
+- **A startup fit refusal, in any arm, at any start (Amendment 3).** The memory fit check runs at every start of
+  a run on the card (the first launch, each six-hour restart, the phase-2 resume) BEFORE that process trains a
+  step. A refusal there (`UpdateWontFit`, the child's exit 3) is a START FAILURE: not a FATAL of the bullet above,
+  not a VOID, not "lost to its lever" and not a replacement cause; it spends neither that bullet's one resume nor
+  seed 5109. The operator records it and starts the SAME segment again from the same checkpoint on the same pin;
+  a repeat on an otherwise empty card HOLDs that run for the orchestrator. §18 Amendment 3 holds the rule, what
+  the launcher does and the three retry forms. The list below keeps its meaning for an out-of-memory failure
+  AFTER a segment's first training step: that one is "lost to its lever".
 - **Replacement, by a closed list.** A run is replaced by seed 5109 in ITS OWN arm, from step 0, only when it
   cannot reach a look for one of these two causes:
   - its files are lost or unreadable (a disk or filesystem fault, a corrupt checkpoint it cannot resume from);
@@ -656,43 +667,67 @@ and one in two to three). It still carries no class: Amendment 1 moves no class 
 
 ## 12. Cost and timeline
 
+Rewritten 2026-11-12 from the measured ρ = 1.392 (§18, slots S1 and S2, which show the arithmetic). The figures
+this replaces were built on a guessed ρ of 1.65: ≈ 311 GPU-h (270–340) and ≈ 16 days.
+
 | item | GPU-h | CPU | calendar |
 |---|---|---|---|
-| phase 1, twelve runs to 50M | ≈ 151 (6 × 9.5 + 6 × 15.6) | — | ≈ 6.3 days |
-| phase 2, 50M → 100M | ≈ 160 (6 × 10.1 + 6 × 16.6) | — | ≈ 6.7 days |
+| phase 1, twelve runs to 50M | ≈ 136 (6 × 9.48 + 6 × 13.20) | — | ≈ 5.7 days |
+| phase 2, 50M → 100M | ≈ 145 (6 × 10.07 + 6 × 14.02) | — | ≈ 6.0 days |
+| starts: ≈ 60 over the twelve runs | ≈ 20 if every one is cold (0.33 h each) | — | ≈ 0.8 days |
 | four looks, 270,000 games each | ≈ 2.0 each under the GPU lock | or ≈ 27 h each on the three agent cores | between runs |
 | Kakuna, 25,920 games | — | ≈ 180 lane-h | ≈ 60 h on 3 lanes |
-| **to the decision** | **≈ 311 (270–340) + ≈ 8** | | **≈ 16 days** |
-| after a WIN: three candidates to the plateau | ≈ 183 (GUESS) | ≈ 45 lane-h | ≈ 8 days |
-| not registered, for scale: a fourth seed an arm | ≈ 104 | ≈ 60 lane-h | ≈ 4.5 days |
+| **to the decision** | **≈ 281 of training (210–281) + ≈ 20 of starts + ≈ 8 of looks ≈ 309** | | **≈ 15.4 days** |
+| after a WIN: three candidates to the plateau | ≈ 154 for a wide cell, ≈ 111 for a narrow one (GUESS) | ≈ 45 lane-h | ≈ 6.4 / 4.6 days |
+| not registered, for scale: a fourth seed an arm | ≈ 94 | ≈ 60 lane-h | ≈ 3.9 days |
 
-- **Amendment 1's bill.** Twelve runs cost ≈ 104 GPU-h more than the registration's eight (≈ 207), which is what
-  its withdrawn extension would have cost after an UNDECIDED. A look holds 2.25 times the cells (54 for 24), so
-  the four looks cost ≈ 8 GPU-h instead of ≈ 4, and the Kakuna read half as much again.
-- Narrow runs: MEASURED on `rb_x26_s2601` (4.40 / 9.48 / 19.55 GPU-h to 25M / 50M / 100M). X26 carried five
-  ride-along heads and predates E13; **UNVERIFIED** that today's production costs the same, that it does at
-  `ent_coef` 0.0125 (X26 trained at 0.05), and what the first-update probes' own forwards add (`e112cbcbf`: about
-  1 % of the learner's wall on a diagnostics update, an estimate, UNMEASURED; both widths carry it).
-- **The wide arm's step-time ratio ρ = 1.65 is a GUESS (1.3–1.9)** until §13 item 4 measures it. On CPU the learner's
-  forward + backward is 1.94× and the policy forward 1.27–1.48×. The draft sent a measured ρ above 1.9 back to the
-  owner for the budget; the owner's standing rule since is no cap on GPU commitments, so **a measured ρ above 1.9 is
-  reported to the orchestrator, who decides**; it is not an automatic hold. **The pilot's measured ρ REWRITES this
-  table before the first launch** (a §18 record): the narrow half (≈ 118 GPU-h) is measured, the wide half is
-  ≈ 118 × ρ, so ≈ 311 is ≈ 270 at ρ = 1.3 and ≈ 341 at 1.9.
-- **Startup is not in ρ (Amendment 2).** The inference service's startup (its CUDA-graph captures) took 938 s and
-  989 s at width 256, 1,011 s at 256 on one lane, and 963 s at width 128 on the de-risk's four starts
-  (`~/.cache/gen3ai/b1_derisk_2026-11-11/logs/`), each on a COLD shared compile cache at a new commit. Every
-  six-hour restart and every phase-2 resume starts again; what a start costs on a warm cache is UNMEASURED, and so
-  is whether X26's hours above include its own starts. ρ is read over steady updates, so the rewrite of this table
-  (§18, slot S2) prices starts separately: about four a narrow run and six a wide one to 100M (ρ near 1.6), so
-  about sixty over the twelve runs, ≈ 16 GPU-h if every one cost the cold figure. The warm figure is read off the
-  first run's first restart and recorded in §18.
-- **Timeline.** Registered Mon 2026-11-09, amended Tue 11-10 and Thu 11-12. The launch day L is no longer a date:
-  it follows §13's GPU items at the launch pin. From L: phase 1 ends ≈ L + 6.5 days, the 50M look that day on
-  the card, phase 2 ends ≈ L + 13.5 days, the 100M, 75M and EQ looks ≈ 6 GPU-h after it, Kakuna ≈ 2.5 days on
-  three lanes, the decision ≈ L + 16 days.
+- **The narrow figure is X26's measured hours, and it is the central one**: `rb_x26_s2601` took 4.40 / 9.48 /
+  19.55 GPU-h to 25M / 50M / 100M (704 s per 1M steps over its first 100M). X26 carried five ride-along heads,
+  predates E13 and trained at `ent_coef` 0.05; whether its hours include its own starts is UNMEASURED. They are
+  kept because they hold what a pilot cannot: evaluations, a growing self-play pool and 100M steps of it.
+- **The wide figure is the narrow one × ρ, with ρ = 1.392 MEASURED** (§13 item 4, at the launch pin, 2026-11-12:
+  734.6 s per 1M steps at width 256 against 527.7 at 128, medians over 37 steady updates each between 0.3M and
+  3.9M steps, `ent_coef` 0.0125, the self-play pool still empty; the update alone is 1.450×, the collection
+  1.126×). It replaces the guess of 1.65 (1.3–1.9). 13.20 / 27.21 GPU-h to 50M / 100M a wide run. **UNVERIFIED
+  that the ratio holds after the pool is seeded and late in training**: no steady row was read after the seed
+  (it came at 4M, where the pilots stopped).
+- **The interval's two ends are two different measurements.** Its LOW end, ≈ 210 GPU-h, prices all twelve runs at
+  the pilots' own steady rates (14.66 GPU-h per 100M at 128, 20.41 at 256): early training, pool empty,
+  evaluation and checkpoint time excluded, so it is a floor and not an estimate. Its HIGH end is the central
+  figure, ≈ 281 (X26's hours and × ρ). The control pilot's rate is 25 % below X26's average over 100M and 17 %
+  below X26's over its first 25M (634 s per 1M); which of the differences above accounts for that is UNMEASURED.
+  Nothing prices a run slower than X26: the first control run's realised hours to 50M are the check (S8).
+- **Starts are priced separately; ρ does not hold them.** A cold start took 1,195 s (W) and 1,192 s (C) from the
+  launch to the last startup line before the first rollout on the pilots, of which the inference service's start
+  (its CUDA-graph captures) was 886.1 / 891.0 s, the trainer's compile prewarm ≈ 245 s and the fit check's dry
+  update 21 to 31 s. A child lives six hours from its own start, so a narrow run takes 2 starts a phase (9.48 and
+  10.07 h) and a wide one 3 (13.20 and 14.02 h): 6 × 4 + 6 × 6 = 60 starts, ≈ 20 GPU-h if every one cost the cold
+  figure (≈ 15 for the service's part alone). Every restart and resume at the pin finds the shared compile cache
+  the first start filled; what such a WARM start costs is UNMEASURED and is read off the first run's first
+  restart (§18, slot S8). The de-risk's four cold starts at other commits read 938 to 1,011 s for the service
+  alone.
+- **The probes' own forwards** (`e112cbcbf`: about 1 % of the learner's wall on a diagnostics update, an
+  estimate) are inside both pilots' rates and not in X26's.
+- **After a WIN** the cell's three runs go on to the plateau: X26 took 36.95 GPU-h from 100M to its plateau at
+  280M (56.5 − 19.55), so three runs cost ≈ 111 GPU-h in a narrow cell and ≈ 154 (× ρ) in a wide one. A GUESS
+  either way: nothing says this lineage plateaus near 280M.
+- **Figures elsewhere that were priced at the guessed ρ and are not edited:** §9's and Amendment 1's "≈ 104 GPU-h"
+  for a seed an arm (≈ 94 at the measured ρ: 2 × 19.55 + 2 × 27.21), and Amendment 1's bill (twelve runs cost
+  ≈ 94 GPU-h more than eight, ≈ 281 against ≈ 187; it was written as ≈ 104 more than ≈ 207). A look holds 2.25
+  times the registration's cells (54 for 24), so the four looks cost ≈ 8 GPU-h instead of ≈ 4, and the Kakuna read
+  half as much again.
+- **Timeline.** Registered Mon 2026-11-09, amended Tue 11-10 and Thu 11-12 (twice). The launch day L is the
+  orchestrator's GO after CE-3d's three forks. One card, the runs serial, the card doing nothing else. From L:
+  phase 1 ends ≈ L + 6.1 days (136 GPU-h and ≈ 10 of starts), the 50M look that day on the card, phase 2 ends
+  ≈ L + 12.6 days, the 100M, 75M and EQ looks ≈ 6 GPU-h after it, Kakuna ≈ 2.5 days on three lanes, the decision
+  ≈ L + 15.4 days. At the interval's low end (≈ 210 GPU-h, 48 starts) the decision is ≈ L + 12.3 days.
 
 ## 13. The GPU pre-launch checklist
+
+**Status, 2026-11-12: items 1 to 7 are GREEN at the launch pin.** Items 1, 6 and 7 and the CPU half of item 2 are
+in §18's re-pin record; items 3, 4 and 5 and the card-visible half of item 2 ran on the card on 2026-11-12
+(04:54 to 08:51 PST, ≈ 3.95 h of the lease) and every one passed: §18's slots S1 to S7 hold the records. Items 8
+and 9 are checked at the launch (slot S8). The text below is the checklist as it was registered.
 
 Nothing here could be verified on the card by the registrar, by Amendment 1 or by the re-pin: none had a GPU
 lease. Every item is done at the LAUNCH pin. Items 1, 6 and 7 and the CPU form of item 2 are in §18's re-pin
@@ -712,8 +747,8 @@ ran at `aee363bc9` and `e112cbcbf`, trainer code changed after both, and its pil
    experiment trains: E13's ship skipped 9 (the compile-region gates on trained weights among them) and the width
    ship skipped 11 in `src/agents/model`. A FAIL in a test the wide or the production path touches holds the launch.
    History, which satisfies nothing: at `aee363bc9` the window read 29 of 30 PASS, the one FAIL being the
-   production forward + backward compile at B = 2 on Triton 3.4.0 (fixed at `1d2aa1695`; its card run is UNVERIFIED
-   until this item); at `1fe7283f7` a shakedown read 30 of 32, the FAILs being that compile and the offload cell's
+   production forward + backward compile at B = 2 on Triton 3.4.0 (fixed at `1d2aa1695`; its card run was this
+   item's, and it passed: §18, slot S4); at `1fe7283f7` a shakedown read 30 of 32, the FAILs being that compile and the offload cell's
    ledger assertion (fixed at `ef89ca99f`).
 4. **The wide-arm pilot, to trained weights** (Amendment 1; the two pilots take 1.2–2.6 GPU-h, an estimate that
    predates the measured ≈ 16-minute cold start of each: the first evaluation is at 2M and the pool is seeded at
@@ -910,7 +945,7 @@ them):
     moves. The third seeds are the last four launches of each phase.
 20. **Curve dominance asks five of six ON runs** (§7; three of four at registration): the nearest count not below
     three quarters. REPORTED either way.
-21. **After a WIN the cell's THREE runs continue to the plateau** (§9, §12: ≈ 183 GPU-h, a guess). Continuing fewer
+21. **After a WIN the cell's THREE runs continue to the plateau** (§9, §12: ≈ 154 GPU-h in a wide cell, a guess). Continuing fewer
     is the orchestrator's to decide, by an amendment before the 100M look, with the rule that picks them.
 22. **The survivor look stays unclassed** although three against three now finds +4 pp four to six times in ten
     (§8, §11.5): this amendment moves no class rule.
@@ -948,11 +983,34 @@ these are the registrar's readings of them):
 36. **The pin holds this amendment and the kit; the records that name it are a later commit** (a commit cannot
     name itself, §3). Between the two the spec has no `pin` and the record-bound tests skip.
 37. **No fit lever is typed.** The memory fit at width 256 is a trainer-code unit applying to every run (§18
-    Amendment 2 item 6). What a fit refusal at a RESTART of a running campaign means is not decided here: §10's
-    "the cause is written into §18 by the orchestrator" applies before any look that would contain the run.
+    Amendment 2 item 6). What a fit refusal at a RESTART of a running campaign means was not decided by
+    Amendment 2; **Amendment 3 decides it** (§18, §10: a start failure, retried from the same checkpoint).
 38. **The two-segment smoke is repeated at the launch pin on CPU** (§13 item 6): trainer code moved.
 39. **The seed floor and the narrow arm's cost were measured at 0.05** and are not re-measured at 0.0125; no bar
     moves for it (§11.1, §12).
+
+**Amendment 3's choices** (2026-11-12; the classification is the orchestrator's, these are the registrar's
+readings of it and of the code):
+
+40. **A fit refusal is classed by WHEN it happens, not by the arm.** Before a segment's first training step it is
+    a start failure; an out-of-memory failure after it stays "lost to its lever" (§10). The wide arms are the ones
+    near the bar (374.5 MiB above it), but the rule is the same for all four.
+41. **A start-failure retry is not the parity bullet's one resume** and does not count against it; no number of
+    retries is registered. The limit is item 6's: one repeat on an empty card HOLDs the run.
+42. **The move-aside at a fresh first start is registered although the launcher would accept the leftover dir**
+    (it holds no checkpoint and no `model_config.json`). Read from the code, not executed. The one precedent on
+    disk, CE-3d's refused FORK dir at another pin (`models/rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN`),
+    agrees: it holds the child logs, `crashes/`, `cuda_ledger.json`, `compile_cache/` and the fork's copied
+    `snapshots/`, and no checkpoint, `metadata.json` or run-root `model_config.json`.
+43. **The mid-phase retry is typed by hand.** The kit's `resume_argv` builds the phase-2 form alone and its
+    resume check covers that form alone; form (c) differs in `--model` and `--steps` only and must pass
+    `--dry-run` first. UNVERIFIED by execution: no run has been resumed from a periodic checkpoint with this kit.
+44. **That a run counts after a retry is read from `main.b1.look` at the pin, not executed**: the look reads the
+    pin history, the lineage, `original_command`, the last process's recorded arguments and the K9(b) rows; it
+    does not read `crashes/`.
+45. **The seed's timing (item 7) changes nothing.** §13 item 4's stop rule read "its first promotion into the
+    self-play pool" as the pool's SEED, which is what a fresh run's first promotion is; neither pilot ran on to a
+    later promotion (slot S5).
 
 ## 18. Amendments and pre-launch records
 
@@ -1085,7 +1143,8 @@ classes and their order, the net rule, the panels, the pairs a cell, the seeds a
      is that run.
    - **What is NOT settled:** the margin at 256 is 294.5 above the bar on one reading; the card's free memory at
      a start varies with what else holds it (10,770.5 at the de-risk, 10,742.5 at the CE-3d start of 11-12). A fit
-     refusal at a restart of a running wide run is not classified by this amendment (§17 item 37). Nothing in the
+     refusal at a restart of a running wide run is not classified by this amendment (§17 item 37); Amendment 3
+     classifies it, and at the launch pin the margin read 374.5 (slot S5). Nothing in the
      probe path is caught any more: an out-of-memory error in the dry update is `UpdateWontFit`, and one mid-run
      stops the run.
 7. **The per-term noise keys may be absent, at either width, by their own gate.** The estimator's state
@@ -1108,13 +1167,84 @@ on main at `35362d348`, the commit before this amendment's. The memory-fit unit 
 item 6 names. **The launch pin is not in this commit**: it is a main commit that holds this amendment, the kit and every
 fix above, and the re-pin record that names it is a later commit (§17 item 36).
 
+### Amendment 3 (2026-11-12): a startup fit refusal is a start failure
+
+Written before any launch, any game and any read, on the orchestrator's decision after §13's GPU items ran at the
+launch pin (slots S1 to S7 below). **Blind: no `rb_b1*` run, checkpoint, game or Kakuna row exists.** The two
+pilots it draws on ran in a scratch models dir on pilot seeds, stopped just past 4M steps, and are read for S1,
+S5 and S6 alone. **It moves no bar**: the +4 pp bar, the −2 pp harm stop, the 1.76 pp floor, the 90 % level, the
+0.005 pp band, the views, the classes and their order, the net rule, the panels, the pairs a cell, the seeds, the
+Kakuna rule, the K9(b) ceilings and §10's two replacement causes are as they were. It classifies one operational
+failure that Amendment 2 left open (its item 6, §17 item 37) and reports one fact (item 7). The launch pin does
+not move: this amendment is a `designs/` commit after it, like the re-pin record.
+
+1. **Why now.** At the pin the fit check read, on two clean starts (no other compute app on the card, no display
+   process; this process could reach 10,770.5 MiB both times): width 256 demand 9,372.0, headroom **1,398.5**,
+   which is **374.5 above the 1,024 bar**; width 128 headroom 3,710.5 (slot S5). So anything that holds more than
+   374.5 MiB of the card when a wide run starts gets that start refused. The registration did not say what such a
+   refusal means once a campaign is running.
+2. **The class.** `UpdateWontFit` at ANY start of a BOUNDARY-1 run (the first launch, a six-hour restart, the
+   phase-2 resume; an out-of-memory error inside the dry update is the same refusal) is a **START FAILURE**. The
+   check runs before that process's first rollout and before its first save, so the process trains no step and
+   writes no checkpoint and no `metadata.json` or `model_config.json` (the run's recorded arguments, lineage and
+   pin history are written at a save). It is therefore not a FATAL in §10's
+   sense, not a VOID, not "lost to its lever" and not one of §10's two replacement causes: it spends neither seed
+   5109 nor the parity bullet's one resume. An out-of-memory failure AFTER a segment's first training step keeps
+   §10's class ("lost to its lever").
+3. **What the launcher does (read from the code at the pin; main's launcher differs from the pin's by nothing
+   under `src/` today).** The child exits 3 (`FATAL_CONFIG`). The launcher saves the child's output under
+   `<run>/crashes/`, logs "Fatal config error — will NOT restart" and itself exits 3. **It does not retry**, at a
+   first launch or at a restart: after a refusal the run has no launcher and no child, and it waits for the
+   operator. The refusing process also overwrites `<run>/update_fit.json` and `<run>/cuda_ledger.json` with its
+   own readings and appends to the run's child logs.
+4. **What the operator records, before anything else**, into §18's launch records: `nvidia-smi` (the card's
+   total and free memory and every compute app on it), whether a display process holds the card, a COPY of the
+   refusing `update_fit.json` (the retry overwrites it), the crash log's name, and the checkpoint the refused
+   start was given. The operator then removes only card holders it started itself, never another's process
+   (one lease on the card at a time means there should be none).
+5. **The retry: the SAME segment, from the same checkpoint, on the same pin and recipe.** Which command that is
+   depends on where the run stood:
+   - **(a) The first start of a fresh run** (the run dir holds no checkpoint and no training step). The failed
+     run dir is MOVED ASIDE to `models/<run>.FITCHECK_REFUSED_<n>` (n = 1, 2, …), never deleted (CE-3d's
+     precedent: `models/rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN`), and the run's identical registered
+     argv is launched again. The counted run's dir, child logs and `crashes/` then hold only its own processes,
+     which is what the K9(b) read's "every generation of the child's full log" reads. By the code the launcher
+     refuses a fresh launch only into a dir that holds a checkpoint or `model_config.json`, which this one does
+     not; the move is the rule all the same.
+   - **(b) The phase-2 resume's own first start** (phase 2 has trained nothing). The identical registered resume
+     command again (`python -m main.b1.arms`'s, from `models/<run>/final_model.zip` to 100M). Nothing is moved.
+   - **(c) A six-hour restart, or any other start after the segment has trained.** The launcher's own restart
+     resumes from the checkpoint `<run>/latest.txt` names, in the same run dir (after a restart's graceful stop
+     that is the stopped child's own save, `final_model_interrupted.zip`). It has
+     exited, and the fresh argv cannot be typed again (the launcher refuses a fresh launch into a dir with
+     progress), so the operator types the same-run resume from that same checkpoint: `python -m main.launcher
+     --restart-interval-hours 6 --pin-commit <PIN> --model models/<run>/<the path latest.txt names> --steps
+     <50000000 in phase 1, 100000000 in phase 2> --device cuda --log-level periodic`, with no `--run-name` (a run
+     name beside `--model` is a fork) and no lever or recipe flag (a resume inherits them). **Never
+     `final_model.zip` in phase 2 once phase 2 has trained**: until phase 2 ends that file is the 50M final, and
+     resuming from it rewinds the run. The kit builds and checks only form (b); form (c) is the same command with
+     another `--model` (and, in phase 1, another `--steps`), so its `--dry-run` must pass before it is typed, and
+     the command goes into §18. Nothing is moved.
+   - **What the look then sees.** The run still carries one pin entry from step 0 and its immutable registered
+     `original_command`, so it counts (§10) if everything else holds. After form (c) in PHASE 1 the run's last
+     process is a typed resume where the other runs' is a restart child, so §10's ten resume-rewritten keys are
+     not compared for it at the 50M look; the rollout shape still is (`metadata.json`'s `batch_size`, `n_steps`).
+6. **A repeat on an empty card is a build gap.** If the retry is refused again with no other compute app on the
+   card and no display process holding it, that run HOLDs and goes to the orchestrator. A code fix would put the
+   run on a second pin, which the look refuses (one pin entry from step 0, §10), so the orchestrator rules before
+   any change and records the ruling as a further amendment, before the look it touches.
+7. **Reported, no rule moves: when a fresh run seeds its pool at this base.** Both pilots seeded the self-play
+   pool at step 4,000,000, their SECOND evaluation (bots 0.7125 at 256, 0.725 at 128, against the 0.55
+   threshold); the first, at 2M, read 0.4437 and 0.4962. That is the first reading of the seed's timing for a
+   fresh run at `ent_coef` 0.0125, one run a width.
+
 ### Pre-launch and launch records
 
 Written here, each before the launch or look it gates: the re-pin; §13's
 results; ρ, §12 rewritten from it, and the EQ step; which block launched (phased or fallback); for EVERY launch its
 date, run, `git rev-parse HEAD` of the main checkout, `python -m utils.core_split show`, and the early check's
 JSON once the run has its first checkpoint; every FATAL, resume and replacement with its cause; every K9(b) record
-(Amendment 2).
+(Amendment 2); every start failure and its retry (Amendment 3).
 
 **The re-pin record (2026-11-12; §18's single re-pin, steps 1 to 6).** Written by the agent the orchestrator
 named, on CPU (no GPU lease), in the commit after the launch pin. It launches nothing and fills none of the slots
@@ -1196,10 +1326,11 @@ below.
 **Not done by the re-pin, and not claimable from it:** anything on the card. §13 items 3, 4 and 5 and the
 card-visible half of item 2 are slots S1 to S7 below; the runbook is
 `~/.cache/gen3ai/handoffs/b1_pin_runbook_2026-11-12.md` (≈ 3.6 GPU-h, 3.0 to 4.4). `13c50a5e6` and `1d2aa1695` as
-main's commits have not run on the card (Amendment 2 item 6); the pilots' startup fit check and item 3's compile
-cell are their first card runs.
+main's commits had not run on the card when the re-pin was written (Amendment 2 item 6); the pilots' startup fit
+check and item 3's compile cell were their first card runs, and both passed (slots S4 and S5 below).
 
-**Slots only the card can fill (all at the launch pin; none filled):**
+**Slots only the card can fill (all at the launch pin). S1 to S7 were filled on 2026-11-12, every one green; their
+records follow the table. S8 is open until the launch.**
 
 | slot | what | from |
 |---|---|---|
@@ -1210,4 +1341,106 @@ cell are their first card runs.
 | S5 | §13 item 4 (b) to (e)'s records, with the fit check's demand and headroom at 256 and at 128 | the pilots |
 | S6 | §13 item 5's record: the cross-width cell | one played cell |
 | S7 | §13 item 2 with the card visible, from a shell at nice ≤ 10: four dry runs, every preflight green | the leased agent |
-| S8 | §13 items 8 and 9; the per-launch records; the warm start's cost; the twelve arm-end K9(b) records | at and after launch |
+| S8 | §13 items 8 and 9; the per-launch records; the warm start's cost; each run's realised GPU-hours; every start failure and its retry (Amendment 3); the twelve arm-end K9(b) records | at and after launch |
+
+**The slot records (2026-11-12; S1 to S7 at the launch pin, on the card).** Run by the Training session under one
+GPU lease, 04:54 to 08:51 PST (≈ 3.95 h; the runbook planned ≈ 3.6), from a clean detached checkout of
+`15136b61634b667bb9da5ccc6647ff9265238829`, with CE-3d's chain paused between its first and second fork. Every
+item passed and nothing was skipped. Evidence: `~/.cache/gen3ai/b1_pin_2026-11-12/` (`results/`, `logs/`,
+`slow_gpu_out/`; a scratch root, not in the repository). The pilots are `rb_b1pinpilot_w_s9203` (W's argv) and
+`rb_b1pinpilot_c_s9201` (C's), each the kit's launch argv with only the seed and the run name changed, into a
+scratch models dir; neither is a BOUNDARY-1 run and neither is read at any look.
+
+- **S1, ρ = 1.392** (`rho.json`: `rho_pre.rho_total` 1.39214). Seconds per 1M steps over the steady updates:
+  **734.59 at width 256** (37 rows, steps 300,288 to 3,936,256; median update 60.92 s, median collection 10.09 s,
+  the update 86.0 % of the wall) against **527.67 at width 128** (37 rows, steps 300,800 to 3,937,792; 42.01 s
+  and 8.93 s, 82.7 %). By part: `rho_update` 1.450, `rho_collect` 1.126. Regime: `ent_coef` 0.0125, the pool
+  EMPTY (every row is before the seed at 4M), the launcher at its own nice 10, CE-3d not training. `rho_post`
+  (after the seed) is null: the pilots stopped within five rows of it. Over all rows, evaluations and checkpoints
+  included, the walls are 757.62 and 547.58 s per 1M and their ratio 1.384. **What ρ does not say:** the ratio
+  late in training or with a full pool (UNVERIFIED).
+- **S2, §12 rewritten** (above). The arithmetic:
+  - Narrow, from `rb_x26_s2601`: 9.48 GPU-h to 50M, 19.55 to 100M, so 10.07 for phase 2. Wide = narrow × 1.39214:
+    13.20, 27.21, 14.02.
+  - Phase 1: 6 × 9.48 + 6 × 13.20 = 56.9 + 79.2 = **136.1**. Phase 2: 6 × 10.07 + 6 × 14.02 = 60.4 + 84.1 =
+    **144.5**. Training: **280.6 GPU-h** (it was ≈ 311 at the guessed 1.65).
+  - The interval's low end, at the pilots' own rates: 527.67 s × 100 = 14.66 GPU-h per narrow run, 734.59 s × 100
+    = 20.41 per wide run, 6 × 14.66 + 6 × 20.41 = **210.4**. It is a floor (pool empty, the first 4M steps,
+    evaluation and checkpoint time excluded); the central figure is X26's. The registered interval was ρ's guessed
+    range (270–340); with ρ measured, what remains uncertain is the narrow hours, and these two readings bound it
+    from below only.
+  - Starts: a child lives six hours from its start. Narrow: 2 starts in phase 1 (9.48 h) and 2 in phase 2
+    (10.07 h); wide: 3 and 3 (13.20 h, 14.02 h; two six-hour children train ≈ 11.3 h between them once each has
+    spent ≈ 0.33 h starting). 6 × 4 + 6 × 6 = **60 starts**. Cold, launch to the last startup line before the
+    first rollout: 1,195 s (W, 06:11:52 to 06:31:47) and 1,192 s (C, 07:27:02 to 07:46:54), 0.33 h, of which
+    `T2 up in 886.1s` and `891.0s`, the prewarm 244.7 and 244.4 s, the fit check's dry update 30.8 and 21.5 s.
+    60 × 0.33 = **≈ 20 GPU-h** if every start is cold (60 × 0.247 = 14.8 for the service's part alone). Both
+    pilots' starts were cold (a new shared compile-cache entry each). **The warm figure is OPEN: read off the
+    first run's first restart (S8).**
+  - To the decision: 280.6 + ≈ 20 + ≈ 8 (four looks) = **≈ 309 GPU-h**; (280.6 + 20) / 24 = 12.5 days of
+    training on the one card, the looks ≈ 0.3 day, Kakuna ≈ 2.5 days: **≈ L + 15.4 days**. At the low end (48
+    starts, since a wide run then takes 2 a phase): 210.4 + 15.9 + 8 = ≈ 234 GPU-h, ≈ L + 12.3 days.
+  - After a WIN: 56.5 − 19.55 = 36.95 GPU-h a narrow run from 100M to X26's plateau step; × 3 = 110.9, and
+    × 1.39214 = 154.3 in a wide cell (it was 183 at 1.65). A fourth seed an arm: 2 × 19.55 + 2 × 27.21 = 93.5
+    (it was ≈ 104).
+- **S3, the EQ step is 71,000,000**: 1,000,000 × ⌊100 / 1.39214⌋ = 1,000,000 × ⌊71.83⌋, below §7's 99M cap. The
+  look takes `--eq-step 71000000` and its requests are named `b1_eq71m_<panel>` (§8's printed example,
+  `b1_eq61m_<panel>`, was the name at the guessed ρ; the code builds the name from the step). The floor's next
+  step is close: 72M needs ρ ≤ 1.3889, and the all-rows ratio (1.384) would give it. The registered statistic is
+  `rho_pre.rho_total`, so 71M stands; the EQ look is REPORTED and carries no class.
+- **S4, the CUDA-only slow tests: 32 of 32 PASS at the pin** (`python -m main.ops.gpu_fill_window`, the
+  `slow-gpu` window; one commit on every row, the pin; no NOT-PASS row, no skip; the tests' own time 71.8 min, the
+  window 76 min, its supervisor exit 0 at 06:11:20 PST). Among them the two cells that had failed before:
+  `extractor_compiles_test.py::test_production_arch_compiles_forward_and_backward_on_cuda` (the production
+  forward + backward compile at B = 2 on Triton 3.4.0, 163 s) and the reference-offload cell
+  (`saved_offload_test.py::test_on_the_card_the_bounded_reference_arm_matches_the_unbounded_one_and_peaks_lower`).
+  **So `1d2aa1695`'s fix is now VERIFIED on the card at main's code**; a separate confirmation the same morning
+  (`~/.cache/gen3ai/triton_fwdbwd_2026-11-11/summary.txt`, stamped 04:44 PST; torch 2.8.0+cu126, Triton 3.4.0)
+  read the commit before the fix failing on the same kernel and the fix passing (forward + backward at B = 2,
+  inference at B = 8).
+- **S5, the pilots, §13 item 4 (b) to (e): all PASS at both widths.**
+  - **Events, the same at 256 and at 128:** first checkpoint at 1,000,192; checkpoints at 1,000,192, 2,000,128,
+    3,000,064 and 4,000,000; first evaluation at 2,000,128 (bots 0.4437 W, 0.4962 C, no seed); second at
+    4,000,000 (0.7125 W, 0.725 C) and **the pool seeded there** (`snapshot_000004000000.zip`; the self-play
+    share then 65 % W, 71 % C). §13 item 4's "first promotion into the self-play pool" was read as this seed;
+    neither pilot ran to a later promotion. Rows logged after the seed: 4 (W), 5 (C). Last logged step 4,330,926
+    (W, 44 rows) and 4,429,200 (C, 45 rows). W ran 06:11:52 to 07:26:34, C 07:27:02 to 08:27:26; each launcher
+    made no restart and attached one child; no crash log, no bad line.
+  - **(b)** the bf16 compile at 256 completed and the startup parity check passed (both widths; the prewarm took
+    244.7 s at 256, 244.4 s at 128). **(c)** the inference CUDA-graph capture succeeded (`T2 up … backend graph
+    on cuda`). **(e)** no parity gate FATAL through the seed and after it; the mid-run canary passed at update 10
+    (W at step 988,416, C at 988,672) and the memory trend read OK at update 44 in both.
+  - **(d) the memory fit** (`update_fit.json`, schema `gen3_update_fit_v2`, 98,304 rows, MiB; before each launch
+    `nvidia-smi` read 33 MiB used of 12,288 with no compute app and no display process):
+
+    | width | demand (peak reserved) | peak allocated | headroom | reachable card | above the 1,024 bar |
+    |---|---|---|---|---|---|
+    | 256 (W) | 9,372.0 | 7,210.6 | **1,398.5** | 10,770.5 | **374.5** |
+    | 128 (C) | 7,060.0 | 4,930.5 | 3,710.5 | 10,770.5 | 2,686.5 |
+
+    At `e112cbcbf` width 256 read 9,452.0 and 1,318.5. **The margin at 256 is thin**: more than 374.5 MiB held
+    by anything else at a wide run's start refuses that start. Amendment 3 says what that is and what follows.
+    `13c50a5e6`'s fit-check path ran here on the card at main's code for the first time, in both pilots.
+  - **K9(b)** (`main.b1.look.k9b_read`, ceilings 1e-3 on the maximum and 1e-4 on the 99th percentile): W PASS
+    through 4,330,926 (44 rows, maximum 1.10e-05, 99th percentile 4.5e-06), C PASS through 4,429,200 (45 rows,
+    1.20e-05, 5.5e-06); no behaviour-policy line in either child log. **A PASS inside 4M steps says nothing
+    about 100M at `ent_coef` 0.0125** (X26 first crossed 1e-4 near 137M, at 0.05): the early check, each look
+    and the arm-end read are the guard (§10).
+- **S6, the cross-width cell on the card: PASS.** `main.h2h`, W's against C's `checkpoint_1000192_steps.zip`, one
+  cell: "1 cell(s), 2 checkpoint(s) — 2 architecture(s)"; one engine, "64 envs, T2 graph on cuda; 2 slot
+  group(s)" (up in 1,359.6 s); 500 mirrored pairs, 1,000 games, exit 0, the row valid under
+  `gen3_eval_count_row_v2`. W scored 40.15 % [37.37, 42.93] (W/L/D 399/596/5); at 1M steps that is a pairing
+  proof and no evidence about width.
+- **S7, the four first-seed dry runs with the card visible: every preflight green.** `rb_b1c_s5101`,
+  `rb_b1w_s5103`, `rb_b1br_s5105`, `rb_b1wb_s5107`, from a shell at nice 0 (`inherited nice : ✓ 0 (<= 10)`),
+  main at `96ff6448f`: 0 refusals each and "DRY RUN — this command would launch"; the child's code by
+  `--pin-commit`; `K9(b) check : warn (typed)`; `ent_coef 0.0125 (TYPED)` against production's 0.05; no display
+  process on the card; disk 170.21 GiB free against 17.88 GiB required. **The disk figure is the same for all
+  four arms and wrong for each**: the preflight sized a checkpoint at 54.7 MiB from another lineage's archive run
+  with the same `ARCH_SIGNATURE`, which does not carry the width; a B1 checkpoint is 35.5 MiB at 128 and
+  77.3 MiB at 256 (the pilots' files). No launch is at risk at 170 GiB free; the defect is filed in
+  `designs/ops/TECH_DEBT_BACKLOG.md` (§2 (g)), and **what the twelve runs need in total is not computed by any
+  gate** (UNVERIFIED).
+- **S8: OPEN**, written at and after the launch: §13 items 8 and 9; each launch's record; the warm start's cost;
+  each run's realised GPU-hours (§7; the first control run's hours to 50M check §12's central figure); every
+  start failure and its retry (Amendment 3); the twelve arm-end K9(b) records.

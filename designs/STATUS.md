@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-11-11.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-12.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -46,16 +46,16 @@ X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side'
 The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
 [`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
-## 2. Running now (as of 2026-11-11)
+## 2. Running now (as of 2026-11-12)
 
-Read on the evening of 2026-11-11 (17:40 PST) from the orchestrator's log (`~/.claude/jobs/x35/status.txt`),
+Read on the morning of 2026-11-12 (09:10 PST) from the orchestrator's log (`~/.claude/jobs/x35/status.txt`),
 `utils.procfs.live_training_runs()` and `scripts/ops/mem_cap.sh --status`.
 
 | where | job | what decision it drives |
 |---|---|---|
-| GPU (since 11-11 17:18) | **The R9 human clone train** (`hclone_r2_s5901`, seed 5901, 45-minute chunks), started by the orchestrator's R9C driver when X69's last fork ended (17:18; X69 is in the landed rows below). Read from the log: this row is a pointer, and the R9 unit owns its detail. | The clone that the R9 kit's `--human-data init:` / `opp:` take (`d0e2715d8`). |
-| GPU next | **CE-3d, the trailing-magnet screen: REGISTERED 11-11 and AMENDED three times the same day; one launch attempted, NO fork has trained** ([PREREG](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md), Amendments 1 to 3, full tier). Fork 1's first launch (11-11, at the first pin `ce3d-pin-333a73dd`) died at step 0 in the startup fit check, a build gap, before any training step; the fix is on main and Amendment 3 RE-PINS the forks; the relaunch of seed 7321 is the orchestrator's GO, after the Training session moves the dead run dir aside. ONE arm, the swap: three P\* + 20M forks with the entropy bonus replaced at the same weight by a pull toward a trailing copy of themselves (`--ent-coef 0 --magnet-kl-coef 0.05`, seeds 7321–7323), ≈ 13 GPU-h, at the backport pin (tag `ce3d-pin-9e97cad5`: the side pin `f4b25238` + the lever + the fit check's fix). The two arms first registered (seeds 7301–7303, 7311–7313) are dropped. The magnet has never trained on the GPU. | Do the swap forks beat the eight banked C0 finals head to head (3 × 8, 1,000 pairs a cell, X67's cross and rule)? C0 trained at `f4b25238` on earlier days, a reported caveat. A second cross, against X67's three finals (3 × 3), is REPORTED and decides nothing. A PASS licenses registering a follow-up only; it moves no recipe and never holds BOUNDARY-1. |
-| GPU after CE-3d | **The BOUNDARY-1 GPU checklist.** Amendment 2 (2026-11-12, blind, before any launch) sets the base every one of the twelve runs types: `--ent-coef 0.0125` (the owner's yes of 2026-11-11 to X67's PASS) and `--behaviour-check warn`, with K9(b) judged by the look, at every look and at arm end. The launch pin is `15136b616` (its §18 re-pin record, 2026-11-12: the CPU items are green). At that pin §13's GPU items run in full, ≈ 3.6 GPU-h (the CUDA-only slow tests, the two pilots to their first pool entry, the cross-width cell, ρ), and their records go into §18 before any launch. ≈ 311 GPU-h to the decision until ρ rewrites it. | MF-5 (§3). |
+| GPU 11-11 17:18 to 18:57 (ended) | **The R9 human clone train** (`hclone_r2_s5901`, seed 5901, 45-minute chunks), started by the orchestrator's R9C driver when X69's last fork ended (17:18; X69 is in the landed rows below). It CONVERGED and the clone is registered (`d79f08ec2`). This row is a pointer, and the R9 unit owns its detail. | The clone that the R9 kit's `--human-data init:` / `opp:` take (`d0e2715d8`). |
+| GPU now | **CE-3d, the trailing-magnet screen: REGISTERED 11-11 and AMENDED three times the same day; fork 1 of 3 is DONE, fork 2 is TRAINING, fork 3 is queued; no cross is read** ([PREREG](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md), Amendments 1 to 3, full tier). Fork 1's first launch (11-11, at the first pin `ce3d-pin-333a73dd`) died at step 0 in the startup fit check, a build gap, before any training step; the fix is on main and Amendment 3 RE-PINS the forks; the dead run dir was moved aside (`models/rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN`). At the re-pin, on the chain `x35-ce3d-nov12`: seed 7321 trained 11-12 00:19 to 04:43 PST (launcher exit 0, last step 300,061,272, 1,374 steps/s, no restart; arm-end K9(b) PASS, `31b0b402c`); seed 7322 launched 11-12 08:52 PST and is the live run; seed 7323 follows it. ONE arm, the swap: three P\* + 20M forks with the entropy bonus replaced at the same weight by a pull toward a trailing copy of themselves (`--ent-coef 0 --magnet-kl-coef 0.05`, seeds 7321–7323), ≈ 13 GPU-h, at the backport pin (tag `ce3d-pin-9e97cad5`: the side pin `f4b25238` + the lever + the fit check's fix). The two arms first registered (seeds 7301–7303, 7311–7313) are dropped. | Do the swap forks beat the eight banked C0 finals head to head (3 × 8, 1,000 pairs a cell, X67's cross and rule)? C0 trained at `f4b25238` on earlier days, a reported caveat. A second cross, against X67's three finals (3 × 3), is REPORTED and decides nothing. A PASS licenses registering a follow-up only; it moves no recipe and never holds BOUNDARY-1. |
+| GPU after CE-3d | **BOUNDARY-1: §13's GPU items 1 to 7 are GREEN at the launch pin `15136b616` (2026-11-12, 04:54 to 08:51 PST, ≈ 3.95 h of the lease); the launch is the orchestrator's GO, after CE-3d's three forks.** Measured there: the wide arm costs ρ = 1.392 times the narrow one (734.59 against 527.67 s per 1M steps, pilots to 4M), so the EQ look is at 71,000,000; the width-256 update fits with 1,398.5 MiB of headroom against the 1,024 bar; the 32 CUDA-only slow tests pass; the cross-width cell passes; both pilots read K9(b) PASS. §12 is rewritten from ρ: ≈ 309 GPU-h to the decision (≈ 281 of training, 210 to 281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch. Amendment 3 (2026-11-12, blind, before any launch): a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint on the same pin; a repeat on an empty card holds that run. Amendment 2 (2026-11-12) set the base every run types: `--ent-coef 0.0125` (the owner's yes of 2026-11-11 to X67's PASS) and `--behaviour-check warn`, with K9(b) judged by the look. The records are the PREREG's §18 (slots S1 to S7; S8 is filled at the launch). | MF-5 (§3). |
 | CPU: the play lanes are FREE | **X60-T look 2 READ 11-11 16:52 PST: NO-TRANSFER** (the landed row below). Its two lanes held the agent cores from 11-09 03:36 to 11-11 16:45; no registered read holds them now. | The next CPU read is the orchestrator's pick from §3 (X67's conditional Kakuna read and the searched player's cost read both waited on these lanes). |
 
 ### Landed since 2026-11-01
@@ -101,7 +101,9 @@ its GO.
   yes on 2026-11-11** (in writing, to the orchestrator), and BOUNDARY-1's Amendment 2 (2026-11-12) types it on
   every run. For BOUNDARY-1 only: the production default stays 0.05.
 - **CE-3d, the trailing-magnet screen: REGISTERED 2026-11-11, AMENDED three times the same day (Amendments 1 to 3); one
-  launch died at step 0 in a startup check (a build gap, re-pinned by Amendment 3), no fork has trained**
+  launch died at step 0 in a startup check (a build gap, re-pinned by Amendment 3); at the re-pin fork 1 (seed 7321)
+  finished on 2026-11-12 with its arm-end K9(b) PASS (`31b0b402c`), fork 2 is training and fork 3 is queued; no cross
+  is read**
   ([`research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)):
   does a P\* + 20M fork get stronger when the entropy bonus is replaced, at the same weight, by `β · KL(π ‖ π_mag)`
   toward a copy of the policy that is replaced every 2M steps? The KL carries an entropy term of its own, so
@@ -139,9 +141,13 @@ its GO.
   PASS; the production default untouched), the look judges K9(b) itself (only a PASS lets a run count; a VOID run
   is lost to its lever and is not replaced), and the width-256 memory fit is recorded (it failed the startup fit check by 2.5 MiB of headroom at
   `aee363bc9`, and fits with 1,318.5 MiB against a 1,024 bar since `e112cbcbf`). **The launch pin is `15136b616`**
-  (its §18 re-pin record, 2026-11-12; the registered pin launches nothing). ≈ 311 GPU-h (270–340: the wide arms' share is a
-  guess until the GPU pilots at the launch pin, which run to trained weights and rewrite the budget), ≈ 16 days
-  from launch, after §13's GPU checklist at the launch pin. Width is decided on the in-house cross over all four
+  (its §18 re-pin record, 2026-11-12; the registered pin launches nothing). **§13's GPU items 1 to 7 are green at
+  that pin (2026-11-12; §18, slots S1 to S7):** the wide arm costs ρ = 1.392 times the narrow one (measured on two
+  pilots to 4M), the EQ look is at 71M, and the width-256 update fits with 1,398.5 MiB of headroom. **AMENDED
+  2026-11-12 (Amendment 3, blind):** a startup fit refusal at any start of a run is a start failure, retried from
+  the same checkpoint on the same pin; a repeat on an empty card holds that run. ≈ 309 GPU-h to the decision (≈ 281
+  of training, 210–281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch; the
+  launch is the orchestrator's GO, after CE-3d's forks. Width is decided on the in-house cross over all four
   panels,
   breadth on forum72 alone and kept only if home72 pays no more than forum72 gains; Kakuna clustered by team
   confirms either. Honest power: a true +4 pp reads WIN 19 times in 20 if the seed spread at 100M is the 1.76 pp
@@ -281,8 +287,8 @@ Every open owner question, in one place.
    ([`research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)
    §0). **Registered 2026-11-09** as both crossed at two seeds a cell, the orchestrator's choice
    ([`PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md), pin `507d0c119`), and
-   **amended 2026-11-10, before any launch, to three seeds a cell**: ≈ 311 GPU-h to the 100M look (≈ 16 days of our
-   card), launched at a new pin taken once, after the `ent_coef` decision. Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
+   **amended 2026-11-10, before any launch, to three seeds a cell**: ≈ 309 GPU-h to the decision (≈ 15.4 days of
+   our card; re-priced 2026-11-12 from the measured ρ = 1.392), launched at a new pin taken once, after the `ent_coef` decision. Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
    yes, staged, launched once the boundary's fixes are in (X60-T's verdict is in: NO-TRANSFER, 11-11, so its HOLD
    does not fire), so the owner's answer is needed before then.
