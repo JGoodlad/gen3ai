@@ -11,7 +11,10 @@ a perturbed fresh production policy, p2 a seeded random policy) — `agents.trai
 * **a resume**: the checkpoint's sidecar, read back by `attach` into a NEW learner and a NEW collector, serves the
   same column bit for bit — and a collector whose slot was not handed the magnet does not;
 * **a whole ``learn()``** with the lever ON trains through refreshes under ``fatal`` K9(b), records
-  ``train/magnet_kl`` and ``magnet/*``, and is a different learner from the flag-OFF golden.
+  ``train/magnet_kl`` and ``magnet/*``, and is a different learner from the flag-OFF golden;
+* **the startup fit check's dry update** (`update_fit.dry_update`, before any rollout, in the launch's order) trains
+  WITH the magnet: its fixture's column is served by the real T2 magnet slot, and the learner, the live buffer and
+  the first real rollout after it are what they would have been.
 """
 from __future__ import annotations
 
@@ -256,5 +259,63 @@ def test_a_whole_learn_with_the_magnet_trains_through_refreshes_and_records_its_
         assert [d[M.TAG_REFRESHES] for d in dumps if M.TAG_REFRESHES in d] == want_ref
         assert all(d[M.TAG_FORWARD_MS] >= 0.0 for d in dumps if M.TAG_AGE in d)
         assert (model._magnet.step, model._magnet.refreshes) == (step, refreshes)
+    finally:
+        env.close()
+
+
+def test_the_startup_dry_update_trains_with_the_column_T2s_magnet_slot_serves_and_leaves_the_run_alone(spaces):
+    """The launch's order (`main.train.model_build`): `magnet.attach`, the env's startup (T2's magnet slot), then the
+    update-fit check, whose dry update runs ONE real `train()` on a fixture rollout BEFORE any collection. CE-3d's
+    first launch died there at step 0 (`MagnetError`: the fixture had no column; CUDA only, so no CPU test saw it).
+    Here the same call on the real core and the real T2: the fixture's column is the magnet's legal-only log-probs
+    of the fixture's rows (the magnet is the loaded weights, so they are the learner's own), the term is in the
+    update, and afterwards the learner is bit-exact, the live buffer has no column, T2's lifecycle is clean and the
+    first real rollout's column is still the behaviour policy's. Fails on revert."""
+    from agents.training import update_fit as UF
+    env, model, col = _setup(spaces, refresh=FAR)
+    try:
+        live = model.rollout_buffer
+        before = [p.detach().clone() for p in model.policy.parameters()]
+        mag = model._magnet
+        assert mag.equals(model.policy) and live.magnet_logp is None
+        served0, flushes0 = int(col.svc.counters["rows_served"]), int(col.svc.counters["flushes"])
+        seen: Dict[str, Any] = {}
+        real_train = type(model).train
+
+        def spy(self):
+            buf = self.rollout_buffer
+            assert buf is not live
+            seen["column"] = np.array(buf.magnet_logp, copy=True)
+            seen["legal"] = np.array(buf.action_masks).reshape(N_STEPS, N, -1) > 0
+            seen["acts"] = buf.actions.reshape(N_STEPS, N).astype(np.int64)
+            seen["forward"] = _learner_forward(self)       # the learner's own log-probs of the fixture's actions
+            real_train(self)
+            seen["moved"] = not mag.equals(self.policy)
+        model.train = spy.__get__(model)
+        r = UF.dry_update(model)
+        del model.train
+        assert r.oom is None and r.rows == ROLLOUT and M.TAG_KL in r.metric_keys
+        assert not [k for k in r.metric_keys if k.startswith("magnet/")]      # a dry pass is not a fill: no meters
+        column, legal = seen["column"], seen["legal"]
+        assert column.shape == legal.shape and column.dtype == np.float32
+        assert (~legal).any() and (column[~legal] == 0.0).all() and np.isfinite(column).all()
+        np.testing.assert_allclose(np.where(legal, np.exp(column.astype(np.float64)), 0.0).sum(-1), 1.0, atol=1e-5)
+        at_action = np.take_along_axis(column, seen["acts"][..., None], axis=-1)[..., 0]
+        np.testing.assert_allclose(at_action, seen["forward"], atol=1e-4)     # the MAGNET's policy (= the weights)
+        assert seen["moved"]                                                   # a real update, inside
+        # ... served by T2's magnet slot, once over the fixture's rows
+        assert int(col.svc.counters["rows_served"]) - served0 == ROLLOUT
+        assert int(col.svc.counters["flushes"]) - flushes0 >= 1
+        # and the run is what it was: the learner bit for bit, the magnet, the live buffer, T2's lifecycle
+        assert all(th.equal(a, b) for a, b in zip(before, model.policy.parameters()))
+        assert model._magnet is mag and mag.equals(model.policy) and (mag.step, mag.refreshes) == (0, 0)
+        assert model.rollout_buffer is live and live.magnet_logp is None
+        col.check_lifecycle()
+        # the first REAL rollout after it: the column is the behaviour policy's on the rows these weights played
+        assert col.collect(model, TK.NullCallback(), model.rollout_buffer)
+        r0 = _rollout(model, col)
+        cur = r0["current"]
+        assert cur.sum() > ROLLOUT // 2
+        np.testing.assert_allclose(r0["at_action"][cur], r0["mu"][cur], atol=1e-5)
     finally:
         env.close()

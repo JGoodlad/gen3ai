@@ -409,6 +409,29 @@ was refused (headroom 978 < 1,024). v2, in `update_fit.dry_update`:
 The bar is unchanged (1,024 MiB). The line names both parts: `demand (peak reserved) D MiB (the update U; the canary's
 check C reserved / A allocated), peak allocated …, fragmentation …`.
 
+**The fill's inputs (`gen3_update_fit_fill_inputs_v1`, 2026-11-11).** A real rollout reaches `train()` through the
+collector's fill (`RustCollector._fill`), which writes more than the buffer's arrays. No fill made the fixture, so
+`dry_update` provides each such input itself, from one table (`update_fit.FILL_INPUTS`, `provide_fill_inputs`):
+
+| the fill writes | read under | the dry update hands `train()` |
+|---|---|---|
+| `rollout_buffer.magnet_logp` | `--magnet-kl-coef` > 0 | the fill's OWN pass: T2's magnet slot serves the fixture's rows (`magnet.fill_column`). The update trains with the term; the pass is the demand's `fill_inputs` segment. Never skipped or zeroed |
+| `_overlap_prox` | `--overlap-collect` | a stand-in: the fixture's own log-probs, an identity rewrite (w = 1) |
+
+- A lever that is on and whose input cannot be provided is `FillInputMissing` (FATAL_CONFIG) before `train()`, naming
+  the lever. A typed refusal raised inside the dry `train()` keeps its type and carries a note that it came from the
+  fixture rollout.
+- The fill's other writes on the learner are listed with their reason in `FILL_WRITES_TRAIN_DOES_NOT_REQUIRE`.
+  `update_fit_test` holds `RustCollector._fill`'s source to the two tables (its writes on the learner, and every
+  callee it hands the learner to), so a new write fails the gate until it is declared.
+- T2 is a function of its rows: the magnet's pass moves no learner bit and no played bit. It does advance T2's own
+  serving counters (`flushes`, `rows_served`, `batches`) by the fixture's rows.
+- Cause: CE-3d's first fork (`rb_x35_ce3dswap_s7321`) died at step 0 in this check with `MagnetError` (no column).
+  The check runs on CUDA only and no CPU test ran the dry update with the lever on; `update_fit_test` and
+  `rust_rollout/magnet_integration_test.py` now do, the second on the real T2 in the launch's order.
+- **UNVERIFIED on the GPU** (built without a lease): the `fill_inputs` segment's size, and that the magnet slot's
+  flush before the first rollout, from an emptied cache, grows T2's reservation by nothing it warns about.
+
 **PREDICTIVE, read on the GPU** (RTX 3080 Ti, the X26 argv, `GEN3AI_CANARY_FIRST=2`):
 
 | code | gate + prewarm (ledger: reserved Δ / peak alloc) | dry update reserved | dry canary reserved / alloc | demand → headroom | the run: reserved at updates 1–4 / canary at update 2 |

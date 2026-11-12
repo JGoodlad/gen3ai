@@ -15902,3 +15902,19 @@ was downloaded or written under `data/`.
   proving its host tensor dies with the graph; a thrice-unpacked one) and on the real learner; the cell's ledger rule
   (`ledgers_settle`) runs in the CPU mirror of the cell. The CUDA cell asserts that rule in place of the false one.
 - **Not shown.** The cell on the GPU (built without a lease).
+## 2026-11-11 — the startup fit check's dry update trains with the levers the run trains with (`gen3_update_fit_fill_inputs_v1`; no config / `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change, training arithmetic untouched)
+
+- **Why.** CE-3d's first fork (`rb_x35_ce3dswap_s7321`, `--ent-coef 0 --magnet-kl-coef 0.05`, pin `333a73dd`) died at
+  step 0 with `MagnetError: --magnet-kl-coef > 0 but the rollout buffer has no magnet column`. The update-fit check's
+  dry update runs one real `train()` on a fixture rollout, and only the collector's fill writes the magnet's column.
+  The check runs on CUDA only, so no CPU test had reached it with the lever on: every β > 0 launch on the card would
+  have died there.
+- **What.** `update_fit.FILL_INPUTS` names every input of `train()` that only the fill writes, and the dry update
+  provides each for its fixture before `train()`. The magnet's column is the fill's own pass (`magnet.fill_column`:
+  T2's magnet slot, holding the magnet built off the loaded weights, serves the fixture's rows), booked into the
+  demand as the `fill_inputs` segment. X14's proximal log-probs keep their identity stand-in, now an entry of the same
+  table. A lever that is on and cannot be provided is `FillInputMissing` (FATAL_CONFIG) before `train()`.
+- **The class.** `update_fit_test` parses `RustCollector._fill` and fails when it writes something on the learner, or
+  hands the learner to a callee, that `update_fit` does not declare.
+- **Not shown.** Anything on the GPU (built without a lease): the segment's size, and T2's reservation counters after
+  a magnet-slot flush from an emptied cache. The restore is shown bit-exact on the CPU learner and the real T2.

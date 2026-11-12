@@ -1787,10 +1787,10 @@
   },
   "src/agents/model/saved_offload_test.py::test_on_the_card_the_bounded_reference_arm_matches_the_unbounded_one_and_peaks_lower": {
    "status": "skip",
-   "commit": "1fe7283f7ecae9ade230f166a6a43fdb851009e1",
-   "at": "2026-11-12T07:13:41Z",
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
    "duration_s": 0.0,
-   "contention": 1.0,
+   "contention": 1.45,
    "detail": ""
   },
   "src/agents/model/speed_physics_bridge_integration_test.py::test_the_priority_bracket_is_never_contradicted_and_the_physics_is_calibrated": {
@@ -2983,50 +2983,58 @@
   },
   "src/agents/training/rust_rollout/magnet_integration_test.py::test_a_whole_learn_with_the_magnet_trains_through_refreshes_and_records_its_meters": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 79.06,
-   "contention": 1.69,
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
+   "duration_s": 55.47,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/training/rust_rollout/magnet_integration_test.py::test_the_column_is_the_magnets_log_probs_over_the_LEGAL_actions": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
    "duration_s": 0.0,
-   "contention": 1.76,
+   "contention": 1.93,
    "detail": ""
   },
   "src/agents/training/rust_rollout/magnet_integration_test.py::test_the_magnet_is_FROZEN_between_refreshes": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
    "duration_s": 0.0,
-   "contention": 1.78,
+   "contention": 1.8,
    "detail": ""
   },
   "src/agents/training/rust_rollout/magnet_integration_test.py::test_the_magnet_refreshes_at_the_first_boundary_at_or_after_the_cadence": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
    "duration_s": 0.0,
-   "contention": 1.81,
+   "contention": 1.95,
    "detail": ""
   },
   "src/agents/training/rust_rollout/magnet_integration_test.py::test_the_magnet_slot_is_the_last_T2_slot_and_never_the_trainees": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 30.5,
-   "contention": 1.62,
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
+   "duration_s": 30.7,
+   "contention": 1.6,
    "detail": ""
   },
   "src/agents/training/rust_rollout/magnet_integration_test.py::test_the_magnet_survives_a_resume_into_a_new_learner_and_collector": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 7.95,
-   "contention": 1.61,
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
+   "duration_s": 7.68,
+   "contention": 1.53,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/magnet_integration_test.py::test_the_startup_dry_update_trains_with_the_column_T2s_magnet_slot_serves_and_leaves_the_run_alone": {
+   "status": "pass",
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
+   "duration_s": 9.05,
+   "contention": 1.01,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_a_whole_learn_with_overlap_trains_through_overlapped_updates_and_is_deterministic": {
@@ -3231,10 +3239,10 @@
   },
   "src/agents/training/update_fit_test.py::test_a_dry_update_leaves_the_learner_bit_identical": {
    "status": "pass",
-   "commit": "e112cbcbfd4d4fef6bfa15144ce00e57a7f3ed23",
-   "at": "2026-11-12T06:11:51Z",
-   "duration_s": 22.65,
-   "contention": 1.79,
+   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
+   "at": "2026-11-12T07:50:43Z",
+   "duration_s": 23.05,
+   "contention": 1.6,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_one_capped_real_game_against_metamon_smallrl": {
@@ -5894,5 +5902,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-12T07:13:41Z"
+ "last_written": "2026-11-12T07:50:43Z"
 }

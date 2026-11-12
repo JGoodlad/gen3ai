@@ -63,6 +63,12 @@ through it once (`RustCollector._fill` → `magnet.fill_column`, in flushes of a
 `RolloutBuffer.magnet_logp`, `[n_steps, n_envs, n_actions]` float32 with 0.0 on illegal entries. The column rides the
 buffer's `get` beside its rows in every device-batch mode, and R1 reads it as a tenth argument.
 
+**The startup fit check serves its own column.** The update-fit check's dry update (`update_fit.dry_update`, CUDA,
+before any rollout) runs one real `train()` on a fixture rollout that no fill made. It serves the fixture's rows
+through the same slot (`update_fit.FILL_INPUTS` → `fill_column`), so that update trains with the term and the pass's
+memory is in the measured demand (`learner_lifecycle.md` "The fill's inputs"). It records no `magnet/*` meter. Before
+2026-11-11 the fixture had no column, and every β > 0 launch on CUDA died there at step 0 (CE-3d's first fork).
+
 **R1 never runs a second forward.** The alternative, a frozen-copy forward per micro-batch inside the update, costs a
 whole extra forward of every epoch (ten per rollout at production's `n_epochs`); one T2 pass per rollout is the cheap
 spelling. Cost on the GPU, **UNVERIFIED (no lease at the build):** one more full-bucket slot of CUDA-graph captures
@@ -122,6 +128,7 @@ on a flagless resume or fork; a typed value wins.
 | β > 0 with `--fork-fraction > 0` | the column is served for the buffer's played rows only; the fork arm appends successor rows | `magnet.validate_decl` (`RustEnvDecl`), and `combination_checks` `magnet_kl_vs_fork_arm` |
 | β > 0 with `--overlap-collect` | the magnet's pass runs on the main thread at the fill, while the overlap's worker owns the T2 flush | the same two places, `magnet_kl_vs_overlap_collect` |
 | β > 0 and no column in the buffer | a run that would train without its regulariser | `MagnetError` in `PPO._magnet_args`, `ValueError` in `micro_step` |
+| β > 0 and the startup dry update has nothing to serve its fixture's column (no magnet, no collector, no slot) | the fit check would measure an update without the term | `FillInputMissing` in `update_fit.provide_fill_inputs`, before `train()` |
 | β < 0, or a cadence ≤ 0 | not a regulariser | the parser |
 
 ## 8. Telemetry
@@ -147,4 +154,9 @@ expected saw-tooth; a flat ≈ 0 between refreshes means the policy is not movin
 - `agents/training/rust_rollout/magnet_integration_test.py` (`slow`, real core and real T2): the slot is last and
   never the trainee's; the column is the magnet's legal-only log-probs; frozen between refreshes; refreshed at the
   boundary whose age reaches the cadence; a resume into a new learner and collector serves the same column bit for
-  bit; a whole `learn()` logs the meters with the replayed ages.
+  bit; a whole `learn()` logs the meters with the replayed ages; the startup dry update, in the launch's order,
+  trains on the column the real slot serves for its fixture and leaves the learner, the live buffer and the first
+  real rollout as they were.
+- `agents/training/update_fit_test.py`: the dry update with β > 0 trains with the term on a served column and
+  restores exactly; with nothing to serve it, it refuses by name before `train()`; `check_update_fits`' CUDA branch
+  is driven on the CPU learner with the lever on.
