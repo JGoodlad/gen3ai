@@ -41,17 +41,16 @@ agent only if need be — gated on the leaf (carried since by L1, S-U and S′, 
 
 | # | experiment | question | status | prerequisite |
 |---|---|---|---|---|
-| X60-T | **H-TEAMS: human-built ladder teams in P\*'s pool** ([`../endstate/design_human_replay_lever.md`](../endstate/design_human_replay_lever.md) §6; PREREG [`measurements/x60t_h_teams_2026-11-06/PREREG.md`](measurements/x60t_h_teams_2026-11-06/PREREG.md)) | Does P\* +20M with `--human-data teams:hr_spec_v1.r3@0.5` (2,295 ladder teams) beat C0 vs Kakuna on forum72, a population it never trained on? | **RUNNING. Look 1 READ 2026-11-07: CONTINUE** (F **+0.64 pp [−2.17, +3.45]**, X60-T 0.515 vs C0 0.508, 3,600 games an arm; per seed −0.42 / +0.17 / +2.17; determinism guard PASS, every VOID gate PASS; `af57d4fd3`, ledger 2026-11-07). **Look 2** is registered by AM-X60T-2 (`aea028c60`; `read_spec_look2.json`, sha256 `a5ad7411…`) and its GAIN-to-ADOPT guards by AM-X60T-3 (`9f80547b6`, 2026-11-09). X60Tb s3504–s3508, then C0b s3506–s3508, train from 2026-11-09 03:04 at their side pins (s3504 first, each K9(b)-guarded); the look-2 read lanes (anchor + S) are playing the existing finals' cells (PREREG §23.7). Look 2 costs about 32.8 GPU-h + 22,540 Kakuna games (about 156 lane-h) + 43 S sets (about 105 lane-h: the S lane is the long pole). Verdicts: PREREG §11 | the eight new finals settle (the `final` rule) and their K9(b) records exist; the orchestrator's GO per launch; the GPU lease |
-| X26 | **The ride-along baseline: the RUN is DONE, its registered READS are NOT.** X26 (`rb_x26_s2601`: the production recipe + `--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all`, DETACHED heads, learning pinned bit-identical to the run without them) plateaued at 280M (P\*, frozen `d172c10ed`) and its continuation X26c read FLAT at 480M (`204204bbf`); it is the baseline every later arm compares against. Registration: [`measurements/ridealong_baseline/PREREGISTRATION.md`](measurements/ridealong_baseline/PREREGISTRATION.md) (Amendments 1 and 2; `../endstate/design_x26_readiness.md`) | R1 does ensemble disagreement predict \|V − z\|? (USABLE iff the AUROC lower bound > 0.55) · R2 RND the same, plus an unseen-team coverage AUROC (per RND variant, Amendment 1) · R3 does A rank like the ground truth, and beyond the policy? · R4 are starved near-best moves flagged? · R5 does B carry outcome information? | **registered, not scheduled.** No R1–R5 verdict is in the ledger (the only ride-along reads are the 2026-09-30 RND state read and the smokes under `measurements/ridealong_baseline/`; UNVERIFIED that none was read off-ledger). The heads' checkpoints exist | none; CPU. The agent cores are on X60-T look 2's lanes |
+| X26 | **The ride-along baseline: the RUN is DONE, its registered READS are NOT.** X26 (`rb_x26_s2601`: the production recipe + `--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all`, DETACHED heads, learning pinned bit-identical to the run without them) plateaued at 280M (P\*, frozen `d172c10ed`) and its continuation X26c read FLAT at 480M (`204204bbf`); it is the baseline every later arm compares against. Registration: [`measurements/ridealong_baseline/PREREGISTRATION.md`](measurements/ridealong_baseline/PREREGISTRATION.md) (Amendments 1 and 2; `../endstate/design_x26_readiness.md`) | R1 does ensemble disagreement predict \|V − z\|? (USABLE iff the AUROC lower bound > 0.55) · R2 RND the same, plus an unseen-team coverage AUROC (per RND variant, Amendment 1) · R3 does A rank like the ground truth, and beyond the policy? · R4 are starved near-best moves flagged? · R5 does B carry outcome information? | **registered, not scheduled.** No R1–R5 verdict is in the ledger (the only ride-along reads are the 2026-09-30 RND state read and the smokes under `measurements/ridealong_baseline/`; UNVERIFIED that none was read off-ledger). The heads' checkpoints exist | none; CPU. The agent cores are free since X60-T look 2 was read (2026-11-11) |
 
 ## 2. PROPOSED — ranked
 
 ### 2.0 THE MODEL-FIRST GPU QUEUE after X60-T (owner, 2026-11-09), ranked
 
 **How it is ranked.** Expected strength per GPU-h to the lever's DECISIVE read, prerequisites respected. CPU-h are
-given beside it because the Kakuna lane, not the GPU, sets when anything is read: X60-T look 2's read (≈ 156 anchor
-lane-h + ≈ 105 S lane-h, PREREG §23.9) holds the agent cores from ≈ 11-12 for days, so a lever whose first decisive
-meter needs no Kakuna game ranks ahead of one that queues behind those lanes. Every effect below is a **GUESS** (80 %
+given beside it because the Kakuna lane, not the GPU, sets when anything is read: X60-T look 2's read held the agent
+cores for 61 h (2026-11-09 03:36 to 11-11 16:45; READ NO-TRANSFER, §3), so a lever whose first decisive meter needs
+no Kakuna game ranks ahead of one that queues for those lanes. Every effect below is a **GUESS** (80 %
 range), mine, not a measurement; each card cites its evidence and labels what is UNVERIFIED. Rates: a P\* + 20M fork
 ≈ 4.1 GPU-h (X60-T PREREG §23.9); a fresh production run ≈ 0.21 GPU-h per M steps (X26's 380M ≈ 79 GPU-h,
 `../endstate/design_x65_exit0_search_distillation.md` option (iii)); ≈ 144 Kakuna games a lane-h (§23.9).
@@ -64,12 +63,12 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 | **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | 0 | ≈ 8 CPU-min a checkpoint (the meter); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a DONE 2026-11-09 (baseline REPORTED); **step b SCREENED OUT 2026-11-09** (light screen X68 read DROP: screen evidence, never a verdict); no head reshape (`../endstate/design_offpool_belief.md`); the route left for the species leg is breadth in the loop, tested by MF-5's 2 × 2; **the move leg DIAGNOSED 2026-11-10** (its §8) and a training lever built off by default (`--belief-grad-mode move_label_only`); **its light screen X69 REGISTERED 2026-11-10, NOT LAUNCHED** (three forks of P\*, ≈ 12.3 GPU-h; `measurements/x69_move_label_only_screen_2026-11-10/SCREEN.md`) |
 | **MF-4** | **The value at the leaf on unfamiliar teams** | 0 until V-RANK fires; then ≈ 1–2 | ≈ 96 (V-RANK) + ≈ 300–600 (a searched game read; S′-LIVE took ≈ 315) | +0.3 (−0.5, +1.5), with search only | ≈ 0.05 after P(V-RANK fires) ≈ 0.3 | V-RANK's builds and PREREG |
 | **MF-5** | **BOUNDARY-1's from-scratch 2 × 2** (width × team breadth, three seeds a cell, twelve fresh runs to 100M): REGISTERED 2026-11-09 at pin `507d0c119`, AMENDED 2026-11-10 (Amendment 1: the third seed up front, the extension withdrawn, the pre-launch review's fixes), [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md); the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options | its §12 | its §12 | its §11 | — | X66 and X67 done; the `ent_coef` decision (an OPEN HOLD: X67 read PASS 2026-11-11 with LR-MOVED; the owner's yes); then its §18 single re-pin (the registered pin cannot launch three seeds); its §13 GPU checklist at that pin (the wide-arm pilot to trained weights, the CUDA-only slow tests); its §10 HOLD on X60-T reading ADOPT-CANDIDATE |
-| MF-6 | Breadth at the plateau: X62's recombined teams | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | X60-T not NO-TRANSFER / LOSS; PR-1′'s place is the orchestrator's |
 | MF-7 | The league's main exploiters (X35-A3) | ≈ 15 | ≈ 107 | +0.5 (−1, +2) vs Kakuna | ≈ 0.03 | its two-phase kit (T55) |
+| MF-6 | Breadth at the plateau: X62's recombined teams (below MF-7 since 2026-11-11, by X60-T's registered outcome branch; its effect and rate are the GUESS made before that read, not re-estimated) | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | **NOT MET:** it needed X60-T not NO-TRANSFER / LOSS, and X60-T read NO-TRANSFER (§3); PR-1′'s place is the orchestrator's |
 | R9 | **A converged human-replay clone as a from-scratch initialisation and as a frozen self-play opponent** (unranked: the 2026-11-09 independent review's R9; the rank is the orchestrator's) | clone ≈ 1.5–3.5 (hard cap 5.9); arms ≈ 84 (two arms × two seeds to 100M), 42 at a 50M first look; ≈ 126 at BOUNDARY-1's amended three seeds an arm | 0 (clone); the arms' read rides BOUNDARY-1's frame | init 0 (−2, +2); opponent +0.3 (−1, +2) | ≈ 0.004 | the kit is BUILT (2026-11-10); after the BOUNDARY-1 launch; the arms need a FULL registration; local GPU only |
 
 **The recommendation.** **MF-1** is READ (X66, NOT-DELIVERED, 2026-11-10) and **MF-3 step (b)** is screened out (X68 read DROP);
-neither asks for anything more. Between and after them the GPU's fill is the orchestrator's (MF-6's or MF-7's training, whose reads can wait for the lanes);
+neither asks for anything more. Between and after them the GPU's fill is the orchestrator's (MF-7's or MF-6's training, in that order since X60-T's read);
 **MF-5** launches the day its prerequisites hold, and the owner is asked about it NOW because a card has a lead
 time.
 
@@ -155,7 +154,7 @@ time.
     saw" half, E2 / E3 stall, E8, E11) and every JUDGMENT-class lever (the value pool's side embedding,
     UNDERSTANDING §6; `--policy-readout trunk`) joins only on its own registered hypothesis (obs backlog §0 rule 3),
     never as a passenger. The boundary is trained by MF-5's fresh pair, so it costs no GPU of its own.
-  - *Unlocks:* a production lineage whose operator is right about the opponent; the vehicle for X60-T's adoption.
+  - *Unlocks:* a production lineage whose operator is right about the opponent; it was to carry X60-T's adoption, and X60-T read NO-TRANSFER (2026-11-11), so no human-team recipe rides it.
   - *Evidence:* E13's row (filed by `7a0153b46`: the Smogon-mean HP exceeds the neutral estimate by ≥ 20 HP for 60 %
     of species with spreads); the census precedent `83272a8f9`. No strength effect of any fidelity fix has been read
     (UNVERIFIED that any moves a game).
@@ -216,7 +215,7 @@ time.
   then); the screen never holds the launch.
 - **MF-6 X62** (`../endstate/design_x62_team_recombination.md`) and **MF-7 X35-A3** (§2.1's CE-3c) keep their own
   designs; they are here because they are model levers with a known price. X62's case rests on H-CTX SUPPORTED
-  (`6f126c4af`) against four breadth misses at the plateau (D1, D3 UNDECIDED; N1-P NULL; X63 NOT PURSUED); A3's on
+  (`6f126c4af`) against five breadth misses at the plateau (D1, D3 UNDECIDED; N1-P NULL; X63 NOT PURSUED; X60-T NO-TRANSFER); A3's on
   R0's best responder (+11.1 pp [+8.3, +13.8], `c456b6a09`), with no evidence it moves the Kakuna meter.
 - **R9 A converged human-replay clone, as an initialisation and as an opponent (CARD; kit BUILT 2026-11-10, nothing
   registered, nothing launched).** The 2026-11-09 independent review's R9: X59-S cloned for 3 epochs (7,041 steps)
@@ -258,17 +257,15 @@ time.
   - *Unlocks:* a human lever that does not go through the loss or the team pool; if the clone is a useful opponent,
     one for the league (X35) that is not our own lineage.
 
-**X60-T's outcome branches** (its verdicts, PREREG §11):
-- **ADOPT-CANDIDATE** (a GAIN on F, I_F LB90 > 0, P non-inferior, guards PASS) → the re-read at the production
-  checkpoint, then X54's sealed `forum216b` read; `--human-data teams:hr_spec_v1.r3@0.5` goes into BOUNDARY-1's
-  recipe on BOTH of MF-5's arms; MF-6 rises (team breadth then works at the plateau).
-- **TRADE** → the exchange rate to the owner; BOUNDARY-1 carries human teams only on the owner's ruling.
-- **KAKUNA-SPECIFIC** or **IN-HOUSE-ONLY** → nothing adopted; BOUNDARY-1 trains on the pool alone.
-- **NO-TRANSFER** or **LOSS** → H-TEAMS stops at the plateau; the breadth family's last live member at the plateau
-  is gone, MF-6 drops below MF-7, and MF-5's case gets stronger (data breadth does not move the plateau).
-- **NOT-DELIVERED** → a dose or fresh-run follow-up is its own registration, never a passenger on MF-5.
-- **NOT-RESOLVED** / **INCONCLUSIVE** → nothing licensed.
-- **Every class:** X60-T's REPORTED belief calibration and P5 on its finals feed MF-3 step (a).
+**X60-T's outcome: NO-TRANSFER (2026-11-11, §3), and the branch registered here for it.** H-TEAMS stops at the
+plateau for the slice it tested (teams whose six mons were all revealed in their replay, loser-enriched); the breadth family's last live member at the
+plateau is gone, MF-6 drops below MF-7 (the table above), and MF-5's case gets stronger: five breadth levers have
+now read without a gain on unfamiliar teams from the plateau (D1, D3 UNDECIDED; N1-P NULL; X63 NOT PURSUED; X60-T
+NO-TRANSFER), so the open question about breadth is the from-scratch one BOUNDARY-1 asks. BOUNDARY-1 trains on the pool alone; its §10 HOLD needed ADOPT-CANDIDATE and does not fire. The
+other branches (ADOPT-CANDIDATE, TRADE, KAKUNA-SPECIFIC, IN-HOUSE-ONLY, NOT-DELIVERED, NOT-RESOLVED) did not fire and
+are in PREREG §11.
+- **Still owed, any class:** X60-T's REPORTED belief calibration and P5 on its finals, for MF-3 step (a). The
+  registered read does not produce them (its README's FINDING 6); they need their own small unit.
 
 ### 2.1 The rest of the queue (ranks set before 2026-11-09; SP-1, the search engineering, is CPU-side and below §2.0)
 
@@ -337,6 +334,7 @@ time.
 
 | # | experiment | verdict | ledger |
 |---|---|---|---|
+| X60-T | H-TEAMS: P\* + 20M with `--human-data teams:hr_spec_v1.r3@0.5` (2,295 human-built ladder teams in half the pool), eight seeds, against C0's eight ([`../endstate/design_human_replay_lever.md`](../endstate/design_human_replay_lever.md) §6; PREREG [`measurements/x60t_h_teams_2026-11-06/PREREG.md`](measurements/x60t_h_teams_2026-11-06/PREREG.md); reads [look 1](measurements/x60t_h_teams_2026-11-06/read/README.md), [look 2](measurements/x60t_h_teams_2026-11-06/read_look2/README.md)) | **NO-TRANSFER 2026-11-11** (look 2, final; look 1 CONTINUE 2026-11-07): Δ_F on forum72 vs Kakuna **−0.23 pp [−1.95, +1.49]**, NO-USEFUL-GAIN (9,600 games an arm); in-house R72 (the corpus's own teams) **+1.69 pp [+1.08, +2.30]** DELIVERED, I_F −0.34 pp [−1.14, +0.46] not a gain, Δ_P on home72 −2.12 pp [−2.99, −1.25] (inferiority not excluded); T − D1 +0.60 pp [−1.58, +2.78], NO-DIFFERENCE-AT-3PP. Guards not read (no GAIN). REPORTED, never decided: Δ_H +2.77, Δ_P72 +5.80, Δ_home72 +2.41 pp vs Kakuna at 140 games a final. Licenses only: stop this lever for this six-seen, loser-enriched slice at the plateau. Still owed (§2.0): the REPORTED belief calibration on its finals, which the read does not produce | `af57d4fd3` (look 1); ledger 2026-11-11 · *X60-T / H-TEAMS look 2 (FINAL): NO-TRANSFER* |
 | S′-HONEST | The leak-honest search replication ([`../endstate/design_sprime_honest.md`](../endstate/design_sprime_honest.md); PREREG `e81f80657`; [`measurements/sprime_honest_play_2026-11-06/`](measurements/sprime_honest_play_2026-11-06/README.md)) | **GO-HONEST, GOAL-B-REACHED 2026-11-09**: P\* + S′h (`r0s4_honest_inc@10`) beats P\* against the real Kakuna on U by **+2.00 pp [+0.34, +3.51]** on 5,097 fresh paired deals (GO-imputed LB +0.32); searched U score **0.5145 [0.5008, 0.5282]**. "Goal (b) met with search", in that regime only. REPORTED [clustering addendum](measurements/sprime_honest_play_2026-11-06/addendum_clustering/README.md): the gain holds under every team clustering (LB ≥ +0.31 pp) and is detected on P72 alone (H + F +0.66 [−1.39, +2.67]); the score clustered on teams is [0.494, 0.535] (ours) to [0.491, 0.538] (two-way), not established beyond these panels' teams; the search program for goal (b) is un-paused, its cost read drafted and its deployable player designed (§2 SP-1) | `331f19cfe`, `e81f80657` |
 | X66 | ExIt-0H (MF-1): distil S′-HONEST's 188,297 banked honest labels into P\* at the learnability probe's stronger recipe, three panel-fold students, a delivery gate before any game ([`measurements/x66_exit0h_2026-11-09/`](measurements/x66_exit0h_2026-11-09/README.md); PREREG `a2dbc9616`) | **NOT-DELIVERED 2026-11-10**: pooled Δagree **−7.05 pp [−7.31, −6.78]** (H −6.48, F −7.16, P72 −7.50), no Kakuna game played. REPORTED: held-out Δagree ≤ 0 at every checkpoint on unseen deals and unseen teams; student precision 0.21–0.24, equal to the leak-inclusive probe arms'; P\*'s agreement with S′h (≈ 62.7 %) sits at S′h's own self-agreement under another key (61.8 % [54.0, 69.0]). Pre-committed: NOT evidence for the scale bet (MF-5); no ExIt-1 (MF-1b) planned on it; nothing about more labels, another recipe or a larger network | ledger 2026-11-10 · *X66 ExIt-0H: NOT-DELIVERED* |
 | S′-LIVE, dlive | S′ (`r0s4_rolls@10`), the leak-inclusive search: the deviation-only live read, then every eligible decision from turn 10 | dlive **STOP** 2026-11-01 (+1.20 pp a departure [−1.55, +3.88], n 1,793); S′-LIVE **GO-LEAKY** 2026-11-05 (+4.60 pp [+2.66, +6.48], 2,698 fresh deals; leak-inclusive by name). Three estimands with S′-HONEST, never pooled | `02fb0f2fc`, `fcfe2575e` |

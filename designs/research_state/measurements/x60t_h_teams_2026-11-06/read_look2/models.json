@@ -1,0 +1,170 @@
+{
+ "c0_s3501": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3501/final_model.zip",
+  "label": "c0_s3501",
+  "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+  "step": 300061940
+ },
+ "c0_s3502": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3502/final_model.zip",
+  "label": "c0_s3502",
+  "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+  "step": 300061805
+ },
+ "c0_s3503": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3503/final_model.zip",
+  "label": "c0_s3503",
+  "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+  "step": 300061491
+ },
+ "c0_s3504": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3504/final_model.zip",
+  "label": "c0_s3504",
+  "sha256": "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3504/final_model.zip",
+  "step": 300062191
+ },
+ "c0_s3505": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3505/final_model.zip",
+  "label": "c0_s3505",
+  "sha256": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3505/final_model.zip",
+  "step": 300062098
+ },
+ "c0_s3506": {
+  "copied_at": "2026-11-10T04:33:07-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3506/final_model.zip",
+  "label": "c0_s3506",
+  "sha256": "21409eee22839b3c6040c43b7b58d7886c49569d6dd288353beb36ec7976b560",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3506/final_model.zip",
+  "step": 300061133
+ },
+ "c0_s3507": {
+  "copied_at": "2026-11-10T08:46:17-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3507/final_model.zip",
+  "label": "c0_s3507",
+  "sha256": "455f73c8d2bd570bf3eca176e3e3953a9b9ac5c059ec35a9a40169a4da1687af",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3507/final_model.zip",
+  "step": 300061396
+ },
+ "c0_s3508": {
+  "copied_at": "2026-11-10T12:55:27-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/c0_s3508/final_model.zip",
+  "label": "c0_s3508",
+  "sha256": "8db0a96e55b751fdfac18bc7fe2cbabf5dd5ce7eddd7560f04bea3fa41fb262e",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3508/final_model.zip",
+  "step": 300061502
+ },
+ "d1_s3501": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/d1_s3501/final_model.zip",
+  "label": "d1_s3501",
+  "sha256": "3d5c9d45ce367eb50034d2a66dd8a6b43a8c71d086872f9ae4bf9bb0bbd7940c",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3501/final_model.zip",
+  "step": 300062277
+ },
+ "d1_s3502": {
+  "copied_at": "2026-11-09T03:35:50-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/d1_s3502/final_model.zip",
+  "label": "d1_s3502",
+  "sha256": "dc3d5cd7d60a5f723f7323f73290fe673a893c3a6796d1428dcb38df066f8d39",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3502/final_model.zip",
+  "step": 300060318
+ },
+ "d1_s3503": {
+  "copied_at": "2026-11-09T03:35:50-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/d1_s3503/final_model.zip",
+  "label": "d1_s3503",
+  "sha256": "30e4e79a38d83c6066c37ddc93e1807135f6acfcb70b59ede0e3e589a0296aec",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3503/final_model.zip",
+  "step": 300062078
+ },
+ "d1_s3504": {
+  "copied_at": "2026-11-09T03:35:50-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/d1_s3504/final_model.zip",
+  "label": "d1_s3504",
+  "sha256": "fdaf6daa66a31c1559b034763d711607de652c4f693be91eaaef49e5e9eaf645",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3504/final_model.zip",
+  "step": 300060820
+ },
+ "d1_s3505": {
+  "copied_at": "2026-11-09T03:35:50-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/d1_s3505/final_model.zip",
+  "label": "d1_s3505",
+  "sha256": "2e36697e57bb0facf81cad5dd79ff8bd606ac81d0ea2a8b3398e65d6ab4f2450",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3505/final_model.zip",
+  "step": 300061809
+ },
+ "x60t_s3501": {
+  "copied_at": "2026-11-09T03:35:48-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3501/final_model.zip",
+  "label": "x60t_s3501",
+  "sha256": "d576e096b496bc913736db98c7885b66ca03eddb7cccb013b27ab824770b8bb9",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3501/final_model.zip",
+  "step": 300078185
+ },
+ "x60t_s3502": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3502/final_model.zip",
+  "label": "x60t_s3502",
+  "sha256": "135017856da5939c56d4bcdf766d163d80439387851d4c3a5aafce4d18a68c6a",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3502/final_model.zip",
+  "step": 300061763
+ },
+ "x60t_s3503": {
+  "copied_at": "2026-11-09T03:35:49-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3503/final_model.zip",
+  "label": "x60t_s3503",
+  "sha256": "5979dbb18d7a60222a0cbb1ac68fd6984f754c28d04dfa8c546d9d2e3082faad",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3503/final_model.zip",
+  "step": 300061279
+ },
+ "x60t_s3504": {
+  "copied_at": "2026-11-09T07:09:12-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3504/final_model.zip",
+  "label": "x60t_s3504",
+  "sha256": "a64b6789393526235304dcc91f21d766ecd6168bde0980be3f6deade2e50a78e",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3504/final_model.zip",
+  "step": 300061682
+ },
+ "x60t_s3505": {
+  "copied_at": "2026-11-09T11:12:56-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3505/final_model.zip",
+  "label": "x60t_s3505",
+  "sha256": "b5ecd48ba1b5508006d3cd22a09a1bd19265a4213d4da9ca30857dac70d4b416",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3505/final_model.zip",
+  "step": 300061299
+ },
+ "x60t_s3506": {
+  "copied_at": "2026-11-09T15:37:23-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3506/final_model.zip",
+  "label": "x60t_s3506",
+  "sha256": "4b284537672b76fd9111e22421fd642b0bd9804cb01ac3ff81a2413f0055358f",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3506/final_model.zip",
+  "step": 300088837
+ },
+ "x60t_s3507": {
+  "copied_at": "2026-11-09T19:44:24-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3507/final_model.zip",
+  "label": "x60t_s3507",
+  "sha256": "ac98ecb6cd6da8f7ed6dbac7ad4e2639aae92f5544ce9ae3eb76690b31262764",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3507/final_model.zip",
+  "step": 300061173
+ },
+ "x60t_s3508": {
+  "copied_at": "2026-11-10T00:07:00-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look2/ckpts/x60t_s3508/final_model.zip",
+  "label": "x60t_s3508",
+  "sha256": "404439ceeea804c4ea0e4737abc29814ab9479780f126a128ee7c38abce39b8b",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3508/final_model.zip",
+  "step": 300068383
+ }
+}

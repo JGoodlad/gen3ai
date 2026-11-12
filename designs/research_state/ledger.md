@@ -31232,3 +31232,75 @@ View: `UNDERSTANDING.md` (§4.15), `STATUS.md` (§2 GPU row, the landed X67 bull
 `EXPERIMENT_BACKLOG.md` (the MF-5 note on X67).
 
 Tag: **VERDICT · X67 entropy screen · PASS · D +1.97 pp [+1.35, +2.59] (3 × 8, floors bound) · pessimistic [−0.65, +4.58] · banked +1.95 / top-up +2.00 · LR-MOVED ×3 (8.372e-05 vs 1.0047e-04) · entropy 0.68 vs 1.01 nats · licenses naming 0.0125 for BOUNDARY-1's base, after the orchestrator sees the LR label and the owner's yes**
+
+### 2026-11-11 · VERDICT · **X60-T / H-TEAMS look 2 (FINAL): NO-TRANSFER — eight P\* + 20M forks with human-built ladder teams in half the pool score F (forum72 vs Kakuna) −0.23 pp [−1.95, +1.49] against C0's eight (NO-USEFUL-GAIN); the positive control R72 +1.69 pp [+1.08, +2.30] DELIVERED, I_F −0.34 pp not a gain, Δ_P −2.12 pp [−2.99, −1.25]; T − D1 NO-DIFFERENCE-AT-3PP; moves no recipe**
+
+**Question** (PREREG `measurements/x60t_h_teams_2026-11-06/PREREG.md` §5–§11; AM-X60T-1 §21, AM-X60T-2 §23
+`aea028c60`, AM-X60T-3 §24 `9f80547b6`; run record §25 `1f3a3b38a`, before `decide`). Does P\* + 20M with
+`--human-data teams:hr_spec_v1.r3@0.5` (2,295 human-built ladder teams, share 0.50 on both sides; X60T_PIN
+`7fe15726`) beat the pool-only C0 fork (pin `f4b25238`) against Kakuna on forum72, human-built teams neither arm
+trained on? ON `rb_x60t_s3501..s3508`; C0 `rb_x35_c0_s3501..s3508` (s3501–s3505's cells imported from X61P looks 1
+and 2, s3506–s3508 the top-up). Rule `x60`, spec `read_spec_look2.json` (sha256 `a5ad7411…8ed7`), read by
+`python -m main.reads` at the play pin `f564c333f`, every game on one engine (E3), CPU only.
+
+**Verdict: NO-TRANSFER** (`decide`: "Δ_F NO-USEFUL-GAIN, R72 DELIVERED, I_F not GAIN"; record
+`measurements/x35_breakers_stage_2026-10-17/reads/x60t_look2.json`, sha256 `5839533b…a1f4`, `COMPLETE`).
+
+| read | X60-T | C0 | X60-T − C0 | class |
+|---|---|---|---|---|
+| **Δ_F**, Kakuna on forum72, 1,200 games a final, 8 v 8 | 0.5107 (4,903 / 9,600) | 0.5130 (4,925 / 9,600) | **−0.23 pp [−1.95, +1.49]** (95 %; σ̂ 0.28 pp, the 1.0 pp floor sets it) | NO-USEFUL-GAIN, equivalent within ±3 pp |
+| **Δ_P**, S on home72 | 54.67 | 56.79 | **−2.12 pp [−2.99, −1.25]** (97.5 % confidence; bar −2.0) | INFERIORITY-NOT-EXCLUDED |
+| **I_F**, S on forum72 | 55.79 | 56.12 | **−0.34 pp [−1.14, +0.46]**; LB90 −0.84 | not a GAIN |
+| **R72**, S on 72 of the corpus's teams | 57.60 | 55.91 | **+1.69 pp [+1.08, +2.30]**; LB90 +1.31 | DELIVERED |
+| **Goal (a)**, ON vs Kakuna on home72 | 642 / 1,120 = 0.573 [0.544, 0.602] | | bar 0.50 | PASS |
+| **T − D1**, 5 v 5, H + F, 600 games a final and panel | 0.5070 | D1 0.5010 | **+0.60 pp [−1.58, +2.78]** | NO-DIFFERENCE-AT-3PP |
+
+Per seed (s3501–s3508, pp): Δ_F −0.42 / +0.17 / +2.17 / −0.75 / +1.42 / +0.75 / −1.25 / −3.92 (4 of 8 positive);
+Δ_P 8 of 8 negative; R72 8 of 8 positive. The look-1 block recomputed on the same counts is unchanged (+0.64 pp
+[−2.17, +3.45], NOT-RESOLVED). Guards G-F / G-E / G-C were not read: they are read only on a GAIN (§11); the guards
+artefact stays the registered NOT PLAYED stub.
+
+**Checks.** Determinism guard PASS (`c0_s3501__forum72__00` tuple-equal to X61P look 1's unit). VOID gate: all 21
+runs PASS (K9(b) at arm end, pin, dose at relative 1e-6: ON 8, C0 8, D1 5). Floor 9,600 / 9,600 an arm (≥ 9,580).
+Re-derived anchor guards: 1,712 units, 0 hits; the forced-end half is `unavailable` on the 112 home72 units (PREREG
+§19 FINDING 8, registered), which feed goal (a) and Δ_home72 only.
+
+**The three exhausted units (§25.5).** The anchor lane's first life ended with `x60t_s3505__forum72__33`,
+`c0_s3506__forum72__34` and `x60t_s3508__forum72__39` not counted, each voided twice by guard G2 (the Kakuna peer's
+long-tail fault, 986 force-reset lines a unit); ON stood one unit under the floor. `main.reads resume --lane anchor`
+re-played exactly the uncounted units at their registered seeds; each counted first time. 11 attempts over 8 units
+were voided in all; none of their games is in a cell.
+
+**§13, descriptive.** Three ON seeds resumed once (s3501, s3506, s3508; T2 near-tie). Without them: −0.25 pp
+[−2.21, +1.71] (5 v 8, §5's V generalised by hand) and +0.35 pp [−1.83, +2.53] (the same five seeds 5 v 5, the
+rule's interval). The class does not depend on them.
+
+**Reported (§12), never decided** (Kakuna, 140 games a final and panel; Newcombe 95 %, binomial only). Δ_H +2.77 pp
+[−1.36, +6.88]; Δ_P72 +5.80 pp [+1.66, +9.92]; Δ_home72 +2.41 pp [−1.70, +6.51]; U (H, F, P72) +2.78 pp [+0.78,
++4.78]; F + P72 +2.79 pp [+0.60, +4.97]; Δ_H − Δ_F +3.00 pp. P72 is fill-adjacent to the corpus and H is the
+corpus's own population; F, the human-built panel adjacent to neither, is flat on both meters.
+
+**Against the GUESS (§16).** Δ_F +1.5 → −0.23; I_F +0.8 → −0.34; Δ_P −1.5 → −2.12; R72 +0.8 → +1.69; T − D1 −0.5 →
++0.60; Δ_H +2.5 → +2.77: all six inside their 80 % intervals. The final class NO-USEFUL-GAIN was given 0.33.
+
+**What it licenses (§11).** "stop this lever **for this six-seen, loser-enriched slice** at the plateau: it moved
+what it trained on, not unfamiliar teams on either meter". Not human teams from step 0, not another slice of the
+corpus, not human replays as behaviour data. No recipe moves; BOUNDARY-1's §10 HOLD on human teams needed
+ADOPT-CANDIDATE and does not fire. By `EXPERIMENT_BACKLOG.md`'s registered branch, MF-6 (X62) drops below MF-7.
+
+**FINDINGs** (README): the three exhausted units and the retry under `--hours 6`; the operator saw the voided
+attempts' summaries (9, 9, 10 of 20) before the retry; the eight new K9(b) records were produced and landed
+(`1f3a3b38a`) before `assemble`; three resumed ON seeds, s3508's tie row not re-derived; forced-end re-derivation
+unavailable on home72; §12's per-team proximity terciles and the belief / intent calibration were NOT produced (no
+module in the read computes them), so MF-3 step (a)'s input from these finals is still owed; Δ_P's whole interval
+is below zero; the REPORTED panels read positive on the corpus-adjacent panels only; σ̂ is under the floor and C0
+(s3508 0.5467) is a shared control with X61P, D3 and X67; the read was run by a delegated operator, not the
+training session §23.7 names.
+
+**Record:** `measurements/x60t_h_teams_2026-11-06/read_look2/README.md` with `decision.json`, `inputs.json`,
+`cells.json`, `void.json`, `models.json`, `code.json`, both supervisor logs and `by_hand.{py,json}`; state
+`~/gen3ai_archive/x60t_read/look2`. Look 1: 2026-11-07 (`af57d4fd3`).
+View: `UNDERSTANDING.md` (TL;DR 5, §3.1's bullet, §5, §6), `STATUS.md` (§2's CPU row and landed row, §3), and
+`EXPERIMENT_BACKLOG.md` (§3's row, §2.0's MF-6 / MF-7 order and the outcome note).
+
+Tag: **VERDICT · X60-T H-TEAMS look 2 (final) · NO-TRANSFER · Δ_F −0.23 pp [−1.95, +1.49] (8 v 8, 9,600 games an arm, floor-bound) · R72 +1.69 pp DELIVERED · I_F −0.34 pp · Δ_P −2.12 pp [−2.99, −1.25] · T − D1 +0.60 pp NO-DIFFERENCE-AT-3PP · reported Δ_H +2.77, Δ_P72 +5.80 · stops H-TEAMS for this six-seen, loser-enriched slice at the plateau; BOUNDARY-1's human-team HOLD does not fire**

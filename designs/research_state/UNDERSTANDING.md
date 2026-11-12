@@ -103,7 +103,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) but has no Kakuna number; H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); human-built ladder teams in half the pool (X60-T, final) read NO-TRANSFER: F −0.23 [−1.95, +1.49] at −2.12 pp in-pool, with the corpus's own teams +1.69 pp in-house (§3.1); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) but has no Kakuna number; H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -161,7 +161,8 @@ under `measurements/`. A number with no pointer is not a measurement.
     1300+ ladder players' games and choices play unfamiliar teams **7.28 pp [4.28, 10.29] worse** against Kakuna than
     students taught by P\*'s own games and choices (SELF-PLAY-DATA-BETTER; the in-house meter −9.06), and human labels
     lose to P\*'s on the same human states by 4.50 pp (OWN-LABELS-BETTER): H-BC is dropped. It closes nothing: restricting
-    labels to the human's support costs 2.85 pp [0.14, 5.56], so human TEAMS stay open (X60-T). [SIGNIFICANT · Kakuna and
+    labels to the human's support costs 2.85 pp [0.14, 5.56]. Human TEAMS in the pool are a separate lever, read
+    NO-TRANSFER at the plateau (X60-T, §3.1). [SIGNIFICANT · Kakuna and
     in-house · X59-S record 2026-10-30; `f8d58205c`, `92af1f121`, `73428c077`]
 
 ---
@@ -182,7 +183,7 @@ owner's approval (`designs/endstate/design_ladder_campaign.md`).
 6. which collapse we see, and a source of counterfactuals (§4.4).
 
 The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; D3 has missed (UNDECIDED, final) and human
-1300+ labels are no route (X59-S: SELF-PLAY-DATA-BETTER and OWN-LABELS-BETTER, closing nothing; human teams stay open, X60-T); N1-P has missed (NULL, final) and X63 stopped at Stage A (NOT PURSUED), so the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
+1300+ labels are no route (X59-S: SELF-PLAY-DATA-BETTER and OWN-LABELS-BETTER, closing nothing); human ladder teams in the pool have missed (X60-T NO-TRANSFER, final); N1-P has missed (NULL, final) and X63 stopped at Stage A (NOT PURSUED), so the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
 
 **The Rustboro era.** It starts with the X5 belief A/B and X26 (2026-10-03): the fixed bots and the Rustboro anchor
 base, the Rust environment core, the END STATE architecture (adopted 2026-10-12, §4.6b) and the bf16 trunk (§4.6c).
@@ -390,6 +391,20 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   the plateau" (share 0.5, 20M) beyond ±3 pp only, not N1 from step 0 (the plasticity confound), the toy screen or a
   human-derived corpus; X53-N1 is not triggered. [Kakuna · ledger 2026-10-30 · *X61P N1-P LOOK 2*;
   `measurements/x61p_n1_production_2026-10-26/read_look2/`; look 1: `read/`]
+- **Human-built ladder teams in the pool (X60-T / H-TEAMS) at the plateau: NO-TRANSFER (final).** A fork of P\*
+  with half of each side's teams from 2,295 teams human ladder players built (`hr_spec_v1.r3`: ≥ 1500 seats whose
+  six mons were all revealed in the replay, 39 % winners), 8 seeds, + 20M, against C0's eight on one engine (E3). On F against Kakuna: **−0.23 pp
+  [−1.95, +1.49]** (X60-T 0.511 vs C0 0.513, 9,600 games an arm; 4 of 8 seeds positive; the guess was +1.5), inside
+  ±3 pp. In-house (S against the frozen reference pool): the positive control, 72 of the corpus's own teams, **+1.69
+  pp [+1.08, +2.30]** (8 of 8 seeds), so the lever was delivered; F **−0.34 pp [−1.14, +0.46]**, no gain; home72
+  **−2.12 pp [−2.99, −1.25]** (8 of 8 seeds negative; D1 −1.61 and N1-P −3.28 at the same share). It moved what it
+  trained on and not unfamiliar human-built teams on either meter. Against the forum-team lever D1 on H + F at five
+  seeds each: +0.60 pp [−1.58, +2.78], no difference at 3 pp, with source and outcome selection confounded. Reported
+  only, on panels adjacent to the corpus, at 140 games a final and with no seed term: H +2.77 [−1.36, +6.88], P72
+  +5.80 [+1.66, +9.92], home72 against Kakuna +2.41 [−1.70, +6.51], **Δ_H − Δ_F +3.00**, the same shape as N1-P's.
+  It stops this lever for this six-seen, loser-enriched slice at the plateau only: not human teams from step 0, not
+  a winners' or higher-rated slice, not human replays as behaviour data. [Kakuna and in-house · ledger 2026-11-11 ·
+  *X60-T / H-TEAMS look 2 (FINAL)*; `measurements/x60t_h_teams_2026-11-06/read_look2/`; look 1: `read/`]
 - **A long union continuation (X63 Stage A) at the plateau: NOT PURSUED.** X26 @380M + 100M with 80 % of each
   side's teams from the 17,876-team union `x63_union_v1` (X62's recombined sixes, N1-P's procedural teams at 3,000, D3's
   set-mutated teams; no forum teams), one seed, against the same +100M on the pool alone (X26c, X63-C), on F against
@@ -681,8 +696,8 @@ registration) and what a deployable player needs (a game clock, the hardware) ar
   UNCLEAR. H-BC is dropped. The closure ("1300+ ladder data in the panel-distant, forfeit-heavy slice, at this mix and
   volume, as a cloning target for a fresh network at 3 epochs") is BLOCKED: its registered guard Δ_restriction = S-P0 −
   S-P read +2.85 pp [+0.14, +5.56] (restricting labels to the human's support costs a student; P\*'s unrestricted
-  labels on human states, S-P0 0.393, teach as well as self-play, S-S 0.393), so human data is not closed and the route
-  is H-TEAMS first (X60-T). It says nothing about adding human data to P\* (X60's
+  labels on human states, S-P0 0.393, teach as well as self-play, S-S 0.393), so human data is not closed; the route
+  taken first, H-TEAMS, read NO-TRANSFER at the plateau (X60-T, §3.1). It says nothing about adding human data to P\* (X60's
   question). **Its scope is SHORT cloning** (relabelled 2026-11-10 on the 2026-11-09 independent review's R9): the
   students' schedule ended at 3 epochs with the S-H held-out NLL still falling in all five seeds (a mean 0.023 nats
   over the last epoch), so it is a null on short fresh-student cloning, not on a clone trained to convergence, nor on a
@@ -817,6 +832,7 @@ would be [−0.65, +4.58].
 | Plain training past 380M keeps lifting goal (b) | X26c FLAT (§3.1) |
 | Better policy-side beliefs are a strength lever at this maturity | the knock-in forks NULL; the prior mix NOT DETECTED (§4.5, §3.1) |
 | 10⁴ procedural teams at share 0.5 lift human-built-team piloting at the plateau within 20M (N1 at the plateau) | N1-P NULL: F +0.55 [−1.26, +2.36], 5 seeds (§3.1; effects beyond ±3 pp only) |
+| 2,295 human-built ladder teams at share 0.5 lift unfamiliar-team piloting at the plateau within 20M (H-TEAMS at the plateau) | X60-T NO-TRANSFER: F −0.23 [−1.95, +1.49], 8 seeds, with the corpus's own teams +1.69 in-house (§3.1; this six-seen, loser-enriched slice and effects beyond ±3 pp only) |
 
 The flywheel-era retirements (fold dose, length, team count, budget, teacher quality, the architecture account) are
 retired for the fold-gift question only; they live in the last full text (§0) and the ledger (2026-09-05 / 06).
@@ -833,9 +849,8 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 **In flight** (what runs now, and its progress: [`../STATUS.md`](../STATUS.md) §2)
 
-| question | the read that answers it |
-|---|---|
-| Do human TEAMS help? (rating at fixed slice read NOT-RESOLVED, +1.33 pp [−2.76, +5.43], X59-S's ≥ 1500 follow-up, §4.8) | **X60-T** (H-TEAMS, the registered route now that X59-S closed nothing: Δ_restriction +2.85 [+0.14, +5.56], §4.8). **Look 1 read CONTINUE** (2026-11-07, `af57d4fd3`): F +0.64 pp [−2.17, +3.45] (X60-T 0.515 vs C0 0.508, 3,600 games an arm), every VOID gate PASS. Look 2 is registered (AM-X60T-2, `aea028c60`); its training (X60Tb seeds 3504–3508, C0b 3506–3508) started 2026-11-09 |
+No read is on the CPU play lanes: X60-T, the human-TEAMS read, finished 2026-11-11 (NO-TRANSFER, §3.1). The GPU's
+current screen is STATUS §2's row.
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)
 

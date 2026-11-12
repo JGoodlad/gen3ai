@@ -1,0 +1,1533 @@
+{
+ "contrast": {
+  "counts": {
+   "d1_s3501": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 309
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 298
+    }
+   },
+   "d1_s3502": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 307
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 291
+    }
+   },
+   "d1_s3503": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 304
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 314
+    }
+   },
+   "d1_s3504": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 317
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 282
+    }
+   },
+   "d1_s3505": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 302
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 282
+    }
+   },
+   "x60t_s3501": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 295
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 330
+    }
+   },
+   "x60t_s3502": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 309
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 311
+    }
+   },
+   "x60t_s3503": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 314
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 309
+    }
+   },
+   "x60t_s3504": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 299
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 269
+    }
+   },
+   "x60t_s3505": {
+    "forum72": {
+     "n": 600,
+     "units": 30,
+     "wins": 297
+    },
+    "heldout72_hpfix": {
+     "n": 600,
+     "units": 30,
+     "wins": 309
+    }
+   }
+  },
+  "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+  "groups": [
+   "primary",
+   "h_contrast",
+   "d1"
+  ],
+  "inconclusive": [],
+  "off": [
+   "d1_s3501",
+   "d1_s3502",
+   "d1_s3503",
+   "d1_s3504",
+   "d1_s3505"
+  ],
+  "on": [
+   "x60t_s3501",
+   "x60t_s3502",
+   "x60t_s3503",
+   "x60t_s3504",
+   "x60t_s3505"
+  ],
+  "panels": [
+   "heldout72_hpfix",
+   "forum72"
+  ],
+  "regime_ids": {
+   "forum72": [
+    "2118812c27885de3"
+   ],
+   "heldout72_hpfix": [
+    "28e65ac93633f6b5"
+   ]
+  },
+  "units": 30
+ },
+ "determinism_guard": {
+  "against": "primary_c0a",
+  "group": "determinism",
+  "passed": true,
+  "reasons": [],
+  "units": [
+   {
+    "banked": {
+     "imported_from": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1",
+     "unit": "c0_s3501__forum72__00"
+    },
+    "choices": "equal",
+    "choices_why": "",
+    "counted": true,
+    "tuple_equal": true,
+    "unit": "c0_s3501__forum72__00"
+   }
+  ]
+ },
+ "finals": {
+  "c0_s3501": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+  "c0_s3502": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+  "c0_s3503": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+  "c0_s3504": "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+  "c0_s3505": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+  "c0_s3506": "21409eee22839b3c6040c43b7b58d7886c49569d6dd288353beb36ec7976b560",
+  "c0_s3507": "455f73c8d2bd570bf3eca176e3e3953a9b9ac5c059ec35a9a40169a4da1687af",
+  "c0_s3508": "8db0a96e55b751fdfac18bc7fe2cbabf5dd5ce7eddd7560f04bea3fa41fb262e",
+  "x60t_s3501": "d576e096b496bc913736db98c7885b66ca03eddb7cccb013b27ab824770b8bb9",
+  "x60t_s3502": "135017856da5939c56d4bcdf766d163d80439387851d4c3a5aafce4d18a68c6a",
+  "x60t_s3503": "5979dbb18d7a60222a0cbb1ac68fd6984f754c28d04dfa8c546d9d2e3082faad",
+  "x60t_s3504": "a64b6789393526235304dcc91f21d766ecd6168bde0980be3f6deade2e50a78e",
+  "x60t_s3505": "b5ecd48ba1b5508006d3cd22a09a1bd19265a4213d4da9ca30857dac70d4b416",
+  "x60t_s3506": "4b284537672b76fd9111e22421fd642b0bd9804cb01ac3ff81a2413f0055358f",
+  "x60t_s3507": "ac98ecb6cd6da8f7ed6dbac7ad4e2639aae92f5544ce9ae3eb76690b31262764",
+  "x60t_s3508": "404439ceeea804c4ea0e4737abc29814ab9479780f126a128ee7c38abce39b8b"
+ },
+ "goal_a": {
+  "counts": {
+   "x60t_s3501": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 0,
+     "units": 7,
+     "wins": 83
+    }
+   },
+   "x60t_s3502": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 1,
+     "units": 7,
+     "wins": 91
+    }
+   },
+   "x60t_s3503": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 0,
+     "units": 7,
+     "wins": 80
+    }
+   },
+   "x60t_s3504": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 1,
+     "units": 7,
+     "wins": 77
+    }
+   },
+   "x60t_s3505": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 0,
+     "units": 7,
+     "wins": 84
+    }
+   },
+   "x60t_s3506": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 0,
+     "units": 7,
+     "wins": 82
+    }
+   },
+   "x60t_s3507": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 0,
+     "units": 7,
+     "wins": 65
+    }
+   },
+   "x60t_s3508": {
+    "home72": {
+     "n": 140,
+     "skipped": 0,
+     "ties": 0,
+     "units": 7,
+     "wins": 80
+    }
+   }
+  },
+  "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+  "groups": [
+   "home72"
+  ],
+  "inconclusive": [],
+  "regime_ids": {
+   "home72": [
+    "2e756ff1ca5e4f40"
+   ]
+  },
+  "teamset": "home72",
+  "units": 7
+ },
+ "guards": {
+  "doc": {
+   "g_c": null,
+   "g_f": null,
+   "note": "AM-X60T-2 (PREREG \u00a723.4): look 2's guards artefact as registered BEFORE any look-2 game. G-F, G-E and G-C are read only on a look-2 \u0394_F GAIN (\u00a711), and their inputs (the 8 x 8 head-to-head matrix, the ge_x60t / ge_c0 readers' r2, the 8-pair G-C record) are produced only then, so each is null here and rule x60 reads each INCONCLUSIVE. On a GAIN the look-2 verdict is then INCONCLUSIVE on the guards alone, or already TRADE / KAKUNA-SPECIFIC on the other meters (\u00a711); the guards are produced and the read re-decided on the same cells with a filled artefact, nothing else changed (\u00a723.4).",
+   "r2": null,
+   "read": "x60t_look2_2026-11-07",
+   "schema": "gen3_x60t_guards_v1",
+   "status": "NOT PLAYED"
+  },
+  "path": "designs/research_state/measurements/x60t_h_teams_2026-11-06/read/guards_look2_not_played.json",
+  "registered": true,
+  "sha256": "282f843c664ff16bf172d60b07ae3520e67e894d920a5543edefa68c91b8bc70"
+ },
+ "i_f": {
+  "engine": "env=393631b886965b0c/126",
+  "groups": [
+   "i_f"
+  ],
+  "inconclusive": [],
+  "nodes": {
+   "c0_s3501": {
+    "group": "i_f",
+    "s_pp": 56.85,
+    "se_pp": 0.5488261127541366
+   },
+   "c0_s3502": {
+    "group": "i_f",
+    "s_pp": 55.228571428571435,
+    "se_pp": 0.5532687651861546
+   },
+   "c0_s3503": {
+    "group": "i_f",
+    "s_pp": 57.371428571428574,
+    "se_pp": 0.5566048684586191
+   },
+   "c0_s3504": {
+    "group": "i_f",
+    "s_pp": 56.73571428571429,
+    "se_pp": 0.5528504060128485
+   },
+   "c0_s3505": {
+    "group": "i_f",
+    "s_pp": 55.535714285714285,
+    "se_pp": 0.5549558724873206
+   },
+   "c0_s3506": {
+    "group": "i_f",
+    "s_pp": 55.86428571428571,
+    "se_pp": 0.551132137198568
+   },
+   "c0_s3507": {
+    "group": "i_f",
+    "s_pp": 55.24285714285714,
+    "se_pp": 0.5532897901070782
+   },
+   "c0_s3508": {
+    "group": "i_f",
+    "s_pp": 56.16428571428571,
+    "se_pp": 0.5484822286109559
+   },
+   "x60t_s3501": {
+    "group": "i_f",
+    "s_pp": 54.83571428571428,
+    "se_pp": 0.5597852175575185
+   },
+   "x60t_s3502": {
+    "group": "i_f",
+    "s_pp": 55.23571428571429,
+    "se_pp": 0.5481613981003651
+   },
+   "x60t_s3503": {
+    "group": "i_f",
+    "s_pp": 55.3,
+    "se_pp": 0.5535672810904538
+   },
+   "x60t_s3504": {
+    "group": "i_f",
+    "s_pp": 56.271428571428565,
+    "se_pp": 0.5489767847587743
+   },
+   "x60t_s3505": {
+    "group": "i_f",
+    "s_pp": 55.6,
+    "se_pp": 0.5597590589545047
+   },
+   "x60t_s3506": {
+    "group": "i_f",
+    "s_pp": 56.221428571428575,
+    "se_pp": 0.552809614051488
+   },
+   "x60t_s3507": {
+    "group": "i_f",
+    "s_pp": 56.964285714285715,
+    "se_pp": 0.5467799057263557
+   },
+   "x60t_s3508": {
+    "group": "i_f",
+    "s_pp": 55.878571428571426,
+    "se_pp": 0.5584703050589647
+   }
+  },
+  "panel": "forum72",
+  "regime_id": "0c972bc06eab468f"
+ },
+ "look": 2,
+ "look1_seeds": [
+  3501,
+  3502,
+  3503
+ ],
+ "p": {
+  "engine": "env=393631b886965b0c/126",
+  "groups": [
+   "p",
+   "p_c0a",
+   "p_c0b"
+  ],
+  "inconclusive": [],
+  "nodes": {
+   "c0_s3501": {
+    "group": "p_c0a",
+    "s_pp": 56.82142857142857,
+    "se_pp": 0.5565312577172342
+   },
+   "c0_s3502": {
+    "group": "p_c0a",
+    "s_pp": 57.392857142857146,
+    "se_pp": 0.5475493640964703
+   },
+   "c0_s3503": {
+    "group": "p_c0a",
+    "s_pp": 56.83571428571429,
+    "se_pp": 0.5482797773816889
+   },
+   "c0_s3504": {
+    "group": "p_c0b",
+    "s_pp": 57.371428571428574,
+    "se_pp": 0.5545203847856787
+   },
+   "c0_s3505": {
+    "group": "p_c0b",
+    "s_pp": 56.58571428571429,
+    "se_pp": 0.5515210877238346
+   },
+   "c0_s3506": {
+    "group": "p",
+    "s_pp": 56.17142857142857,
+    "se_pp": 0.5590142563258206
+   },
+   "c0_s3507": {
+    "group": "p",
+    "s_pp": 56.9,
+    "se_pp": 0.5499807046708131
+   },
+   "c0_s3508": {
+    "group": "p",
+    "s_pp": 56.278571428571425,
+    "se_pp": 0.5586975560924474
+   },
+   "x60t_s3501": {
+    "group": "p",
+    "s_pp": 53.207142857142856,
+    "se_pp": 0.5611906984261232
+   },
+   "x60t_s3502": {
+    "group": "p",
+    "s_pp": 54.028571428571425,
+    "se_pp": 0.550906673825346
+   },
+   "x60t_s3503": {
+    "group": "p",
+    "s_pp": 54.35,
+    "se_pp": 0.5501375523726882
+   },
+   "x60t_s3504": {
+    "group": "p",
+    "s_pp": 55.90714285714285,
+    "se_pp": 0.5517697871025412
+   },
+   "x60t_s3505": {
+    "group": "p",
+    "s_pp": 54.74285714285714,
+    "se_pp": 0.568761633655407
+   },
+   "x60t_s3506": {
+    "group": "p",
+    "s_pp": 55.07142857142857,
+    "se_pp": 0.5651259567023759
+   },
+   "x60t_s3507": {
+    "group": "p",
+    "s_pp": 55.385714285714286,
+    "se_pp": 0.5519852852223878
+   },
+   "x60t_s3508": {
+    "group": "p",
+    "s_pp": 54.685714285714276,
+    "se_pp": 0.5554645050104737
+   }
+  },
+  "panel": "home72",
+  "regime_id": "d4de0fd7c16a2658"
+ },
+ "primary": {
+  "counts": {
+   "c0_s3501": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 2,
+     "units": 60,
+     "wins": 607
+    }
+   },
+   "c0_s3502": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 2,
+     "units": 60,
+     "wins": 625
+    }
+   },
+   "c0_s3503": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 598
+    }
+   },
+   "c0_s3504": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 0,
+     "units": 60,
+     "wins": 610
+    }
+   },
+   "c0_s3505": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 583
+    }
+   },
+   "c0_s3506": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 2,
+     "units": 60,
+     "wins": 620
+    }
+   },
+   "c0_s3507": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 2,
+     "units": 60,
+     "wins": 626
+    }
+   },
+   "c0_s3508": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 656
+    }
+   },
+   "x60t_s3501": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 0,
+     "units": 60,
+     "wins": 602
+    }
+   },
+   "x60t_s3502": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 627
+    }
+   },
+   "x60t_s3503": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 0,
+     "units": 60,
+     "wins": 624
+    }
+   },
+   "x60t_s3504": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 3,
+     "units": 60,
+     "wins": 601
+    }
+   },
+   "x60t_s3505": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 600
+    }
+   },
+   "x60t_s3506": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 2,
+     "units": 60,
+     "wins": 629
+    }
+   },
+   "x60t_s3507": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 0,
+     "units": 60,
+     "wins": 611
+    }
+   },
+   "x60t_s3508": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 609
+    }
+   }
+  },
+  "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+  "groups": [
+   "primary",
+   "primary_c0a",
+   "primary_c0b"
+  ],
+  "inconclusive": [],
+  "regime_ids": {
+   "forum72": [
+    "2118812c27885de3"
+   ]
+  },
+  "teamset": "forum72",
+  "units": 60
+ },
+ "r72": {
+  "engine": "env=393631b886965b0c/126",
+  "groups": [
+   "r72"
+  ],
+  "inconclusive": [],
+  "nodes": {
+   "c0_s3501": {
+    "group": "r72",
+    "s_pp": 55.714285714285715,
+    "se_pp": 0.5445475560649653
+   },
+   "c0_s3502": {
+    "group": "r72",
+    "s_pp": 55.90714285714286,
+    "se_pp": 0.558922341361901
+   },
+   "c0_s3503": {
+    "group": "r72",
+    "s_pp": 56.59285714285714,
+    "se_pp": 0.5398925630084533
+   },
+   "c0_s3504": {
+    "group": "r72",
+    "s_pp": 56.478571428571435,
+    "se_pp": 0.547642908382863
+   },
+   "c0_s3505": {
+    "group": "r72",
+    "s_pp": 55.6,
+    "se_pp": 0.5478227778382051
+   },
+   "c0_s3506": {
+    "group": "r72",
+    "s_pp": 55.07857142857143,
+    "se_pp": 0.5513657440152312
+   },
+   "c0_s3507": {
+    "group": "r72",
+    "s_pp": 55.18571428571429,
+    "se_pp": 0.548442693227927
+   },
+   "c0_s3508": {
+    "group": "r72",
+    "s_pp": 56.74285714285714,
+    "se_pp": 0.5483111361634162
+   },
+   "x60t_s3501": {
+    "group": "r72",
+    "s_pp": 57.050000000000004,
+    "se_pp": 0.5500485136303331
+   },
+   "x60t_s3502": {
+    "group": "r72",
+    "s_pp": 57.94285714285714,
+    "se_pp": 0.541417263357223
+   },
+   "x60t_s3503": {
+    "group": "r72",
+    "s_pp": 56.69285714285714,
+    "se_pp": 0.5495964196479048
+   },
+   "x60t_s3504": {
+    "group": "r72",
+    "s_pp": 57.68571428571429,
+    "se_pp": 0.5362247092176098
+   },
+   "x60t_s3505": {
+    "group": "r72",
+    "s_pp": 58.09285714285715,
+    "se_pp": 0.5447968166468775
+   },
+   "x60t_s3506": {
+    "group": "r72",
+    "s_pp": 57.785714285714285,
+    "se_pp": 0.5507823748902972
+   },
+   "x60t_s3507": {
+    "group": "r72",
+    "s_pp": 57.971428571428575,
+    "se_pp": 0.5448117068477579
+   },
+   "x60t_s3508": {
+    "group": "r72",
+    "s_pp": 57.6,
+    "se_pp": 0.5479341536486787
+   }
+  },
+  "panel": "r72",
+  "regime_id": "1bfe0b8a101ba8fb"
+ },
+ "recorded_seeds": {
+  "c0_s3501": {
+   "ok": true,
+   "recorded": 3501,
+   "run": "models/rb_x35_c0_s3501",
+   "spec": 3501
+  },
+  "c0_s3502": {
+   "ok": true,
+   "recorded": 3502,
+   "run": "models/rb_x35_c0_s3502",
+   "spec": 3502
+  },
+  "c0_s3503": {
+   "ok": true,
+   "recorded": 3503,
+   "run": "models/rb_x35_c0_s3503",
+   "spec": 3503
+  },
+  "c0_s3504": {
+   "ok": true,
+   "recorded": 3504,
+   "run": "models/rb_x35_c0_s3504",
+   "spec": 3504
+  },
+  "c0_s3505": {
+   "ok": true,
+   "recorded": 3505,
+   "run": "models/rb_x35_c0_s3505",
+   "spec": 3505
+  },
+  "c0_s3506": {
+   "ok": true,
+   "recorded": 3506,
+   "run": "models/rb_x35_c0_s3506",
+   "spec": 3506
+  },
+  "c0_s3507": {
+   "ok": true,
+   "recorded": 3507,
+   "run": "models/rb_x35_c0_s3507",
+   "spec": 3507
+  },
+  "c0_s3508": {
+   "ok": true,
+   "recorded": 3508,
+   "run": "models/rb_x35_c0_s3508",
+   "spec": 3508
+  },
+  "d1_s3501": {
+   "ok": true,
+   "recorded": 3501,
+   "run": "models/rb_x35_d1wide_s3501",
+   "spec": 3501
+  },
+  "d1_s3502": {
+   "ok": true,
+   "recorded": 3502,
+   "run": "models/rb_x35_d1wide_s3502",
+   "spec": 3502
+  },
+  "d1_s3503": {
+   "ok": true,
+   "recorded": 3503,
+   "run": "models/rb_x35_d1wide_s3503",
+   "spec": 3503
+  },
+  "d1_s3504": {
+   "ok": true,
+   "recorded": 3504,
+   "run": "models/rb_x35_d1wide_s3504",
+   "spec": 3504
+  },
+  "d1_s3505": {
+   "ok": true,
+   "recorded": 3505,
+   "run": "models/rb_x35_d1wide_s3505",
+   "spec": 3505
+  },
+  "x60t_s3501": {
+   "ok": true,
+   "recorded": 3501,
+   "run": "models/rb_x60t_s3501",
+   "spec": 3501
+  },
+  "x60t_s3502": {
+   "ok": true,
+   "recorded": 3502,
+   "run": "models/rb_x60t_s3502",
+   "spec": 3502
+  },
+  "x60t_s3503": {
+   "ok": true,
+   "recorded": 3503,
+   "run": "models/rb_x60t_s3503",
+   "spec": 3503
+  },
+  "x60t_s3504": {
+   "ok": true,
+   "recorded": 3504,
+   "run": "models/rb_x60t_s3504",
+   "spec": 3504
+  },
+  "x60t_s3505": {
+   "ok": true,
+   "recorded": 3505,
+   "run": "models/rb_x60t_s3505",
+   "spec": 3505
+  },
+  "x60t_s3506": {
+   "ok": true,
+   "recorded": 3506,
+   "run": "models/rb_x60t_s3506",
+   "spec": 3506
+  },
+  "x60t_s3507": {
+   "ok": true,
+   "recorded": 3507,
+   "run": "models/rb_x60t_s3507",
+   "spec": 3507
+  },
+  "x60t_s3508": {
+   "ok": true,
+   "recorded": 3508,
+   "run": "models/rb_x60t_s3508",
+   "spec": 3508
+  }
+ },
+ "reported": {
+  "h": {
+   "cells": {
+    "c0_s3506": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 64
+     }
+    },
+    "c0_s3507": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 66
+     }
+    },
+    "c0_s3508": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 56
+     }
+    },
+    "x60t_s3506": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 64
+     }
+    },
+    "x60t_s3507": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 71
+     }
+    },
+    "x60t_s3508": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 65
+     }
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "inconclusive": [],
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unplayed": 0
+  },
+  "h_contrast": {
+   "cells": {
+    "x60t_s3501": {
+     "heldout72_hpfix": {
+      "n": 600,
+      "wins": 330
+     }
+    },
+    "x60t_s3502": {
+     "heldout72_hpfix": {
+      "n": 600,
+      "wins": 311
+     }
+    },
+    "x60t_s3503": {
+     "heldout72_hpfix": {
+      "n": 600,
+      "wins": 309
+     }
+    },
+    "x60t_s3504": {
+     "heldout72_hpfix": {
+      "n": 600,
+      "wins": 269
+     }
+    },
+    "x60t_s3505": {
+     "heldout72_hpfix": {
+      "n": 600,
+      "wins": 309
+     }
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "inconclusive": [],
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unplayed": 0
+  },
+  "home72": {
+   "cells": {
+    "c0_s3506": {
+     "home72": {
+      "n": 140,
+      "wins": 69
+     }
+    },
+    "c0_s3507": {
+     "home72": {
+      "n": 140,
+      "wins": 79
+     }
+    },
+    "c0_s3508": {
+     "home72": {
+      "n": 140,
+      "wins": 75
+     }
+    },
+    "x60t_s3501": {
+     "home72": {
+      "n": 140,
+      "wins": 83
+     }
+    },
+    "x60t_s3502": {
+     "home72": {
+      "n": 140,
+      "wins": 91
+     }
+    },
+    "x60t_s3503": {
+     "home72": {
+      "n": 140,
+      "wins": 80
+     }
+    },
+    "x60t_s3504": {
+     "home72": {
+      "n": 140,
+      "wins": 77
+     }
+    },
+    "x60t_s3505": {
+     "home72": {
+      "n": 140,
+      "wins": 84
+     }
+    },
+    "x60t_s3506": {
+     "home72": {
+      "n": 140,
+      "wins": 82
+     }
+    },
+    "x60t_s3507": {
+     "home72": {
+      "n": 140,
+      "wins": 65
+     }
+    },
+    "x60t_s3508": {
+     "home72": {
+      "n": 140,
+      "wins": 80
+     }
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "inconclusive": [],
+   "teamsets": [
+    "home72"
+   ],
+   "unplayed": 0
+  },
+  "p72": {
+   "cells": {
+    "c0_s3506": {
+     "p72": {
+      "n": 140,
+      "wins": 64
+     }
+    },
+    "c0_s3507": {
+     "p72": {
+      "n": 140,
+      "wins": 66
+     }
+    },
+    "c0_s3508": {
+     "p72": {
+      "n": 140,
+      "wins": 55
+     }
+    },
+    "x60t_s3501": {
+     "p72": {
+      "n": 140,
+      "wins": 69
+     }
+    },
+    "x60t_s3502": {
+     "p72": {
+      "n": 140,
+      "wins": 74
+     }
+    },
+    "x60t_s3503": {
+     "p72": {
+      "n": 140,
+      "wins": 65
+     }
+    },
+    "x60t_s3504": {
+     "p72": {
+      "n": 140,
+      "wins": 73
+     }
+    },
+    "x60t_s3505": {
+     "p72": {
+      "n": 140,
+      "wins": 74
+     }
+    },
+    "x60t_s3506": {
+     "p72": {
+      "n": 140,
+      "wins": 69
+     }
+    },
+    "x60t_s3507": {
+     "p72": {
+      "n": 140,
+      "wins": 77
+     }
+    },
+    "x60t_s3508": {
+     "p72": {
+      "n": 140,
+      "wins": 78
+     }
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "inconclusive": [],
+   "teamsets": [
+    "p72"
+   ],
+   "unplayed": 0
+  },
+  "reported_c0a": {
+   "cells": {
+    "c0_s3501": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 69
+     },
+     "home72": {
+      "n": 140,
+      "wins": 83
+     },
+     "p72": {
+      "n": 140,
+      "wins": 59
+     }
+    },
+    "c0_s3502": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 66
+     },
+     "home72": {
+      "n": 140,
+      "wins": 74
+     },
+     "p72": {
+      "n": 140,
+      "wins": 74
+     }
+    },
+    "c0_s3503": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 63
+     },
+     "home72": {
+      "n": 140,
+      "wins": 79
+     },
+     "p72": {
+      "n": 140,
+      "wins": 63
+     }
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "inconclusive": [],
+   "teamsets": [
+    "heldout72_hpfix",
+    "p72",
+    "home72"
+   ],
+   "unplayed": 0
+  },
+  "reported_c0b": {
+   "cells": {
+    "c0_s3504": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 59
+     },
+     "home72": {
+      "n": 140,
+      "wins": 76
+     },
+     "p72": {
+      "n": 140,
+      "wins": 72
+     }
+    },
+    "c0_s3505": {
+     "heldout72_hpfix": {
+      "n": 140,
+      "wins": 59
+     },
+     "home72": {
+      "n": 140,
+      "wins": 80
+     },
+     "p72": {
+      "n": 140,
+      "wins": 61
+     }
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "inconclusive": [],
+   "teamsets": [
+    "heldout72_hpfix",
+    "p72",
+    "home72"
+   ],
+   "unplayed": 0
+  }
+ },
+ "reported_pooled": {
+  "heldout72_hpfix": {
+   "counts": {
+    "c0_s3501": {
+     "n": 140,
+     "units": 7,
+     "wins": 69
+    },
+    "c0_s3502": {
+     "n": 140,
+     "units": 7,
+     "wins": 66
+    },
+    "c0_s3503": {
+     "n": 140,
+     "units": 7,
+     "wins": 63
+    },
+    "c0_s3504": {
+     "n": 140,
+     "units": 7,
+     "wins": 59
+    },
+    "c0_s3505": {
+     "n": 140,
+     "units": 7,
+     "wins": 59
+    },
+    "c0_s3506": {
+     "n": 140,
+     "units": 7,
+     "wins": 64
+    },
+    "c0_s3507": {
+     "n": 140,
+     "units": 7,
+     "wins": 66
+    },
+    "c0_s3508": {
+     "n": 140,
+     "units": 7,
+     "wins": 56
+    },
+    "x60t_s3501": {
+     "n": 140,
+     "units": 7,
+     "wins": 79
+    },
+    "x60t_s3502": {
+     "n": 140,
+     "units": 7,
+     "wins": 68
+    },
+    "x60t_s3503": {
+     "n": 140,
+     "units": 7,
+     "wins": 67
+    },
+    "x60t_s3504": {
+     "n": 140,
+     "units": 7,
+     "wins": 60
+    },
+    "x60t_s3505": {
+     "n": 140,
+     "units": 7,
+     "wins": 59
+    },
+    "x60t_s3506": {
+     "n": 140,
+     "units": 7,
+     "wins": 64
+    },
+    "x60t_s3507": {
+     "n": 140,
+     "units": 7,
+     "wins": 71
+    },
+    "x60t_s3508": {
+     "n": 140,
+     "units": 7,
+     "wins": 65
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "groups": [
+    "h",
+    "h_contrast",
+    "reported_c0a",
+    "reported_c0b"
+   ],
+   "inconclusive": [],
+   "regime_ids": [
+    "28e65ac93633f6b5"
+   ],
+   "units": 7
+  },
+  "home72": {
+   "counts": {
+    "c0_s3501": {
+     "n": 140,
+     "units": 7,
+     "wins": 83
+    },
+    "c0_s3502": {
+     "n": 140,
+     "units": 7,
+     "wins": 74
+    },
+    "c0_s3503": {
+     "n": 140,
+     "units": 7,
+     "wins": 79
+    },
+    "c0_s3504": {
+     "n": 140,
+     "units": 7,
+     "wins": 76
+    },
+    "c0_s3505": {
+     "n": 140,
+     "units": 7,
+     "wins": 80
+    },
+    "c0_s3506": {
+     "n": 140,
+     "units": 7,
+     "wins": 69
+    },
+    "c0_s3507": {
+     "n": 140,
+     "units": 7,
+     "wins": 79
+    },
+    "c0_s3508": {
+     "n": 140,
+     "units": 7,
+     "wins": 75
+    },
+    "x60t_s3501": {
+     "n": 140,
+     "units": 7,
+     "wins": 83
+    },
+    "x60t_s3502": {
+     "n": 140,
+     "units": 7,
+     "wins": 91
+    },
+    "x60t_s3503": {
+     "n": 140,
+     "units": 7,
+     "wins": 80
+    },
+    "x60t_s3504": {
+     "n": 140,
+     "units": 7,
+     "wins": 77
+    },
+    "x60t_s3505": {
+     "n": 140,
+     "units": 7,
+     "wins": 84
+    },
+    "x60t_s3506": {
+     "n": 140,
+     "units": 7,
+     "wins": 82
+    },
+    "x60t_s3507": {
+     "n": 140,
+     "units": 7,
+     "wins": 65
+    },
+    "x60t_s3508": {
+     "n": 140,
+     "units": 7,
+     "wins": 80
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "groups": [
+    "home72",
+    "reported_c0a",
+    "reported_c0b"
+   ],
+   "inconclusive": [],
+   "regime_ids": [
+    "2e756ff1ca5e4f40"
+   ],
+   "units": 7
+  },
+  "p72": {
+   "counts": {
+    "c0_s3501": {
+     "n": 140,
+     "units": 7,
+     "wins": 59
+    },
+    "c0_s3502": {
+     "n": 140,
+     "units": 7,
+     "wins": 74
+    },
+    "c0_s3503": {
+     "n": 140,
+     "units": 7,
+     "wins": 63
+    },
+    "c0_s3504": {
+     "n": 140,
+     "units": 7,
+     "wins": 72
+    },
+    "c0_s3505": {
+     "n": 140,
+     "units": 7,
+     "wins": 61
+    },
+    "c0_s3506": {
+     "n": 140,
+     "units": 7,
+     "wins": 64
+    },
+    "c0_s3507": {
+     "n": 140,
+     "units": 7,
+     "wins": 66
+    },
+    "c0_s3508": {
+     "n": 140,
+     "units": 7,
+     "wins": 55
+    },
+    "x60t_s3501": {
+     "n": 140,
+     "units": 7,
+     "wins": 69
+    },
+    "x60t_s3502": {
+     "n": 140,
+     "units": 7,
+     "wins": 74
+    },
+    "x60t_s3503": {
+     "n": 140,
+     "units": 7,
+     "wins": 65
+    },
+    "x60t_s3504": {
+     "n": 140,
+     "units": 7,
+     "wins": 73
+    },
+    "x60t_s3505": {
+     "n": 140,
+     "units": 7,
+     "wins": 74
+    },
+    "x60t_s3506": {
+     "n": 140,
+     "units": 7,
+     "wins": 69
+    },
+    "x60t_s3507": {
+     "n": 140,
+     "units": 7,
+     "wins": 77
+    },
+    "x60t_s3508": {
+     "n": 140,
+     "units": 7,
+     "wins": 78
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "groups": [
+    "p72",
+    "reported_c0a",
+    "reported_c0b"
+   ],
+   "inconclusive": [],
+   "regime_ids": [
+    "b7547f904af56acc"
+   ],
+   "units": 7
+  }
+ },
+ "schema": "gen3_read_x60_v1",
+ "seeds": {
+  "c0_s3501": 3501,
+  "c0_s3502": 3502,
+  "c0_s3503": 3503,
+  "c0_s3504": 3504,
+  "c0_s3505": 3505,
+  "c0_s3506": 3506,
+  "c0_s3507": 3507,
+  "c0_s3508": 3508,
+  "x60t_s3501": 3501,
+  "x60t_s3502": 3502,
+  "x60t_s3503": 3503,
+  "x60t_s3504": 3504,
+  "x60t_s3505": 3505,
+  "x60t_s3506": 3506,
+  "x60t_s3507": 3507,
+  "x60t_s3508": 3508
+ },
+ "sides": {
+  "off": [
+   "c0_s3501",
+   "c0_s3502",
+   "c0_s3503",
+   "c0_s3504",
+   "c0_s3505",
+   "c0_s3506",
+   "c0_s3507",
+   "c0_s3508"
+  ],
+  "on": [
+   "x60t_s3501",
+   "x60t_s3502",
+   "x60t_s3503",
+   "x60t_s3504",
+   "x60t_s3505",
+   "x60t_s3506",
+   "x60t_s3507",
+   "x60t_s3508"
+  ]
+ }
+}
