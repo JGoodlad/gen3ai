@@ -34,7 +34,8 @@ WHAT IT MAY NOT CHANGE, and why it does not: the reference arm's NUMBERS. A host
 a copy whose strides differ from the original's (a view that is not dense in its storage) is refused and the
 original kept, so every backward kernel sees the operand layout it saw before. The arm's loss, log-probs
 and gradient are therefore bit-identical with and without the hooks (`saved_offload_test.py`: CPU, with the
-offload forced; a CUDA cell for the card), the bf16 rule's drift bars and envelopes keep their basis, and
+offload forced; on the card, where the plain arm's own gradient is not run-to-run bit-stable, the bounded arm
+is judged against the measured spread of four plain arms under deterministic algorithms), the bf16 rule's drift bars and envelopes keep their basis, and
 the parameter-noise null (`canary_param_null`) reads the same reference. What does change: the arm's wall
 time (two transfers of the offloaded bytes) and a host-memory transient of the same size.
 

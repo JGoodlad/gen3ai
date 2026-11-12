@@ -62,6 +62,25 @@ from agents.training.grad_balance import ProbeGraphError
 #: aggregate.
 NOISE_TERM_GROUPS: Tuple[str, ...] = ("policy", "value", "entropy", "aux")
 
+#: `train/noise_per_term_groups`: how many groups the sampled update folded (0 = the first accumulation
+#: group was not completed, so no group has a second batch-size point). Written on every sampled update.
+GROUPS_SAMPLED_TAG = "train/noise_per_term_groups"
+
+
+def state_tags(group: str) -> Tuple[str, str]:
+    """The two tags a sampled update ALWAYS writes for a group it measured: the smoothed `|G_g|²` and
+    `tr(Σ_g)` the three derived tags are computed from. They are the group's whole estimator state, so
+    a derived tag that is withheld is explained by the same dump (gen3_noise_term_keys_v1)."""
+    return f"train/noise_scale_g2_{group}", f"train/noise_scale_trsigma_{group}"
+
+
+def derived_tags(group: str) -> Tuple[str, str, str]:
+    """`(B_simple, B_simple / effective batch, |G_g|² / |G_total|²)` — each written only while its
+    VALUE gate holds (`NoiseScaleDiagnostics._fold_per_term_noise`): the first two need both smoothed
+    estimates positive (`|G_g|²` above 1e-12), the share a positive `|G_g|²` and a readable total."""
+    return (f"train/noise_scale_{group}", f"train/noise_scale_ratio_{group}",
+            f"train/noise_scale_share_{group}")
+
 
 def per_term_enabled(model: object) -> bool:
     """Is the per-term probe on for this process?

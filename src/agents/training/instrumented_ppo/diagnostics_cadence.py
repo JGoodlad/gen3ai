@@ -14,7 +14,10 @@ THE GATED SET — the exact set the benchmark's "all optional telemetry OFF" con
   | per-term noise sampler                  | `train/noise_scale_{g}`,              | per group: 1 R1  |
   |   (`noise_scale_terms.PerTermNoiseSampler`) | `train/noise_scale_ratio_{g}`,    | forward + 1 back-|
   |                                         | `train/noise_scale_share_{g}`,        | ward, × accum    |
-  |                                         | `train/noise_per_term_ms`             | micro-batches    |
+  |                                         | `train/noise_scale_g2_{g}`,           | micro-batches    |
+  |                                         | `train/noise_scale_trsigma_{g}`,      |                  |
+  |                                         | `train/noise_per_term_groups`,        |                  |
+  |                                         | `train/noise_per_term_ms`             |                  |
   | shared-trunk gradient balance           | `grad/*`                              | per term: 1 R1   |
   |   (`grad_balance.grad_balance_metrics_fresh`) |                                 | forward + 1 back-|
   |                                         |                                       | ward, once       |

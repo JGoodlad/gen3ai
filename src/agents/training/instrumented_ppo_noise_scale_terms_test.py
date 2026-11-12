@@ -25,10 +25,13 @@ from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
 from agents.training.instrumented_ppo.noise_scale import debiased_ema
 from agents.training.instrumented_ppo.noise_scale_terms import (
+    GROUPS_SAMPLED_TAG,
     NOISE_TERM_GROUPS,
     NULL_TAGGER,
     PerTermNoiseSampler,
+    derived_tags,
     per_term_enabled,
+    state_tags,
 )
 from agents.training.instrumented_ppo_test import _build_tiny_ppo, _train_from_init
 
@@ -88,6 +91,65 @@ def test_per_term_fold_withholds_a_group_whose_ema_is_not_yet_positive():
     assert "train/noise_scale_policy" not in out
     assert "train/noise_scale_ratio_policy" not in out
     assert "train/noise_scale_share_policy" in out    # the share is still readable
+
+
+def expected_per_term_keys(logged, groups, total_g2):
+    """The key set a fold over ``groups`` must write, DERIVED from the two state values it logged: the
+    state tags always; `B_simple` and its ratio iff both are positive (|G|² above the 1e-12 floor); the
+    share iff |G|² is positive and the total is readable. The one statement of the rule the tests hold
+    the fold to (`designs/training/telemetry_scalars.md`, "The per-term noise key set")."""
+    keys = set()
+    for g in groups:
+        g2_tag, tr_tag = state_tags(g)
+        b_tag, ratio_tag, share_tag = derived_tags(g)
+        keys |= {g2_tag, tr_tag}
+        g2, tr = logged[g2_tag], logged[tr_tag]
+        if g2 > 1e-12 and tr > 0.0:
+            keys |= {b_tag, ratio_tag}
+        if total_g2 is not None and total_g2 > 1e-12 and g2 > 0.0:
+            keys.add(share_tag)
+    return keys
+
+
+#: `(g_small_sq, g_big_sq)` at b = 10 / 40 for every state the gate distinguishes. |G|² = (4·big − small)/3,
+#: tr(Σ) = (small − big)·40/3. None sits on a gate's boundary (rule 8): the nearest |G|² to the 1e-12
+#: floor is 1e-20 below and 1 above.
+_GATE_STATES = {
+    "readable": (3.0, 1.5),                       # |G|² = 1, tr(Σ) = 20
+    "negative_noise": (1.0, 2.0),                 # tr(Σ) < 0: withheld, share still readable
+    "negative_gradient": (5.0, 1.0),              # |G|² < 0: everything derived withheld
+    "no_gradient": (3e-20, 1.5e-20),              # a FRESH policy's entropy bonus: |G|² = 1e-20, under the floor
+    "exactly_zero": (0.0, 0.0),
+}
+
+
+@pytest.mark.parametrize("total_g2", [None, 0.0, 4.0])
+def test_every_folded_group_writes_its_state_tags_and_the_key_set_is_a_function_of_them(total_g2):
+    """THE CLASS (gen3_noise_term_keys_v1): fresh production runs wrote `train/noise_scale_share_entropy`
+    and neither `train/noise_scale_entropy` nor its ratio, where a fork of a trained policy wrote all
+    three — and nothing in the dump said the value gate had withheld them (a fresh policy is uniform, so
+    its entropy bonus has |G|² ~ 1e-20). A folded group now ALWAYS writes its smoothed |G|² and tr(Σ),
+    finite, and which derived tags sit beside them is exactly the documented function of those two."""
+    out = _Fold()._fold_per_term_noise(dict(_GATE_STATES), 10.0, 40.0, total_g2=total_g2)
+    for g in _GATE_STATES:
+        for tag in state_tags(g):
+            assert tag in out and np.isfinite(out[tag]), f"{tag}: a folded group's state is not in the dump"
+    assert set(out) == expected_per_term_keys(out, _GATE_STATES, total_g2)
+    # …and the rule really discriminates here: each state lands where its name says.
+    readable = {g for g in _GATE_STATES if derived_tags(g)[0] in out}
+    assert readable == {"readable"}
+    shared = {g for g in _GATE_STATES if derived_tags(g)[2] in out}
+    assert shared == ({"readable", "negative_noise", "no_gradient"} if total_g2 else set())
+    assert out[state_tags("no_gradient")[0]] == pytest.approx(1e-20, rel=1e-6)
+    assert out[state_tags("negative_noise")[1]] < 0.0 < out[state_tags("readable")[1]]
+
+
+def test_the_state_and_derived_tags_are_five_distinct_keys_per_group_and_collide_with_nothing():
+    from agents.training import train_logger as TL
+    keys = [t for g in NOISE_TERM_GROUPS for t in (*state_tags(g), *derived_tags(g))]
+    keys += ["train/noise_scale", "train/noise_scale_ratio", "train/noise_per_term_ms", GROUPS_SAMPLED_TAG]
+    assert len(set(keys)) == 5 * len(NOISE_TERM_GROUPS) + 4
+    TL.check_metric_keys(keys, where="the per-term noise key set")
 
 
 def test_per_term_ratio_reads_the_ema_state_not_the_last_fold():
@@ -331,12 +393,18 @@ def test_off_is_byte_identical_and_on_adds_the_new_tags():
               "train/grad_norm", "train/policy_gradient_loss"):
         assert log_off[k] == log_on[k], f"the probe perturbed {k}"
 
-    assert not [k for k in log_off if "noise_scale_ratio_" in k], "OFF must emit no per-term tag"
-    assert "train/noise_per_term_ms" not in log_off
+    per_term = re.compile(r"train/noise_scale_(ratio_|share_|g2_|trsigma_)?(%s)$" % "|".join(NOISE_TERM_GROUPS))
+    assert not [k for k in log_off if per_term.match(k)], "OFF must emit no per-term tag"
+    assert "train/noise_per_term_ms" not in log_off and GROUPS_SAMPLED_TAG not in log_off
     for group in ("policy", "value"):     # entropy is coef-0 here; aux is off on this env
         assert f"train/noise_scale_{group}" in log_on
         assert f"train/noise_scale_ratio_{group}" in log_on
         assert f"train/noise_scale_share_{group}" in log_on
+    # gen3_noise_term_keys_v1: the dump says how many groups it folded, and the per-term key set is
+    # exactly the state tags of those groups plus the derived tags their logged state admits.
+    folded = [g for g in NOISE_TERM_GROUPS if state_tags(g)[0] in log_on]
+    assert {"policy", "value"} <= set(folded) and log_on[GROUPS_SAMPLED_TAG] == float(len(folded))
+    assert {k for k in log_on if per_term.match(k)} == expected_per_term_keys(log_on, folded, total_g2=2.0)
     assert log_on["train/noise_per_term_ms"] >= 0.0
     assert log_on["train/train_ms"] > 0.0 and log_off["train/train_ms"] > 0.0
 

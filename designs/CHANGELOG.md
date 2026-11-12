@@ -15856,3 +15856,26 @@ was downloaded or written under `data/`.
   arms still finish inside `PARAM_NULL_CAP_S`. The validation is in `training/learner_lifecycle.md` "The diagnostics
   and the canary are memory-bounded". The `donated_buffer=False` pin stays although its first reason is gone
   (`compiled_first_update_test.py`'s docs: with the pin reverted the compiled first update now passes).
+
+## 2026-11-12 — a per-term noise metric can no longer vanish without a trace, and the offload's CUDA cell can decide on the card (`gen3_noise_term_keys_v1`; no config / `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change, training arithmetic untouched)
+
+- **Why, the keys.** Fresh production runs (d_model 256, pins `aee363bc9` and `e112cbcbf`, `--ent-coef` 0.05) had
+  `train/noise_scale_share_entropy` in `update_fit.json`'s `metric_keys` and neither `train/noise_scale_entropy` nor
+  `train/noise_scale_ratio_entropy`; X67's fork had all three. The cause is the estimator's value gate, unchanged since
+  `f4b25238`: a fresh policy is uniform over the legal actions, the entropy bonus is at its maximum and its gradient is
+  zero (`rb_b1val_w_s9103`, first update: share 7.3e-21), so the smoothed `|G|²` is under the 1e-12 floor and the value
+  and the ratio are withheld. A fork's dry update runs on a trained policy. Nothing recorded which case a missing key was.
+- **What.** Every folded group now always writes its estimator state, `train/noise_scale_g2_<g>` and
+  `train/noise_scale_trsigma_<g>`, and every sampled update writes `train/noise_per_term_groups`. The three derived
+  tags keep their gates; the key set is a function of the folded groups and the state values
+  (`training/telemetry_scalars.md` "The per-term noise key set"). No existing tag changes value.
+- **Why, the cell.** On the card, `saved_offload_test.py`'s CUDA cell failed its own control: two plain reference arms
+  agreed on the loss and the log-probs and differed in the gradient, so bit identity cannot be asked of the bounded arm.
+- **What.** The cell runs its compared arms under `torch.use_deterministic_algorithms(True, warn_only=True)` with
+  `CUBLAS_WORKSPACE_CONFIG` set and restored, measures the spread of four plain arms per field (max pairwise relative
+  L2), and judges two bounded arms against it: zero spread demands bit identity; otherwise within 4× passes, 16× or
+  more fails, between the two is INCONCLUSIVE (a failure). Peaks and the ledger come from further arms on the
+  production kernels. The judgement runs on the CPU learner in the routine gate, including a planted moved number.
+  The CPU bit-identity test is unchanged.
+- **Not shown.** The cell on the GPU (built without a lease): whether every op has a deterministic CUDA
+  implementation (the cell prints the ones that warn), the spread, the peaks.

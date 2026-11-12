@@ -507,10 +507,43 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 † The 19 sites were counted 2026-09-06 and also covered the `team_pfsp/`, `cf/` and `q_winprob/` families, which deletion pass L4 (2026-10-02) removed together with their callbacks; recount before quoting.
 
 **The diagnostics cadence (`gen3_diagnostics_cadence_v1`, config v124):** `grad/*`, `edge/*`, `cell/*`, the per-term
-`train/noise_scale_{,ratio_,share_}<g>` and `train/noise_per_term_ms` are written only on an update
-`--diagnostics-every` runs (fresh default 10; a pre-v124 run stays at 1), and `rank/*` too unless
+`train/noise_scale_{,ratio_,share_,g2_,trsigma_}<g>`, `train/noise_per_term_groups` and `train/noise_per_term_ms`
+are written only on an update `--diagnostics-every` runs (fresh default 10; a pre-v124 run stays at 1), and `rank/*` too unless
 `--rank-tripwire` is on. A skipped update is a GAP, never a repeat. The rule, the exemptions and the
 bit-identity guarantee: [`ppo_step.md`](ppo_step.md).
+
+### The per-term noise key set (`gen3_noise_term_keys_v1`, 2026-11-12)
+
+On an update that samples the per-term probe (`instrumented_ppo/noise_scale_terms.py`; `<g>` is a group of
+`NOISE_TERM_GROUPS` = policy, value, entropy, aux), the keys are a function of two things and nothing else:
+
+| key | written |
+|---|---|
+| `train/noise_per_term_ms` · `train/noise_per_term_groups` | ALWAYS. The second is the number of groups folded; 0 means the first accumulation group never closed (a KL early stop), so no group has its second batch-size point |
+| `train/noise_scale_g2_<g>` · `train/noise_scale_trsigma_<g>` (`state_tags`) | ALWAYS, for every folded group: the smoothed `\|G_g\|²` and `tr(Σ_g)`, the estimator's whole state. Either can be zero or negative |
+| `train/noise_scale_<g>` · `train/noise_scale_ratio_<g>` (`derived_tags`) | only while `g2 > 1e-12` and `trsigma > 0` (a ratio of a non-positive estimate is not a critical batch) |
+| `train/noise_scale_share_<g>` | only while `g2 > 0` and the total's smoothed `\|G\|²` is above 1e-12 |
+
+A group is folded when the configuration scores at least one of its terms on the first micro-batch (no aux heads ⇒ no
+`aux` group), so the folded set is fixed by the recipe; which derived keys sit beside the state keys is fixed by the
+state keys' values. A derived key that is absent is therefore explained by a value in the same dump.
+
+**Why it exists.** Fresh production runs (d_model 256, pins `aee363bc9` and `e112cbcbf`, `--ent-coef` 0.05) recorded
+`train/noise_scale_share_entropy` and neither `train/noise_scale_entropy` nor its ratio in `update_fit.json`'s
+`metric_keys`, while X67's forks (`rb_x35_x67ent_s6701`, pin `f4b25238`) recorded all three. Not a regression and not
+the width: the value gate. A fresh policy is uniform over the legal actions, where the entropy bonus is at its maximum
+and its gradient vanishes: `rb_b1val_w_s9103`'s first update logged `train/noise_scale_share_entropy` = 7.3e-21, a
+`\|G\|²` far under the 1e-12 floor. The same holds for the first update of X67's own fresh ancestor (share 6.6e-19,
+no `train/noise_scale_entropy` until the second sample); a fork's dry update runs on a trained policy, whose entropy
+gradient is real. The gate and its code are unchanged since `f4b25238`; what was missing was any trace of it, so a
+gated key and a dead probe looked alike. The total's `train/noise_scale` / `train/noise_scale_ratio` carry the same
+gate (both smoothed estimates positive) and no state tags: X67 wrote them on 2,847 of 2,852 updates.
+
+Tests: `instrumented_ppo_noise_scale_terms_test.py`
+(`test_every_folded_group_writes_its_state_tags_and_the_key_set_is_a_function_of_them`, every gate state incl. the
+fresh policy's `\|G\|²` = 1e-20) and `diagnostics_cadence_test.py`
+(`test_an_UNWARMED_production_learner_writes_every_folded_groups_state`, the production surface with no primed
+estimates).
 
 ### ERA RELEVANCE — a tag whose SOURCE is absent is not emitted (`gen3_tb_relevance_v1`)
 

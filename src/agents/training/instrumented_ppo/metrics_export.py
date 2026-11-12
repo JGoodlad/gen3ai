@@ -17,6 +17,7 @@ from agents.training.instrumented_ppo.calibration import (
 )
 from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
 from agents.training.instrumented_ppo.noise_scale import debiased_ema
+from agents.training.instrumented_ppo.noise_scale_terms import GROUPS_SAMPLED_TAG
 
 
 class TrainMetricsExport:
@@ -100,6 +101,10 @@ class TrainMetricsExport:
                 for _tag, _val in self._fold_per_term_noise(
                         _pt, b_small, b_small * accum, self._noise_ema_g2).items():
                     self.logger.record(_tag, _val)
+            # A sampled update SAYS how many groups it folded (0: the first accumulation group never
+            # closed), and every folded group writes its two state tags: a per-term reading that is
+            # absent is then explained by this dump, never by silence (gen3_noise_term_keys_v1).
+            self.logger.record(GROUPS_SAMPLED_TAG, float(len(_pt)))
             self.logger.record("train/noise_per_term_ms", 1000.0 * _ns_terms.probe_seconds)
             _ns_terms.release()
         # +NSR-ADVISOR: the smoothed PPO-policy-term ratio, read off the EMA state so it survives a

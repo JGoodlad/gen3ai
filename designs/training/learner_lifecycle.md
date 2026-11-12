@@ -451,8 +451,12 @@ call, so `train/noise_scale_<group>` existed at 128 and silently did not at 256.
 2. **The fp32 reference arm keeps at most 2,048 MiB of saved activations on the card**
    (`agents/model/saved_offload.py`; `compile_regions._r1_reference`, the startup gate's and the canary's yardstick).
    Later saved tensors wait in host memory and return when their backward node runs. A host round trip is a byte copy,
-   so the arm's loss, log-probs and gradient are bit-identical (`saved_offload_test.py`) and every bar and envelope
-   calibrated against it keeps its basis. One rule in bytes at every width; an arm that saves less is untouched.
+   so the arm's loss, log-probs and gradient are bit-identical (`saved_offload_test.py`, on the CPU with the offload
+   forced) and every bar and envelope calibrated against it keeps its basis. On the card the plain arm's own gradient
+   is not run-to-run bit-stable (2026-11-11: two plain arms agreed on the loss and the log-probs and differed in the
+   gradient), so the CUDA cell runs its compared arms under `torch.use_deterministic_algorithms` and judges the
+   bounded arm against the measured spread of four plain arms: zero spread demands bit identity, otherwise a
+   relative-L2 distance within 4× of it passes, 16× or more fails, and between the two the cell is INCONCLUSIVE. One rule in bytes at every width; an arm that saves less is untouched.
 
 **A probe can no longer vanish.** Nothing in the probe path is caught: an OOM inside the dry update is `UpdateWontFit`
 at startup, and a probe failure mid-run stops the run. A re-run that registers different terms from the real forward is

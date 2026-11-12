@@ -4,7 +4,11 @@ THE GUARANTEE: the reference arm's numbers do not move. On the K9 golden's produ
 `compile_regions._r1_reference` with every saved tensor forced through the host round trip returns the loss,
 the log-probs and the flat gradient of the plain arm, bit for bit (one thread; a second plain arm is the
 reproducibility control, and the ledger proves the tensors really left and came back). The CUDA cell asks
-the same on the card, and that the bounded arm's peak is lower.
+the same on the card, and that the bounded arm's peak is lower. CUDA's eager backward is NOT run-to-run
+bit-stable on these rows (measured 2026-11-11: two plain arms agree on the loss and the log-probs and differ
+in the gradient), so the cell runs its compared arms under `torch.use_deterministic_algorithms` and judges
+the bounded arm against the MEASURED spread of four plain arms (`judge_offload`): zero spread demands bit
+identity; a non-zero spread, a distance inside 4x of it, with 4x-16x INCONCLUSIVE and never a pass.
 
 Then the rule, on toys: what stays where it is (a CPU tensor, a small one, a parameter, an expanded view),
 the budget counted per STORAGE in forward order, one copy per tensor and version, a non-dense view refused,
@@ -12,7 +16,10 @@ and the scope's ledger.
 """
 from __future__ import annotations
 
+import contextlib
 import functools
+import itertools
+import warnings
 
 import pytest
 import torch
@@ -190,13 +197,148 @@ def test_on_the_real_learner_the_offloaded_reference_arm_is_bit_identical(monkey
     assert all(_same(plain, prod).values()) and led3["offloaded"] < led["offloaded"]
 
 
+# ── the card's cell: judged against the measured control spread ───────────────────────────────
+KEYS = ("loss", "log_prob", "grad", "grad_sizes")
+#: The spread rule's two bars, in multiples of the control spread (the largest pairwise distance among the
+#: plain arms). A byte copy adds nothing, so the bounded arm is one more draw from the plain arms' own
+#: distribution: its distance to a plain arm is a relative L2 norm over every gradient element, which
+#: concentrates (measured spread between pairs: a few percent), so 4x is never reached by a healthy arm,
+#: and a wrong operand (a stale version, a re-laid-out view) moves the gradient by orders of magnitude
+#: more than 16x a rounding-order spread. Between the bars the cell refuses to decide (root rule 8).
+PASS_WITHIN, FAIL_BEYOND = 4.0, 16.0
+BIT, WITHIN, DIFFERS, INCONCLUSIVE = "bit-identical", "within the control spread", "DIFFERS", "INCONCLUSIVE"
+
+
+def distance(a: torch.Tensor, b: torch.Tensor) -> float:
+    """0.0 iff the two tensors are equal element for element; else ||a - b|| / ||a|| in float64, and
+    infinite where that is not a positive number (a NaN, a zero norm), so "not equal" is never 0."""
+    if torch.equal(a, b):
+        return 0.0
+    a64, b64 = a.detach().double().cpu(), b.detach().double().cpu()
+    d = float((a64 - b64).norm() / a64.norm())
+    return d if d > 0.0 else float("inf")
+
+
+def spread_verdict(spread: float, d: float) -> str:
+    """One field's verdict from the control spread and the judged arm's distance. Deterministic at the
+    declared bars: zero spread (the plain arms are bit-stable) demands bit identity."""
+    if d == 0.0:
+        return BIT
+    if spread == 0.0 or d >= FAIL_BEYOND * spread:
+        return DIFFERS
+    return WITHIN if d <= PASS_WITHIN * spread else INCONCLUSIVE
+
+
+def judge_offload(arm, judged, n_control: int = 4):
+    """``arm(**forced) -> (out, ledger, peak)``. Runs ``n_control`` plain (unbounded) arms, then each of
+    ``judged`` (name -> the SavedOffload kwargs); returns the plain arms' ledgers, the per-field control
+    spread, and per judged arm its (verdicts by field, distances by field, ledger, peak)."""
+    plains = [arm(**UNBOUNDED) for _ in range(n_control)]
+    spread = {k: max(distance(a[0][k], b[0][k]) for a, b in itertools.combinations(plains, 2)) for k in KEYS}
+    ref = plains[0][0]
+    out = {}
+    for name, kw in judged.items():
+        got, led, peak = arm(**kw)
+        dist = {k: distance(ref[k], got[k]) for k in KEYS}
+        out[name] = ({k: spread_verdict(spread[k], dist[k]) for k in KEYS}, dist, led, peak)
+    return [p[1] for p in plains], spread, out
+
+
+UNBOUNDED = dict(budget_bytes=1 << 60)
+
+
+@contextlib.contextmanager
+def deterministic_algorithms(monkeypatch):
+    """`torch.use_deterministic_algorithms(True, warn_only=True)` with the cuBLAS workspace it needs, both
+    restored on exit. Yields the list of ops that announced they have NO deterministic implementation
+    (warn-only: they still run, and the control spread — not this list — decides the rule)."""
+    was = torch.are_deterministic_algorithms_enabled()
+    was_warn = torch.is_deterministic_algorithms_warn_only_enabled()
+    undetermined: list = []
+    with monkeypatch.context() as mp, warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        mp.setenv("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        torch.use_deterministic_algorithms(True, warn_only=True)
+        try:
+            yield undetermined
+        finally:
+            torch.use_deterministic_algorithms(was, warn_only=was_warn)
+            undetermined.extend(sorted({str(w.message).split(" does not have a deterministic")[0]
+                                        for w in caught if "deterministic implementation" in str(w.message)}))
+
+
+def test_the_spread_rule_is_deterministic_at_its_declared_bars():
+    assert spread_verdict(0.0, 0.0) == BIT and spread_verdict(1e-7, 0.0) == BIT
+    assert spread_verdict(0.0, 1e-12) == DIFFERS, "bit-stable plain arms demand bit identity"
+    s = 1e-7
+    assert [spread_verdict(s, m * s) for m in (0.5, 1.0, 4.0)] == [WITHIN] * 3
+    assert [spread_verdict(s, m * s) for m in (4.5, 8.0, 15.0)] == [INCONCLUSIVE] * 3
+    assert [spread_verdict(s, m * s) for m in (16.0, 1e3, float("inf"))] == [DIFFERS] * 3
+    a = torch.tensor([3.0, 4.0])
+    assert distance(a, a.clone()) == 0.0
+    assert distance(a, torch.tensor([3.0, 4.5])) == pytest.approx(0.1, rel=1e-12)       # 0.5 / |(3, 4)|
+    assert distance(a, torch.tensor([3.0, float("nan")])) == float("inf")
+    assert distance(torch.zeros(2), torch.tensor([0.0, 1e-30])) == float("inf")
+
+
+def test_the_deterministic_scope_restores_the_mode_and_the_environment(monkeypatch):
+    import os
+    monkeypatch.delenv("CUBLAS_WORKSPACE_CONFIG", raising=False)
+    assert not torch.are_deterministic_algorithms_enabled()
+    with deterministic_algorithms(monkeypatch) as undetermined:
+        assert torch.are_deterministic_algorithms_enabled()
+        assert torch.is_deterministic_algorithms_warn_only_enabled()
+        assert os.environ["CUBLAS_WORKSPACE_CONFIG"] == ":4096:8"
+        torch.zeros(4).put_(torch.tensor([0, 1]), torch.ones(2))      # no deterministic implementation: warns
+    assert not torch.are_deterministic_algorithms_enabled()
+    assert not torch.is_deterministic_algorithms_warn_only_enabled()
+    assert "CUBLAS_WORKSPACE_CONFIG" not in os.environ
+    assert len(undetermined) == 1 and "put_" in undetermined[0], undetermined
+
+
+def test_the_cells_judgement_runs_on_the_real_learner_and_catches_a_moved_number(monkeypatch,
+                                                                                 restore_torch_globals):
+    """The CUDA cell's whole flow on the CPU (the offload forced, one thread, so the control spread is 0
+    and the rule is bit identity): the bounded arms pass, under deterministic algorithms as the card runs
+    them — and an arm whose gradient moved by one part in 1e6 is DIFFERS, so the cell can fail."""
+    from agents.model import compile_regions as cr
+    from agents.training import learner_golden as LG
+    torch.set_num_threads(1)
+    torch.set_float32_matmul_precision("highest")
+    model = LG.build_learner()
+    LG.load_buffer_into(model)
+    model.policy.set_training_mode(True)
+    args = cr._r1_args(model, cr.r1_batch(model, 64, 0))
+    tamper = {"on": False}
+
+    def arm(**forced):
+        out, led = _reference(model, args, monkeypatch, force=True, **forced)
+        if tamper["on"] and forced != UNBOUNDED:
+            out = {**out, "grad": out["grad"] * (1.0 + 1e-6)}
+        return out, led, None
+
+    judged = {"nothing kept": dict(budget_bytes=0, min_bytes=0), "default budget": {}}
+    with deterministic_algorithms(monkeypatch):
+        plain_leds, spread, got = judge_offload(arm, judged)
+        tamper["on"] = True
+        _, _, moved = judge_offload(arm, {"nothing kept": dict(budget_bytes=0, min_bytes=0)}, n_control=2)
+    assert all(led["offloaded"] == 0 for led in plain_leds)
+    assert spread == dict.fromkeys(KEYS, 0.0), spread
+    for name in judged:
+        assert got[name][0] == dict.fromkeys(KEYS, BIT), (name, got[name][:2])
+    assert got["nothing kept"][2]["offloaded"] > 100
+    assert moved["nothing kept"][0]["grad"] == DIFFERS and moved["nothing kept"][0]["loss"] == BIT
+
+
 @_skip_cuda
 @pytest.mark.slow
-def test_on_the_card_the_bounded_reference_arm_is_bit_identical_and_peaks_lower(monkeypatch,
-                                                                                restore_torch_globals):
-    """CUDA: the production object (no forcing). The plain arm twice is the control (CUDA's eager kernels
-    are run-to-run bit-stable on these rows; if the control fails, this cell says so and decides nothing
-    about the offload); then the arm with nothing kept on the card against it, and its peak below."""
+def test_on_the_card_the_bounded_reference_arm_matches_the_unbounded_one_and_peaks_lower(monkeypatch,
+                                                                                         restore_torch_globals):
+    """CUDA: the production object (no forcing). Under deterministic algorithms, four plain arms are the
+    control and give each field's spread; the arm with nothing kept on the card and the arm at the
+    default budget are judged against it (`judge_offload`: zero spread demands bit identity, else within
+    4x of it; 4x-16x is INCONCLUSIVE and fails as such). Then the same three arms on the PRODUCTION
+    kernels (deterministic mode off) for the peaks and the ledger the run will see."""
     from agents.model import compile_regions as cr
     from agents.training import learner_golden as LG
     torch.set_float32_matmul_precision("highest")
@@ -217,16 +359,23 @@ def test_on_the_card_the_bounded_reference_arm_is_bit_identical_and_peaks_lower(
         torch.cuda.synchronize(dev)
         return out, led, torch.cuda.max_memory_allocated(dev) / MiB
 
-    unbounded = dict(budget_bytes=1 << 60)
-    plain, led_p, peak_p = arm(**unbounded)
-    again, _, _ = arm(**unbounded)
-    assert led_p["offloaded"] == 0
-    assert all(_same(plain, again).values()), "the CONTROL failed: two unbounded arms differ on this card"
-    bounded, led_b, peak_b = arm(budget_bytes=0)
-    assert all(_same(plain, bounded).values()), _same(plain, bounded)
+    judged = {"nothing kept": dict(budget_bytes=0), "default budget": {}}
+    with deterministic_algorithms(monkeypatch) as undetermined:
+        plain_leds, spread, got = judge_offload(arm, judged)
+    _, _, peak_p = arm(**UNBOUNDED)
+    _, led_b, peak_b = arm(budget_bytes=0)
+    _, led_d, peak_d = arm()
+    print(f"[saved_offload] B=2048 control spread over 4 plain arms (deterministic algorithms; ops with no "
+          f"deterministic implementation: {undetermined or 'none'}): {spread}")
+    for name, (verdicts, dist, led, _peak) in got.items():
+        print(f"[saved_offload] {name}: {verdicts} distances {dist} ledger {led}")
+    print(f"[saved_offload] B=2048 peak MiB on the production kernels: unbounded {peak_p:.0f}, default budget "
+          f"{peak_d:.0f} (ledger {led_d}), nothing kept {peak_b:.0f} (ledger {led_b})")
+    assert all(led["offloaded"] == 0 for led in plain_leds)
+    for name, (verdicts, dist, _led, _peak) in got.items():
+        bad = {k: (v, dist[k], spread[k]) for k, v in verdicts.items() if v not in (BIT, WITHIN)}
+        assert not bad, f"{name}: field -> (verdict, distance, control spread) {bad}"
+    led_j = got["nothing kept"][2]
+    assert led_j["offloaded"] > 0 and led_j["returned"] >= led_j["offloaded"]
     assert led_b["offloaded"] > 0 and led_b["returned"] >= led_b["offloaded"]
     assert peak_b < peak_p - 0.25 * led_b["offloaded_mib"], (peak_b, peak_p, led_b)
-    default, led_d, peak_d = arm()
-    assert all(_same(plain, default).values())
-    print(f"[saved_offload] B=2048 peak MiB: unbounded {peak_p:.0f}, default budget {peak_d:.0f} "
-          f"(ledger {led_d}), nothing kept {peak_b:.0f} (ledger {led_b})")

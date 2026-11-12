@@ -1031,7 +1031,8 @@ none changes a number:
   every activation at twice the trained function's bytes and was the canary's peak (d_model 256: 8,703 MiB allocated, 403 MiB
   of fit headroom). Under `saved_tensors_hooks` its first 2,048 MiB of saved storage stay on the card; the rest are copied to
   the host and back when their backward node runs. Loss, log-probs and gradient are bit-identical (`saved_offload_test.py`,
-  CPU with the offload forced, plus a CUDA cell), so the drift bars, the envelopes and `canary_param_null`'s null keep their
+  CPU with the offload forced; the CUDA cell judges the bounded arm against the measured spread of four plain arms, since
+  the card's own gradient is not run-to-run bit-stable), so the drift bars, the envelopes and `canary_param_null`'s null keep their
   basis. Lost inside the scope: autograd's version check on a hooked saved tensor (the eager bf16 arm runs the same body
   unhooked). **UNVERIFIED on the GPU**: the bounded peak and the transfer seconds (the null's 16 lazy reference arms run
   under `PARAM_NULL_CAP_S`; a truncated null falls back to the old, stricter bars).

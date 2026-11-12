@@ -29,7 +29,9 @@ pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 42 s of routine-gate ti
 
 GATED_PREFIXES = ("grad/", "rank/", "edge/", "cell/")
 PER_TERM_TAGS = ("train/noise_scale_ratio_policy", "train/noise_scale_policy",
-                 "train/noise_scale_share_policy", "train/noise_per_term_ms")
+                 "train/noise_scale_share_policy", "train/noise_per_term_ms",
+                 "train/noise_per_term_groups", "train/noise_scale_g2_policy", "train/noise_scale_trsigma_policy",
+                 "train/noise_scale_g2_entropy", "train/noise_scale_trsigma_entropy")
 EVERY_UPDATE_TAGS = ("train/loss", "train/value_loss", "train/policy_gradient_loss",
                      "train/approx_kl", "train/clip_fraction", "train/grad_norm",
                      "train/approx_kl_epoch_0", "train/clip_fraction_epoch_0", "train/train_ms")
@@ -297,6 +299,32 @@ def test_the_ON_arm_really_runs_every_gated_probe(three_arms):
         assert any(k.startswith(prefix) for k in logged), f"no {prefix}* tag: the ON arm is vacuous"
     for tag in PER_TERM_TAGS:
         assert tag in logged, tag
+
+
+def test_an_UNWARMED_production_learner_writes_every_folded_groups_state(real_model, three_arms):
+    """gen3_noise_term_keys_v1, on the production surface with NO primed EMAs — a process's first
+    diagnostic update, where fresh production runs wrote `train/noise_scale_share_entropy` without
+    `train/noise_scale_entropy` and nothing said why. Whatever each group's single-sample estimate reads
+    here, its two state tags are in the dump, and the per-term key set is exactly the documented function
+    of them (so a derived tag that is absent is explained by a value that is present)."""
+    from agents.training.instrumented_ppo.noise_scale_terms import NOISE_TERM_GROUPS, state_tags
+    from agents.training.instrumented_ppo_noise_scale_terms_test import expected_per_term_keys
+    import re
+    model = real_model
+    state0 = three_arms[0]
+    saved = (model._noise_ema_s, model._noise_ema_g2, model._noise_ema_n, model._noise_ema_terms)
+    model._noise_ema_s, model._noise_ema_g2, model._noise_ema_n, model._noise_ema_terms = None, None, 0, None
+    try:
+        logged = _one_update(model, lb.capture_buffer_state(model.rollout_buffer), state0, skip=False)[2]
+        total_g2 = model._noise_ema_g2
+    finally:
+        model._noise_ema_s, model._noise_ema_g2, model._noise_ema_n, model._noise_ema_terms = saved
+    folded = [g for g in NOISE_TERM_GROUPS if state_tags(g)[0] in logged]
+    assert {"policy", "entropy"} <= set(folded), folded
+    assert logged["train/noise_per_term_groups"] == float(len(folded))
+    per_term = re.compile(r"train/noise_scale_(ratio_|share_|g2_|trsigma_)?(%s)$" % "|".join(NOISE_TERM_GROUPS))
+    assert {k for k in logged if per_term.match(k)} == expected_per_term_keys(logged, folded, total_g2)
+    assert all(np.isfinite(logged[t]) for g in folded for t in state_tags(g))
 
 
 #: The parameters only the CRITIC reads (the value CLS pool, the entity pool and the win-prob head; the pool's

@@ -103,7 +103,7 @@ number the optimizer sees, so they run on **every Nth update**; the module that 
 
 | gated probe | its tags (written ONLY on a diagnostics update — a skipped update leaves a GAP) |
 |---|---|
-| per-term noise sampler (`noise_scale_terms.py`) | `train/noise_scale_<g>`, `train/noise_scale_ratio_<g>`, `train/noise_scale_share_<g>`, `train/noise_per_term_ms` |
+| per-term noise sampler (`noise_scale_terms.py`) | `train/noise_scale_<g>`, `train/noise_scale_ratio_<g>`, `train/noise_scale_share_<g>` (value-gated), `train/noise_scale_g2_<g>`, `train/noise_scale_trsigma_<g>`, `train/noise_per_term_groups`, `train/noise_per_term_ms` (always; the key set: `telemetry_scalars.md` "The per-term noise key set") |
 | grad balance (`grad_balance_metrics_fresh`) | `grad/*` |
 | effective rank (`rank_probe`) | `rank/{trunk,value_cls,policy,vf_feat}_*` — `vf_feat` measures `value_pooled` (128-wide; the extractor's whole value half since the version break's part 2 — before it, the 512-wide post-ReLU value projection, so the series breaks there) |
 | edge / cell liveness | `edge/*`, `cell/*` |

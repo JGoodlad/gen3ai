@@ -184,17 +184,26 @@ class NoiseScaleDiagnostics:
         decay, and the emit gate is the SAME "both EMAs positive" rule. If the per-term reading
         disagrees with the total, that has to be the GRADIENT differing, not the estimator.
 
-        Three tags per group:
+        Five tags per group (`noise_scale_terms.state_tags` / `derived_tags`). Two are written for
+        EVERY group in ``per_term``, whatever their values (gen3_noise_term_keys_v1):
+          `train/noise_scale_g2_<g>`       the smoothed |G_g|² (the denominator; can be ≤ 0).
+          `train/noise_scale_trsigma_<g>`  the smoothed tr(Σ_g) (the numerator; can be ≤ 0).
+        Three are derived from them and VALUE-gated, so a withheld one is explained by the two above:
           `train/noise_scale_<g>`        B_simple for that group's gradient alone.
           `train/noise_scale_ratio_<g>`  the same over the effective batch — the actionable read.
           `train/noise_scale_share_<g>`  |G_g|² / |G_total|², i.e. how much of the true gradient's
                                          squared length this group owns.
+        The gate is not a corner case: a FRESH policy is uniform over the legal actions, where the
+        entropy bonus is at its maximum and its gradient is ~0 (measured |G|² share 7e-21 on a fresh
+        256-wide run), so `train/noise_scale_{,ratio_}entropy` are withheld on a fresh run's first
+        updates and present on a fork of a trained policy.
 
         ⚠️ The shares do NOT sum to 1, and that is not a bug: `|G_total|² = ‖Σ_g G_g‖²` carries the
         CROSS terms, so groups pulling together sum above 1 and groups fighting sum below it. Read a
         share as "how big is this group's own pull", never as a partition of the total.
         """
         from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
+        from agents.training.instrumented_ppo.noise_scale_terms import derived_tags, state_tags
         if self._noise_ema_terms is None:
             self._noise_ema_terms = {}
         decay = _NOISE_SCALE_EMA_DECAY
@@ -211,12 +220,16 @@ class NoiseScaleDiagnostics:
             ema_s = debiased_ema(None if prev is None else prev[0], n_prev, tr_sigma, decay)
             ema_g2 = debiased_ema(None if prev is None else prev[1], n_prev, g2, decay)
             self._noise_ema_terms[group] = [ema_s, ema_g2, n_prev + 1]
+            g2_tag, trsigma_tag = state_tags(group)
+            b_tag, ratio_tag, share_tag = derived_tags(group)
+            out[g2_tag] = float(ema_g2)
+            out[trsigma_tag] = float(ema_s)
             if ema_g2 > 1e-12 and ema_s > 0.0:
                 b_simple = ema_s / ema_g2
-                out[f"train/noise_scale_{group}"] = float(b_simple)
-                out[f"train/noise_scale_ratio_{group}"] = float(b_simple / b_big)
+                out[b_tag] = float(b_simple)
+                out[ratio_tag] = float(b_simple / b_big)
             if total_g2 is not None and total_g2 > 1e-12 and ema_g2 > 0.0:
-                out[f"train/noise_scale_share_{group}"] = float(ema_g2 / total_g2)
+                out[share_tag] = float(ema_g2 / total_g2)
         return out
 
     def _per_term_ratio(self, group, b_big):
