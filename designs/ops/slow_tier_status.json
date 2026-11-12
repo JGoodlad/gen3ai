@@ -1942,26 +1942,26 @@
   },
   "src/agents/model/update_performance_shape_test.py::test_R1s_attention_profile_on_cpu_is_pinned": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:57:57Z",
-   "duration_s": 73.09,
-   "contention": 1.41,
+   "commit": "1d2aa1695d7a4582665f7623726a51206c1ed8ae",
+   "at": "2026-11-12T08:37:47Z",
+   "duration_s": 110.57,
+   "contention": 1.87,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_a_real_update_makes_a_bounded_number_of_host_scalar_reads": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:57:57Z",
-   "duration_s": 26.82,
-   "contention": 1.39,
+   "commit": "1d2aa1695d7a4582665f7623726a51206c1ed8ae",
+   "at": "2026-11-12T08:40:56Z",
+   "duration_s": 47.93,
+   "contention": 1.82,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:57:57Z",
-   "duration_s": 30.55,
-   "contention": 1.5,
+   "commit": "1d2aa1695d7a4582665f7623726a51206c1ed8ae",
+   "at": "2026-11-12T08:40:56Z",
+   "duration_s": 49.03,
+   "contention": 1.71,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_on_cuda_the_trunk_layer_dispatches_a_fused_sdpa_kernel_not_math": {
@@ -1971,8 +1971,8 @@
    "duration_s": 1.56,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-11-09T23:14:48Z",
-   "last_skipped_commit": "35b30bd9fb246c61b0de9e4a13f2478e54b1207b",
+   "last_skipped_at": "2026-11-12T08:37:47Z",
+   "last_skipped_commit": "1d2aa1695d7a4582665f7623726a51206c1ed8ae",
    "last_skip_detail": ""
   },
   "src/agents/observation/rust_encoder_benchmark_test.py::test_the_encoder_benchmark_runs": {
@@ -5902,5 +5902,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-12T08:09:00Z"
+ "last_written": "2026-11-12T08:40:56Z"
 }

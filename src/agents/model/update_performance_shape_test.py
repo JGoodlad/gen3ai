@@ -10,7 +10,11 @@ the regression is planted through the same seam production reads and the pin mus
   1. every micro-batch of a REAL update runs R1 through its COMPILED route, none eager — the counters
      the run logs as `lifecycle/compiled_region_calls` / `eager_fallback_calls`. A dispatcher bypass
      that runs the eager body uncounted (the 2.9x regression the benchmark read on 2026-10-02) leaves
-     every run-level FATAL silent and is caught only here.
+     every run-level FATAL silent and is caught only here. The count is of TRAINING micro-batches: a
+     diagnostic update's gradient probes re-run R1 through the same counted route (`probe_forward.py`,
+     gen3_probe_own_graph_v1), so those re-runs are counted at their one seam (`ProbeForward.__call__`)
+     and the pin is `dispatches == micro-batches + probe re-runs`, with a probes-skipped update (the
+     hot path: nine production updates in ten) at exactly the micro-batch count.
   2. a real update makes a BOUNDED number of host scalar reads (`.item()`, `float(tensor)`), each a
      device sync. K8's regions took them from 66,784 to 9,942 per production update (-10 s); a read
      added to the per-micro-batch path is x480 there.
@@ -33,7 +37,7 @@ from __future__ import annotations
 
 import contextlib
 import math
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Iterator, List, NamedTuple
 
 import numpy as np
 import pytest
@@ -74,18 +78,47 @@ def learner() -> Iterator[Any]:
         torch._dynamo.reset()
 
 
-def _real_update(model: Any, meter: Dict[str, float]) -> Dict[str, int]:
+class _Update(NamedTuple):
+    routes: Dict[str, int]     # the dispatcher's route counts (training micro-batches AND probe re-runs)
+    probe_reruns: int          # R1 re-runs the gradient probes made (`ProbeForward.__call__`, their one seam)
+
+
+def _real_update(model: Any, meter: Dict[str, float]) -> _Update:
     """ONE real `train()` on the golden buffer, seeds fixed (the permutation and every data-dependent
-    branch are then deterministic); returns the update's region route counts and fills ``meter``."""
+    branch are then deterministic); returns the update's region route counts and the probes' share of
+    them, and fills ``meter``."""
     from agents.training import learner_benchmark as lb
     from agents.training import learner_golden as LG
+    from agents.training.instrumented_ppo import probe_forward as PF
     LG.load_buffer_into(model)
     np.random.seed(LG.UPDATE_SEED)
     torch.manual_seed(LG.UPDATE_SEED)
+    reruns = [0]
+    real = PF.ProbeForward.__call__
+
+    def counted(self: Any) -> Any:
+        reruns[0] += 1
+        return real(self)
+
     RC.take()                                              # a clean per-update window
-    with lb._scalar_read_meter(meter):
-        model.train()
-    return RC.take()
+    PF.ProbeForward.__call__ = counted                     # type: ignore[method-assign]
+    try:
+        with lb._scalar_read_meter(meter):
+            model.train()
+    finally:
+        PF.ProbeForward.__call__ = real                    # type: ignore[method-assign]
+    return _Update(RC.take(), reruns[0])
+
+
+def _skip_the_probes(model: Any, m: pytest.MonkeyPatch) -> None:
+    """Make the next `train()` a NON-diagnostic update — the hot path — for the life of ``m``:
+    `diagnostics_cadence.plan_for` reads exactly these (`probe_own_graph_test._golden_arm`'s skip arm)."""
+    from agents.training.instrumented_ppo import diagnostics_cadence as DC
+    m.setattr(model, "diagnostics_every", 2 ** 31 - 1, raising=False)
+    m.setattr(model, "_diagnostics_ran_in_process", True, raising=False)
+    m.setattr(model, "rank_probe_every_update", False, raising=False)
+    m.setattr(model, "noise_terms_every_update", False, raising=False)
+    m.setattr(DC, "rollout_index", lambda _model: 1)       # a fresh learner sits at rollout 0, which every cadence divides
 
 
 def _micro_batches(model: Any) -> int:
@@ -94,23 +127,47 @@ def _micro_batches(model: Any) -> int:
     return math.ceil(rows / int(model.batch_size)) * int(model.n_epochs)
 
 
+def _real_update_bypassed(model: Any, monkeypatch: pytest.MonkeyPatch, body: Any) -> _Update:
+    """THE PLANT: one real update with R1 routed AROUND its dispatcher (the eager ``body``, uncounted)."""
+    with monkeypatch.context() as m:
+        m.setattr(model, "_compiled_micro_step", lambda *a, **k: body(*a, **k))
+        return _real_update(model, {"s": 0.0, "n": 0})
+
+
 # ---------------------------------------------------------------- 1. every micro-batch runs R1 compiled
 @pytest.mark.slow  # ship gate (2026-10-19): 33 s beside a live run
 def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager(learner, monkeypatch):
     """The golden's 64 rows / micro-batch 16 / 2 epochs = 8 micro-batches, ALL through R1's compiled
     route, none through the declared eager route (the rows divide evenly: no ragged tail).
 
+    Two updates, because R1's dispatcher counts every call and a diagnostic update's gradient probes re-run
+    R1 through it (one forward per probe gradient, `probe_forward.py`):
+      * the DIAGNOSTIC update (a fresh process's first, every probe on): every dispatch is compiled, and
+        dispatches minus the probes' re-runs — counted at `ProbeForward.__call__`, the one way a probe
+        reaches R1 — is exactly the 8 training micro-batches. The probes must really have re-run (> 0), or
+        this arm is the other one;
+      * the SAME update with the probes skipped (the hot path): exactly 8 dispatches, all compiled.
+    How MANY re-runs a probe makes is the probes' own pin (`probe_own_graph_test.py`), not this file's.
+
     TEETH, in the same test (one fixture build): the regression the benchmark read at 2.9x (116 s against
     40 s, compiled share 0.000) — R1 routed AROUND its dispatcher, running the eager body uncounted — leaves
     every run-level FATAL silent (no counter, no inventory change after the lock) and must show here."""
     from agents.training.instrumented_ppo.micro_step import micro_step
-    routes = _real_update(learner, {"s": 0.0, "n": 0})
+    diag = _real_update(learner, {"s": 0.0, "n": 0})
     assert _micro_batches(learner) == 8
-    assert routes == {"R1_compiled": 8}, routes
+    assert diag.probe_reruns > 0, "the first update's gradient probes never re-ran R1: this is not the diagnostic arm"
+    assert diag.routes == {"R1_compiled": 8 + diag.probe_reruns}, (
+        f"{diag}: a dispatch that is neither a training micro-batch nor a probe re-run, or an eager one")
     with monkeypatch.context() as m:
+        _skip_the_probes(learner, m)
+        hot = _real_update(learner, {"s": 0.0, "n": 0})
+        assert hot == _Update({"R1_compiled": 8}, 0), hot
         m.setattr(learner, "_compiled_micro_step", lambda *a, **k: micro_step(*a, **k))
         bypassed = _real_update(learner, {"s": 0.0, "n": 0})
-    assert bypassed.get("R1_compiled", 0) == 0 and bypassed != routes, bypassed
+    assert bypassed == _Update({}, 0), bypassed
+    # ... and on the diagnostic update the bypass takes the training micro-batches AND the probes' re-runs
+    bypassed_diag = _real_update_bypassed(learner, monkeypatch, micro_step)
+    assert bypassed_diag.routes == {} and bypassed_diag.probe_reruns == diag.probe_reruns, bypassed_diag
 
 
 # ---------------------------------------------------------------- 2. a bounded host-scalar-read budget
@@ -139,19 +196,25 @@ def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager
 #: (`legacy_production_args`) still reads exactly 984 = 4 × its 246 optimizer parameter tensors, the end state 1,120
 #: = 4 × 280 — the end-state network's NET +34 parameter tensors (the static encoder / board, the third trunk round,
 #: the move-resolution family and the fact projections, less the seven blocks it retires) at the same 4 reads each. No read was added to the micro-step (the TEETH below).
+#: THE PROBES ADD NONE (gen3_probe_own_graph_v1, MEASURED 2026-11-12 by call site on this test's setup): the
+#: diagnostic update's 22 R1 re-runs read no host scalar (R1 is a static-shape program; the probes' norms and
+#: dots ride batched transfers), so the diagnostic update and the probes-skipped one both read exactly 1,120, every
+#: one of them `optimizer.step()`'s. The pin is asserted on BOTH; the plant below is counted on the probes-skipped
+#: update, where R1 runs once per training micro-batch and nothing else (on a diagnostic update a read planted in
+#: R1 also fires on every probe re-run, which is how this test read 1,150 against 1,128 from e112cbcbf on).
 GOLDEN_UPDATE_HOST_SCALAR_READS = 1120
 
 
 @pytest.mark.slow  # ship gate (2026-10-19): 32 s beside a live run
 def test_a_real_update_makes_a_bounded_number_of_host_scalar_reads(learner, monkeypatch):
     meter = {"s": 0.0, "n": 0}
-    _real_update(learner, meter)
+    diag = _real_update(learner, meter)                    # the DIAGNOSTIC update: every probe on
+    assert diag.probe_reruns > 0, "the first update's gradient probes never re-ran R1: this is not the diagnostic arm"
     assert meter["n"] > 0, "the meter read nothing: it is not counting the reads it exists to count"
     assert meter["n"] == GOLDEN_UPDATE_HOST_SCALAR_READS, (
         f"{meter['n']} host scalar reads in one golden update, the pin is {GOLDEN_UPDATE_HOST_SCALAR_READS}: "
         f"each is a device sync x {_micro_batches(learner)} micro-batches here (x480 in production). A HIGHER "
         f"number is a sync added to the per-micro-batch path; a lower one is a win — update the pin and say why")
-    # TEETH (same fixture): ONE host read added to the micro-step moves the count by one per micro-batch
     real = learner._compiled_micro_step
 
     def noisy(*a: Any, **k: Any) -> Any:
@@ -159,10 +222,25 @@ def test_a_real_update_makes_a_bounded_number_of_host_scalar_reads(learner, monk
         torch.zeros(()).item()
         return out
     with monkeypatch.context() as m:
+        _skip_the_probes(learner, m)
+        hot = {"s": 0.0, "n": 0}
+        assert _real_update(learner, hot).probe_reruns == 0
+        assert hot["n"] == GOLDEN_UPDATE_HOST_SCALAR_READS, (
+            f"{hot['n']} host scalar reads in the probes-skipped golden update against {meter['n']} with them on: "
+            f"the pin {GOLDEN_UPDATE_HOST_SCALAR_READS} is the TRAINING path's on both")
+        # TEETH (same fixture): ONE host read added to the micro-step moves the count by one per micro-batch
         m.setattr(learner, "_compiled_micro_step", noisy)
         planted = {"s": 0.0, "n": 0}
-        _real_update(learner, planted)
+        assert _real_update(learner, planted).probe_reruns == 0
     assert planted["n"] == GOLDEN_UPDATE_HOST_SCALAR_READS + _micro_batches(learner), planted["n"]
+    # ... and on the diagnostic update the same plant also fires on every probe re-run: a read added to R1 is
+    # paid per R1 CALL, and the probes' calls are the ones counted at their seam, no others
+    with monkeypatch.context() as m:
+        m.setattr(learner, "_compiled_micro_step", noisy)
+        planted_diag = {"s": 0.0, "n": 0}
+        reruns = _real_update(learner, planted_diag).probe_reruns
+    assert reruns == diag.probe_reruns
+    assert planted_diag["n"] == GOLDEN_UPDATE_HOST_SCALAR_READS + _micro_batches(learner) + reruns, planted_diag["n"]
 
 
 # ---------------------------------------------------------------- 3. attention lowers to the FUSED op
