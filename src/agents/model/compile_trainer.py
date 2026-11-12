@@ -476,7 +476,7 @@ def arm_compile_sentinel(model: Any, *, batch_size: int,
 
     ``learner_cudagraphs`` (`--learner-cudagraphs on`, T25 lever C, `gen3_r1_graphed_route_v1`): declare
     R1's GRAPHED route too — the same micro-step compiled with cudagraph trees, served to every
-    micro-step that carries no retain_graph probe (`compile_regions.r1_route_for`); gated (with an
+    micro-step that no gradient probe samples (`compile_regions.r1_route_for`); gated (with an
     accumulation rung), prewarmed, counted by the inventory and judged by the canary like the first.
     """
     fe = getattr(getattr(model, "policy", None), "features_extractor", None)
@@ -486,8 +486,8 @@ def arm_compile_sentinel(model: Any, *, batch_size: int,
             "extractor and the micro-step `_micro_static`) — the declared region is the only "
             "compiled learner surface")
     from agents.model.compile_control import control, set_strict_errors
-    # `install` pins the compile config (K1b's `donated_buffer=False` — without it the first
-    # retain_graph probe crashes: measured on the consolidation's launch proof, 2026-10-01) and
+    # `install` pins the compile config (K1b's `donated_buffer=False` — without it a retain_graph
+    # probe on a compiled graph crashes: measured on the consolidation's launch proof, 2026-10-01) and
     # registers the cache-limit detector and the after-lock compile counter. Idempotent.
     ctl = control(emit).install()
     set_strict_errors()
@@ -510,7 +510,7 @@ def arm_compile_sentinel(model: Any, *, batch_size: int,
     if learner_cudagraphs:
         ctl.graphed_check = lambda: _cr.graphed_route_skipped(model)
         _say("📸 [CompileRegions] --learner-cudagraphs on: R1's GRAPHED route (cudagraph trees) serves every "
-             "micro-step with no retain_graph probe; the compiled route serves the probe micro-steps "
+             "micro-step no gradient probe samples; the compiled route serves those and the probes' re-runs "
              "(gen3_r1_graphed_route_v1)")
     _cr.gate_regions(model, batch_size=int(batch_size), say=_say)
     line = ctl.prewarm(_cr.prewarm_calls(model, batch_size=int(batch_size)))

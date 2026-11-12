@@ -11,12 +11,13 @@ THE GATED SET — the exact set the benchmark's "all optional telemetry OFF" con
 
   | probe                                   | tags                                  | cost / call      |
   |-----------------------------------------|---------------------------------------|------------------|
-  | per-term noise sampler                  | `train/noise_scale_{g}`,              | 5 extra backward |
-  |   (`noise_scale_terms.PerTermNoiseSampler`) | `train/noise_scale_ratio_{g}`,    | traversals × accum|
-  |                                         | `train/noise_scale_share_{g}`,        | micro-batches    |
-  |                                         | `train/noise_per_term_ms`             |                  |
-  | shared-trunk gradient balance           | `grad/*`                              | per-term         |
-  |   (`grad_balance.grad_balance_metrics`) |                                       | `autograd.grad`  |
+  | per-term noise sampler                  | `train/noise_scale_{g}`,              | per group: 1 R1  |
+  |   (`noise_scale_terms.PerTermNoiseSampler`) | `train/noise_scale_ratio_{g}`,    | forward + 1 back-|
+  |                                         | `train/noise_scale_share_{g}`,        | ward, × accum    |
+  |                                         | `train/noise_per_term_ms`             | micro-batches    |
+  | shared-trunk gradient balance           | `grad/*`                              | per term: 1 R1   |
+  |   (`grad_balance.grad_balance_metrics_fresh`) |                                 | forward + 1 back-|
+  |                                         |                                       | ward, once       |
   | effective rank (`rank_metrics.rank_probe_from_stash`) | `rank/{trunk,value_cls,policy,vf_feat}_*` | 0 forwards (R1's stashes) + 4 device spectra, 1 host read |
   | per-family liveness (`edge_family_metrics`) | `edge/*`                          | param norms      |
   | pointer-cell liveness (`cell_family_metrics`) | `cell/*`                        | param norms      |
@@ -41,10 +42,12 @@ the run's own flags (`apply_training_hparams` sets the two attributes below):
 
 THE FIRST UPDATE OF EVERY PROCESS IS ALWAYS A DIAGNOSTIC UPDATE. Two reasons. (1) The declared
 lifecycle (`program_rust_core.md` §M5): `compile_control` LOCKS the compiled learner after the
-first real update, so every signature the steady state will use must be seen by then — the rank
-probe's no-grad train-mode forward and the probes' `autograd.grad(retain_graph=True)` calls are
-such signatures, and a probe first reached on update N would be a post-lock recompile (a typed
-FATAL). (2) A restart then reads every diagnostic immediately. The latch
+first real update, so every signature the steady state will use must be seen by then, and a probe
+first reached on update N must not be a post-lock recompile (a typed FATAL; the gradient probes
+re-run R1 through the route the update itself uses — `probe_forward.py` — so they add none). The
+same holds for MEMORY: the startup update-fit check (`update_fit.dry_update`) measures the first
+update, so the probes' peak is inside the demand it admits. (2) A restart then reads every
+diagnostic immediately. The latch
 (`_diagnostics_ran_in_process`) is excluded from the checkpoint so each process re-arms it.
 
 THE PHASE is the ROLLOUT INDEX, `num_timesteps // (n_steps · n_envs)`, not a process-local
@@ -54,8 +57,8 @@ restart and a reader can predict which steps carry a reading.
 THE GUARANTEE (pinned by `diagnostics_cadence_test.py`): learning is BIT-IDENTICAL with the
 diagnostics on and off — same seed, same buffer, one update ⇒ identical parameters, optimizer
 state, losses and RNG state. Every gated probe is read-only (`autograd.grad` never writes `.grad`;
-the rank forward is `no_grad` with dropout 0; the liveness reads are norms) and none draws a
-random number.
+the gradient probes' own forwards run under `fork_rng` and touch nothing the update reads; the rank
+probe reads R1's stashes; the liveness reads are norms) and none draws a random number.
 """
 from __future__ import annotations
 
@@ -104,25 +107,31 @@ def plan_for(model: object) -> DiagnosticsPlan:
 
 
 def micro_retains_graph(noise_tagger: object, *, grad_balance_pending: bool) -> bool:
-    """Will THIS micro-step call autograd through R1's graph BEFORE its `backward()` — i.e. traverse it
-    twice (`gen3_r1_graphed_route_v1`)? Decided before R1 runs, from the plan's probes and their own
-    state; `compile_regions.r1_route_for` turns it into the route. The two retain_graph users (the
-    inventory, 2026-10-10):
+    """Is THIS micro-step one a gradient probe samples — so that it, and the probe's own re-runs of it,
+    take R1's UN-GRAPHED compiled route (`gen3_r1_graphed_route_v1`)? Decided before R1 runs, from the
+    plan's probes and their own state; `compile_regions.r1_route_for` turns it into the route. The two
+    gradient probes (the inventory, 2026-10-10; on their own graphs since gen3_probe_own_graph_v1):
 
-      * the per-term noise sampler (`noise_scale_terms.PerTermNoiseSampler`): one `autograd.grad` per
-        loss group in `flush_micro`, on EVERY micro-step it collects — epoch 0's first accumulation group
-        of a cadence update (every update under `--adaptive-batch policy`). ``noise_tagger`` is that
-        micro-step's tagger (`NULL_TAGGER` elsewhere); a sampler that has FAILED takes no gradient;
-      * the grad-balance probe (`grad_balance._flat_grads`): once per cadence update, on the FIRST
-        micro-step whose terms are all present — a DATA-dependent micro-step, so every micro-step while
-        it is still PENDING (``grad_balance_pending``: `shared_trunk and diag.grad_balance and not
-        grad_balance`) carries it potentially; the first eligible one takes it and clears the pending.
+      * the per-term noise sampler (`noise_scale_terms.PerTermNoiseSampler`): one R1 re-run and one
+        `autograd.grad` per loss group in `flush_micro`, on EVERY micro-step it collects — epoch 0's
+        first accumulation group of a cadence update (every update under `--adaptive-batch policy`).
+        ``noise_tagger`` is that micro-step's tagger (`NULL_TAGGER` elsewhere);
+      * the grad-balance probe (`grad_balance.grad_balance_metrics_fresh`): once per cadence update, on
+        the FIRST micro-step whose terms are all present — a DATA-dependent micro-step, so every
+        micro-step while it is still PENDING (``grad_balance_pending``: `shared_trunk and
+        diag.grad_balance and not grad_balance`) carries it potentially; the first eligible one takes
+        it and clears the pending.
 
-    No other autograd call re-enters R1's graph: the capacity cosine and the K9(b) behaviour probe run
-    their OWN eager forwards; the ride-along heads backward through their own graph on DETACHED inputs;
-    the rank probe and the calibration / ride-along snapshots read R1's outputs without autograd."""
-    sampler = bool(getattr(noise_tagger, "collecting", False)) and not bool(getattr(noise_tagger, "failed", False))
-    return sampler or bool(grad_balance_pending)
+    Neither re-enters the training step's graph any more (each re-runs R1 after the step's `backward()`:
+    `probe_forward.py`), so the sampled step itself is traversed once. It keeps the un-graphed route
+    all the same, and so do the re-runs: the graphed route's outputs are cudagraph-pool memory the NEXT
+    replay overwrites, and a re-run before the group's deferred host reads would overwrite the sampled
+    step's own; and the update's numbers under `--learner-cudagraphs on` stay the ones they were when
+    the probes did re-enter the graph. No other autograd call touches R1's graph: the capacity cosine
+    and the K9(b) behaviour probe run their OWN eager forwards; the ride-along heads backward through
+    their own graph on DETACHED inputs; the rank probe and the calibration / ride-along snapshots read
+    R1's outputs without autograd."""
+    return bool(getattr(noise_tagger, "collecting", False)) or bool(grad_balance_pending)
 
 
 def mark_ran(model: object, plan: DiagnosticsPlan) -> None:

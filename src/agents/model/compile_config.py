@@ -35,6 +35,15 @@ from typing import Any, Dict, Optional
 #   saved tensors as eager does — same kernels, same numbers (`compile_control_test` pins the
 #   gradient bit-for-bit on vs off); measured cost on 2.8: none in time, +0.3% peak memory
 #   (`designs/research_state/measurements/m5_k1/`).
+#   SINCE gen3_probe_own_graph_v1 (2026-11-11) `train()`'s probes no longer do that: each takes its
+#   gradient from its OWN forward of R1 with `retain_graph=False`
+#   (`agents/training/instrumented_ppo/probe_forward.py`), so every compiled graph the learner builds
+#   is walked once (with this row set to donate, the compiled first update passes: measured
+#   2026-11-11, CPU Inductor, `compiled_first_update_test`'s docs). The pin STAYS all the same: it is in the hashed row and in the cache-key tag
+#   below, so dropping it is a compile-config change with its own measurement, not a clean-up; and
+#   the retained-graph reference (`grad_balance.grad_balance_metrics`, the per-term sampler's
+#   `flush_micro()` with no re-run) must keep working on a compiled graph for the tests that hold
+#   the probes' values to it.
 #
 #   torch.compiler.config.cache_key_tag = "gen3_donated_buffer_off_v1" (2.8 only; 2.5.1 has no such
 #   config and never donated). Setting donated_buffer alone was NOT enough — measured 2026-09-29: the

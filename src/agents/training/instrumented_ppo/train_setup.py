@@ -48,7 +48,7 @@ class FoldFlags(NamedTuple):
 class ProbeSetup(NamedTuple):
     """The once-per-`train()` diagnostics state. `ns_terms` is `_ns_terms` in `train()`; a
     `NamedTuple` field cannot start with an underscore, and the local name is what the fold's
-    `_ntg.add(...)` seam is written against."""
+    `_ntg` seam (`tag_terms`, then `flush_micro`) is written against."""
     shared_trunk: Any
     grad_balance: Any
     rank_metrics: Any
@@ -227,8 +227,8 @@ class TrainSetup:
         # +NOISE-SCALE PER-TERM: the same two points, taken per LOSS GROUP so the total reading can
         # be told apart from the PPO policy term's own (noise_scale_terms.py's docstring is the why).
         # Built only on a DIAGNOSTICS-CADENCE update (`--diagnostics-every`, diagnostics_cadence.py:
-        # the cadence divides its cost) and NULL otherwise, in which case every `_ntg.add(...)`
-        # below is a passthrough and no extra gradient is ever taken.
+        # the cadence divides its cost) and NULL otherwise, in which case the fold's tagging is a
+        # passthrough, no forward is re-run and no extra gradient is ever taken.
         _ns_terms = NULL_TAGGER
         if accum >= 2 and per_term_enabled(self) and diag.noise_terms:
             _ns_terms = PerTermNoiseSampler(list(self.policy.parameters()))
@@ -292,10 +292,10 @@ class TrainSetup:
 
     def _micro_region(self, retained_graph: bool = False) -> Any:
         """R1 as installed: the compiled region under --compile-trainer (K8), else the function. Under
-        `--learner-cudagraphs on` (gen3_r1_graphed_route_v1) the GRAPHED route serves a micro-step whose
-        graph is traversed once, and the compiled route one that a retain_graph probe re-enters
-        (``retained_graph``, `diagnostics_cadence.micro_retains_graph`); with the flag off there is one
-        compiled route and ``retained_graph`` changes nothing."""
+        `--learner-cudagraphs on` (gen3_r1_graphed_route_v1) the GRAPHED route serves an ordinary
+        micro-step, and the compiled route one a gradient probe samples and every re-run of it the probe
+        makes (``retained_graph``, `diagnostics_cadence.micro_retains_graph`; `probe_forward.py`); with
+        the flag off there is one compiled route and ``retained_graph`` changes nothing."""
         compiled = getattr(self, "_compiled_micro_step", None)
         if compiled is not None:
             graphed = getattr(self, "_compiled_micro_step_graphed", None)

@@ -34,11 +34,10 @@ import torch as th
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.utils import explained_variance
 
-from agents.training.belief_bank import ROWS as _BELIEF_ROWS
 from agents.training.grad_balance import (
     cell_family_metrics,
     edge_family_metrics,
-    grad_balance_metrics,
+    grad_balance_metrics_fresh,
 )
 from agents.training.instrumented_ppo.aux_terms import AuxTerms
 from agents.training.instrumented_ppo.capacity_terms import CapacityTerms
@@ -69,7 +68,13 @@ from agents.training.instrumented_ppo.micro_step import unpack as _unpack_micro
 from agents.model.masked_categorical import MaskedPi as _MaskedPi
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
 from agents.training.instrumented_ppo.noise_scale_terms import NULL_TAGGER
+from agents.training.instrumented_ppo.noise_scale_terms import tag_terms as _tag_terms
 from agents.training.instrumented_ppo.phase_hook import current as _current_phase_hook
+from agents.training.instrumented_ppo.probe_forward import ProbeForward as _ProbeForward
+from agents.training.instrumented_ppo.probe_forward import R1_PROBE_TERMS as _R1_PROBE_TERMS   # noqa: F401
+from agents.training.instrumented_ppo.probe_forward import balance_terms as _probe_balance_terms
+from agents.training.instrumented_ppo.probe_forward import probe_aux_terms as _probe_aux_terms
+from agents.training.instrumented_ppo.probe_forward import select_probe_terms
 from agents.training.instrumented_ppo.ridealong_terms import (RideAlongAccumulator,
                                                              RideAlongTerms)
 from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
@@ -103,6 +108,8 @@ def train_step_source() -> str:
         TrainSetup._align_opp_intent_labels,
         TrainSetup._resolve_fold_flags,
         TrainSetup._train_probe_setup,
+        _probe_balance_terms,                 # the grad-balance probe's terms (gen3_probe_own_graph_v1)
+        _probe_aux_terms,
         TrainMetricsExport._record_grad_balance_metrics,
         TrainMetricsExport._record_signal_metrics,
         TrainMetricsExport._record_noise_scale_metrics,
@@ -114,14 +121,6 @@ def train_step_source() -> str:
 
 
 # ------------------------------------------------------------------ the deferred host reads' callbacks
-#: R1's probe terms in the inline fold's REGISTRATION order (the grad-balance probe's and K9(c)'s names):
-#: the belief bank's rows' `probe` names, then the win-prob head. DERIVED from `belief_bank.ROWS`, never retyped —
-#: a row registered under a name this tuple does not hold is never looked up, so its `grad/<name>_*` family is
-#: never produced. (That is how `hidden_team_set`, registered `species_belief_set`, lost `grad/species_belief_*`
-#: from the X5 version break to 2026-10-15: `gen3_metric_producer_guard_v1`.)
-_R1_PROBE_TERMS = tuple(_row.probe for _row in _BELIEF_ROWS) + ("win_prob",)
-
-
 def _magnet_args(st, rollout_data):
     """R1's optional tenth argument (`gen3_magnet_kl_v1`): the micro-batch's magnet column when `--magnet-kl-coef`
     is on, nothing when it is off. On with no column (a buffer the collector's magnet pass did not fill) is a typed
@@ -133,12 +132,6 @@ def _magnet_args(st, rollout_data):
         raise _MagnetError("--magnet-kl-coef > 0 but the rollout buffer has no magnet column: the collector's fill "
                            "writes it (`agents.training.magnet.fill_column`); this buffer was filled without one")
     return (col,)
-
-
-def select_probe_terms(terms, present):
-    """The R1 terms the grad-balance probe and K9(c)'s finiteness verdict see: every `_R1_PROBE_TERMS` name the
-    micro-batch REGISTERED (`terms`) and SCORED (`present`), in registration order."""
-    return {name: terms[name] for name in _R1_PROBE_TERMS if name in terms and present.get(name, False)}
 
 
 def _micro_reader(packed, sink, last, box, *, epoch, approx_kl_divs, deferred):
@@ -267,6 +260,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         precedes the tail's readers by reading the source. (The TD-consistency auxiliary and the
         counterfactual block — cf-winprob, cf-evidential, cf-twin, cf-shadow — were the tail's
         own-forward folds; deleted in deletion passes P11c and L4.)
+
+        **THE GRADIENT PROBES RE-RUN R1, and sit where that is safe** (gen3_probe_own_graph_v1,
+        `probe_forward.py`): the grad-balance probe and the per-term noise probe take each gradient
+        from their OWN forward of the micro-batch, AFTER its `backward()` and BEFORE the optimizer
+        step. That is after every stash reader of the micro-batch (the re-run re-stashes equal
+        values: same rows, same parameters), after the real graph is gone (so the card never holds
+        a retained graph plus a second traversal), and before the parameters move. They fold
+        nothing and write no `.grad`.
 
         The steps AFTER the loop (the grad-accum flush, the noise-scale fold, and the ~260 lines
         of `self.logger.record`) are diagnostics and carry no gradient.
@@ -415,7 +416,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # +NOISE-SCALE PER-TERM: collect on epoch 0's FIRST accumulation group only — the
                 # same window the total's two points are read from, so both readings score the very
                 # same data and a disagreement can only be the gradient. NULL elsewhere ⇒ the
-                # `_ntg.add(...)` calls threaded through the fold below are pure passthroughs.
+                # tagging below (`_tag_terms`) is a pure passthrough and no probe forward is built.
                 _ntg = _ns_terms if (epoch == 0 and _ns_terms.micros < accum) else NULL_TAGGER
                 # +R1 (gen3_learner_micro_step_v1, M5 Lane K8): `evaluate_actions` AND fold steps 1-3a —
                 # the upstream PPO loss, the belief bank's hidden_move site, the opponent-intent fold,
@@ -423,18 +424,20 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # (`micro_step.micro_step`), in exactly this source order inside it. Compiled as one
                 # `fullgraph=True` region under --compile-trainer (`self._micro_region`), eager
                 # otherwise; the steps after 3a below are the DECLARED EAGER TAIL, in contract order.
-                # +R1 ROUTE (gen3_r1_graphed_route_v1, `--learner-cudagraphs on`): a micro-step a
-                # retain_graph probe will re-enter takes the un-graphed compiled route, every other one
-                # the graphed route — decided HERE, before the call, from the probes' state.
+                # +R1 ROUTE (gen3_r1_graphed_route_v1, `--learner-cudagraphs on`): a micro-step a gradient
+                # probe samples takes the un-graphed compiled route (the one the probe's own forwards
+                # take), every other one the graphed route — decided HERE, before the call, from the
+                # probes' state.
                 _retains = _micro_retains_graph(
                     _ntg, grad_balance_pending=bool(shared_trunk and diag.grad_balance and not grad_balance))
                 # +MAGNET: the rows' magnet column is R1's tenth argument ONLY with the magnet on — off, the
                 # call (and the compiled region's signature) is the nine-argument one.
-                _mo = self._micro_region(_retains)(self.policy, rollout_data.observations,
-                                         rollout_data.actions, rollout_data.action_masks,
-                                         rollout_data.old_log_prob, rollout_data.old_values,
-                                         self._micro_advantages(rollout_data), rollout_data.returns,
-                                         _micro_st, *_magnet_args(_micro_st, rollout_data))
+                _r1_args = (self.policy, rollout_data.observations,
+                            rollout_data.actions, rollout_data.action_masks,
+                            rollout_data.old_log_prob, rollout_data.old_values,
+                            self._micro_advantages(rollout_data), rollout_data.returns,
+                            _micro_st, *_magnet_args(_micro_st, rollout_data))
+                _mo = self._micro_region(_retains)(*_r1_args)
                 actions = (rollout_data.actions.long().flatten() if _micro_st.discrete
                            else rollout_data.actions)
                 values = _mo.values
@@ -468,9 +471,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     _mpres, _mfinite, _approx_kl = _rd_box["present"], _rd_box["finite"], _rd_box["approx_kl"]
                 else:                  # the deferred read makes the K9(c) verdicts itself
                     _mpres, _mfinite, _approx_kl = {}, True, None
-                for _tn, _tt in _mo.terms.items():          # the noise-scale per-term tagger
-                    if _mpres.get(_tn, True):
-                        _ntg.add(_mo.term_groups[_tn], _tt)
+                _tag_terms(_ntg, _mo.terms, _mo.term_groups, _mpres)    # the noise-scale per-term tagger
                 _policy_grad_term, _ent_term = _mo.terms["policy"], _mo.terms["entropy"]
                 _vf_term = _mo.terms.get("value", 0.0)
 
@@ -525,21 +526,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # so policy/value/each-aux are mutually comparable + sum to ~1 (grad_balance.py). Only
                 # the terms set this minibatch are included (a belief term is None on a zero-believed
                 # minibatch; win_prob None when its head is off).
-                aux_probe_terms: dict[str, th.Tensor] = {}
-                # R1's terms (gen3_learner_micro_step_v1), in the inline fold's registration order;
-                # a term is registered exactly when the inline fold had one (`present`).
-                aux_probe_terms.update(select_probe_terms(_mo.terms, _mpres))
+                # R1's terms (gen3_learner_micro_step_v1), in the inline fold's registration order —
+                # a term is registered exactly when the inline fold had one (`present`) — then the
+                # opponent-intent term, the fight detector (`probe_forward.probe_aux_terms`).
+                aux_probe_terms: dict[str, th.Tensor] = _probe_aux_terms(_mo.terms, _mpres)
                 win_prob_term = aux_probe_terms.get("win_prob")
-                opp_intent_term = (_mo.terms["opp_intent"]
-                                   if "opp_intent" in _mo.terms and _mpres.get("opp_intent", False)
-                                   else None)
-                # THE FIGHT DETECTOR. Registering the intent term here is what produces
-                # `grad/opp_intent_policy_cosine` — the angle between the intent objective's pull on
-                # the shared trunk and the policy's. Under `--opp-intent-grad-mode detached` the
-                # intent gradient cannot reach the trunk at all and this reads ~0 BY CONSTRUCTION,
-                # which is the correct and expected value, not a bug. It only becomes informative
-                # under `shaping`, which is precisely when you need to know.
-                if opp_intent_term is not None:    aux_probe_terms["opp_intent"] = opp_intent_term
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -549,7 +540,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     k in aux_probe_terms for k in ("species_belief", "move_belief", "move_latent")
                 )
                 # +K9(c) FAIL-CLOSED: the assembled loss must be finite before anything reads its graph
-                # (the grad-balance / noise probes below, the backward). A NaN/Inf is a typed FATAL
+                # (the backward) or re-runs its forward (the probes after it). A NaN/Inf is a typed FATAL
                 # naming the term(s), never a skipped step (`learner_gates.check_loss_finite`).
                 # R1's finiteness rode the micro-batch's one host read; the full check (its own read)
                 # runs only when the eager tail folded something onto the region's loss, or to NAME
@@ -561,31 +552,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                       epoch=epoch, micro=len(pg_losses) - 1)
                 if _ph is not None: _ph("loss")
 
-                # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
-                # minibatch (graph alive here; the probe uses read-only autograd.grad with
-                # retain_graph, so loss.backward() below is unaffected). Skipped when the
-                # extractor exposes no shared-trunk params (non-Gen3 policy).
-                # Sample once per train(). When an aux is ON, wait for a minibatch that actually HAS
-                # scored slots (belief_present) so the per-aux shares aren't silently dropped for the
-                # call; when off, sample on the first minibatch as before.
-                if (shared_trunk and diag.grad_balance and not grad_balance
-                        and (not aux_on or belief_present)
-                        and (not win_prob_on or win_prob_term is not None)):   # don't drop grad/win_prob_share
-                    grad_balance = grad_balance_metrics(
-                        # +PG-COEF: the probe measures the terms AS FOLDED — `_policy_grad_term`, not the
-                        # raw `policy_loss` (at the 1.0 default they are the same tensor).
-                        _policy_grad_term + self.ent_coef * _mo.entropy_loss,
-                        # Under the win-prob critic the REAL critic term is the head's BCE; the scalar
-                        # vf_coef·value_loss is dropped from the loss, so measure the BCE instead.
-                        (win_prob_term if (critic_winprob and win_prob_term is not None)
-                         else self.vf_coef * _mo.value_loss),
-                        shared_trunk,
-                        # Each ACTIVE scaffold broken out on the trunk: species/move/move-latent
-                        # belief + win-prob (≈0 under read_only). Empty → RL-heads-only.
-                        aux_terms=aux_probe_terms or None,
-                    )
-
-                if _ph is not None: _ph("probes")
+                # +INSTRUMENTATION: is THIS the micro-batch the shared-trunk gradient balance samples?
+                # Once per train(). When an aux is ON, wait for a minibatch that actually HAS scored slots
+                # (belief_present) so the per-aux shares aren't silently dropped for the call; when off,
+                # the first minibatch. Skipped when the extractor exposes no shared-trunk params (a
+                # non-Gen3 policy). The probe itself runs after this micro-batch's backward (below).
+                _gb_due = bool(shared_trunk and diag.grad_balance and not grad_balance
+                               and (not aux_on or belief_present)
+                               and (not win_prob_on or win_prob_term is not None))   # grad/win_prob_share
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -619,11 +593,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # Optimization step. +GRAD-ACCUM: accumulate the 1/accum-scaled gradient (accum
                 # micro-batches of size batch_size sum to the exact (batch_size·accum) gradient) and
                 # step only when the group is full. accum==1 ⇒ one step per minibatch (upstream).
-                # +NOISE-SCALE PER-TERM: take the per-group gradients LAST, while the graph is
-                # still alive and `.grad` still holds only what previous micro-batches put there.
-                # `autograd.grad` writes no `.grad`, so the accumulation below is untouched.
-                _ntg.flush_micro()
-                if _ph is not None: _ph("noise_probe")
                 (loss / accum).backward()
                 micro_in_group += 1
                 if _ph is not None: _ph("backward")
@@ -650,6 +619,28 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     else:
                         _hr.push(_ns_sq.reshape(1), _noise_small_reader(_noise_small, accum))
                 if _ph is not None: _ph("noise_base")
+                # +PROBES' OWN GRAPH (gen3_probe_own_graph_v1, `probe_forward.py`): the two per-term
+                # gradient probes run HERE — after this micro-batch's backward (its graph is gone, so
+                # the card holds one forward's graph at a time, never a retained one plus a second
+                # traversal) and before the optimizer step (the parameters are still the ones the
+                # forward above read). Each gradient comes from its OWN re-run of R1 on these rows;
+                # `autograd.grad` writes no `.grad`, so the accumulation above is untouched. A probe
+                # that raises — out of memory included — is NOT caught: the startup fit check ran this
+                # very path (`update_fit.dry_update`), so it fits or the run never started.
+                _probe_fw = (_ProbeForward(self._micro_region(True), _r1_args, _mpres,
+                                           ent_coef=self.ent_coef, vf_coef=self.vf_coef,
+                                           critic_winprob=critic_winprob)
+                             if (_gb_due or _ntg is not NULL_TAGGER) else None)
+                # +INSTRUMENTATION: the shared-trunk gradient balance, each ACTIVE scaffold broken out
+                # on the trunk (species/move/move-latent belief + win-prob, ≈0 under read_only; none →
+                # RL heads only), the terms AS FOLDED (`probe_forward.balance_terms`).
+                if _gb_due:
+                    grad_balance = grad_balance_metrics_fresh(_probe_fw.balance_terms, shared_trunk)
+                if _ph is not None: _ph("probes")
+                # +NOISE-SCALE PER-TERM: this micro-batch's per-group gradients.
+                if _ntg is not NULL_TAGGER:
+                    _ntg.flush_micro(_probe_fw.grouped_terms)
+                if _ph is not None: _ph("noise_probe")
                 if micro_in_group == accum:
                     # +INSTRUMENTATION: pre-clip total grad norm (per step). +K9(c): a NaN/Inf norm is a
                     # typed FATAL BEFORE the in-place clip and the optimizer step (`learner_gates`).

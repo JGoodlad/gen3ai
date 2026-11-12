@@ -106,8 +106,8 @@ REGIONS: Tuple[Region, ...] = (
     Region("R1_learner_micro_step", "instrumented_ppo.micro_step.micro_step",
            (Signature("batch_size", "train", True),
             # T25 lever C (`gen3_r1_graphed_route_v1`, `--learner-cudagraphs on`): the SAME signature
-            # replayed from cudagraph trees on every micro-step that carries no retain_graph probe; the
-            # "compiled" route above serves the probe micro-steps (`r1_route_for`).
+            # replayed from cudagraph trees on every micro-step that no gradient probe samples; the
+            # "compiled" route above serves the sampled micro-steps and the probes' re-runs (`r1_route_for`).
             Signature("batch_size", "train", True, "graphed", "learner_cudagraphs")), True,
            "the accumulation group + optimizer step are per GROUP; the host read follows it"),
     Region("R2_rank_probe", "rank_metrics.rank_probe_from_stash (no forward)", (), False,
@@ -193,14 +193,14 @@ def declared_signature_count(model: Any = None) -> int:
 
 
 def r1_route_for(*, retained_graph: bool) -> str:
-    """WHICH R1 callable a micro-step takes (`gen3_r1_graphed_route_v1`): ``"compiled"`` when the
-    micro-step will call autograd through R1's graph a SECOND time — a `retain_graph=True` probe before
-    its `backward()` (the per-term noise sampler's flush, the grad-balance probe) — else ``"graphed"``.
+    """WHICH R1 callable a micro-step takes (`gen3_r1_graphed_route_v1`): ``"compiled"`` for a micro-step
+    a gradient probe samples (the per-term noise sampler's flush, the grad-balance probe) and for every
+    re-run of it the probe makes (`gen3_probe_own_graph_v1`, `probe_forward.py`) — else ``"graphed"``.
     Decided BEFORE the call from the diagnostics plan and the probes' own state
     (`instrumented_ppo.diagnostics_cadence.micro_retains_graph`): deterministic, never a try / except.
-    WHY: cudagraph trees record ONE backward per forward; a second traversal of the graph dies in the
-    recording ("graph recording observed an input tensor deallocate during graph recording that did not
-    occur during replay", F-PB-2) — so no retain_graph probe may ever run on the graphed route."""
+    WHY: a graphed call's outputs are cudagraph-pool memory the next replay overwrites (a graphed re-run
+    would overwrite the sampled step's own before its deferred host reads), and trees record ONE backward
+    per forward (F-PB-2: a second traversal of a graphed forward's graph dies in the recording)."""
     return "compiled" if retained_graph else "graphed"
 
 
@@ -240,7 +240,7 @@ def install(model: Any, *, backend: Optional[str] = None,
     if graphed and "cudagraphs" in preset.split("+"):
         raise ct.CompileTrainerError(
             f"--learner-cudagraphs on with the R1 Inductor preset {preset!r}: the preset graphs R1's ONE "
-            f"compile, so the retain_graph probes would run through cudagraph trees again (F-PB-2). The "
+            f"compile, so the gradient probes' re-runs would replay through cudagraph trees (F-PB-2). The "
             f"flag declares its own graphed route; drop `cudagraphs` from the preset "
             f"(gen3_r1_graphed_route_v1)")
     # a non-default preset (T25 levers B / C) or a CPU learner (gen3_cpu_inductor_scalar_v1) passes `options`;
@@ -1843,13 +1843,13 @@ BF16_LOSS_FLOOR = max(ct._MAX_NUMERIC_DRIFT, 2.0 ** -9)
 
 def _r1_reference(model: Any, args: Tuple[Any, ...]) -> Dict[str, torch.Tensor]:
     """The bf16 rule's REFERENCE arm: R1's EAGER body with every trunk round at its fp32 base class
-    (`trunk_precision.fp32_scope`) — the production function on the same weights and rows. Proved eager like the
-    gate's own eager arm: R1's Python body exactly once, the compiled route zero times (a compiled call under the
-    base classes would be a new signature)."""
-    from agents.model.trunk_precision import fp32_scope
+    (`trunk_precision.fp32_scope`) — the production function on the same weights and rows; its saved activations
+    past a fixed budget wait on the host (`saved_offload`, bit-identical). Proved eager like the gate's own eager
+    arm: R1's Python body exactly once, the compiled route zero times (a new signature under the base classes)."""
+    from agents.model.saved_offload import fp32_reference_scope
     from agents.training.instrumented_ppo.micro_step import micro_step
     e0, c0 = _routes()
-    with fp32_scope(model.policy):
+    with fp32_reference_scope(model.policy):
         ref = _r1_arm(model, micro_step, args)
     _mem("fp32 reference arm")
     e1, c1 = _routes()

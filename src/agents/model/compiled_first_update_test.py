@@ -5,24 +5,30 @@ deletion pass K1 removed with the extractor-only compile's `compiled_train_probe
 
 WHY IT EXISTS. Torch >= 2.6 defaults `donated_buffer` to True: AOTAutograd then lets a compiled BACKWARD
 reuse the forward's saved activations IN PLACE, legal only when every backward through that graph is
-single-use. The learner's are not — the first update's read-only probes (`grad_balance._flat_grads`, the
-per-term noise-scale probe) call `autograd.grad(..., retain_graph=True)` on the compiled graph — and the
-sentinel's prewarm puts a plain `.backward()` through R1's train graph FIRST, which bakes donated buffers
-into it. `compile_control.install()` pins the option False (`_COMPILE_CONFIG`). Nothing else exercises a
-real first `train()` through the compiled regions with the donating default forced, so a dropped pin (or a
-moved prewarm, or an Inductor cache key that stopped carrying the adapter's tag) would crash a LAUNCH, two
-minutes in, after every startup gate had passed.
+single-use, and the sentinel's prewarm puts a plain `.backward()` through R1's train graph FIRST, which bakes
+donated buffers into it. `compile_control.install()` pins the option False (`_COMPILE_CONFIG`). Until
+gen3_probe_own_graph_v1 (2026-11-11) the first update's read-only probes (the grad-balance probe, the
+per-term noise-scale probe) called `autograd.grad(..., retain_graph=True)` on the compiled graph, and a
+dropped pin crashed a LAUNCH two minutes in, after every startup gate had passed; this test was that
+launch. The probes now take each gradient from their OWN forward of R1
+(`agents/training/instrumented_ppo/probe_forward.py`), so every compiled graph is walked once.
+
+WHAT IT PINS NOW. (1) The adapter still pins `donated_buffer` False when handed torch's default (the row is
+part of the compile-cache key; the retained-graph reference the probe tests compare against needs it).
+(2) A real first `train()` through the compiled regions with EVERY probe on completes after the lock and
+emits every gated family: the probes' re-runs go through the installed region at the signature the update
+already compiled, so they add no post-lock compile (which would be a typed FATAL here). Reverting the pin no
+longer fails this test: with the row set to donate, in a private compile cache, the same update passed
+(measured 2026-11-11, CPU Inductor, 213 s).
 
 THE SHAPE. The real `arm_compile_sentinel` pipeline (install, gate, reset, prewarm, lock, canary) on the
 K9 golden's production-surface learner (the CPU cell skips the numeric gate: CPU Inductor's kernels differ
 from eager beyond the fp32 bars — loss rel 1.5e-3 on this learner, measured 2026-10-02 — and the gate is a
-CUDA fact; everything after it, the prewarm that bakes the donation and the first update, runs), then one `train()` with every probe forced on
-(`diagnostics_every = 1`, the noise EMAs primed past warm-up so the per-term probe's emit gate passes and
-its tags prove it ran). It FORCES `donated_buffer = True` before the pipeline and asserts the adapter
-pinned it False. Reverting the pin fails it on both devices: the first update's probe raises "one of the
-variables needed for gradient computation has been modified by an inplace operation" (measured 2026-10-02,
-CPU Inductor). CPU runs Inductor's C++ backend (about 3.5 minutes of compile, hence `slow`); the CUDA cell
-is the production device and the real `--compile-trainer` gate.
+CUDA fact; everything after it, the prewarm and the first update, runs), then one `train()` with every probe
+forced on (`diagnostics_every = 1`, the noise EMAs primed past warm-up so the per-term probe's emit gate
+passes and its tags prove it ran). It FORCES `donated_buffer = True` before the pipeline and asserts the
+adapter pinned it False. CPU runs Inductor's C++ backend (about 3.5 minutes of compile, hence `slow`); the
+CUDA cell is the production device and the real `--compile-trainer` gate.
 """
 from __future__ import annotations
 
@@ -56,7 +62,7 @@ def _compiled_first_update(device: str, gate: bool = True):
     torch._dynamo.reset()
     prev = fcfg.donated_buffer
     prev_det = torch.backends.cudnn.deterministic
-    fcfg.donated_buffer = True                       # the torch >= 2.6 default — hostile to a retain_graph probe
+    fcfg.donated_buffer = True                       # the torch >= 2.6 default; the adapter must pin it back
     model = None
     try:
         model = LG.build_learner()
@@ -78,8 +84,8 @@ def _compiled_first_update(device: str, gate: bool = True):
             "R1 is not installed — the test is vacuous"
         assert fcfg.donated_buffer is False, (
             "compile_control did not pin torch._functorch.config.donated_buffer=False at install — a "
-            "compiled backward will then donate its saved activations and every retain_graph probe on it "
-            "raises (torch >= 2.6)")
+            "compiled backward will then donate its saved activations, and a second backward through one "
+            "graph raises (torch >= 2.6)")
         # The first update of a process: every gated probe runs (K2's cadence). Prime the noise EMAs
         # past warm-up so the per-term probe's EMIT gate passes and its tags prove it ran.
         model.diagnostics_every = 1
@@ -113,9 +119,8 @@ def _assert_full_update(before, after, logged):
 
 def test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cpu(
         restore_torch_globals):
-    """CPU, Inductor's C++ backend: AOTAutograd's donated-buffer logic is device-agnostic, so this
-    reproduces the torch 2.8 crash without a GPU. Fails (the probe's retain_graph backward) if the
-    adapter's `donated_buffer=False` pin is reverted."""
+    """CPU, Inductor's C++ backend: the pin is asserted, and the first update — every probe re-running R1
+    through the locked region — completes and emits every gated family (module docs)."""
     torch.set_num_threads(2)
     _assert_full_update(*_compiled_first_update("cpu", gate=False))
 

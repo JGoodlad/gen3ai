@@ -15,32 +15,46 @@ feeds the two squared norms through the SAME pure `_noise_scale_estimate` two-po
 groups: `policy` (the clipped surrogate as folded), `value` (`vf_coef·value_loss`), `entropy`
 (`ent_coef·ent_loss_used`), `aux` (every belief / win-prob / intent term).
 
-HOW IT IS WIRED, and why it cannot change the update. The tagger is threaded through the fold as
-`loss = loss + _ntg.add("aux", term)`: `add` RETURNS ITS ARGUMENT UNCHANGED, so the loss
-expression is the one that was there before, tensor-for-tensor. The gradients come from
-`torch.autograd.grad(..., retain_graph=True)`, which never writes `.grad` — structurally the same
-read-only probe `grad_balance_metrics` has run per-term on every `train()` for generations (which
-is also why `--compile-trainer` is not a new risk here: the compiled backward is already called
-repeatedly with `retain_graph` by that probe). When the feature is off, the null tagger's `add` is
-a two-instruction passthrough and no gradient is taken at all.
+HOW IT IS WIRED, and why it cannot change the update. R1 returns each loss term beside the loss
+(`micro_step`'s `terms` / `term_groups`); the fold hands them to the tagger (`tag_terms` → `add`,
+which RETURNS ITS ARGUMENT UNCHANGED), so the loss expression is the one that was there before,
+tensor-for-tensor. The gradients come from `torch.autograd.grad`, which never writes `.grad`. When
+the feature is off, the null tagger's `add` is a two-instruction passthrough and no gradient is
+taken at all.
 
-WHAT IT COSTS. `len(groups)` extra backward traversals per micro-batch, on `accum` micro-batches,
-on one `train()` call in `--diagnostics-every` (`diagnostics_cadence.py`). Peak extra memory is
-`len(active groups) × Σ|params|` (one gradient accumulator per group, freed at the end of the
-call). The measured overhead and the resulting default live in `designs/training/step_size_and_batch.md`.
+WHOSE GRAPH (gen3_probe_own_graph_v1). In the learner each group's gradient is taken from the
+group's OWN re-run of R1 on the same rows at the same parameters (`flush_micro(reforward)`,
+`probe_forward.ProbeForward`), AFTER the micro-batch's real `backward()` and BEFORE the optimizer
+step, with nothing retained: the graph is freed as it is walked, so the probe's peak is a training
+forward's, not a retained graph plus a second backward's transient on top of it (that sum was the
+learner's peak — 9,106 MiB at d_model 256 against 7,139 for the forward — and the term that kept
+the wide arm from fitting the card: `designs/training/learner_lifecycle.md`). The value is the same
+function of the same inputs as a gradient read off the micro-batch's own retained graph, which
+`flush_micro()` with no ``reforward`` still does for a direct caller and is the reference the
+equivalence tests compare against (`probe_own_graph_test.py`).
 
-FAILURE IS SELF-DISABLING. Anything the probe raises retires it for the rest of the call with one
-printed line and leaves the training step untouched: a diagnostic must never take a run down.
+WHAT IT COSTS. Per micro-batch, one R1 forward and one backward traversal per live group, on
+`accum` micro-batches, on one `train()` call in `--diagnostics-every` (`diagnostics_cadence.py`).
+Extra memory is `len(active groups) × Σ|params|` (one gradient accumulator per group, freed at the
+end of the call) beside one forward's graph. The measured overhead and the resulting default live
+in `designs/training/step_size_and_batch.md`; the live meter is `train/noise_per_term_ms`.
+
+A FAILURE IS LOUD. Nothing is caught here: whatever the probe raises — an out-of-memory error
+included — leaves `train()`. The startup update-fit check runs this probe on the first (always
+diagnostic) update's shape before any rollout (`update_fit.dry_update`), so a probe that does not
+fit the card is an `UpdateWontFit` at startup, not a metric that quietly stops being written for
+one arm of a comparison (the per-call disable this replaced did exactly that at d_model 256).
 """
 from __future__ import annotations
 
 import os
 import time
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 import torch as th
 
 from agents.training.batched_reads import read_floats
+from agents.training.grad_balance import ProbeGraphError
 
 #: The gradient groups, in reporting order. `aux` is deliberately ONE bucket rather than one entry
 #: per head — `grad/<term>_share` already breaks the heads out individually, and the question this
@@ -105,6 +119,42 @@ def term_gradient(terms: Sequence[th.Tensor], params: Sequence[th.nn.Parameter],
                             retain_graph=retain_graph, allow_unused=True)
 
 
+def _is_live(term: Any) -> bool:
+    """Does ``term`` carry a gradient the sampler can take (a tensor on a graph)?"""
+    return isinstance(term, th.Tensor) and term.requires_grad
+
+
+def tag_terms(tagger: Any, terms: Mapping[str, Any], term_groups: Mapping[str, str],
+              present: Mapping[str, bool]) -> None:
+    """Hand one R1 forward's loss terms to ``tagger``, each under its group — the ONE rule for which
+    terms a micro-batch's per-term gradient covers, used for the real forward and for every probe
+    re-run of it: a term R1 registered (``terms``) and scored on these rows (``present``; a name the
+    read does not carry counts as scored)."""
+    for name, term in terms.items():
+        if present.get(name, True):
+            tagger.add(term_groups[name], term)
+
+
+class _GroupCollector:
+    """`tag_terms`' sink for a probe re-run: the live terms by group, nothing else."""
+
+    def __init__(self) -> None:
+        self.groups: Dict[str, List[th.Tensor]] = {}
+
+    def add(self, group: str, term):
+        if _is_live(term):
+            self.groups.setdefault(group, []).append(term)
+        return term
+
+
+def grouped_terms(terms: Mapping[str, Any], term_groups: Mapping[str, str],
+                  present: Mapping[str, bool]) -> Dict[str, List[th.Tensor]]:
+    """One forward's live loss terms by group, by `tag_terms`' rule."""
+    col = _GroupCollector()
+    tag_terms(col, terms, term_groups, present)
+    return col.groups
+
+
 class NullTermTagger:
     """The OFF path: `add` hands the term straight back, `flush_micro` does nothing.
 
@@ -116,13 +166,12 @@ class NullTermTagger:
     collecting = False
     micros = 0
     probe_seconds = 0.0
-    failed = False
 
     def add(self, group: str, term):    # noqa: D102 - passthrough
         return term
 
-    def flush_micro(self) -> None:      # noqa: D102 - no-op
-        return None
+    def flush_micro(self, reforward: Optional[Callable[[], Dict[str, List[th.Tensor]]]] = None) -> None:
+        return None                     # noqa: D102 - no-op: no forward is re-run, no gradient taken
 
     def result(self, accum: int) -> Dict[str, Tuple[float, float]]:   # noqa: D102
         return {}
@@ -138,15 +187,20 @@ class PerTermNoiseSampler:
     """Accumulates per-GROUP gradients across the first accumulation group of one `train()` call.
 
     Lifecycle, per sampled `train()`:
-      * `add(group, term)` during each minibatch's fold — records the tensor, returns it unchanged.
-      * `flush_micro()` immediately BEFORE `(loss/accum).backward()` — one `autograd.grad` per
-        group with live terms; the first micro-batch's squared norms are kept as the
-        `B = batch_size` point, and every micro-batch's gradient is summed into a per-group
-        accumulator.
+      * `add(group, term)` during each minibatch's fold (`tag_terms`) — records the tensor, returns it
+        unchanged.
+      * `flush_micro(reforward)` once per micro-batch — one `autograd.grad` per group with live terms;
+        the first micro-batch's squared norms are kept as the `B = batch_size` point, and every
+        micro-batch's gradient is summed into a per-group accumulator. With ``reforward`` (the
+        learner: after the real `backward()`, before the optimizer step) each group's gradient comes
+        from its own re-run of the forward and nothing is retained; without it the gradients are read
+        off the graph the tagged terms hold, which must then still be alive (call BEFORE `backward()`).
       * `result(accum)` after the group closes — `(g_small_sq, g_big_sq)` per group, where
         `g_big_sq = ‖Σ_i g_i / accum‖²` mirrors exactly what `.grad` holds for the total after the
         accum micro-batches of `(loss/accum).backward()`.
       * `release()` — drop the accumulators.
+
+    It catches nothing (module docs, "A FAILURE IS LOUD").
     """
 
     collecting = True
@@ -161,18 +215,23 @@ class PerTermNoiseSampler:
         self.small_sq: Dict[str, Optional[th.Tensor]] = {}
         self.micros: int = 0
         self.probe_seconds: float = 0.0
-        self.failed: bool = False
 
     def add(self, group: str, term):
         """Tag `term` as belonging to `group` and RETURN IT UNCHANGED (the fold must not move)."""
-        if isinstance(term, th.Tensor) and term.requires_grad:
+        if _is_live(term):
             self._pending.setdefault(group, []).append(term)
         return term
 
-    def flush_micro(self) -> None:
-        """Take this micro-batch's per-group gradients. Call BEFORE the real `backward()`."""
+    def flush_micro(self, reforward: Optional[Callable[[], Dict[str, List[th.Tensor]]]] = None) -> None:
+        """Take this micro-batch's per-group gradients.
+
+        ``reforward()`` re-runs the micro-batch's forward and returns its live terms by group
+        (`grouped_terms`); it is called once per live group and that call's graph is consumed by the
+        group's one gradient (``retain_graph=False``). A group the real forward tagged and the re-run
+        does not produce is a `ProbeGraphError`. ``reforward=None``: differentiate the tagged terms on
+        the graph they hold, retained (the reference path — call it BEFORE the real `backward()`)."""
         pending, self._pending = self._pending, {}
-        if self.failed or not self._params:
+        if not self._params:
             return
         t0 = time.perf_counter()
         try:
@@ -181,7 +240,18 @@ class PerTermNoiseSampler:
                 terms = pending.get(group)
                 if not terms:
                     continue
-                grads = term_gradient(terms, self._params)
+                if reforward is None:
+                    grads = term_gradient(terms, self._params)
+                else:
+                    fresh = reforward().get(group)
+                    if not fresh or len(fresh) != len(terms):
+                        raise ProbeGraphError(
+                            f"the per-term noise probe's own forward produced {len(fresh or ())} live "
+                            f"{group!r} term(s) where the micro-batch's forward tagged {len(terms)}: a re-run "
+                            "of the micro-step on the same rows must register the same terms "
+                            "(gen3_probe_own_graph_v1)")
+                    grads = term_gradient(fresh, self._params, retain_graph=False)
+                    del fresh
                 buf = self._accum.get(group)
                 if buf is None:
                     self._accum[group] = [None if g is None else g.detach().clone() for g in grads]
@@ -193,13 +263,6 @@ class PerTermNoiseSampler:
                 if first:
                     self.small_sq[group] = sq_norm_t(grads)
             self.micros += 1
-        except Exception as exc:                              # pragma: no cover - defensive
-            self.failed = True
-            self._accum = {}
-            self.small_sq = {}
-            print("⚠️ [NOISE] per-term noise-scale probe disabled for this run "
-                  f"({type(exc).__name__}: {exc}). Training is unaffected; set "
-                  "GEN3AI_NOISE_SCALE_PER_TERM=0 to silence.", flush=True)
         finally:
             self.probe_seconds += time.perf_counter() - t0
 
@@ -210,7 +273,7 @@ class PerTermNoiseSampler:
         so it yields nothing rather than a wrong second point — the same discipline the total
         estimator applies by leaving `noise_g_big_sq` None.
         """
-        if self.failed or self.micros < accum or accum < 2:
+        if self.micros < accum or accum < 2:
             return {}
         inv = 1.0 / float(accum * accum)
         # first appeared on a later micro-batch — no matched small-batch point: skipped

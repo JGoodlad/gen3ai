@@ -63,7 +63,7 @@ upstream** (one step per minibatch).
   thousands (and it is this term, not the accumulation math, that the bit-exact check above isolates
   by running with `normalize_advantage=False`). (The grad-balance probe also samples on the first
   **micro**-batch instead of the first minibatch — a smaller, cheaper, still-representative sample; its
-  `retain_graph` memory shrinks with the micro-batch.)
+  memory is one micro-batch forward plus one gradient.)
 - **Not version-locked / not in `model_config.json`.** It is a pure train-loop knob (no forward
   change, no weight-shape effect, no `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump) — like `batch_size`
   / `n_epochs`, **forwarded as a CLI flag on every launcher resume** (set on the model in both the
@@ -238,18 +238,19 @@ is a warning of its own rather than a footnote on the total's. The policy ratio 
 state (`_per_term_ratio`), not from the last fold, so a call the cadence did not sample still quotes
 it.
 
-**It cannot change training, structurally.** The tagger is threaded through the fold as
-`loss = loss + _ntg.add("aux", term)` and **`add` returns its argument unchanged**, so the loss
-expression is tensor-for-tensor the one that was there (`_ent_term` merely names a sub-expression
-whose operations and order are unchanged). Gradients come from `torch.autograd.grad(…,
-retain_graph=True)`, which never writes `.grad` — the same read-only mechanism
-`grad_balance_metrics` has used per-term on every `train()` for generations, **which is also why
-`--compile-trainer` is not a new risk**: the compiled backward is already called repeatedly with
-`retain_graph` by that probe. Any exception retires the probe for the call with one printed line and
-leaves the step untouched.
+**It cannot change training, structurally.** The tagger only NAMES the terms R1 registered
+(`tag_terms`; `add` returns its argument unchanged), so the loss expression is tensor-for-tensor the
+one that was there. Each group's gradient comes from the probe's OWN re-run of the micro-step, after
+its `backward()` and before the optimizer step (`probe_forward.py`, `gen3_probe_own_graph_v1`), by
+`torch.autograd.grad`, which never writes `.grad`; the re-run goes through the installed compiled
+region at the signature the update already compiled and sits under `fork_rng`. Pinned on the learner
+golden (`probe_own_graph_test.py`). **A probe failure is LOUD** — nothing is caught, so a probe that
+does not fit fails the startup fit check instead of dropping its scalars for one arm (it used to retire
+itself per call with one printed line; `learner_lifecycle.md` "The diagnostics and the canary are
+memory-bounded").
 
 **COST — measured, and the default follows the measurement.** The probe costs `n_groups` extra
-backward traversals on `accum` micro-batches of a sampled `train()`, against
+backward traversals (and, since 2026-11-11, as many R1 forwards) on `accum` micro-batches of a sampled `train()`, against
 `n_epochs × n_minibatches` fwd+bwd for the call — so **the overhead is governed by minibatches per
 `train()`, not by batch size**. It self-reports (`train/noise_per_term_ms`) against a new
 `train/train_ms` (the whole call's wall clock, recorded as `train()`'s last line — the honest
@@ -267,8 +268,9 @@ contention stretches both and the RATIO is what survives — which is exactly wh
 was added rather than an external stopwatch.)*
 
 **Default ON** (`PpoHyperparameters.noise_scale_per_term`), because the production shape is well
-under the 10% bar. Peak extra memory is one gradient accumulator per live group
-(`n_groups × Σ|params|` ≈ 5 × ~16 MB), freed at the end of the call.
+under the 10% bar (the rows above predate the probe's own forwards and were not re-measured). Peak
+extra memory is one gradient accumulator per live group (`n_groups × Σ|params|` ≈ 5 × ~16 MB), freed at
+the end of the call, on top of one micro-batch forward.
 
 **⚠️ WARM-UP: `_policy` is the LAST tag to appear, and that is the signal, not a gap.** A group is
 emitted only once both its EMAs are positive. For a strongly noise-limited term `|G|²` is genuinely

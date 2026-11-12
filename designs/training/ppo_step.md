@@ -25,6 +25,7 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 | `hparams.py` | every after-construction knob `train_rl_agent` sets (the belief/intent/cf coefficients, `grad_accum_steps`, …) with the rationale comment each carries, plus `_excluded_save_params` |
 | `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor + `noise_ratio_sample`, the read seam `--adaptive-batch` steers by |
 | `noise_scale_terms.py` | the PER-LOSS-TERM half of it — is the total reading the POLICY gradient's, or the auxiliary heads'? |
+| `probe_forward.py` | **the gradient probes' OWN forward** (`gen3_probe_own_graph_v1`): `ProbeForward` re-runs R1 for one micro-batch (same rows, same parameters, the installed region, under `fork_rng`), once per probe gradient, after that micro-batch's `backward()` and before the optimizer step; `balance_terms` / `probe_aux_terms` are the ONE rule for which terms the grad-balance probe reads. Why, and what it may not change: its docstring and `learner_lifecycle.md` "The diagnostics and the canary are memory-bounded" |
 | `value_terms.py` | the win-prob BCE |
 | `aux_terms.py` | the `belief_bank` delegate |
 | `constants.py` | `_WIN_CONTESTED_TAU` · `_NOISE_SCALE_EMA_DECAY` |
@@ -103,7 +104,7 @@ number the optimizer sees, so they run on **every Nth update**; the module that 
 | gated probe | its tags (written ONLY on a diagnostics update — a skipped update leaves a GAP) |
 |---|---|
 | per-term noise sampler (`noise_scale_terms.py`) | `train/noise_scale_<g>`, `train/noise_scale_ratio_<g>`, `train/noise_scale_share_<g>`, `train/noise_per_term_ms` |
-| grad balance (`grad_balance_metrics`) | `grad/*` |
+| grad balance (`grad_balance_metrics_fresh`) | `grad/*` |
 | effective rank (`rank_probe`) | `rank/{trunk,value_cls,policy,vf_feat}_*` — `vf_feat` measures `value_pooled` (128-wide; the extractor's whole value half since the version break's part 2 — before it, the 512-wide post-ReLU value projection, so the series breaks there) |
 | edge / cell liveness | `edge/*`, `cell/*` |
 
@@ -116,9 +117,10 @@ accumulation makes anyway — and `--adaptive-batch total`'s input), `signal/*`,
   diagnostics update iff `N == 1`, or `rollout_index % N == 0`, or it is **the first update of the
   process**. The phase rides the restored step counter, so it survives a restart. The first-update
   rule is the DECLARED LIFECYCLE's: `compile_control` locks after the first update, so every
-  signature the probes use (the rank probe's no-grad train-mode forward, their
-  `autograd.grad(retain_graph=True)`) must be seen by then — a probe first reached on update N
-  would be a post-lock recompile, a typed FATAL. Its latch `_diagnostics_ran_in_process` is in
+  signature the probes use must be seen by then — a probe first reached on update N would be a
+  post-lock recompile, a typed FATAL (the gradient probes re-run R1 through the route the update
+  itself uses, so they add no signature). The same holds for memory: the startup fit check measures
+  the first update, so the probes' peak is inside the demand it admits. Its latch `_diagnostics_ran_in_process` is in
   `_excluded_save_params`, so every process re-arms it.
 - **Load-bearing exemptions** (derived in `model_build.apply_training_hparams` from the SAME
   predicates `main.train.callbacks` registers the consumer with): `--rank-tripwire warn|abort`

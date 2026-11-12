@@ -734,8 +734,8 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
 `ipc.send_metrics` path with zero extra wiring; ordering/labels live in `launcher/format.py`).
 
 - **Gradient balance — every head's *pull* on the shared trunk, on ONE common denominator.** Sampled
-  on the first minibatch (graph alive) by **read-only** `autograd.grad` probes (`retain_graph=True`, so
-  the real `loss.backward()` is unaffected) against the shared-trunk params. "Shared" =
+  on the first eligible micro-batch of a diagnostic update by **read-only** `autograd.grad` probes, each on
+  its OWN re-run of the micro-step after the real `loss.backward()` (`probe_forward.py`), against the shared-trunk params. "Shared" =
   `SHARED_TRUNK_PHASES = {embeddings, pokemon_encoder, team_transformer, assembler}` (the allow-list
   is the single source of truth), which **excludes** `cls_pool` (head-private `our_cls`/`their_cls`/
   `value_cls` queries) and both projection heads — only *truly contested* params count. With the
@@ -943,8 +943,8 @@ on a spread-free margin, so the contested-vs-blowout question is answered offlin
 ### Gradient-balance + value-scale diagnostics (`grad_balance.py`)
 
 The dual-head extractor shares ONE transformer trunk between policy, value and a dozen auxiliaries,
-and all of their gradients compete there. A read-only `autograd.grad(retain_graph=True)` probe on
-ONE minibatch per `train()` measures each head's pull **on one common denominator**, so every
+and all of their gradients compete there. A read-only `autograd.grad` probe on ONE micro-batch per
+diagnostic `train()` (one own forward per term, `grad_balance_metrics_fresh`) measures each head's pull **on one common denominator**, so every
 `grad/*_share` sums to ~1 and any term crowding out the rest is read directly. "Shared" is the
 DECLARED `SHARED_TRUNK_PHASES` allow-list — it excludes `cls_pool` and both projection heads, so
 only truly contested params count.

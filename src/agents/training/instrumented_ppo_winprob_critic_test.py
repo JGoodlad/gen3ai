@@ -128,7 +128,7 @@ def test_the_win_prob_term_is_tagged_value_under_the_winprob_critic():
         "the promoted BCE must join the `value` noise-scale group — an `aux` tag here reproduces "
         "the defect the design's §1.4 records")
     assert 'wterm, grp = wl, "aux"' in src, "the shaped path must keep its `aux` tag"
-    assert "_ntg.add(_mo.term_groups[_tn], _tt)" in src
+    assert "_tag_terms(_ntg, _mo.terms, _mo.term_groups, _mpres)" in src
 
 
 def test_the_promoted_bce_is_weighted_by_vf_coef_and_the_shaped_aux_is_unit_weight():

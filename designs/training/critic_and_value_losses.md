@@ -149,8 +149,8 @@ reads UNREADABLE at rollout 1 (`grad/policy_norm_shared` exactly 0.0 against a v
 number about the epoch, and a ratio of LOSS MAGNITUDES was the wrong quantity anyway — what
 competes on a shared trunk is the gradient.
 
-**The norms are READ from `grad_balance_metrics`, never recomputed.** That read-only
-`autograd.grad(retain_graph=True)` probe already runs per-term on every `train()`, so the printed
+**The norms are READ from the grad-balance probe (`grad_balance_metrics_fresh`), never recomputed.** That
+read-only `autograd.grad` probe already runs per-term on a diagnostic `train()`, so the printed
 ratio is exactly `10 ** grad/value_policy_logratio` and no second backward pass is run for a
 banner. **The threshold is on the NORM, not the epoch** (`MIN_POLICY_GRAD_NORM`, 1e-6): the probe
 samples ONE minibatch per `train()` and it is in epoch 1 by construction, so there is no later

@@ -326,8 +326,11 @@ verdict: `designs/endstate/program_rust_core.md` §2, "T2 DESIGN".
 
 ### Lane K1b — two backwards through one compiled graph (`gen3_donated_buffer_off_v1`, 2026-09-29)
 
-The first real update puts TWO backwards through one compiled graph (`grad_balance._flat_grads` and the per-term
-noise-scale probe call `autograd.grad(retain_graph=True)` before `loss.backward()`). On torch 2.8 that failed twice:
+Until `gen3_probe_own_graph_v1` (2026-11-11) the first real update put TWO backwards through one compiled graph (the
+grad-balance and per-term noise probes called `autograd.grad(retain_graph=True)` before `loss.backward()`); the probes now
+re-run R1 and walk each graph once (`learner_lifecycle.md` "The diagnostics and the canary are memory-bounded"), and the
+pin below stays as a cache-key fact and for the retained-graph reference the probe tests compare against. On torch 2.8
+two backwards failed twice:
 `torch._functorch.config.donated_buffer` defaults True from torch 2.6, so a donating backward reuses the forward's saved
 activations in place (legal only for single-use backwards); and the Inductor FX-graph cache key is blind to donation, so a
 donation-OFF compile was served a donating backward cached by another process.
@@ -340,7 +343,7 @@ served an artifact compiled under the default config. Donation OFF runs the same
 (routine) also pins: a donating backward REFUSES a retain-graph probe and the pinned row accepts it, install / uninstall
 restore the row, and the cache key carries the tag. `compiled_first_update_test.py` (`slow`, CPU and CUDA cells) drives a full
 real first `train()` through the compiled R1 region with `donated_buffer` forced back to torch's default True and asserts the
-adapter pinned it False; reverting the pin fails it. **UNVERIFIED** whether any graph of ours has a donating Triton kernel that
+adapter pinned it False (reverting the pin no longer fails the update itself: measured 2026-11-11, the test's docs). **UNVERIFIED** whether any graph of ours has a donating Triton kernel that
 overwrites a saved activation without an ATen op (a version counter would not catch it), which is why the tag is not optional.
 
 History: archive, same heading (the two failure traces, the batch-1 eager route and its deletion).
@@ -635,8 +638,9 @@ flag (next section). Each is OFF by default; off, the production and end-state c
     unchanged bars (`trunk_precision_flag_test`: bit-identical probe log-probs on a bf16 learner).
   - **THE bf16 PARITY RULE** (`gen3_r1_bf16_parity_v1`, `compile_regions._r1_verdict_bf16`) applies when the policy's rounds
     are bf16, at the startup gate and at every canary, through the same rungs as fp32. Three arms run on the same weights and
-    rows: compiled bf16, eager bf16, and the fp32 EAGER REFERENCE (`_r1_reference`: R1's eager body under `fp32_scope`,
-    proved eager by the region counters). (1) **DRIFT**: eager bf16 vs the reference, loss rel and global gradient rel-L2,
+    rows: compiled bf16, eager bf16, and the fp32 EAGER REFERENCE (`_r1_reference`: R1's eager body under
+    `saved_offload.fp32_reference_scope` — `fp32_scope` with the arm's saved activations past 2,048 MiB waiting on the host,
+    bit-identical numbers — proved eager by the region counters). (1) **DRIFT**: eager bf16 vs the reference, loss rel and global gradient rel-L2,
     each <= `BF16_DRIFT_BARS` (loss 0.014, gradient 0.68). (2) **ENVELOPE**: compiled bf16 vs the reference <= K x
     max(eager bf16 vs the reference, a floor), for the loss, the global gradient and EVERY judged parameter
     (`BF16_ENVELOPE_K`: loss 9.2, gradient 6.4, per parameter 12); the floor is the fp32 bar of that quantity, except the
@@ -1023,6 +1027,14 @@ none changes a number:
 - **The update-fit check measures what training will need** (`gen3_update_fit_v2`, `learner_lifecycle.md` "The update fit
   check"): from an emptied cache, the dry update and then the canary's check once (`CompileCanary.measure`); demand = the
   peak reserved over both.
+- **The fp32 reference arm is bounded** (`gen3_reference_offload_v1`, 2026-11-11, `agents/model/saved_offload.py`): it saves
+  every activation at twice the trained function's bytes and was the canary's peak (d_model 256: 8,703 MiB allocated, 403 MiB
+  of fit headroom). Under `saved_tensors_hooks` its first 2,048 MiB of saved storage stay on the card; the rest are copied to
+  the host and back when their backward node runs. Loss, log-probs and gradient are bit-identical (`saved_offload_test.py`,
+  CPU with the offload forced, plus a CUDA cell), so the drift bars, the envelopes and `canary_param_null`'s null keep their
+  basis. Lost inside the scope: autograd's version check on a hooked saved tensor (the eager bf16 arm runs the same body
+  unhooked). **UNVERIFIED on the GPU**: the bounded peak and the transfer seconds (the null's 16 lazy reference arms run
+  under `PARAM_NULL_CAP_S`; a truncated null falls back to the old, stricter bars).
 
 **The record.** Every gate prints a `🧮 [CompileRegions] gate memory` line (MiB allocated after / high-water per step); every
 canary record carries `memory` {start_alloc_mib, transient_mib, peak_alloc_mib, reserved_mib}; TB gets
@@ -1041,10 +1053,12 @@ rung dies at startup with "accessing tensor output of CUDAGraphs that has been o
 the second replay overwrote it. Until a follow-up materialises `.grad` before each accumulation group (or clones the graphed
 grads out of the pool) and types the error, the flag stays a MEASUREMENT lever, default off.
 
-**Why a second route.** R1 under Inductor's cudagraph trees passes the startup gate bit-equal, then dies on the first update in
-the grad-balance probe's `autograd.grad(retain_graph=True)` (F-PB-2): cudagraph trees record ONE backward per forward. Two
-consumers re-enter R1's graph with `retain_graph`: the per-term noise sampler (`noise_scale_terms.PerTermNoiseSampler.flush_micro`)
-and the grad-balance probe (`grad_balance._flat_grads`), both on diagnostic updates only.
+**Why a second route.** R1 under Inductor's cudagraph trees passed the startup gate bit-equal, then died on the first update in
+the grad-balance probe's `autograd.grad(retain_graph=True)` (F-PB-2): cudagraph trees record ONE backward per forward. The two
+gradient probes (`noise_scale_terms.PerTermNoiseSampler.flush_micro`, `grad_balance.grad_balance_metrics_fresh`; diagnostic
+updates only) no longer re-enter the step's graph — each re-runs R1 (`probe_forward.py`) — but a re-run on the graphed route
+would overwrite the sampled step's pool outputs before its deferred host reads, so the sampled step and the re-runs keep the
+un-graphed route.
 
 **The route** (`compile_regions.r1_route_for` <- `diagnostics_cadence.micro_retains_graph`, decided BEFORE each R1 call,
 deterministic, no try/except): a micro-step whose per-term sampler is collecting, or whose grad-balance probe is still

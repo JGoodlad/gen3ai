@@ -1,11 +1,14 @@
 """T25 lever C — R1's GRAPHED route (`--learner-cudagraphs on`, `gen3_r1_graphed_route_v1`), on CPU.
 
-THE PROBLEM (window B, F-PB-2). R1 compiled with Inductor's cudagraph trees passes the startup gate bit-equal and
-then dies on the first update: the grad-balance probe's `autograd.grad(retain_graph=True)` traverses R1's graph a
+THE PROBLEM (window B, F-PB-2). R1 compiled with Inductor's cudagraph trees passed the startup gate bit-equal and
+then died on the first update: the grad-balance probe's `autograd.grad(retain_graph=True)` traversed R1's graph a
 SECOND time, and cudagraph trees record ONE backward per forward. THE FIX: two declared R1 callables of one
-signature — the graphed one for every micro-step no retain_graph probe re-enters, the un-graphed compiled one for
-the probe micro-steps — routed per micro-step from the diagnostics plan (`diagnostics_cadence.micro_retains_graph`
--> `compile_regions.r1_route_for`), deterministically.
+signature — the graphed one for every ordinary micro-step, the un-graphed compiled one for the micro-steps a
+gradient probe samples — routed per micro-step from the diagnostics plan
+(`diagnostics_cadence.micro_retains_graph` -> `compile_regions.r1_route_for`), deterministically. Since
+gen3_probe_own_graph_v1 the probes take each gradient from their OWN re-run of R1 (`probe_forward.py`), so no
+forward's graph is traversed twice on any route; the sampled micro-steps and their re-runs keep the un-graphed
+route (a graphed re-run would overwrite the sampled step's pool-backed outputs).
 
 CPU HAS NO CUDA GRAPHS, so the graphed route compiles here with a STAND-IN backend that keeps cudagraph trees' one
 load-bearing constraint: a second backward traversal of one forward's graph RAISES (`_one_backward_backend`). Its
@@ -151,7 +154,7 @@ def arms():
 
 
 # ------------------------------------------------------------------- the route rule (pure)
-def test_the_route_rule_sends_every_retain_graph_micro_step_to_the_compiled_route():
+def test_the_route_rule_sends_every_probed_micro_step_to_the_compiled_route():
     from agents.training.instrumented_ppo.diagnostics_cadence import micro_retains_graph
     from agents.training.instrumented_ppo.noise_scale_terms import NULL_TAGGER, PerTermNoiseSampler
     assert cr.r1_route_for(retained_graph=True) == "compiled"
@@ -159,9 +162,8 @@ def test_the_route_rule_sends_every_retain_graph_micro_step_to_the_compiled_rout
     sampler = PerTermNoiseSampler([torch.nn.Parameter(torch.zeros(2))])
     assert micro_retains_graph(NULL_TAGGER, grad_balance_pending=False) is False
     assert micro_retains_graph(NULL_TAGGER, grad_balance_pending=True) is True
-    assert micro_retains_graph(sampler, grad_balance_pending=False) is True
-    sampler.failed = True                        # a failed sampler takes no gradient: graphed is safe
-    assert micro_retains_graph(sampler, grad_balance_pending=False) is False
+    assert micro_retains_graph(sampler, grad_balance_pending=False) is True     # (a sampler never retires:
+    #                                               a probe that raises stops the run — gen3_probe_own_graph_v1)
 
 
 # --------------------------------------------------------------- the declaration and install
@@ -256,12 +258,16 @@ def test_flag_on_startup_gates_prewarms_and_inventories_BOTH_routes(arms):
 def test_the_probe_micro_steps_take_the_compiled_route_and_every_other_one_the_graphed(arms):
     """The K9 golden learner: 64 rows, micro 16 x accumulation 3, 2 epochs = 8 micro-steps. On the process's
     first (diagnostic) update the per-term noise sampler collects epoch 0's first group (3 micro-steps) and the
-    grad-balance probe takes one of them: COMPILED; the rest GRAPHED. A plain update: all GRAPHED. Flag off: one
-    route. The stand-in RAISES on a probe that reaches the graphed route, so this ran each probe un-graphed."""
+    grad-balance probe takes one of them: COMPILED, and so is every re-run of R1 the two probes make for their
+    gradients (`probe_forward.ProbeForward`: at least the balance's policy and value forwards, and one per noise
+    group per sampled micro-step); the other five GRAPHED, after them. A plain update: all GRAPHED, no re-run.
+    Flag off: one route, and the same number of calls as the flag-on diagnostic update."""
     diag, plain = arms["on"]["routes"]
-    assert diag == ["c", "c", "c", "g", "g", "g", "g", "g"], diag
+    assert diag[-5:] == ["g"] * 5 and set(diag[:-5]) == {"c"}, diag
+    reruns = len(diag) - 8
+    assert reruns >= 2 + 3, f"the probes re-ran R1 only {reruns}x on the diagnostic update"
     assert plain == ["g"] * 8, plain
-    assert arms["off"]["routes"] == [["c"] * 8, ["c"] * 8]
+    assert arms["off"]["routes"] == [["c"] * len(diag), ["c"] * 8]
 
 
 def test_the_probes_read_and_learning_are_IDENTICAL_whichever_route_the_plain_micro_steps_take(arms):
@@ -290,15 +296,25 @@ def test_the_canary_judges_every_declared_route(arms):
 
 # ----------------------------------------------------------------- teeth: the stand-in and the rung
 @pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
-def test_the_stand_in_has_teeth_a_probe_on_the_graphed_route_raises(bare, monkeypatch):
-    """Revert proof for the routing test above: route EVERY micro-step graphed and the diagnostic update dies in
-    the stand-in, exactly as F-PB-2 died on the GPU."""
+def test_no_probe_traverses_a_forwards_graph_twice_and_the_stand_in_has_teeth(bare, monkeypatch):
+    """gen3_probe_own_graph_v1, on the real train step: route EVERY micro-step AND every probe re-run through the
+    stand-in that raises on a second backward through one forward's graph. The diagnostic update completes and
+    both probes report — so each probe gradient came from its own forward, and the real backward was that
+    forward's only traversal. (Before, this very arrangement died in the stand-in, as F-PB-2 died on the GPU.)
+    Teeth: the RETAINED reference path (`grad_balance_metrics`: one graph, a gradient per term) raises in it."""
+    from agents.training.grad_balance import grad_balance_metrics
+    lin = torch.nn.Linear(3, 2)
+    out = _OneBackward.apply({"n": 0}, lin(torch.ones(4, 3)))[0]
+    with pytest.raises(RuntimeError, match="second backward through one forward"):
+        grad_balance_metrics(out.sum(), out.pow(2).sum(), list(lin.parameters()))
+
     model = _learner(True)
     bare.append(model)
     _install(model)
     monkeypatch.setattr(cr, "r1_route_for", lambda *, retained_graph: "graphed")
-    with pytest.raises(RuntimeError, match="second backward through one forward"):
-        _update(model, diagnostic=True)
+    logged = _update(model, diagnostic=True)["logged"]
+    assert any(k.startswith("grad/") for k in logged), "no grad-balance probe ran"
+    assert "train/noise_scale_ratio_policy" in logged, "the per-term noise sampler emitted nothing"
 
 
 @pytest.mark.slow  # ship gate (2026-10-19): 30 s beside a live run

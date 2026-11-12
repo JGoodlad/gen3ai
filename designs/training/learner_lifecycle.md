@@ -421,6 +421,69 @@ The update now sets the demand (its `batch` segment); the fixed canary fits insi
 peak reserved adds nothing). Logs: `/tmp/x26memfix/models/rb_memfix_{old,new,v3}/launcher_child.log` (scratch; the
 numbers are copied here).
 
+### The diagnostics and the canary are memory-bounded (`gen3_probe_own_graph_v1`, `gen3_reference_offload_v1`, 2026-11-11)
+
+**Why.** With the levers below in place, what a run needed at startup was set by its own first-update DIAGNOSTICS and by
+the canary's yardstick, not by training. The production recipe at two widths (98,304 rows, 8 T2 lanes, bf16 trunk; MiB
+ALLOCATED per `train()` segment, from each run's `update_fit.json`):
+
+| segment | d_model 128 (`rb_x35_x67ent_s6701`) | d_model 256 (`--d-model 256 --trunk-ffn-dim 512`, B1's wide pilot `rb_b1pilot_w_s9103`) |
+|---|---|---|
+| training's forward / backward | 4,801 / 4,608 | 7,139 / 6,881 |
+| grad-balance probe (`probes`) | 6,516 | 9,053 |
+| per-term noise probe (`noise_probe`) | 6,579 | 9,106, and it ran out of memory there |
+| the canary's check | 5,458 | 8,703 |
+| demand (peak reserved) → headroom | 8,314 → 2,492 PASS | 10,768 → **2.5, `UpdateWontFit`** |
+
+About 1,660 MiB of the reserved peak is not reclaimable at either width (`fragmentation_mib`; 1,188 of it T2's private
+CUDA-graph pools), so the wide arm passes only if nothing allocates past ~8,080 MiB. Both probes read one gradient per
+loss term off the micro-batch's LIVE graph (`retain_graph=True`, before the real `backward()`): a whole backward's
+transient on top of the retained graph. The noise probe's sampler caught its own OOM and retired itself per `train()`
+call, so `train/noise_scale_<group>` existed at 128 and silently did not at 256.
+
+**Two changes; neither moves a number training produces.**
+
+1. **Each probe gradient comes from the probe's OWN forward** (`instrumented_ppo/probe_forward.py`). After the
+   micro-batch's `backward()` (its graph is gone) and before the optimizer step (the parameters are the ones the real
+   forward read), the probe re-runs R1 on the same rows through the same installed region and takes the gradient with
+   `retain_graph=False`. A probe's peak is then a training forward's plus one gradient. Values: the same function of
+   the same inputs — bit-equal to the retained-graph reading on one CPU thread (`probe_own_graph_test.py`).
+2. **The fp32 reference arm keeps at most 2,048 MiB of saved activations on the card**
+   (`agents/model/saved_offload.py`; `compile_regions._r1_reference`, the startup gate's and the canary's yardstick).
+   Later saved tensors wait in host memory and return when their backward node runs. A host round trip is a byte copy,
+   so the arm's loss, log-probs and gradient are bit-identical (`saved_offload_test.py`) and every bar and envelope
+   calibrated against it keeps its basis. One rule in bytes at every width; an arm that saves less is untouched.
+
+**A probe can no longer vanish.** Nothing in the probe path is caught: an OOM inside the dry update is `UpdateWontFit`
+at startup, and a probe failure mid-run stops the run. A re-run that registers different terms from the real forward is
+a `ProbeGraphError`.
+
+**The update's numbers are unchanged** — `autograd.grad` writes no `.grad`, the re-runs sit under `fork_rng`, and the
+probes still run on the same micro-batches. Pinned on the learner golden (`probe_own_graph_test.py`): the update with
+every probe on and the update with all of them skipped both reproduce the COMMITTED golden (recorded before this
+change), with identical optimizer state and torch / numpy / python RNG streams; `diagnostics_cadence_test.py` and
+`update_fit_test.py` hold the same on their own learners.
+
+**What it costs.** One R1 forward per probe gradient: `2 + n_aux` for grad-balance and `groups × accum` for the noise
+probe on a diagnostic update (production: 10 + 4 × 32). Estimated +8–12 % on a diagnostic update and about 1 % of
+learner wall at `--diagnostics-every 10` — NOT re-measured: the learner benchmark's noise probe was 128 backwards in
+11.5 % of a 58.5 s update, 52 ms each, and a forward costs no more (`train/noise_per_term_ms` meters it live); `lifecycle/compiled_region_calls` is higher on a diagnostic update by the same count. The reference arm pays two
+transfers of what it offloads (`saved_offload.LAST["seconds"]`), once per canary and per gate rung, and a host-memory
+transient of that size.
+
+**The demand model is unchanged and still covers it**: `dry_update` runs the real first update (every probe on, now
+on their own forwards) and then the canary's check, and reads the peak reserved over both. The segments the hook books
+are in `phase_hook.py` (a micro-batch's marks: `forward`, `ridealong`, `loss`, `kl`, `backward`, `probes`,
+`noise_probe`, `optim`).
+
+**UNVERIFIED on the GPU** (built without a lease). Expected at d_model 256, from the table: the probes peak near the
+forward (7,139) plus the sampler's accumulators and one gradient, ~7,300–7,550 MiB allocated; the canary's binding arm
+becomes eager bf16 (~7,230). Demand ~8,900–9,200 MiB → headroom ~1,500–1,900 MiB against the 1,024 bar. The validation
+that turns this into a reading: the CUDA cells of `probe_own_graph_test.py`, `saved_offload_test.py` and
+`compiled_first_update_test.py`, then one startup at each width — `update_fit.json` must show headroom ≥ 1,024 MiB with
+`probes` and `noise_probe` within ~500 MiB of `forward`, the first update must log every `grad/*` family and
+`train/noise_per_term_ms`, and the first canary must pass.
+
 v1's text below is kept for the parts v2 did not change (the dry update itself, the restore, the levers).
 
 **The check — MEASURED, not a lower bound** (`agents/training/update_fit.py`; it replaced
@@ -496,10 +559,10 @@ The staged batch's CUDA tests pass on the GPU on the compute-stream code (2 pass
 - **Uncapped T2 at N = 256 + heads (`--t2-opponent-bucket-cap 0`):** REFUSED at startup by `UpdateWontFit` (exit 3), as designed. No throughput A/B was possible on that shape.
 - **The uncontended rerun of N = 256 + heads + promotions (`ship_n256h_b`):** hit its 1,200 s hold after 2 updates (exit 124), because it was contended. It is NOT a read. The fix's own acceptance run (next section) supersedes it.
 
-Where the peak lives now (dry update, per segment, N = 48 resident): the per-term noise-scale probe
+Where the peak lived until 2026-11-11 (dry update, per segment, N = 48 resident): the per-term noise-scale probe
 7,424 MiB and the once-per-call grad-balance / rank probes 7,382 — first-update DIAGNOSTICS, ~1.4 GiB
-above the micro-step's backward (5,997) and forward (5,476). A plain update peaks ~1.5 GiB lower (N = 256:
-4,730 vs 6,230 MiB allocated).
+above the micro-step's backward (5,997) and forward (5,476); a plain update peaked ~1.5 GiB lower. The probes
+now run on their own forwards (the section above), so a diagnostic update's peak is a plain update's plus one gradient.
 
 **The micro-step's activation footprint is the model's real size** (allocator snapshot of a micro-step,
 2,048 rows): ~2.5 GiB of forward activations saved for backward (the entity trunk's 61-token × 128-wide

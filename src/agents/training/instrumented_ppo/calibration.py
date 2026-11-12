@@ -367,9 +367,9 @@ def announce_vf_coef_scale(model, bce: Optional[Sequence[float]],
     Stateful half, kept out of the pure function so the wording stays testable. Four properties:
 
     * **THE GRADIENT NORMS ARE READ, NEVER RECOMPUTED.** ``grad_balance`` is the dict
-      `grad_balance_metrics` already produced for this `train()` — the read-only
-      `autograd.grad(retain_graph=True)` probe that has run per-term on every rollout for
-      generations. Under the win-prob critic its ``grad/value_norm_shared`` is the norm of
+      `grad_balance_metrics_fresh` already produced for this `train()` — the read-only
+      `autograd.grad` probe (one term per own forward, `probe_forward.py`) of the diagnostic
+      updates. Under the win-prob critic its ``grad/value_norm_shared`` is the norm of
       ``vf_coef * BCE`` (the term as folded) and ``grad/policy_norm_shared`` is
       ``policy_loss + ent_coef * entropy_loss``, both over the same shared-trunk parameter set. A
       second backward pass here would cost a rollout's worth of graph and could disagree with the

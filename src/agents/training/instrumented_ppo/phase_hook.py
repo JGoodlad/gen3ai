@@ -18,18 +18,24 @@ mark and this one":
     ridealong    the DETACHED ride-along heads' own step (`gen3_ridealong_heads_v1`; ~0 when off)
     loss         the whole FOLD: PPO loss, belief/intent/win-prob/... terms and their per-minibatch
                  `.item()`/`float()` diagnostics
-    probes       the once-per-call grad-balance, rank, edge- and cell-liveness probes
     kl           the approx-KL read (`.cpu().numpy()`, a host sync) + the early-stop check
-    noise_probe  the per-term noise-scale sampler's per-micro flush (`autograd.grad` per group)
     backward     `(loss / accum).backward()`
+    probes       FIRST site: the once-per-call edge- and cell-liveness reads (parameter norms)
     noise_base   the two-point noise-scale `‖g_small‖²` read (once per call)
+    probes       SECOND site: the once-per-call grad-balance probe — one R1 forward and one
+                 `autograd.grad` per term, each on its own graph (`probe_forward.py`)
+    noise_probe  the per-term noise-scale sampler's per-micro flush — one R1 forward and one
+                 `autograd.grad` per group, each on its own graph
     optim        grad clip (a host sync) + optimizer step + zero_grad, when the group is full
     capacity     `--capacity-telemetry`'s per-minibatch observe
     epoch_end    the trailing partial-group flush + the per-epoch KL/clip bookkeeping
     logging      capacity finish, explained variance and every `self.logger.record`
 
 ``probes`` is marked twice per minibatch (both once-per-call probe sites book to it); every other
-name once. A mark is never placed inside a compiled region.
+name once. A mark is never placed inside a compiled region. (The rank probe reads R1's stashes
+right after the forward and books to ``forward``.) Both gradient probes run AFTER the backward
+(gen3_probe_own_graph_v1): the update-fit check's per-phase peaks (`update_fit._PhasePeaks`) read
+each one's memory off its own mark.
 """
 from contextlib import contextmanager
 from typing import Callable, Iterator, Optional
@@ -38,8 +44,8 @@ from typing import Callable, Iterator, Optional
 PHASE_HOOK: Optional[Callable[[str], None]] = None
 
 # Every name `train()` marks, in source order (``probes`` appears at two sites).
-PHASES = ("start", "setup", "batch", "forward", "ridealong", "loss", "probes", "kl", "noise_probe",
-          "backward", "noise_base", "optim", "capacity", "epoch_end", "logging")
+PHASES = ("start", "setup", "batch", "forward", "ridealong", "loss", "kl", "backward", "probes",
+          "noise_base", "noise_probe", "optim", "capacity", "epoch_end", "logging")
 
 
 def current() -> Optional[Callable[[str], None]]:

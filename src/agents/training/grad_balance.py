@@ -10,9 +10,11 @@ comparable across terms. These pure helpers measure that competition **directly*
 reducing ``vf_coef`` / an aux coef can be tuned to a
 number instead of inferred indirectly from ``approx_kl`` / ``clip_fraction``.
 
-Two probes, both cheap and both run once per ``train()`` call:
+Two probes, both run once per ``train()`` call:
 
-* :func:`grad_balance_metrics` — the per-term *pull* on the shared trunk (the pressure gauge).
+* :func:`grad_balance_metrics` — the per-term *pull* on the shared trunk (the pressure gauge;
+  :func:`grad_balance_metrics_fresh` is the SAME read with every gradient taken from its own
+  forward, which is how the learner calls it — gen3_probe_own_graph_v1).
   Every ``grad/<term>_share`` is that term's gradient norm over the SAME total
   (``policy + value + Σ aux``), so ``grad/policy_share`` + ``grad/value_share`` +
   ``grad/aux_share`` ≈ 1 and a term swamping the trunk is visible as its share climbing.
@@ -29,7 +31,7 @@ All functions are pure (no SB3, no logging) so they unit-test without a training
 """
 from __future__ import annotations
 
-from typing import Dict, List, Sequence
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch as th
@@ -70,21 +72,46 @@ def shared_trunk_parameters(features_extractor: nn.Module) -> List[nn.Parameter]
     ]
 
 
-def _flat_grads(loss: th.Tensor, params: Sequence[nn.Parameter]) -> th.Tensor:
+class ProbeGraphError(RuntimeError):
+    """A probe's OWN forward did not reproduce the term it was asked to differentiate
+    (gen3_probe_own_graph_v1): the reading would be of a different quantity, so there is none."""
+
+
+def _flat_grads(loss: th.Tensor, params: Sequence[nn.Parameter], *, retain_graph: bool = True) -> th.Tensor:
     """Flattened gradient of ``loss`` w.r.t. ``params`` (zeros for params it doesn't reach).
 
-    Uses ``autograd.grad(retain_graph=True)`` so it is a **read-only** probe: it does NOT
-    populate ``.grad`` and leaves the graph intact for the real ``loss.backward()`` that
-    follows in the training step. ``allow_unused=True`` tolerates a param outside this loss's
+    ``autograd.grad`` RETURNS the gradient, so this is a **read-only** probe: it never populates
+    ``.grad``. ``retain_graph=True`` (the default) leaves the graph alive for another traversal —
+    what a caller holding ONE graph for several terms needs; ``retain_graph=False`` frees the graph
+    as it is walked, which is what a caller that built the graph for this one gradient wants
+    (`grad_balance_metrics_fresh`). ``allow_unused=True`` tolerates a param outside this loss's
     subgraph (substituted with zeros) rather than raising.
     """
     if not params:
         return th.zeros(1)
-    grads = th.autograd.grad(loss, params, retain_graph=True, allow_unused=True)
+    grads = th.autograd.grad(loss, params, retain_graph=retain_graph, allow_unused=True)
     return th.cat([
         (g if g is not None else th.zeros_like(p)).reshape(-1)
         for g, p in zip(grads, params)
     ])
+
+
+#: What a grad-balance caller hands the probe: ``(policy_term, value_term, aux_terms)``.
+BalanceTerms = Tuple[th.Tensor, th.Tensor, "Optional[Dict[str, th.Tensor]]"]
+
+
+def _aux_names(value_term: th.Tensor, aux_terms: "Optional[Dict[str, th.Tensor]]") -> List[str]:
+    """The auxiliary terms the probe REPORTS, in registration order.
+
+    gen3_tb_relevance_v1: AN AUX TERM THAT *IS* THE VALUE TERM IS NOT A SECOND TERM. Under the win-prob
+    critic the deployed critic loss IS the win-prob BCE, so `ppo.py` passes the SAME tensor object as
+    `value_term` and as `aux_terms["win_prob"]`. Reporting it twice published three exact duplicate curves
+    (`grad/win_prob_*` ≡ `grad/value_*`) AND — the real defect — counted its norm twice in the shared
+    denominator, deflating EVERY `grad/*_share` on such a run (measured on ai_v12_01: policy_share 0.564
+    published where 0.680 is the true share). Identity (`is`) rather than value equality: it is exactly
+    the "same tensor" case, it costs nothing, and two numerically-equal-but-distinct terms are a genuine
+    coincidence to report."""
+    return [name for name, term in (aux_terms or {}).items() if term is not value_term]
 
 
 def grad_balance_metrics(
@@ -101,7 +128,7 @@ def grad_balance_metrics(
     **weighted** contribution (``coef * aux_loss``) exactly as it entered the loss, e.g.
     ``{"species_belief": …, "move_belief": …, "move_latent": …, "win_prob": …}`` — pass only the terms that are ACTIVE this minibatch (an empty / ``None``
     dict means "RL heads only", the upstream-identical 2-way case). **An aux term that is the SAME
-    tensor object as ``value_term`` is skipped** (`gen3_tb_relevance_v1`): under
+    tensor object as ``value_term`` is skipped** (`gen3_tb_relevance_v1`, `_aux_names`): under
     the win-prob critic the critic loss IS the win-prob BCE, and reporting it as both would
     publish duplicate curves and double-count its norm in the shared denominator below.
 
@@ -123,32 +150,64 @@ def grad_balance_metrics(
     ``grad/<name>_share``, ``grad/<name>_norm_shared`` and ``grad/<name>_policy_cosine`` (<0 = that
     aux fights the policy), plus a single ``grad/aux_share`` = Σ aux shares (the total non-RL draw —
     one number for "are the scaffolds collectively crowding the RL heads"). **Must be called while
-    the graph is alive** (before ``loss.backward()``).
+    the graph is alive** (before ``loss.backward()``): every gradient is taken from the ONE graph
+    the caller holds, which stays alive throughout (``retain_graph=True``). That costs a whole
+    backward's transient ON TOP of the live graph per term — the learner cannot afford it at the
+    wide shape and calls `grad_balance_metrics_fresh` instead; this is the reference definition
+    (and the unit tests' entry point).
     """
-    g_pi = _flat_grads(policy_term, shared_params)
-    g_vf = _flat_grads(value_term, shared_params)
+    return grad_balance_metrics_fresh(lambda: (policy_term, value_term, aux_terms), shared_params,
+                                      retain_graph=True)
 
-    # gen3_tb_relevance_v1: AN AUX TERM THAT *IS* THE VALUE TERM IS NOT A SECOND TERM. Under
-    # the win-prob critic: the deployed critic loss IS the win-prob BCE, so `ppo.py` passes the SAME
-    # tensor object as `value_term` and as `aux_terms["win_prob"]`. Reporting it twice published
-    # three exact duplicate curves (`grad/win_prob_*` ≡ `grad/value_*`) AND — the real defect —
-    # counted its norm twice in the shared denominator, deflating EVERY `grad/*_share` on such a
-    # run (measured on ai_v12_01: policy_share 0.564 published where 0.680 is the true share).
-    # Identity (`is`) rather than value equality: it is exactly the "same tensor" case, it costs
-    # nothing, and two numerically-equal-but-distinct terms are a genuine coincidence to report.
-    aux_g: Dict[str, th.Tensor] = {}
-    for name, term in (aux_terms or {}).items():
-        if term is value_term:
-            continue
-        aux_g[name] = _flat_grads(term, shared_params)
+
+def grad_balance_metrics_fresh(terms_fn: Callable[[], BalanceTerms], shared_params: Sequence[nn.Parameter],
+                               *, retain_graph: bool = False) -> Dict[str, float]:
+    """`grad_balance_metrics` with EVERY gradient taken from its OWN graph (gen3_probe_own_graph_v1).
+
+    ``terms_fn()`` returns ``(policy_term, value_term, aux_terms)`` on a graph the probe may consume:
+    it is called once per reported term, the term's gradient is taken with ``retain_graph=False`` (the
+    graph is freed as it is walked) and reduced on the spot to the device scalars the metrics need
+    (its norm, its dot with the policy gradient), so what stays allocated is the policy gradient and
+    the scalars — never a retained graph plus a second traversal's transient. The learner hands it a
+    re-run of R1 on the SAME rows at the SAME parameters (`probe_forward.ProbeForward`), so each
+    gradient is the one `grad_balance_metrics` reads off the retained graph: the same function of the
+    same inputs, read in the same order in the same single transfer.
+
+    A term the first call reported and a later call does not produce is a `ProbeGraphError` (the
+    re-run is not the forward it claims to be) — never a silently missing share.
+    """
+    policy_term, value_term, aux_terms = terms_fn()
+    names = _aux_names(value_term, aux_terms)
+    g_pi = _flat_grads(policy_term, shared_params, retain_graph=retain_graph)
+    del policy_term, value_term, aux_terms
+    _, value_term, _ = terms_fn()
+    g_vf = _flat_grads(value_term, shared_params, retain_graph=retain_graph)
+    scalars = [g_pi.norm(), g_vf.norm(), g_pi @ g_vf]
+    del g_vf, value_term
+    norms: List[th.Tensor] = []
+    dots: List[th.Tensor] = []
+    for name in names:
+        _, _, aux_terms = terms_fn()
+        if not aux_terms or name not in aux_terms:
+            raise ProbeGraphError(
+                f"the grad-balance probe's own forward did not produce the term {name!r} the first one "
+                f"registered (it has {sorted(aux_terms or {})}): a re-run of the micro-step on the same rows "
+                "must register the same terms (gen3_probe_own_graph_v1)")
+        g = _flat_grads(aux_terms[name], shared_params, retain_graph=retain_graph)
+        norms.append(g.norm())
+        dots.append(g @ g_pi)
+        del g, aux_terms
     # gen3_batched_host_reads_v1: every norm and every dot product the shares and cosines below use, read
     # in ONE transfer (each value is the float32 `float(t)` / `.item()` read it replaced).
-    _names = list(aux_g)
-    _host = read_floats([g_pi.norm(), g_vf.norm(), g_pi @ g_vf]
-                        + [aux_g[k].norm() for k in _names] + [aux_g[k] @ g_pi for k in _names])
-    n_pi, n_vf, dot_pv = _host[0], _host[1], _host[2]
-    aux_n = {k: _host[3 + i] for i, k in enumerate(_names)}
-    aux_dot = {k: _host[3 + len(_names) + i] for i, k in enumerate(_names)}
+    return _balance_from_host(names, read_floats(scalars + norms + dots))
+
+
+def _balance_from_host(names: Sequence[str], host: Sequence[float]) -> Dict[str, float]:
+    """The `grad/*` block from the probe's ONE host read: ``[‖g_pi‖, ‖g_vf‖, g_pi·g_vf]``, then each
+    reported aux term's norm, then each one's dot with the policy gradient (``names`` order)."""
+    n_pi, n_vf, dot_pv = host[0], host[1], host[2]
+    aux_n = {k: host[3 + i] for i, k in enumerate(names)}
+    aux_dot = {k: host[3 + len(names) + i] for i, k in enumerate(names)}
 
     # ONE common denominator = the FULL trunk pull (policy + value + every reported scaffold), so
     # every `*_share` is on the same scale, they sum to ~1, and any term crowding out the rest is

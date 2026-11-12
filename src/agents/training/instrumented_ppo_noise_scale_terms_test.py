@@ -202,25 +202,28 @@ def test_add_returns_the_same_tensor_object():
     assert NULL_TAGGER.add("aux", 0.0) == 0.0          # the `_vf_term = 0.0` case (value_from_dist)
 
 
-def test_a_raising_probe_disables_itself_and_reports_nothing(monkeypatch, capsys):
-    """A diagnostic must never take a run down. Whatever `autograd.grad` raises (a compiled
-    backward that refuses a second traversal is the realistic one), the probe retires itself for
-    the call, prints once, and leaves the training step to proceed untouched."""
+@pytest.mark.parametrize("exc", [RuntimeError("Trying to backward through the graph a second time"),
+                                 th.OutOfMemoryError("CUDA out of memory (stand-in)")])
+def test_a_raising_probe_RAISES_and_never_retires_itself(monkeypatch, capsys, exc):
+    """gen3_probe_own_graph_v1: a probe that cannot take its gradient must be LOUD. The sampler used to
+    catch everything, print once and report nothing for the call — and at d_model 256 that was an
+    out-of-memory on every diagnostic update, so `train/noise_scale_<group>` existed at one width and
+    silently not at the other. Whatever `autograd.grad` raises now reaches the caller: at startup that
+    is the update-fit check (`UpdateWontFit`), in a run it is a crash with a traceback. Fails on a
+    revert to the swallowing `except`."""
     net = _tiny_net()
     sampler = PerTermNoiseSampler(list(net.parameters()))
     sampler.add("policy", net(th.ones(1, 3)).sum())
 
     def _boom(*a, **kw):
-        raise RuntimeError("Trying to backward through the graph a second time")
+        raise exc
 
     monkeypatch.setattr(th.autograd, "grad", _boom)
-    sampler.flush_micro()
-    assert sampler.failed and sampler.result(accum=2) == {}
-    assert "per-term noise-scale probe disabled" in capsys.readouterr().out
-    monkeypatch.undo()
-    sampler.add("policy", net(th.ones(1, 3)).sum())
-    sampler.flush_micro()                       # stays retired, and still takes no gradient
-    assert sampler.result(accum=2) == {} and all(p.grad is None for p in net.parameters())
+    with pytest.raises(type(exc)):
+        sampler.flush_micro()
+    assert "disabled" not in capsys.readouterr().out
+    assert not hasattr(sampler, "failed"), "a sampler has no retired state any more"
+    assert sampler.probe_seconds > 0.0, "the probe's wall time is booked even when it raises"
 
 
 def test_null_tagger_is_inert():

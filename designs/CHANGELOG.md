@@ -15822,3 +15822,37 @@ was downloaded or written under `data/`.
   `move_head`; the label path survives and only the move posterior is published as a copy; the runtime setter applies
   the mode to a checkpoint built under `shaping`; `label_only` still cuts the move head. `belief_grad_mode_test.py`:
   the value set. Each fails on revert.
+
+## 2026-11-11 — the learner's diagnostics and the canary's fp32 yardstick are memory-bounded (`gen3_probe_own_graph_v1`, `gen3_reference_offload_v1`; no config / `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change, training arithmetic untouched)
+
+- **Why.** BOUNDARY-1's 256-wide arm (`--d-model 256 --trunk-ffn-dim 512`) was refused at startup: `UpdateWontFit`,
+  demand 10,768 MiB against a 10,770 MiB card (2.5 MiB of headroom, 1,024 required). The binding terms were not
+  training (forward 7,139 / backward 6,881 MiB allocated) but the first update's gradient probes (grad-balance 9,053,
+  the per-term noise probe 9,106 and out of memory there) and the canary's check (8,703). The noise probe caught its
+  own OOM and retired itself per `train()` call, so `train/noise_scale_<group>` existed at 128 wide and silently did
+  not at 256.
+- **What, the probes.** The grad-balance probe and the per-term noise probe no longer read gradients off the
+  micro-batch's live graph with `retain_graph=True`. Each gradient comes from the probe's OWN re-run of R1
+  (`instrumented_ppo/probe_forward.py`: same rows, same parameters, the installed region, under `fork_rng`), after
+  that micro-batch's `backward()` and before the optimizer step, with nothing retained. A probe's peak is a training
+  forward's plus one gradient. Nothing in the probe path is caught any more: an OOM in the dry update is
+  `UpdateWontFit` at startup, a failure mid-run stops the run, a re-run that registers different terms is
+  `ProbeGraphError`.
+- **What, the canary.** The fp32 reference arm (`compile_regions._r1_reference`: the startup gate's, the canary's and
+  `canary_param_null`'s yardstick) runs under `saved_offload.fp32_reference_scope`: the first 2,048 MiB of saved
+  activation storage stay on the card, later ones wait in host memory and return when their backward node runs. A
+  byte copy, so the arm's loss, log-probs and gradient are bit-identical and every bar calibrated against it keeps its
+  basis.
+- **Bit-identity.** `probe_own_graph_test.py`: on the learner golden, the update with every probe on (their own
+  forwards) and the update with all of them skipped both reproduce the golden recorded BEFORE this change, with equal
+  optimizer state and torch / numpy / python RNG streams; the own-graph probe values equal the retained-graph
+  values to the bit (one CPU thread). `saved_offload_test.py`: the reference arm with every saved tensor forced
+  through the round trip equals the plain arm to the bit.
+- **Cost.** One R1 forward per probe gradient (production: 10 + 4 × 32 on a diagnostic update; estimated +8–12 % on that
+  update, about 1 % of learner wall at `--diagnostics-every 10`, not re-measured); `lifecycle/compiled_region_calls` rises by that count on a diagnostic
+  update. The reference arm pays two transfers of what it offloads.
+- **Not shown.** Everything on the GPU (built without a lease): the new peaks (expected headroom at 256 wide
+  ~1.5–1.9 GiB), the CUDA cells' bit-identity, the transfer seconds, and whether `canary_param_null`'s 16 reference
+  arms still finish inside `PARAM_NULL_CAP_S`. The validation is in `training/learner_lifecycle.md` "The diagnostics
+  and the canary are memory-bounded". The `donated_buffer=False` pin stays although its first reason is gone
+  (`compiled_first_update_test.py`'s docs: with the pin reverted the compiled first update now passes).
