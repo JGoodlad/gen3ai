@@ -1330,3 +1330,94 @@ is outside the repo unless it is committed.
 35. **Observed, not read:** `models/rb_x60t_s3504` (training) holds `behaviour_violation_*` files and
     `behaviour_violations.jsonl`. That is K9(b) `warn` mode logging; the AM-6 K9(b) arm-end record judges it at arm
     end (§22's pattern). This unit opened none of them.
+
+## 25. Look 2's run record (the delegated read operator, written 2026-11-11 BEFORE `decide`)
+
+Every fact below was fixed before the verdict was computed: no `assemble`, `decide` or `record` had run on the look-2
+state when this section was written. Evidence: `~/.claude/jobs/x35/status.txt` (the `x60t s350X` / `c0 s350X` lines),
+each seed's kit launcher log `~/.claude/jobs/x35/rb_x60t_s350X.launcher.log*` and `rb_x35_c0_s350X.launcher.log`, the
+state `~/gen3ai_archive/x60t_read/look2`, and the archives named. Look 1's three ON seeds (s3501–s3503) are §22's.
+
+**1. Aborted or odd runs: none.** No look-2 run dir was moved, renamed or relaunched fresh. The eight new runs are
+`models/rb_x60t_s3504`–`s3508` (X60Tb) and `models/rb_x35_c0_s3506`–`s3508` (X60T-C0b); each holds a `final_model.zip`.
+
+**2. The resumes (§13): two, both the T2 parity near-tie of §22.2.**
+
+| field | s3506, resume #1 | s3508, resume #1 |
+|---|---|---|
+| cause | FATAL T2 `ParityFailure` 2026-11-09 15:10:55, `graph group=pool0 slot=24 bucket=256 rows=256`, legal-logp max 1.08e-01 over the 1e-3 bar; launcher_rc 3 | FATAL T2 `ParityFailure` 2026-11-09 22:19:53, `slot=24 bucket=64 rows=64`, legal-logp max 2.12e-01; launcher_rc 3 |
+| root cause | §22.2's class: the selection near-tie in `hypothesis_set.stable_order`, fixed on main at `3260d7ae0` (`gen3_t2_parity_tie_judge_v1`); the side pin `7fe15726` predates the fix and stayed unamended. | The same class at bucket 64, not 256. This record did not re-derive the tie row for bucket 64; the class is read from the same failing group, slot and statistic. |
+| resumed by | hand, on the orchestrator's 2026-11-09 GO | the kit driver (v5), under the orchestrator's 2026-11-09 pre-approval of this failure class |
+| resumed | 15:13:20, from `checkpoint_299000183_steps.zip` | 22:21:32, from `checkpoint_292000394_steps.zip` |
+| steps re-trained | ≈ 865,024 (the fatal at ≈ 299.87M) | ≤ 1,000,000 (the fatal step was not read from the log; the cadence bounds it) |
+| argv | §13's, through main's launcher with `--pin-commit 7fe15726…`, no `--run-name` | the same |
+| condition 7 | The dry-run (`~/gen3ai_archive/x60t_resumes/s3506_resume1_dryrun.txt`, sha256 `c5f85d92a40a3d3b…`) resolved `--seed 3506` (TYPED), K9(b) `warn` (typed) and `--checkpoint-every-steps 1000000` (TYPED). The clause was `teams:hr_spec_v1.r3@0.5`, hash `544c9bc00ea95030`. | The dry-run (`~/gen3ai_archive/x60t_resumes/x60t_s3508_resume1_dryrun.txt`, sha256 `a14375cfb852a6da…`) resolved `--seed 3508` (TYPED), `warn` (typed) and `1000000` (TYPED); the same clause and hash. |
+| outcome | Ended clean 2026-11-09 15:32, at 300,088,837 | Ended clean 2026-11-10 00:02, at 300,068,383 |
+| live-row guard | K9(b) logp max over the run 3.58e-4 (the HOLD bar is 1e-3) | 1.79e-4 |
+| replicate | "Replicate = same pin + seed" is lost for s3506 (§13). | Lost for s3508 (§13). |
+
+With §22's s3501, **3 of 8 ON seeds resumed (s3501, s3506, s3508). That meets §13's ≥ 3 bar: Δ_F is also reported
+without them (ON s3502, s3503, s3504, s3505, s3507 against C0's eight), descriptive only.** s3504, s3505, s3507 and
+all eight C0 finals ran 0 restarts.
+
+**3. §13's conditions and §15's VOID checks, per new run.**
+
+| run | launched (log clock) | final (step) | launch logs read | `[HUMAN-DATA]` stamp (rows_sha `2e864572…`, hash `544c9bc00ea95030`) | `[TEAM-MIX]` 2295 teams, 0.50 both sides | held-out panels | `corpus_<n>` / FATAL naming a corpus team | pin_history | dose (display) | K9(b) at arm end (judged max / p99, rows) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| x60t s3504 | 11-09 03:04 | 300,061,682 | 1 | yes | yes | 0 hits over 5 panels (registry `ea3917c2f1e6`); 0 corpus teams pack to a pool team | none | 1 span, `7fe15726` | lr_median 1.005e-4, upd/step 2.035e-4, dose_rate 2.044e-08 | PASS 2.36e-4 / 3.29e-5, 204 |
+| x60t s3505 | 11-09 07:05 | 300,061,299 | 1 | yes | yes | as s3504 | none | 1 span | as s3504 | PASS 2.55e-4 / 3.40e-5, 204 |
+| x60t s3506 | 11-09 11:08, resumed 15:13 | 300,088,837 | 2: the fresh launch (`.20261109T151320.prev`) and the resume | in both | in both | as s3504, in both | none | 1 span | as s3504 | PASS 3.58e-4 / 4.00e-5, 212 |
+| x60t s3507 | 11-09 15:32 | 300,061,173 | 1 | yes | yes | as s3504 | none | 1 span | as s3504 | PASS 2.40e-4 / 3.01e-5, 204 |
+| x60t s3508 | 11-09 19:40, resumed 22:21 | 300,068,383 | 2: the fresh launch (`.20261109T222132.prev`) and the resume | in both | in both | as s3504, in both | none | 1 span | as s3504 | PASS 1.79e-4 / 3.38e-5, 211 |
+| c0 s3506 | 11-10 00:03 | 300,061,133 | 1 | absent, as a control must be | absent | n/a (no corpus) | none | 1 span, `f4b25238` | as s3504 | PASS 2.40e-4 / 3.34e-5, 204 |
+| c0 s3507 | 11-10 04:29 | 300,061,396 | 1 | absent | absent | n/a | none | 1 span | as s3504 | PASS 1.74e-4 / 3.71e-5, 204 |
+| c0 s3508 | 11-10 08:42 | 300,061,502 | 1 | absent | absent | n/a | none | 1 span | as s3504 | PASS 2.88e-4 / 3.38e-5, 204 |
+
+- **The K9(b) records are `x35_breakers_stage_2026-10-17/k9b/{rb_x60t_s3504…s3508, rb_x35_c0_s3506…s3508}.json`,**
+  produced on 2026-11-11 by this operator with `python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>`
+  (CPU, nice 19 on the agent cores) and committed with this section. They did not exist on main when the lanes
+  finished; §23.7 step 3 makes them a precondition of the read. Each: fork_step 280,000,170, no fires, no
+  near-ceiling row, no reasons (ceilings: judged max 1e-3, p99 1e-4). The judged maxima equal the live maxima the
+  driver logged.
+- Each ON log holds exactly one stamp and one banner; each control log holds none.
+- `main.sidecar_audit`: 21 sidecars a run, 0 PIN-SPLIT, 0 without a pin_history.
+- Every T54 post-spawn pool-seed check PASSED (all eight runs).
+- The exact relative-1e-6 dose comparison is the read's `void.dose`.
+- Each log's `FATAL` matches are the three standing banners (compile "FATAL by design", the `FATAL_SUPPLY (5)` notice,
+  the K9 learner-golden notice). The two `.prev` logs also hold the T2 `ParityFailure` above.
+
+**4. The queue at the read's start** (`mem_cap.sh --status`, 2026-11-09 03:36:18,
+`~/gen3ai_archive/x60t_read/look2_queue_at_start_20261109T033618.txt`, sha256 `563f78cd7a49a01b…`): both heavy slots
+free, 0 queued, 0 BLOCKING bypassers; the x60t s3504 trainer was live on the GPU.
+
+**5. How it was played.**
+- Spec `read_spec_look2.json`: the state's `spec.json` is byte-identical (sha256 `a5ad7411…8ed7`). Playing code
+  `f564c333f` (`code.json`: clean), checkout `~/dev/gen3ai-reads/x60t_play_de15dfc7`; no repins, no holds.
+- Lanes `anchor` (concurrency 2) and `s`, started 2026-11-09 03:36 as the user units `x60t-look2-anchor` and
+  `x60t-look2-s` (nice 19, cores 5-7,13-15), CPU only. The S lane ended `done`, `not_counted []`, 2026-11-11 13:18.
+- **The anchor lane's first life ended `done` 2026-11-11 15:23 with THREE units exhausted** (`not_counted`):
+  `x60t_s3505__forum72__33`, `c0_s3506__forum72__34`, `x60t_s3508__forum72__39`. Each had its two attempts of that
+  supervisor life voided by guard G2 (`peer_clean` false): the Kakuna peer's log holds 986 "Force resetting due to
+  long-tail error" lines in each unit, the Metamon long-tail fault of `EXTERNAL_ANCHORS_SOP.md` §3.1 (re-run with the
+  same seed, never salvage). Every voided attempt ended rc 0 on the short lane, wall 381–528 s against ≈ 150–165 s for
+  a clean unit.
+- **What that left:** ON at 9,560 counted forum72 games, UNDER rule `x60`'s floor of 9,580 (§15: one short unit an arm
+  is inside it; two are not); C0 at 9,580. A read then would be INCONCLUSIVE, whose registered remedy (§11) is "the
+  missing piece is played or re-played and the read re-decided, with nothing else changed".
+- **The retry, by the tool's own resume and nothing else:** `python -m main.reads resume --state
+  ~/gen3ai_archive/x60t_read/look2 --lane anchor --hours 6 --concurrency 2` in the playing checkout at the same pin
+  (nice 19, cores 5-7,13-15, CPU only), 2026-11-11 16:40:48 → 16:45:46. A new supervisor life retries every uncounted
+  unit with its registered seed and replays no counted unit (`designs/tools/reads.md`); the operator chose no unit.
+  It queued exactly those three, and each counted on its first attempt (wall 150.7 / 159.0 / 145.9 s). The lane ended
+  `done`, `not_counted []`. `--hours 6` in place of the registered lane's 150 is a stop bound only.
+- **Voided attempts in all: 11, over 8 units.** Five other units lost one attempt to the same fault and counted on
+  their retry inside the first life (`d1_s3505__forum72__13`, `c0_s3507__home72__01`,
+  `c0_s3507__heldout72_hpfix__06`, `x60t_s3504__forum72__29`, `x60t_s3507__forum72__31`). No voided attempt's games
+  enter any cell.
+- **The operator saw the three exhausted units' voided summaries** (9, 9 and 10 wins of 20) while finding the cause,
+  before the retry. They are void by G2, and a clean replay at the registered seed does not depend on them.
+- **Counts at the read:** 1,127 / 1,127 planned Kakuna units counted, 0 exhausted (primary 480, D1 300, the T − D1
+  contrast 150, home72 77, p72 77, H 42, the determinism unit 1); the three look-1 ON finals' primary units and C0
+  s3501–s3505's are imported; every S cell at its 500 pairs.
+- **The operator.** §23.7 names Training Oct; the read was run by a read operator the orchestrator dispatched on
+  2026-11-11, under the same registered commands.
