@@ -21,6 +21,18 @@ logger. The run that follows is BIT-IDENTICAL to one without the check (`update_
 learner golden). One epoch suffices: every epoch runs the same micro-batches through the same code,
 and the first carries the once-per-update diagnostics (the cadence's "first update of the process").
 
+THE FILL'S INPUTS (`gen3_update_fit_fill_inputs_v1`, 2026-11-11). A real rollout reaches `train()` through the
+collector's FILL (`RustCollector._fill`), which writes more than the buffer's arrays: a lever's column
+(`RolloutBuffer.magnet_logp`, `--magnet-kl-coef`), X14's proximal log-probs, the rows' versions. No fill made the
+fixture, so the dry update hands `train()` each of them itself (`FILL_INPUTS`, `provide_fill_inputs`): the magnet's
+column is the fill's OWN pass (`magnet.fill_column`: T2's magnet slot, holding the magnet built off the loaded
+weights, serves the fixture's rows), so the update trains with the run's regulariser and the pass's memory is in the
+demand (the `fill_inputs` segment); it is never skipped or zeroed. A lever that is on and whose input cannot be
+provided is `FillInputMissing` (FATAL_CONFIG) BEFORE `train()`, naming the lever. T2 is a function of its rows: the
+pass moves no learner bit and no played bit, only T2's own serving counters (`flushes`, `rows_served`, ...), which
+keep the rows it served. Why: the first magnet launch (CE-3d, `rb_x35_ce3dswap_s7321`) died here at step 0 —
+the fixture had no column, and no CPU test ran the dry update with the lever on.
+
 THE DEMAND (`gen3_update_fit_v2`, 2026-10-15) is what TRAINING will need, not what startup left behind. v1 read the
 allocator's peak reserved during the dry update from whatever cache startup had left, so a startup TRANSIENT held
 in the cache (the region gate's arms: 9,790 MiB reserved on `rb_xs_s2701`, whose update peaked at 6,579 allocated)
@@ -62,21 +74,31 @@ import os
 import random
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 import torch
+
+from main.exit_codes import FatalConfigError
 
 MiB = 1 << 20
 SCHEMA = "gen3_update_fit_v2"
 #: Device headroom the first update must leave: K6's ceiling margin (512) + D-6's rule (512).
 FIT_HEADROOM_MIB = 1024.0
 SNAPSHOT_ENV = "GEN3AI_UPDATE_FIT_SNAPSHOT"
+#: The dry update's segment for `provide_fill_inputs` (the magnet's T2 pass): booked like a `train()` phase.
+FILL_PHASE = "fill_inputs"
 
 
 class UpdateWontFit(RuntimeError):
     """The first real PPO update does not fit on this card with the declared headroom: measured by a
     dry update at startup, refused there (FATAL_CONFIG), never discovered as an OOM at update 1."""
+
+
+class FillInputMissing(FatalConfigError):
+    """A lever of this run makes `train()` read an input that only the collector's fill writes, and the dry update
+    could not provide it for its fixture rollout (FATAL_CONFIG: a restart meets the same build). Raised before
+    `train()`, naming the lever — never a dry update that trains without the run's term."""
 
 
 @dataclass
@@ -269,8 +291,98 @@ def fixture_buffer(model: Any) -> Tuple[Any, str]:
     out.returns = tile(fx.returns, rb.returns)
     out.rewards = np.zeros_like(rb.rewards)
     out.episode_starts = np.zeros_like(rb.episode_starts)
+    # the optional columns belong to the rows a fill (or an update) wrote them for, never to the fixture's:
+    # `provide_fill_inputs` writes the ones this run's levers read
+    out.is_weights = None
+    out.magnet_logp = None
     out.full, out.pos, out.generator_ready = True, n_steps, False
     return out, fx.source
+
+
+# ------------------------------------------------------------------------------ the fill's inputs
+@dataclass(frozen=True)
+class FillInput:
+    """ONE input of `train()` that only the collector's fill writes (`RustCollector._fill`), so a rollout no fill
+    made lacks it — and how the dry update hands it over for the fixture's rows."""
+    writes: str                              # what the fill writes, as an attribute path on the learner
+    lever: str                               # the flag whose `train()` reads it
+    on: Callable[[Any], bool]                # is it to be provided for this learner?
+    provide: Callable[[Any, Any], None]      # (model, fixture buffer): write it; `FillInputMissing` if it cannot
+    present: Callable[[Any, Any], bool]      # is it where `train()` reads it?
+    how: str                                 # the fill's own computation, or a declared stand-in
+
+
+def _magnet_on(model: Any) -> bool:
+    return float(getattr(model, "magnet_kl_coef", 0.0) or 0.0) > 0.0
+
+
+def _provide_magnet_column(model: Any, buf: Any) -> None:
+    """The fixture rows' magnet column, by the fill's own pass (`magnet.fill_column`): T2's magnet slot — loaded at
+    the env's startup with the magnet `attach` built off the loaded weights — serves the fixture's observations and
+    masks. The logger gets none of the fill's `magnet/*` records (they are the collector's facts about a real fill)."""
+    from agents.training import magnet as M
+
+    col = getattr(model, "_rust_collector", None)
+    svc, slot = getattr(col, "svc", None), getattr(col, "magnet_slot", None)
+    missing = [what for what, absent in (
+        ("the learner holds no magnet (`magnet.attach` did not run)", getattr(model, "_magnet", None) is None),
+        ("the learner has no Rust collector (`model._rust_collector`: the env's startup did not run)", col is None),
+        ("the collector declares no T2 magnet slot (`RustEnvDecl.magnet`)", col is not None and slot is None),
+        ("the collector has no T2 service", col is not None and svc is None)) if absent]
+    if missing:
+        raise FillInputMissing(
+            f"--magnet-kl-coef {float(model.magnet_kl_coef):g} > 0, but the update-fit check's dry update cannot "
+            f"fill its fixture rollout's magnet column (`RolloutBuffer.magnet_logp`, written by the collector's "
+            f"fill through T2's magnet slot): {'; '.join(missing)}. The dry update never trains without the run's "
+            f"regulariser, so it refuses here, before `train()`. The launch order is `magnet.attach`, the Rust "
+            f"env's startup, then this check (`main.train.model_build`).")
+    buf.magnet_logp = M.fill_column(svc, int(slot), buf)
+
+
+def _provide_overlap_prox(model: Any, buf: Any) -> None:
+    model._overlap_prox = np.asarray(buf.log_probs, dtype=np.float64).copy()
+
+
+#: Every input of `train()` that only the fill writes, and what the dry update hands over in its place.
+#: `update_fit_test` holds `RustCollector._fill`'s writes to this table and `FILL_WRITES_TRAIN_DOES_NOT_REQUIRE`:
+#: a new write of the fill is declared in one of the two, or the gate fails.
+FILL_INPUTS: Tuple[FillInput, ...] = (
+    FillInput(
+        writes="rollout_buffer.magnet_logp", lever="--magnet-kl-coef", on=_magnet_on,
+        provide=_provide_magnet_column, present=lambda model, buf: buf.magnet_logp is not None,
+        how="the fill's own pass: T2's magnet slot serves the fixture's rows (`magnet.fill_column`)"),
+    FillInput(
+        # X14: only the overlap path reads it, and `preserved_learner` removes it
+        writes="_overlap_prox", lever="--overlap-collect", on=lambda model: True,
+        provide=_provide_overlap_prox, present=lambda model, buf: getattr(model, "_overlap_prox", None) is not None,
+        how="a declared stand-in: the fixture's own log-probs, an IDENTITY decoupled rewrite (w = 1)"),
+)
+
+#: The fill's other writes on the learner, and why the dry update's `train()` does not need them from here.
+FILL_WRITES_TRAIN_DOES_NOT_REQUIRE: Dict[str, str] = {
+    "_rust_fill": "the fill's report: read only for K9(b)'s staleness meters, and optional there (absent = no meter)",
+    "_rust_row_provenance": "read only by K9(b)'s violation dump, and optional there",
+    "_rust_row_versions": "`_behaviour_probe_setup` writes it (every fixture row current) when the check is on",
+    "_rust_version": "`_behaviour_probe_setup` writes it beside the rows' versions",
+}
+
+
+def provide_fill_inputs(model: Any, buf: Any) -> List[str]:
+    """Hand the dry update's `train()` every `FILL_INPUTS` entry this learner's levers read, for the fixture ``buf``
+    — and REFUSE (`FillInputMissing`, before `train()`) one that is on and not where `train()` reads it. Returns
+    the attribute paths provided."""
+    done: List[str] = []
+    for inp in FILL_INPUTS:
+        if not inp.on(model):
+            continue
+        inp.provide(model, buf)
+        if not inp.present(model, buf):
+            raise FillInputMissing(
+                f"{inp.lever} is on, but the update-fit check's dry update did not get `{inp.writes}` for its "
+                f"fixture rollout ({inp.how}): `train()` would raise on a rollout no collector filled. Fix "
+                f"`update_fit.FILL_INPUTS`' entry; never skip the term in the dry update.")
+        done.append(inp.writes)
+    return done
 
 
 class _PhasePeaks:
@@ -391,9 +503,16 @@ def dry_update(model: Any, *, epochs: int = 1, canary: Any = None) -> FitReading
             model._logger = configure(None, [])
         model.rollout_buffer = buf
         model.n_epochs = int(epochs)
-        # X14 (--overlap-collect): an IDENTITY decoupled rewrite (w = 1) for a buffer no fill made; only the
-        # overlap path reads it, and `preserved_learner` removes it
-        model._overlap_prox = np.asarray(buf.log_probs, dtype=np.float64).copy()
+        # what only the collector's FILL writes and this run's `train()` reads (the magnet's column by T2's magnet
+        # slot, X14's proximal log-probs): provided here, or refused before `train()` (`FILL_INPUTS`)
+        try:
+            provide_fill_inputs(model, buf)
+        except BaseException:
+            import shutil
+            shutil.rmtree(dump_dir, ignore_errors=True)
+            raise
+        if cuda:
+            phases.mark(FILL_PHASE)            # the magnet's T2 pass is part of the demand, in its own segment
         _behaviour_probe_setup(model, buf, dump_dir)
         if snap_path:
             torch.cuda.memory._record_memory_history(max_entries=400_000)
@@ -404,6 +523,13 @@ def dry_update(model: Any, *, epochs: int = 1, canary: Any = None) -> FitReading
             recorded = tuple(getattr(model._logger, "name_to_value", {}) or {})
         except torch.cuda.OutOfMemoryError as exc:
             oom = str(exc).splitlines()[0]
+        except FatalConfigError as exc:
+            # a typed refusal out of `train()` here is about the FIXTURE rollout, which no collector filled: say so
+            # on the traceback (a lever whose input only the fill writes belongs in `FILL_INPUTS`)
+            exc.add_note("raised inside the update-fit check's DRY update at startup (`update_fit.dry_update`: one "
+                         "real train() on a fixture rollout no collector filled; an input only the collector's fill "
+                         "writes is provided by `update_fit.FILL_INPUTS`), not by a rollout of the run")
+            raise
         finally:
             if snap_path:
                 with contextlib.suppress(Exception):
@@ -503,12 +629,16 @@ def verdict(r: FitReading, mode: str = "?", run_dir: Optional[str] = None) -> st
     return line
 
 
+def _on_cuda(model: Any) -> bool:
+    return bool(next(model.policy.parameters()).device.type == "cuda")
+
+
 def check_update_fits(model: Any, run_dir: Optional[str] = None) -> Optional[str]:
     """The startup gate: `dry_update`, the METRIC-KEY check over every key it recorded (+ the network's
     derived families; `agents.training.metric_keys` — `MetricKeyCollisionError`, FATAL_CONFIG), then
     `verdict`. Off CUDA: the key check over the derived families only, then None (no dry update)."""
     from agents.training.metric_keys import check_startup_metric_keys
-    if next(model.policy.parameters()).device.type != "cuda":
+    if not _on_cuda(model):
         check_startup_metric_keys(model)
         return None
     reading = dry_update(model, canary=armed_canary(model))
