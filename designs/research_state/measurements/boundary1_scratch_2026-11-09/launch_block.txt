@@ -1,0 +1,88 @@
+# BOUNDARY-1 launch block (phased): python -m main.b1.arms describe --pin 15136b61634b667bb9da5ccc6647ff9265238829
+# pin 15136b61634b667bb9da5ccc6647ff9265238829; run every command from the MAIN checkout; one run at a time, in this order
+# every run types the base --ent-coef 0.0125 --behaviour-check warn (PREREG §18 Amendment 2), then its arm's lever
+#
+# arm                runs                                         lever typed
+# C control          rb_b1c_s5101, rb_b1c_s5102, rb_b1c_s5110     nothing beyond the base
+# W wide             rb_b1w_s5103, rb_b1w_s5104, rb_b1w_s5111     --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch
+# Br breadth         rb_b1br_s5105, rb_b1br_s5106, rb_b1br_s5112  --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both
+# WB wide + breadth  rb_b1wb_s5107, rb_b1wb_s5108, rb_b1wb_s5113  --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both
+# spare seed 5109: a replaced run's own arm takes it, from step 0 (names rb_b1c_s5109, rb_b1w_s5109, rb_b1br_s5109, rb_b1wb_s5109)
+
+# PHASE 1: 12 FRESH launches to 50,000,000 steps
+# [1] rb_b1c_s5101  (C control, seed 5101)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101
+# [2] rb_b1w_s5103  (W wide, seed 5103)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5103 --device cuda --log-level periodic --run-name rb_b1w_s5103
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5103 --device cuda --log-level periodic --run-name rb_b1w_s5103
+# [3] rb_b1br_s5105  (Br breadth, seed 5105)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5105 --device cuda --log-level periodic --run-name rb_b1br_s5105
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5105 --device cuda --log-level periodic --run-name rb_b1br_s5105
+# [4] rb_b1wb_s5107  (WB wide + breadth, seed 5107)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5107 --device cuda --log-level periodic --run-name rb_b1wb_s5107
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5107 --device cuda --log-level periodic --run-name rb_b1wb_s5107
+# [5] rb_b1c_s5102  (C control, seed 5102)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5102 --device cuda --log-level periodic --run-name rb_b1c_s5102
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5102 --device cuda --log-level periodic --run-name rb_b1c_s5102
+# [6] rb_b1w_s5104  (W wide, seed 5104)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5104 --device cuda --log-level periodic --run-name rb_b1w_s5104
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5104 --device cuda --log-level periodic --run-name rb_b1w_s5104
+# [7] rb_b1br_s5106  (Br breadth, seed 5106)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5106 --device cuda --log-level periodic --run-name rb_b1br_s5106
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5106 --device cuda --log-level periodic --run-name rb_b1br_s5106
+# [8] rb_b1wb_s5108  (WB wide + breadth, seed 5108)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5108 --device cuda --log-level periodic --run-name rb_b1wb_s5108
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5108 --device cuda --log-level periodic --run-name rb_b1wb_s5108
+# [9] rb_b1c_s5110  (C control, seed 5110)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5110 --device cuda --log-level periodic --run-name rb_b1c_s5110
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5110 --device cuda --log-level periodic --run-name rb_b1c_s5110
+# [10] rb_b1w_s5111  (W wide, seed 5111)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5111 --device cuda --log-level periodic --run-name rb_b1w_s5111
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5111 --device cuda --log-level periodic --run-name rb_b1w_s5111
+# [11] rb_b1br_s5112  (Br breadth, seed 5112)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5112 --device cuda --log-level periodic --run-name rb_b1br_s5112
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5112 --device cuda --log-level periodic --run-name rb_b1br_s5112
+# [12] rb_b1wb_s5113  (WB wide + breadth, seed 5113)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5113 --device cuda --log-level periodic --run-name rb_b1wb_s5113
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 1000000 --steps 50000000 --seed 5113 --device cuda --log-level periodic --run-name rb_b1wb_s5113
+
+# THE 50,000,000 LOOK (the harm stop) is read here, before any phase-2 command.
+
+# PHASE 2: each run RESUMED in its own folder to 100,000,000 steps (no --run-name: a resume, not a fork; no --arch: fresh-only)
+# [1] rb_b1c_s5101  (C control, seed 5101)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1c_s5101/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1c_s5101/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [2] rb_b1w_s5103  (W wide, seed 5103)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1w_s5103/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1w_s5103/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [3] rb_b1br_s5105  (Br breadth, seed 5105)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1br_s5105/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1br_s5105/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [4] rb_b1wb_s5107  (WB wide + breadth, seed 5107)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1wb_s5107/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1wb_s5107/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [5] rb_b1c_s5102  (C control, seed 5102)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1c_s5102/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1c_s5102/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [6] rb_b1w_s5104  (W wide, seed 5104)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1w_s5104/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1w_s5104/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [7] rb_b1br_s5106  (Br breadth, seed 5106)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1br_s5106/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1br_s5106/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [8] rb_b1wb_s5108  (WB wide + breadth, seed 5108)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1wb_s5108/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1wb_s5108/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [9] rb_b1c_s5110  (C control, seed 5110)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1c_s5110/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1c_s5110/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [10] rb_b1w_s5111  (W wide, seed 5111)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1w_s5111/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1w_s5111/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [11] rb_b1br_s5112  (Br breadth, seed 5112)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1br_s5112/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1br_s5112/final_model.zip --steps 100000000 --device cuda --log-level periodic
+# [12] rb_b1wb_s5113  (WB wide + breadth, seed 5113)
+python -m main.launcher --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1wb_s5113/final_model.zip --steps 100000000 --device cuda --log-level periodic
+#     dry run: python -m main.launcher --dry-run --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --model models/rb_b1wb_s5113/final_model.zip --steps 100000000 --device cuda --log-level periodic

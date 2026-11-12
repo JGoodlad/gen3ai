@@ -3,8 +3,9 @@
 **Status: REGISTERED (tier FULL) before any launch, any game and any read; AMENDED 2026-11-10 (Amendment 1, §18:
 three runs a cell, twelve runs) and 2026-11-12 (Amendment 2, §18: every run types `--ent-coef 0.0125
 --behaviour-check warn`, the look judges K9(b), the memory fit at width 256), both also before any launch, game or
-read. NOT LAUNCHED** (no `rb_b1*` run exists). **The LAUNCH pin is PENDING: §18's re-pin record names it, and the
-registered pin launches nothing.**
+read. NOT LAUNCHED** (no `rb_b1*` run exists). **The LAUNCH pin is
+`15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
+nothing.**
 The launch is the orchestrator's GO through the Training session, after the re-pin record and after §13's GPU
 checklist at the launch pin is
 green, with its records in §18. Nothing below changes after the first run launches except by a dated amendment (§18), written before the look
@@ -89,8 +90,9 @@ the base and its lever and nothing else; the control types the base alone.
 
 ## 3. The pin, the seeds, and the checks before launch
 
-- **ONE pin for everything: the LAUNCH pin, PENDING** (set once, by §18's re-pin record, which lists what main
-  gained since the registered pin). All runs train at it, every look plays at it, and the Kakuna read plays at it.
+- **ONE pin for everything: the LAUNCH pin, `15136b61634b667bb9da5ccc6647ff9265238829`** (set once, by §18's re-pin
+  record of 2026-11-12, which lists what main gained since the registered pin). All runs train at it, every look plays
+  at it, and the Kakuna read plays at it.
 - **Registered: `507d0c11961da8d4243a4c8877bcc04ef220058c`** (main at registration, the commit that carried the
   kit, the cross statistic and the Kakuna rule). It is `0220f8408` plus the nine commits main gained while this was written
   (`c4a842d12` to `c8c212214`: the light-screen tier's docs, the heavy slots admitted by memory, the core split and
@@ -113,7 +115,8 @@ the base and its lever and nothing else; the control types the base alone.
   recorded seed, no run name and no `_s51NN` directory name collides with 5101–5109 or the twelve run names. **Again
   2026-11-10, with the amended kit, for Amendment 1's seeds:** 646 `metadata.json` files and 3,922 directory names,
   no collision with 5101–5113 or the sixteen run names (the twelve runs and the spare under each arm). **Again at
-  the launch pin** (§18's re-pin record carries the counts). The same
+  the launch pin, 2026-11-12:** 664 `metadata.json` files and 4,017 directory names, no collision (§18's re-pin
+  record). The same
   command verifies the corpus identity and that each arm differs from the control by its lever alone. **It is re-run
   immediately before the first launch** (§13 item 1): a hit refuses the launch. Run again later, it lists the
   experiment's own folders as `own` (a folder whose immutable `original_command` and seed are the registered run's
@@ -756,7 +759,8 @@ ran at `aee363bc9` and `e112cbcbf`, trainer code changed after both, and its pil
 
 Run every training command from the MAIN checkout with the launcher's interpreter (`$GEN3AI_PYTHON`), one at a time,
 **from a shell at nice ≤ 10** (Amendment 2: the launcher's inherited-nice gate, `src/main/launcher/nice_gate.py`,
-refuses a GPU launch typed from a shell above nice 10).
+refuses a GPU launch typed from a shell above nice 10). **`<PIN>` in every command below is the launch pin,
+`15136b61634b667bb9da5ccc6647ff9265238829`** (§3; §18's re-pin record).
 
 - **Launch block** (the Training session's): `launch_block.txt`, which is `python -m
   main.b1.arms describe --pin <PIN>` (twelve fresh launches, then twelve resumes). **It is written by §18's re-pin
@@ -1112,7 +1116,88 @@ date, run, `git rev-parse HEAD` of the main checkout, `python -m utils.core_spli
 JSON once the run has its first checkpoint; every FATAL, resume and replacement with its cause; every K9(b) record
 (Amendment 2).
 
-**The re-pin record: PENDING.** It is the commit after the launch pin.
+**The re-pin record (2026-11-12; §18's single re-pin, steps 1 to 6).** Written by the agent the orchestrator
+named, on CPU (no GPU lease), in the commit after the launch pin. It launches nothing and fills none of the slots
+below.
+
+1. **The launch pin is `15136b61634b667bb9da5ccc6647ff9265238829`**: main's commit of Amendment 2 (`prereg(b1):
+   Amendment 2 …`). Its parent is the
+   kit's commit `35362d348`; it also holds the memory-fit unit and its follow-ups (`e112cbcbf`, `1fe7283f7`,
+   `ef89ca99f`, `13c50a5e6`, `1d2aa1695`) and the test-only `90699348f`. This record's commit differs from the pin
+   only under `designs/` (the records, the spec's `pin`, this file, STATUS and the backlog).
+2. **What the pin adds since the registered `507d0c119`**: 42 commits, 363 files, 153 of them under `src/`.
+   - **Trainer, model or launcher code, on every run's path:** `e112cbcbf`, `1fe7283f7`, `ef89ca99f`, `13c50a5e6`
+     (the memory fit, Amendment 2 item 6); `1d2aa1695` (the damage op reads OUR spread off the real context, so
+     the CUDA forward + backward compiles at B = 2 again; every number bit-identical; no `ARCH_SIGNATURE`, config
+     or floor change); `6e4a0300e` and `d4b0576ea` (the launcher's inherited-nice gate, Amendment 2 item 3).
+   - **Trainer or model code behind a switch no BOUNDARY-1 run types** (each off by default, and each dry run
+     says so): `251bbfb87` (the trailing magnet, `--magnet-kl-coef`, default 0.0; it adds the recipe row
+     `magnet_kl_coef: 0.0` to `designs/production_config.json` and moves `MODEL_CONFIG_VERSION` 169 → 170);
+     `3c7f3bedd` (`--belief-grad-mode move_label_only`); `d0e2715d8` (the human-replay clone's two uses behind the
+     human-data lever; the dry runs print `human data : off`).
+   - **Tests and goldens only:** `55334e88a` (two flag-off numerics goldens re-recorded behind config v165 to
+     v168; its one head-to-head file is a test), `90699348f` (Amendment 2 item 6).
+   - **The kit:** `c92a5e290` (three seeds a cell), `35362d348` (the base, the K9(b) reads).
+   - **Not touched by any of the 42:** the observation encoder, the inference service, the Rust core, the
+     head-to-head play code (`src/agents/observation`, `src/agents/inference`, `src/rust_sim`, `src/main/h2h`).
+     `ARCH_SIGNATURE` (`gen3_mon_tied_gain_v1`) and the migration floor (145) are unchanged.
+   - **The rest** are ops and gate fixes (`4038f8915`, `7c25230ba`, `b27c78383`, `5eabc4a79`, `218d093c0`,
+     `f85f7f3dd`), a tools meter (`811c08ddc`), the X35 kit's CE-3d arms (`08b998d12`, `71c20b521`, `e9f55e723`)
+     and registrations, verdicts and docs (X66, X67, X69, X60-T, CE-3d, R9's registry row, this file).
+   - **`checkargs` and the dry runs at the pin resolve `production_config@8a9be0753ba9`** (the registered pin
+     resolved `@51496e4209fc`; the whole difference is the `magnet_kl_coef: 0.0` row). Per argv: 1 of 32 recipe
+     knobs differs from `recipe.fresh`, `ent_coef` 0.0125, TYPED, in all four arms; 2 of 42 ARCH-surface keys
+     differ in W and WB (`d_model` 256, `trunk_ffn_dim` 512) and none in C and Br; `K9(b) check : warn (typed)`;
+     0 unrecognised flags.
+3. **The records, regenerated from a clean detached checkout of the pin** (`git worktree add --detach`,
+   bootstrapped, `git status` empty): [`launch_block.txt`](launch_block.txt) (`python -m main.b1.arms describe
+   --pin 15136b61634b667bb9da5ccc6647ff9265238829`: twelve fresh launches, then twelve resumes, each with its
+   commented dry-run form; its second line
+   names the pin), and the eight-run block of the registered pin is deleted; `argv_`, `checkargs_` and `dryrun_`
+   for `rb_b1c_s5101`, `rb_b1w_s5103`, `rb_b1br_s5105`, `rb_b1wb_s5107`; `read_spec_kakuna.json` now carries
+   `"pin"` (spec sha256 `00269676…613b6a`), its twelve models and the model list `kakuna_rule_test.py` pins
+   unchanged.
+4. **The checks at the pin** (the same checkout, CPU):
+   - `python -m main.b1.arms check --tree <checkout> --pin 15136b61634b667bb9da5ccc6647ff9265238829 --params`: `CHECK
+     PASSED`. (a) 664
+     `metadata.json` files and 4,017 directory names under the main checkout's `models/` and `~/gen3ai_archive`:
+     no seed of 5101–5113 and none of the sixteen run names is taken; (b) the corpus `n1_proc_v1@ALL` verifies
+     (data sha256 `99e3425a…0bad6`, 12,000 teams); (c) the control resolves the base and each arm differs from it
+     by its lever alone, at 50M and at 100M; (d) parameters 2,609,183 (C, Br) and 6,258,079 (W, WB).
+   - `python -m main.b1.resume_check static --tree <checkout> --pin 15136b61634b667bb9da5ccc6647ff9265238829`: `PASS:
+     no difference`.
+   - `pytest src/main/b1` on this record's tree: 266 passed, 0 skipped (no record-bound test skips). The kit's slow
+     tier ran
+     at `35362d348`, whose `src/` is the pin's: 5 passed (the cross-width pairing on CPU, the parameter counts).
+5. **§13 items 1, 2, 6 and 7 at the pin, on CPU:**
+   - **Item 1**: the kit's check, above. It is run again immediately before the first launch (§3).
+   - **Item 2, the CPU half**: the four first-seed dry runs, from a nice-19 shell with the card hidden, exit 3
+     with exactly two refusals each, `cuda devices` and `inherited nice`; every other preflight passes (the pin
+     resolves, the run dir would be created, disk 165.9 GiB free against 14.45 GiB required, no display process
+     on the card, the Showdown validator present). The card-visible half is slot S7.
+   - **Item 6**: the static check above, and the two-segment smoke REPEATED at the pin
+     ([`resume_check.log`](resume_check.log) is its transcript): arm WB, seed 5107, half = 4,000 steps, CPU
+     `--debug`, the base typed. `PASS: no difference`; 68 checks ok and 7 notes, every segment exited 0, on the first
+     run at this pin (1,299 s, peak 9.49 GB of a 16 GB cap). Phase 1 stopped at 4,346 and phase 2 resumed at that
+     count, ending at 8,510 against the run-through's 8,203 (an update boundary is a count of completed games' rows);
+     the optimizer (280 entries) and 809 policy tensors are tensor-equal across the stop; both runs record `ent_coef`
+     0.0125, one matchup hash and one code version, `15136b61634b`. Its coverage is §4's: one arm, the CPU, a
+     debug rollout shape. The phased block stays the registered one.
+   - **Item 7**: `python -m main.reads check-spec --spec <this folder>/read_spec_kakuna.json`, with the spec's
+     `pin` filled in and read on a checkout whose HEAD is the pin, reports the pin `15136b616…`, `is_head` true and
+     `play_path_differs_at_head` 0. (The spec committed AT the pin carries no pin, so there is nothing to read
+     in the pin's own tree.) This record's commit changes files under `designs/` only, none of them on the play
+     path, and the read is repeated on it before it is pushed.
+   - **Also read at the pin, though no item asks it**: the three CPU slow tests of
+     `src/agents/model/update_performance_shape_test.py` that `90699348f` repaired pass (127 s; their CUDA cell is
+     one of §13 item 3's).
+6. **The pin is written** into this file's header, §3 and §14, `designs/STATUS.md` and the backlog's MF-5 row.
+
+**Not done by the re-pin, and not claimable from it:** anything on the card. §13 items 3, 4 and 5 and the
+card-visible half of item 2 are slots S1 to S7 below; the runbook is
+`~/.cache/gen3ai/handoffs/b1_pin_runbook_2026-11-12.md` (≈ 3.6 GPU-h, 3.0 to 4.4). `13c50a5e6` and `1d2aa1695` as
+main's commits have not run on the card (Amendment 2 item 6); the pilots' startup fit check and item 3's compile
+cell are their first card runs.
 
 **Slots only the card can fill (all at the launch pin; none filled):**
 

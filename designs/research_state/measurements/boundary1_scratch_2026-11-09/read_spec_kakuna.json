@@ -2,6 +2,7 @@
  "schema": "gen3_read_spec_v1",
  "read": "boundary1_kakuna_2026-11-09",
  "prereg": "designs/research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
  "note": "BOUNDARY-1's Kakuna meter (PREREG section 6): the twelve 100M finals of the width x breadth 2x2 (3 seeds a cell; PREREG section 18 Amendments 1 and 2) against Kakuna on H (heldout72_hpfix), F (forum72) and P72 (p72), unit seeds 0-35 = 720 games a run a panel, 25,920 games. CONFIRMING contrasts: width_U and breadth_F. REPORTED: breadth_U, width_F, interaction_U. Rule b1_kakuna classifies each contrast POSITIVE / NEGATIVE / SPANS-ZERO by its analytic two-way interval at `level`; the combination with the in-house verdict is main.b1's, not the rule's. The pin is the launch pin of the single re-pin (PREREG section 3 and section 18): the commit that holds the re-pinned kit cannot name itself, so the records commit that follows it fills `pin` (until then: check-spec --pin-pending).",
  "models": {
   "b1c_s5101": {

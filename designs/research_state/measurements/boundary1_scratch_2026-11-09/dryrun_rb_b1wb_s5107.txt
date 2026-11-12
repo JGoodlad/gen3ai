@@ -1,11 +1,12 @@
-# python -m main.launcher --dry-run $(cat argv_rb_b1wb_s5107.txt)   [CUDA_VISIBLE_DEVICES=""; a worktree whose HEAD is the pin 507d0c11961da8d4243a4c8877bcc04ef220058c; 2026-11-10T05:53Z]
+# python -m main.launcher --dry-run $(cat argv_rb_b1wb_s5107.txt)   [CUDA_VISIBLE_DEVICES="", nice 19 (a run is live: rule 5b); a clean detached checkout whose HEAD is the pin 15136b61634b667bb9da5ccc6647ff9265238829; 2026-11-12T09:06Z]
+# On CPU at nice 19 the launcher refuses on exactly two rows, 'cuda devices' and 'inherited nice': both are the shell's, not the argv's. The card-visible nice-0 dry runs are §13 item 2's GPU half (§18 slot S7).
 
 ── launcher --dry-run — resolving only, nothing will be created ────────────
   role        : FRESH
   run dir     : /home/goodlad/dev/gen3ai/models/rb_b1wb_s5107   [would be created]
   on restart  : RESUME role — drops FRESH-only --arch (inherited from model_config.json); --model → the run's latest checkpoint
-  pin         : 507d0c11961da8d4243a4c8877bcc04ef220058c  (source: pin_commit)
-                ↳ feat(b1): BOUNDARY-1's kit and meters -- the four arms of the from-scratch 2 x 2 (width x team breadth) as one launch block, the stop-at-50M-and-resume check (PASS), the head-to-head cross with its floored variance and coded rules, the look driver and its run guards, and Kakuna clustered by team as a read rule; this commit is the registration's pin
+  pin         : 15136b61634b667bb9da5ccc6647ff9265238829  (source: pin_commit)
+                ↳ prereg(b1): Amendment 2, blind and before any launch -- every BOUNDARY-1 run types --ent-coef 0.0125 (the owner's yes) and --behaviour-check warn with K9(b) judged by the look; the width-256 memory fit recorded; no skip rule; the launch pin still PENDING
                 (a real launch would create an isolated worktree at this commit — the dry run does not)
   steps       : --steps 50,000,000 (fresh run, from 0)
   interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — FRESH launch; this torch is recorded at the run's first save
@@ -21,7 +22,7 @@
       --eval-games           None         (default - neither typed nor inherited)
       --seed                 5107         (TYPED - from the argv)
   env core    : rust  [the only core]
-  K9(b) check : fatal  (the default: --behaviour-check is neither typed nor inherited)
+  K9(b) check : warn  (typed)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
   human data                     : off (no human data)
         [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
   (child-only: a declared growth's fork-time gate (--grow: the grown network's logits + values bit-identical to the parent's on real rows) and the seeded pool's growth)
@@ -30,7 +31,7 @@
   (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
   (child-only: the observation dimension and arch signature)
   arch        : --arch production — 42 ARCH-surface key(s) applied from designs/production_config.json for every flag this argv leaves unset
-  ARCH SURFACE vs designs/production_config.json  [production_config@51496e4209fc]
+  ARCH SURFACE vs designs/production_config.json  [production_config@8a9be0753ba9]
     --arch production applied the production surface (explicit flags still win)
     ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
         --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
@@ -38,27 +39,30 @@
         trunk_ffn_dim                512            (this argv, argv)   production: 256
         d_model                      256            (this argv, argv)   production: 128
     ℹ️  --allow-nonproduction-arch — the drift above is an EXPLICIT choice and is recorded in model_config.json's arch_source.
-  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@51496e4209fc]
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@8a9be0753ba9]
     --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
     sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
     trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
-    ✓ every RECIPE knob matches recipe.fresh (31 knobs)
+    1 of 32 RECIPE knob(s) differs from recipe.fresh:
+        ent_coef                 0.0125     (TYPED)   production: 0.05
+    ℹ️  every differing knob was TYPED — a deliberate deviation, recorded in metadata.json's cli_args.
   desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
-  disk space  : ✓ 209.30 GiB free on /home/goodlad/dev/gen3ai/models vs 16.42 GiB REQUIRED (checkpoint archive run rb_x60t_s3508 (same ARCH_SIGNATURE) checkpoint_290000067_steps.zip)
+  disk space  : ✓ 165.90 GiB free on /home/goodlad/dev/gen3ai/models vs 14.45 GiB REQUIRED (checkpoint archive run rb_x35_ce3dswap_s7321 (same ARCH_SIGNATURE) checkpoint_282000111_steps.zip)
                 the arithmetic:
           periodic checkpoints      2.67 GiB   = 50 x 54.7 MiB  (steps 50,000,000 // 1,000,000 - resume 0 // 1,000,000)
           final/best/aborted       164.2 MiB   = 3 x 54.7 MiB
           eval traces               1.76 GiB   = 25 cycles x 72.0 MiB  (ceil(50,000,000 / 2,000,000))
           pool snapshots            1.07 GiB   = 20 x 54.7 MiB  (cap 20)
           compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
-          shared compile cache      1.58 GiB   = cap 20.00 GiB - 18.42 GiB in use at /home/goodlad/.cache/gen3ai/compile_shared (this filesystem: counted)
+          shared compile cache       0.0 MiB   = cap 20.00 GiB - 20.96 GiB in use at /home/goodlad/.cache/gen3ai/compile_shared (this filesystem: counted)
           sidecar + tb + logs      300.0 MiB   = 50.0M steps x 6.0 MiB/M
           fixed                     16.0 MiB   = metadata, ledgers, sidecar json
-          subtotal                  9.94 GiB
-          + margin 25%              2.48 GiB
+          subtotal                  8.36 GiB
+          + margin 25%              2.09 GiB
           + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
-          = REQUIRED               16.42 GiB
-  showdown deps : ✓ /home/goodlad/dev/gen3ai-worktrees/boundary1_reg/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+          = REQUIRED               14.45 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai-worktrees/b1_pin_check/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
   cuda devices : ✗ REFUSED (FATAL_CONFIG): CUDA_VISIBLE_DEVICES='' is set in the environment this launch hands the child, and it hides every GPU, but the launch is --device cuda: the child would die at startup with "No CUDA GPUs are available". Fix: `unset CUDA_VISIBLE_DEVICES` (or set the device index to use) before launching, or launch with --device cpu
+  inherited nice : ✗ REFUSED (FATAL_CONFIG): this shell runs at nice 19, which a GPU training launch would inherit: the launcher can only raise its nice toward 10, never lower it, so the run and its ~940 processes would train at nice 19, starved by agent work. Fix: launch from a nice-0 (or <= 10) shell, not one under `nice -n 19` or the agent-CPU prefix
   ✗ DRY RUN — this command would NOT launch. Nothing was created or modified.
 exit 3
