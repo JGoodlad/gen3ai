@@ -26,27 +26,49 @@ def _levers(seeds: Optional[Dict[str, Tuple[int, ...]]] = None) -> Dict[Tuple[st
     return {(arm, s): LEVERS[arm] for arm in X.ARMS for s in seeds[arm]}
 
 
+#: The module's own K9(b) reader (TensorBoard rows + the child log), before the fixture below stands in for it.
+REAL_K9B_READ = K.k9b_read
+K9B_STUB = "k9b_stub.json"
+
+
+def _stub_k9b_read(run_dir: Path, upto: Optional[int]) -> Dict[str, Any]:
+    """The K9(b) record ``make_run`` planted (``k9b=``), else a PASS: the guard runs on every plan and check here
+    without an event file a run; the real reader has its own tests below."""
+    rec = {"schema": K.K9B_SCHEMA, "run": run_dir.name, "verdict": "PASS", "upto": upto, "fires": [], "reasons": []}
+    planted = run_dir / K9B_STUB
+    return {**rec, **(json.loads(planted.read_text()) if planted.is_file() else {})}
+
+
+@pytest.fixture(autouse=True)
+def _k9b_from_the_fixture(monkeypatch):
+    monkeypatch.setattr(K, "k9b_read", _stub_k9b_read)
+
+
 def make_run(models: Path, arm: str, seed: int, *, steps: Tuple[int, ...] = (50_000_081, 51_000_012),
-             pin: str = PIN, last_step: int = 100_050_000, target: int = 50_000_000, **over: Any) -> Path:
-    """A run folder as the trainer leaves it: ``metadata.json`` and ``checkpoints/checkpoint_<N>_steps.zip`` + sidecar."""
+             pin: str = PIN, last_step: int = 100_050_000, target: int = 50_000_000,
+             k9b: Optional[Dict[str, Any]] = None, **over: Any) -> Path:
+    """A run folder as the trainer leaves it: ``metadata.json`` and ``checkpoints/checkpoint_<N>_steps.zip`` + sidecar.
+    ``k9b``: what the stubbed K9(b) reader reports for this run (default: PASS)."""
     kit = K.KIT_ARM[arm]
     run = models / A.run_name(kit, seed)
     (run / "checkpoints").mkdir(parents=True)
     history = [{"git_hash": pin, "pin_source": "pin_commit", "first_step": 0, "last_step": last_step, "torch": "2.8"}]
     md: Dict[str, Any] = {
-        "cli_args": {"seed": seed, "n_epochs": 10, "ent_coef": 0.05, **LEVERS[arm]},
+        "cli_args": {"seed": seed, "n_epochs": 10, "ent_coef": 0.0125, **LEVERS[arm]},
         "original_command": " ".join(["/x/src/main/launcher/__main__.py", *A.build_argv(kit, seed, pin, target)]),
-        "ent_coef": 0.05, "pin_history": history, "lineage": {"role": "fresh", "fork_parent": None},
+        "ent_coef": 0.0125, "pin_history": history, "lineage": {"role": "fresh", "fork_parent": None},
         "torch_version": "2.8.0+cu126", "init_num_threads": 8}
     side_over = over.pop("side", {})
     cli_over = over.pop("cli", {})
     md.update(over)
     md["cli_args"].update(cli_over)
     (run / "metadata.json").write_text(json.dumps(md))
+    if k9b is not None:
+        (run / K9B_STUB).write_text(json.dumps(k9b))
     for n in steps:
         z = run / "checkpoints" / f"checkpoint_{n}_steps.zip"
         z.write_bytes(f"{run.name}@{n}".encode())
-        side = {"num_timesteps": n, "ent_coef": 0.05,
+        side = {"num_timesteps": n, "ent_coef": 0.0125,
                 "pin_history": [{**history[0], "last_step": n}], **side_over}
         z.with_suffix(".json").write_text(json.dumps(side))
     return run
@@ -198,7 +220,7 @@ def test_a_fork_is_not_a_fresh_run(tmp_path):
 def test_a_run_not_launched_by_its_arms_registered_argv_is_refused(tmp_path):
     def cmd(arm: str, seed: int, extra: str = "", steps: int = 50_000_000) -> str:
         return " ".join(["/x/__main__.py", *A.build_argv(arm, seed, PIN, steps)]) + extra
-    for i, bad in enumerate((cmd("c", 5101), cmd("wb", 5107), cmd("br", 5106), cmd("br", 5105, " --ent-coef 0.0125"),
+    for i, bad in enumerate((cmd("c", 5101), cmd("wb", 5107), cmd("br", 5106), cmd("br", 5105, " --ent-coef 0.05"),
                              cmd("br", 5105).replace("@ALL:0.5", "@ALL:0.8"), "", None)):
         assert "original_command is not the registered argv of arm Br seed 5105" in \
             _one_bad(tmp_path / str(i), original_command=bad)
@@ -221,11 +243,93 @@ def test_a_resume_that_lost_the_lever_is_refused_by_the_last_processs_resolved_k
 
 
 def test_another_entropy_coefficient_or_epoch_count_is_refused(tmp_path):
-    assert "metadata.ent_coef 0.0125 != 0.05" in _one_bad(tmp_path / "a", ent_coef=0.0125)
-    assert "cli_args.ent_coef 0.0125 != 0.05" in _one_bad(tmp_path / "b", cli={"ent_coef": 0.0125})
-    assert "checkpoint_50000081_steps.zip ent_coef 0.01 != 0.05" in _one_bad(tmp_path / "c", side={"ent_coef": 0.01})
+    """The registered base is ``ent_coef`` 0.0125 (PREREG §18 Amendment 2): production's own 0.05 is refused too."""
+    assert K.ENT_COEF == 0.0125 == float(A.ENT_COEF)
+    assert "metadata.ent_coef 0.05 != 0.0125" in _one_bad(tmp_path / "a", ent_coef=0.05)
+    assert "cli_args.ent_coef 0.05 != 0.0125" in _one_bad(tmp_path / "b", cli={"ent_coef": 0.05})
+    assert "checkpoint_50000081_steps.zip ent_coef 0.01 != 0.0125" in _one_bad(tmp_path / "c", side={"ent_coef": 0.01})
     assert "n_epochs 4 != 10" in _one_bad(tmp_path / "d", cli={"n_epochs": 4})
-    assert "metadata.ent_coef None != 0.05" in _one_bad(tmp_path / "e", ent_coef=None)
+    assert "metadata.ent_coef None != 0.0125" in _one_bad(tmp_path / "e", ent_coef=None)
+
+
+# --------------------------------------------------------------------------------- K9(b) at a look (Amendment 2)
+def test_a_run_whose_k9b_read_is_not_pass_refuses_the_plan_and_a_pass_is_recorded_in_it(tmp_path):
+    """PREREG §10 (Amendment 2): the runs train under ``--behaviour-check warn``, so the look is where K9(b) is
+    judged; VOID and INCONCLUSIVE both refuse, and the plan carries every run's record."""
+    void = {"verdict": "VOID", "fires": ["judged_max 0.002 >= 0.001 at step 31000000"]}
+    assert ("K9(b) through step 50000081 is VOID, not PASS: judged_max 0.002 >= 0.001 at step 31000000"
+            in _one_bad(tmp_path / "a", k9b=void))
+    absent = {"verdict": "INCONCLUSIVE", "reasons": ["behaviour/max_abs_dlogp_judged: no row"]}
+    assert "is INCONCLUSIVE, not PASS: behaviour/max_abs_dlogp_judged: no row" in _one_bad(tmp_path / "b", k9b=absent)
+    make_all(tmp_path / "c")
+    doc, probs = plan_of(tmp_path / "c")
+    assert probs == [] and doc is not None
+    recs = [f["k9b"] for a in X.ARMS for f in doc["runs"][a]]
+    assert len(recs) == 12 and all(r["verdict"] == "PASS" and r["upto"] == 50_000_081 for r in recs)
+    # the reader is asked about the look checkpoint's own step, per arm (the EQ look: the wide arms' earlier step)
+    asked: List[Tuple[str, int]] = []
+    make_all(tmp_path / "d", steps=(61_000_007, 100_000_033))
+
+    def spy(run_dir: Path, upto: int) -> Dict[str, Any]:
+        asked.append((run_dir.name, upto))
+        return _stub_k9b_read(run_dir, upto)
+    assert plan_of(tmp_path / "d", "EQ", eq_step=61_000_000, k9b=spy)[1] == []
+    assert len(asked) == 12 and {u for r, u in asked if "_b1w" in r} == {61_000_007}
+    assert {u for r, u in asked if "_b1w" not in r} == {100_000_033}
+
+
+def _write_events(path: Path, rows) -> None:
+    from torch.utils.tensorboard import SummaryWriter
+
+    path.mkdir(parents=True, exist_ok=True)
+    w = SummaryWriter(log_dir=str(path))
+    for tag, step, v in rows:
+        w.add_scalar(tag, v, step)
+    w.close()
+
+
+JUDGED, P99 = "behaviour/max_abs_dlogp_judged", "behaviour/p99_abs_dlogp_current"
+
+
+def test_the_k9b_reader_judges_a_fresh_runs_own_rows_through_the_look_checkpoint(tmp_path):
+    """The real reader on event files: every row in (0, upto] is judged on X35's ceilings (1e-3 / 1e-4); a row after
+    the checkpoint is not this look's; no row, or no child log, is INCONCLUSIVE, never a pass; the child log's
+    non-finite FATAL fires from any rotation of the log."""
+    run = tmp_path / "rb_b1w_s5103"
+    _write_events(run / "tb", [(JUDGED, 200_000, 4e-4), (P99, 200_000, 3e-5), (JUDGED, 900_000, 5e-5),
+                               (P99, 900_000, 2e-5), (JUDGED, 60_000_000, 2e-3), (P99, 60_000_000, 2e-5)])
+    no_log = REAL_K9B_READ(run, 1_000_040)
+    assert no_log["verdict"] == "INCONCLUSIVE" and "no launcher_child.full.log" in no_log["reasons"][0]
+    assert K.k9b_problem(no_log).startswith("K9(b) through step 1000040 is INCONCLUSIVE, not PASS: no launcher_")
+    (run / "launcher_child.full.log").write_text("update 1\nupdate 2\n")
+    ok = REAL_K9B_READ(run, 1_000_040)
+    assert ok["verdict"] == "PASS" and ok["rows"] == {"judged_max": 2, "p99": 2} and K.k9b_problem(ok) is None
+    assert ok["schema"] == K.K9B_SCHEMA and ok["upto"] == 1_000_040 and ok["required_family"] == "behaviour"
+    assert ok["max"]["judged_max"] == pytest.approx(4e-4) and ok["ceilings"] == {"judged_max": 1e-3, "p99": 1e-4}
+    assert REAL_K9B_READ(run, 59_999_999)["verdict"] == "PASS", "the 60M row is not the 50M look's"
+    late = REAL_K9B_READ(run, 60_000_000)
+    assert late["verdict"] == "VOID" and "judged_max" in late["fires"][0] and "at step 60000000" in late["fires"][0]
+    assert REAL_K9B_READ(run, 100_000)["verdict"] == "INCONCLUSIVE", "no row yet is not a pass"
+    assert ok["last_row_step"] == 900_000 and late["last_row_step"] == 60_000_000
+    # the ARM-END read (upto None) judges every row the run has written, and says how far that is
+    end = REAL_K9B_READ(run, None)
+    assert end["verdict"] == "VOID" and end["upto"] is None and end["last_row_step"] == 60_000_000
+    assert end["rows"] == {"judged_max": 3, "p99": 3}
+    assert K.k9b_problem(end).startswith("K9(b) through the run's last row (step 60000000) is VOID, not PASS: ")
+    # a second process's file (a restart) is read too: a p99 at the ceiling's wrong side fires
+    _write_events(run / "tb" / "restart", [(P99, 950_000, 1.5e-4)])
+    for f in (run / "tb" / "restart").iterdir():
+        f.rename(run / "tb" / (f.name + ".restart"))
+    (run / "tb" / "restart").rmdir()
+    assert "p99" in REAL_K9B_READ(run, 1_000_040)["fires"][0]
+    # the non-finite FATAL in a ROTATED generation of the child log fires, at any look
+    clean = tmp_path / "rb_b1c_s5101"
+    _write_events(clean / "tb", [(JUDGED, 200_000, 4e-4), (P99, 200_000, 3e-5)])
+    (clean / "launcher_child.full.log").write_text("fine\n")
+    assert REAL_K9B_READ(clean, 1_000_000)["verdict"] == "PASS"
+    (clean / "launcher_child.full.log.1").write_text("x\nFATAL: a NON-FINITE |d log pi| reached the judge\n")
+    fired = REAL_K9B_READ(clean, 1_000_000)
+    assert fired["verdict"] == "VOID" and "NON-FINITE" in fired["fires"][0]
 
 
 def test_a_run_short_of_the_look_or_with_a_bad_sidecar_is_refused(tmp_path):
@@ -663,6 +767,18 @@ def test_the_early_check_reads_one_run_at_its_first_checkpoint_and_exits_three_o
     got = json.loads(capsys.readouterr().out)
     assert got["ok"] is True and got["problems"] == [] and got["run"] == "rb_b1w_s5103" and got["steps"] == 1_000_040
     assert got["checkpoint"].endswith("checkpoint_1000040_steps.zip") and got["init_num_threads"] == 8
+    assert got["k9b"]["verdict"] == "PASS" and got["k9b"]["upto"] == 1_000_040, "the record carries the K9(b) read"
+    assert got["arm_end"] is False
+    # --arm-end: the same guards, K9(b) on every row the run has written (no step bound; PREREG §10).
+    assert K.main(["check-run", "--arm", "W", "--seed", "5103", "--pin", PIN, "--arm-end"]) == 0
+    end = json.loads(capsys.readouterr().out)
+    assert end["arm_end"] is True and end["k9b"]["upto"] is None and end["steps"] == 1_000_040
+    # A run whose K9(b) read is not PASS at its first checkpoint is a problem (PREREG §10, Amendment 2).
+    make_run(models, "W", 5111, **first, k9b={"verdict": "VOID", "fires": ["p99 0.0002 >= 0.0001 at step 700000"]})
+    assert K.main(["check-run", "--arm", "W", "--seed", "5111", "--pin", PIN]) == 3
+    void = json.loads(capsys.readouterr().out)
+    assert void["k9b"]["verdict"] == "VOID" and void["problems"] == [
+        "K9(b) through step 1000040 is VOID, not PASS: p99 0.0002 >= 0.0001 at step 700000"]
     # The wide run typed WITHOUT its lever: the launch argv and the resolved width both name it.
     make_run(models, "W", 5104, **first, cli={"d_model": 128, "trunk_ffn_dim": 256},
              original_command=" ".join(["/x/launcher", *A.build_argv("c", 5101, PIN)]))

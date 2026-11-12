@@ -8,14 +8,17 @@
 THE PIN is not in this file: a tree cannot name the commit that holds it. It is registered in the PREREG's §3 and every
 entry point takes it (``--pin``; a call without one is refused).
 
-THE BASE is a FRESH ``--arch production`` launch with nothing else typed that is an architecture or a recipe knob
-(``designs/production_config.json`` supplies both; ``ent_coef`` 0.05, ten epochs). The tail every arm shares is the
-launcher's 6 h restart, the pin, a checkpoint every 1,000,000 steps (the 50M / 75M / 100M looks and the equal-compute
-read need that series), the step target, the seed, the device, the log level and the run name.
+THE BASE is a FRESH ``--arch production`` launch (``designs/production_config.json`` supplies the architecture and
+the recipe; ten epochs) plus :data:`BASE`, the two knobs EVERY run types (PREREG §18 Amendment 2): ``--ent-coef
+0.0125`` (the owner's choice for this experiment after X67; the production default stays 0.05 and is not this
+kit's to move) and ``--behaviour-check warn`` (a 100M fresh run under ``fatal`` can stop on a K9(b) threshold
+crossing; the judged read is ``main.b1.look.k9b_read`` at every look). The tail every arm shares is the launcher's
+6 h restart, the pin, a checkpoint every 1,000,000 steps (the 50M / 75M / 100M looks and the equal-compute read
+need that series), the step target, the seed, the device, the log level and the run name.
 
 THE ARMS (each one lever from the control; WB carries both):
 
-* ``c``  -- control: nothing typed. Width 128, both sides draw from the usual team pool.
+* ``c``  -- control: the base and nothing else. Width 128, both sides draw from the usual team pool.
 * ``w``  -- wide: :data:`WIDE_LEVER`, the trunk at 256 with its base FFN (2 x the width; a lower value is refused) and
   the consent a non-production architecture needs.
 * ``br`` -- breadth: :data:`BREADTH_LEVER`, on each side every fresh team draw is a ``n1_proc_v1`` team with
@@ -54,6 +57,11 @@ CORPUS_IDENT: Dict[str, Any] = {
     "manifest_sha256": "4db822ba1e0cf2e21d3ab7780ab42017ae3b02b15b3687661961b1c8e191e067",
 }
 
+#: What EVERY run types beside ``--arch production`` (PREREG §18 Amendment 2): the experiment's entropy coefficient
+#: and the K9(b) mode. A base knob, never a lever: the control carries it too, so no arm differs from it in either.
+ENT_COEF = "0.0125"
+BEHAVIOUR_CHECK = "warn"
+BASE: Tuple[str, ...] = ("--ent-coef", ENT_COEF, "--behaviour-check", BEHAVIOUR_CHECK)
 WIDE_LEVER: Tuple[str, ...] = ("--d-model", "256", "--trunk-ffn-dim", "512", "--allow-nonproduction-arch")
 BREADTH_LEVER: Tuple[str, ...] = ("--team-mix", f"{CORPUS}@{CORPUS_TIER}:{BREADTH_SHARE}", "--team-mix-sides", "both")
 #: arm -> the tokens it types beyond the control's.
@@ -107,8 +115,8 @@ def build_argv(arm: str, seed: int, pin: Optional[str] = None, steps: int = PHAS
     name = run_name(arm, seed)
     if steps not in PHASE_STEPS:
         raise ArmError(f"--steps {steps} is not a registered target ({PHASE_STEPS})")
-    return ["--restart-interval-hours", RESTART_HOURS, "--pin-commit", _pin(pin), "--arch", "production", *ARMS[arm],
-            "--checkpoint-every-steps", str(CHECKPOINT_EVERY), "--steps", str(steps), "--seed", str(seed),
+    return ["--restart-interval-hours", RESTART_HOURS, "--pin-commit", _pin(pin), "--arch", "production", *BASE,
+            *ARMS[arm], "--checkpoint-every-steps", str(CHECKPOINT_EVERY), "--steps", str(steps), "--seed", str(seed),
             "--device", "cuda", "--log-level", "periodic", "--run-name", name]
 
 
@@ -117,7 +125,7 @@ def resume_argv(arm: str, seed: int, pin: Optional[str] = None, steps: int = PHA
 
     A ``--model`` with no ``--run-name`` is a same-run resume (a ``--run-name`` would make it a fork); ``--arch`` is
     fresh-only and refused beside ``--model``. Everything the argv does not type (the seed, the levers, the checkpoint
-    cadence, the recipe) is restored from the run's own record. ``--pin-commit`` says the pin again: a same-run resume
+    cadence, the recipe, :data:`BASE`'s two knobs) is restored from the run's own record. ``--pin-commit`` says the pin again: a same-run resume
     refuses a pin that differs from the checkpoint's, so this line cannot move the run onto other code."""
     name = run_name(arm, seed)
     if steps != PHASE_STEPS[1]:
@@ -179,11 +187,16 @@ def namespace_diff(a: Dict[str, Any], b: Dict[str, Any]) -> List[str]:
 
 
 def check_levers(pin: Optional[str] = None) -> List[str]:
-    """Each arm one lever from the control, in the argv AND in the resolved config; ``[]`` when all hold."""
+    """Each arm one lever from the control, in the argv AND in the resolved config, and the control resolving
+    :data:`BASE` as typed (so every arm does); ``[]`` when all hold."""
     bad: List[str] = []
     own = ["run_name", "seed"]
     for steps in PHASE_STEPS:
         base = resolved_namespace(build_argv("c", SEEDS["c"][0], pin, steps))
+        got_base = (base.get("ent_coef"), base.get("behaviour_check"))
+        if got_base != (float(ENT_COEF), BEHAVIOUR_CHECK):
+            bad.append(f"c @ {steps}: the base resolves to (ent_coef, behaviour_check) = {got_base}, "
+                       f"not ({float(ENT_COEF)}, {BEHAVIOUR_CHECK!r})")
         for arm, lever in ARMS.items():
             if lever_diff(arm, pin, steps) != lever:
                 bad.append(f"{arm} @ {steps}: argv lever {lever_diff(arm, pin, steps)} != {lever}")
@@ -328,7 +341,7 @@ def arms_table() -> List[str]:
     w = max(len(v) for v in runs.values())
     rows = [f"{'arm':<18} {'runs':<{w}}  lever typed"]
     for arm, lever in ARMS.items():
-        rows.append(f"{ARM_LABELS[arm]:<18} {runs[arm]:<{w}}  {shlex.join(lever) or 'nothing'}")
+        rows.append(f"{ARM_LABELS[arm]:<18} {runs[arm]:<{w}}  {shlex.join(lever) or 'nothing beyond the base'}")
     return rows
 
 
@@ -348,6 +361,7 @@ def launch_block(pin: Optional[str] = None, block: str = "phased") -> str:
     head = [f"# BOUNDARY-1 launch block ({block}): python -m main.b1.arms describe --pin {pin}"
             + ("" if block == "phased" else f" --block {block}"),
             f"# pin {pin}; run every command from the MAIN checkout; one run at a time, in this order",
+            f"# every run types the base {shlex.join(BASE)} (PREREG §18 Amendment 2), then its arm's lever",
             "#", *("# " + r for r in arms_table()),
             f"# spare seed {SPARE_SEED}: a replaced run's own arm takes it, from step 0 "
             f"(names {', '.join(run_name(a, SPARE_SEED) for a in ARMS)})"]
@@ -397,8 +411,8 @@ def _check(tree: str, pin: Optional[str], params: bool, roots: Optional[Sequence
         failed += 1
 
     bad = check_levers(pin)
-    print("(c) each arm's argv and resolved config differ from the control's by its lever alone "
-          f"(at {PHASE_STEPS[0]:,} and {PHASE_STEPS[1]:,} steps)")
+    print(f"(c) the control resolves the base ({shlex.join(BASE)}) and each arm's argv and resolved config differ "
+          f"from the control's by its lever alone (at {PHASE_STEPS[0]:,} and {PHASE_STEPS[1]:,} steps)")
     for b in bad:
         print(f"    FAIL: {b}")
     failed += bool(bad)

@@ -712,14 +712,17 @@ def test_the_registered_spec_parses_and_holds_the_registered_statistic():
         got = speccheck.check_spec(SPEC, pin_pending=True)
         assert got["rule"] == "b1_kakuna" and got["pending"] == [] and got["pin"]["state"] == "PENDING"
     s = SP.load(SPEC)
-    assert s.rule == "b1_kakuna" and len(s.models) == 8
+    from main.b1 import arms as A
+
+    assert s.rule == "b1_kakuna" and len(s.models) == 12, "three runs a cell (PREREG §18 Amendment 1, the re-pin)"
     runs = {m.ref.run for m in s.models.values()}
-    assert runs == {f"models/rb_b1{t}_s{n}" for t, ns in (("c", (5101, 5102)), ("w", (5103, 5104)), ("br", (5105, 5106)),
-                                                           ("wb", (5107, 5108))) for n in ns}
+    assert runs == {f"models/{A.run_name(arm, seed)}" for arm, seed in A.LAUNCH_ORDER}
     assert all(m.ref.kind == "final" and m.ref.min_step == 100_000_000 for m in s.models.values())
     assert sorted((m.arm, m.seed) for m in s.models.values()) == [
-        ("Br", 5105), ("Br", 5106), ("C", 5101), ("C", 5102), ("W", 5103), ("W", 5104), ("WB", 5107), ("WB", 5108)]
+        ("Br", 5105), ("Br", 5106), ("Br", 5112), ("C", 5101), ("C", 5102), ("C", 5110),
+        ("W", 5103), ("W", 5104), ("W", 5111), ("WB", 5107), ("WB", 5108), ("WB", 5113)]
     g = s.anchor["kakuna"]
+    assert set(g.models) == set(s.models), "every final plays Kakuna"
     assert tuple(g.teamsets) == ("heldout72_hpfix", "forum72", "p72") and tuple(g.unit_seeds) == tuple(range(36))
     p = s.params
     u = ["heldout72_hpfix", "forum72", "p72"]

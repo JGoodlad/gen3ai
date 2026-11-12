@@ -2,8 +2,7 @@
  "schema": "gen3_read_spec_v1",
  "read": "boundary1_kakuna_2026-11-09",
  "prereg": "designs/research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md",
- "pin": "507d0c11961da8d4243a4c8877bcc04ef220058c",
- "note": "BOUNDARY-1's Kakuna meter (PREREG section 6): the eight 100M finals of the width x breadth 2x2 (2 seeds a cell) against Kakuna on H (heldout72_hpfix), F (forum72) and P72 (p72), unit seeds 0-35 = 720 games a run a panel. CONFIRMING contrasts: width_U and breadth_F. REPORTED: breadth_U, width_F, interaction_U. Rule b1_kakuna classifies each contrast POSITIVE / NEGATIVE / SPANS-ZERO by its analytic two-way interval at `level`; the combination with the in-house verdict is main.b1's, not the rule's. No pin yet: the registration fills `pin` (review with check-spec --pin-pending).",
+ "note": "BOUNDARY-1's Kakuna meter (PREREG section 6): the twelve 100M finals of the width x breadth 2x2 (3 seeds a cell; PREREG section 18 Amendments 1 and 2) against Kakuna on H (heldout72_hpfix), F (forum72) and P72 (p72), unit seeds 0-35 = 720 games a run a panel, 25,920 games. CONFIRMING contrasts: width_U and breadth_F. REPORTED: breadth_U, width_F, interaction_U. Rule b1_kakuna classifies each contrast POSITIVE / NEGATIVE / SPANS-ZERO by its analytic two-way interval at `level`; the combination with the in-house verdict is main.b1's, not the rule's. The pin is the launch pin of the single re-pin (PREREG section 3 and section 18): the commit that holds the re-pinned kit cannot name itself, so the records commit that follows it fills `pin` (until then: check-spec --pin-pending).",
  "models": {
   "b1c_s5101": {
    "arm": "C",
@@ -21,6 +20,16 @@
    "ref": {
     "kind": "final",
     "run": "models/rb_b1c_s5102",
+    "min_step": 100000000,
+    "quiet_s": 300
+   }
+  },
+  "b1c_s5110": {
+   "arm": "C",
+   "seed": 5110,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_b1c_s5110",
     "min_step": 100000000,
     "quiet_s": 300
    }
@@ -45,6 +54,16 @@
     "quiet_s": 300
    }
   },
+  "b1w_s5111": {
+   "arm": "W",
+   "seed": 5111,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_b1w_s5111",
+    "min_step": 100000000,
+    "quiet_s": 300
+   }
+  },
   "b1br_s5105": {
    "arm": "Br",
    "seed": 5105,
@@ -61,6 +80,16 @@
    "ref": {
     "kind": "final",
     "run": "models/rb_b1br_s5106",
+    "min_step": 100000000,
+    "quiet_s": 300
+   }
+  },
+  "b1br_s5112": {
+   "arm": "Br",
+   "seed": 5112,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_b1br_s5112",
     "min_step": 100000000,
     "quiet_s": 300
    }
@@ -84,6 +113,16 @@
     "min_step": 100000000,
     "quiet_s": 300
    }
+  },
+  "b1wb_s5113": {
+   "arm": "WB",
+   "seed": 5113,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_b1wb_s5113",
+    "min_step": 100000000,
+    "quiet_s": 300
+   }
   }
  },
  "anchor": {
@@ -98,12 +137,16 @@
    "models": [
     "b1c_s5101",
     "b1c_s5102",
+    "b1c_s5110",
     "b1w_s5103",
     "b1w_s5104",
+    "b1w_s5111",
     "b1br_s5105",
     "b1br_s5106",
+    "b1br_s5112",
     "b1wb_s5107",
-    "b1wb_s5108"
+    "b1wb_s5108",
+    "b1wb_s5113"
    ]
   }
  },

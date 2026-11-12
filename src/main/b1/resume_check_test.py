@@ -57,11 +57,12 @@ def test_the_static_check_passes_for_all_four_arms():
     assert "all 12 phase-2 commands: a same-run RESTART" in text
 
 
-def test_the_target_knobs_are_the_production_recipes_values():
-    """The registered recipe facts the check leans on (the brief: ent_coef 0.05, ten epochs, 1M checkpoints)."""
+def test_the_target_knobs_are_the_registered_recipes_values():
+    """The registered recipe facts the check leans on: production's, with the base every run types (PREREG §18
+    Amendment 2: ent_coef 0.0125), ten epochs, 1M checkpoints."""
     knobs = {k: v for k, (v, _why) in R.TARGET_KNOBS.items()}
     assert knobs == {"anneal_lr_start_steps": None, "adaptive_batch": "off", "clip_range": 0.15,
-                     "clip_range_vf": None, "ent_coef": 0.05, "n_epochs": 10, "overlap_collect": False,
+                     "clip_range_vf": None, "ent_coef": 0.0125, "n_epochs": 10, "overlap_collect": False,
                      "checkpoint_every_steps": 1_000_000}
 
 
@@ -220,11 +221,13 @@ def test_compare_fails_on_run_dirs_and_logs_that_are_not_there(tmp_path):
 
 
 # ------------------------------------------------------------------------------------------------ the child argvs
-def test_the_six_hour_restart_child_drops_arch_keeps_the_levers_and_names_the_checkpoint_and_the_run_dir():
+def test_the_six_hour_restart_child_drops_arch_keeps_the_base_and_the_levers_and_names_the_checkpoint_and_the_run_dir():
+    """The launcher's own restart child re-types the fresh argv's base (``--ent-coef 0.0125 --behaviour-check
+    warn``, PREREG §18 Amendment 2) and levers; the typed phase-2 resume types neither and restores them."""
     fresh = A.build_argv("wb", 5107, PIN, 100_000_000)
     child = R.restart_child_argv(fresh, "/m/rb_b1wb_s5107/final_model_interrupted.zip", "/m/rb_b1wb_s5107")
     assert "--arch" not in child and "--pin-commit" not in child and "--restart-interval-hours" not in child
-    assert child[:len(A.WIDE_LEVER) + len(A.BREADTH_LEVER)] == [*A.WIDE_LEVER, *A.BREADTH_LEVER]
+    assert child[:len(A.BASE) + len(A.WIDE_LEVER) + len(A.BREADTH_LEVER)] == [*A.BASE, *A.WIDE_LEVER, *A.BREADTH_LEVER]
     assert child[-4:] == ["--model", "/m/rb_b1wb_s5107/final_model_interrupted.zip", "--run-dir", "/m/rb_b1wb_s5107"]
     assert child[child.index("--steps") + 1] == "100000000" and child[child.index("--seed") + 1] == "5107"
 

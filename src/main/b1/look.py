@@ -27,8 +27,10 @@ it is overwritten by the phase-2 resume, and a look must read the same bytes whe
 **A run counts** (:func:`check_run`, PREREG §10) iff its record says: it was LAUNCHED by its arm's registered argv,
 token for token (``original_command``, which no restart or resume rewrites, against :func:`main.b1.arms.build_argv`
 at a registered step target); it is a FRESH run; ONE pin, the registered one, from step 0 to the checkpoint;
-``ent_coef`` 0.05 and ten epochs; and its LAST process still resolved the arm's lever keys (:data:`CONFIG_KEYS`) as
-the arm's own argv resolves them, so a resume that dropped the width or the team mix is refused. Across the look,
+``ent_coef`` 0.0125 (the base every run types, :data:`main.b1.arms.BASE`) and ten epochs; its LAST process still
+resolved the arm's lever keys (:data:`CONFIG_KEYS`) as the arm's own argv resolves them, so a resume that dropped the
+width or the team mix is refused; and its K9(b) read through the look checkpoint's step is PASS (:func:`k9b_read`:
+the runs train under ``--behaviour-check warn``, so the judged read is here and not in the trainer). Across the look,
 every run's last process must record the SAME public ``cli_args`` as the first control run's, except its own keys
 (:data:`RUN_OWN_KEYS`) and its arm's lever keys (:func:`recipe_drift`: any other knob that moved in one run and not
 in the control; the keys a resume rewrites are compared only between processes of one kind, and the rollout shape
@@ -38,7 +40,10 @@ not clean is a question for the orchestrator, never a silent drop.
 
 **The early check** (``check-run``, :func:`early_check`; PREREG §10) applies :func:`check_run` to ONE run at its
 first checkpoint, hours into the run and not at the 50M look, so a mistyped launch costs one checkpoint interval
-and not a phase. It is the per-run half only: the cross-run guards need every run and stay the plan's.
+and not a phase; ``--step N`` reads a later checkpoint the same way. ``--arm-end`` judges K9(b) on EVERY row the run
+has written, not only through the checkpoint: the record of a finished phase, whose ``final_model.zip`` holds one
+update more than the look's checkpoint (PREREG §10: required of each 100M final before the Kakuna read is planned).
+It is the per-run half only: the cross-run guards need every run and stay the plan's.
 
 **The cells** are :meth:`main.b1.cross.Design.cells` in order (54 at three runs an arm), each ``[player .zip, opponent
 .zip]``, the same list for every panel. One ledger FAMILY a panel, one REQUEST a look and panel (:func:`family`,
@@ -57,7 +62,7 @@ import re
 import shlex
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from agents.training import eval_ledger as L
 from main.b1 import arms as A
@@ -70,7 +75,12 @@ WIDE_ARMS: Tuple[str, ...] = X.FACTORS["width"][0]
 #: cross arm -> the kit's arm key (``main.b1.arms``).
 KIT_ARM: Dict[str, str] = {"C": "c", "W": "w", "Br": "br", "WB": "wb"}
 PROTOCOL = "gen3_eval_protocol_v1_h2h"
-ENT_COEF, N_EPOCHS = 0.05, 10
+#: The entropy coefficient every run types (PREREG §18 Amendment 2; the kit's own token) and production's epochs.
+ENT_COEF, N_EPOCHS = float(A.ENT_COEF), 10
+#: The K9(b) record of one run at one look step (:func:`k9b_read`); only ``PASS`` lets the run count.
+K9B_SCHEMA = "b1_k9b_look_v1"
+K9B_PASS = "PASS"
+K9bReader = Callable[[Path, Optional[int]], Mapping[str, Any]]
 INCONCLUSIVE = "INCONCLUSIVE"
 #: The keys of a run's recorded ``cli_args`` (its LAST process's resolved namespace) that must equal what its arm's
 #: argv resolves to. ``allow_nonproduction_arch`` is a permission, not a configuration, and is not compared.
@@ -225,9 +235,69 @@ def _one_pin(history: Any, pin: str, upto: int) -> Optional[str]:
     return None
 
 
-def check_run(run_dir: Path, arm: str, seed: int, pin: str, step: int, levers: Mapping[str, Any]
-              ) -> Tuple[List[str], Dict[str, Any]]:
-    """``(problems, facts)`` for one run at one look step (module docstring, "A run counts")."""
+def _child_log_fire(run_dir: Path, line: str) -> Tuple[bool, bool]:
+    """``(a full child log exists, some generation of it carries ``line``)``: the live ``launcher_child.full.log``
+    and every rotation beside it (``.1`` ...), read as a stream (a generation is up to 64 MiB)."""
+    from main.launcher.child import child_full_log_path
+
+    live = Path(str(child_full_log_path(str(run_dir))))
+    needle, hit = line.encode(), False
+    for p in [live, *sorted(run_dir.glob(live.name + ".*"))]:
+        if p.is_file():
+            with p.open("rb") as f:
+                hit = hit or any(needle in ln for ln in f)
+    return live.is_file(), hit
+
+
+def k9b_read(run_dir: Path, upto: Optional[int]) -> Dict[str, Any]:
+    """K9(b) on a FRESH run, through step ``upto`` (the look checkpoint's own step; ``None`` = the ARM-END read,
+    every row the run has written, ``last_row_step`` saying how far that is): X35's arm-end rule
+    (``main.x35.batch.judge_k9b``: the same tags, ceilings and boundary band; an absent required family is
+    INCONCLUSIVE, never a pass; a non-finite row or the child log's non-finite FATAL is a fire) on EVERY row the
+    run wrote at a step in ``(0, upto]``. X35's own reader excludes a fork's inherited rows and refuses a run with
+    no fork step; a fresh run has neither, so its rows are all its own. Rows after ``upto`` trained nothing the
+    checkpoint holds and are not read; the child-log line carries no step and fires at any look. A run with no
+    full child log is INCONCLUSIVE (the launcher writes one for every run). Read-only."""
+    from main.x35 import batch as B
+    from main.x35.tbrows import load_segments
+
+    tag_of = dict(B.K9B_TAGS, **B.K9B_SNAPSHOT_TAGS)
+    series: Dict[str, List[Tuple[int, float]]] = {k: [] for k in tag_of}
+    n_overlap, last = 0, 0
+    inside = (lambda st: True) if upto is None else (lambda st: st <= upto)
+    for seg in load_segments(str(run_dir), [*tag_of.values(), B.K9B_OVERLAP_TAG], after_step=None):
+        for key, tag in tag_of.items():
+            series[key] += [(st, v) for st, v in seg.rows.get(tag, []) if inside(st)]
+            last = max([last, *(st for st, _ in seg.rows.get(tag, []) if inside(st))])
+        n_overlap += sum(1 for st, _ in seg.rows.get(B.K9B_OVERLAP_TAG, []) if inside(st))
+    evidence = B.recorded_overlap(str(run_dir)) + ([f"{n_overlap} own {B.K9B_OVERLAP_TAG} row(s)"] if n_overlap else [])
+    has_log, fatal = _child_log_fire(run_dir, B.K9B_NONFINITE_LINE)
+    got = B.judge_k9b(run_dir.name, 0, series, B.K9B_NONFINITE_LINE if fatal else "", overlap=bool(evidence),
+                      overlap_evidence=evidence)
+    reasons = list(got.reasons) + ([] if has_log else ["no launcher_child.full.log: the child's non-finite FATAL "
+                                                         "cannot be excluded"])
+    verdict = got.verdict if got.verdict != K9B_PASS or has_log else B.INCONCLUSIVE
+    return {"schema": K9B_SCHEMA, "run": run_dir.name, "verdict": verdict, "upto": upto, "last_row_step": last,
+            "rows": dict(got.n_rows),
+            "max": dict(got.max_value), "ceilings": dict(B.K9B_CEILINGS), "fires": list(got.fires),
+            "near_ceiling": list(got.near), "reasons": reasons, "overlap": got.overlap,
+            "required_family": "behaviour_snapshot" if got.overlap else "behaviour"}
+
+
+def k9b_problem(rec: Mapping[str, Any]) -> Optional[str]:
+    """``None`` iff a K9(b) record (:func:`k9b_read`) is PASS; else the one line the plan refuses with."""
+    if rec.get("verdict") == K9B_PASS:
+        return None
+    why = [*(rec.get("fires") or ()), *(rec.get("reasons") or ())]
+    upto = rec.get("upto")
+    where = f"step {upto}" if upto is not None else f"the run's last row (step {rec.get('last_row_step')})"
+    return f"K9(b) through {where} is {rec.get('verdict')}, not {K9B_PASS}: " + "; ".join(map(str, why))
+
+
+def check_run(run_dir: Path, arm: str, seed: int, pin: str, step: int, levers: Mapping[str, Any],
+              k9b: Optional[K9bReader] = None) -> Tuple[List[str], Dict[str, Any]]:
+    """``(problems, facts)`` for one run at one look step (module docstring, "A run counts"). ``k9b`` (tests)
+    overrides :func:`k9b_read`."""
     probs: List[str] = []
     facts: Dict[str, Any] = {"arm": arm, "seed": seed, "run": run_dir.name}
     try:
@@ -263,24 +333,33 @@ def check_run(run_dir: Path, arm: str, seed: int, pin: str, step: int, levers: M
     for k in CONFIG_KEYS:
         if _json(cli.get(k)) != levers.get(k):
             probs.append(f"cli_args.{k} {cli.get(k)!r} is not the arm's {levers.get(k)!r}")
-    facts.update({"checkpoint": str(zip_path), "steps": n, "torch_version": md.get("torch_version"),
+    rec = dict((k9b or k9b_read)(run_dir, n))
+    bad = k9b_problem(rec)
+    if bad:
+        probs.append(bad)
+    facts.update({"checkpoint": str(zip_path), "steps": n, "k9b": rec, "torch_version": md.get("torch_version"),
                   "init_num_threads": md.get("init_num_threads"),
                   "_cli": {k: v for k, v in cli.items() if not str(k).startswith("_")},
                   "_true": {k: md.get(k) for k in TRUE_KEYS}})
     return probs, facts
 
 
-def early_check(models: Path, arm: str, seed: int, pin: str, step: int = A.CHECKPOINT_EVERY) -> Dict[str, Any]:
+def early_check(models: Path, arm: str, seed: int, pin: str, step: int = A.CHECKPOINT_EVERY,
+                k9b: Optional[K9bReader] = None, arm_end: bool = False) -> Dict[str, Any]:
     """ONE run against its registered arm, seed and pin at the first checkpoint at or after ``step`` (module
-    docstring, "The early check"): ``ok`` iff :func:`check_run` names no problem. A seed that is neither the
-    arm's nor the spare raises :class:`main.b1.arms.ArmError`."""
+    docstring, "The early check"): ``ok`` iff :func:`check_run` names no problem. The record carries the run's
+    K9(b) read through that checkpoint, or with ``arm_end`` on every row the run has written. A seed that is
+    neither the arm's nor the spare raises :class:`main.b1.arms.ArmError`."""
     run_dir = models / A.run_name(KIT_ARM[arm], seed)
+    reader = k9b or k9b_read
     if not run_dir.is_dir():
         probs, facts = [f"no run folder under {models}"], {}
     else:
-        probs, facts = check_run(run_dir, arm, seed, pin, step, expected_levers(arm, seed, pin))
-    return {"run": run_dir.name, "arm": arm, "seed": seed, "pin": pin, "step": step, "ok": not probs,
+        probs, facts = check_run(run_dir, arm, seed, pin, step, expected_levers(arm, seed, pin),
+                                 (lambda d, _n: reader(d, None)) if arm_end else reader)
+    return {"run": run_dir.name, "arm": arm, "seed": seed, "pin": pin, "step": step, "arm_end": arm_end, "ok": not probs,
             "problems": probs, "checkpoint": facts.get("checkpoint"), "steps": facts.get("steps"),
+            "k9b": facts.get("k9b"),
             "torch_version": facts.get("torch_version"), "init_num_threads": facts.get("init_num_threads")}
 
 
@@ -312,10 +391,11 @@ def _design(runs: Mapping[str, Sequence[str]], survivor: Optional[str]) -> Any:
 
 
 def plan(models: Path, look: str, pin: str, *, eq_step: Optional[int] = None, replace: Optional[int] = None,
-         survivor: Optional[str] = None, levers: Optional[Mapping[Tuple[str, int], Mapping[str, Any]]] = None
-         ) -> Tuple[Optional[Dict[str, Any]], List[str]]:
+         survivor: Optional[str] = None, levers: Optional[Mapping[Tuple[str, int], Mapping[str, Any]]] = None,
+         k9b: Optional[K9bReader] = None) -> Tuple[Optional[Dict[str, Any]], List[str]]:
     """``(plan, [])`` or ``(None, problems)``. ``survivor``: the factor still read after the other's STOP-HARM (the
-    look then holds two arms). ``levers`` (tests) overrides :func:`expected_levers` per (arm, seed)."""
+    look then holds two arms). ``levers`` (tests) overrides :func:`expected_levers` per (arm, seed) and ``k9b``
+    (tests) :func:`k9b_read`. The plan's ``runs`` carry each run's K9(b) record (``look.json``)."""
     from utils.hashing import sha256_file
 
     arms = look_arms(look, survivor)
@@ -330,7 +410,7 @@ def plan(models: Path, look: str, pin: str, *, eq_step: Optional[int] = None, re
                 probs.append(f"{run_dir.name}: no run folder under {models}")
                 continue
             want = levers[(arm, seed)] if levers is not None else expected_levers(arm, seed, pin)
-            p, facts = check_run(run_dir, arm, seed, pin, steps[arm], want)
+            p, facts = check_run(run_dir, arm, seed, pin, steps[arm], want, k9b)
             probs.extend(f"{run_dir.name}: {x}" for x in p)
             runs[arm].append(facts)
     for what in ("torch_version", "init_num_threads"):
@@ -506,11 +586,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     c.add_argument("--seed", required=True, type=int, help="the run's registered seed (or the spare's)")
     c.add_argument("--pin", required=True, help="the registered pin (PREREG §3)")
     c.add_argument("--step", type=int, default=A.CHECKPOINT_EVERY,
-                   help="read the first checkpoint at or after this step (default: the first checkpoint)")
+                   help="read the first checkpoint at or after this step (default: the first checkpoint); the "
+                        "record carries the run's K9(b) read through it")
+    c.add_argument("--arm-end", action="store_true",
+                   help="judge K9(b) on EVERY row the run has written, not only through the checkpoint: the "
+                        "record of a finished phase (PREREG §10)")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "check-run":
-            got = early_check(_models(), a.arm, a.seed, a.pin, a.step)
+            got = early_check(_models(), a.arm, a.seed, a.pin, a.step, arm_end=a.arm_end)
             print(json.dumps(got, indent=1, default=str))
             return 0 if got["ok"] else 3
         if a.cmd == "names":

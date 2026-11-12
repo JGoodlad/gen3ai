@@ -68,7 +68,8 @@ TARGET_KNOBS: Dict[str, Tuple[Any, str]] = {
                               "off = grad_accum_steps is the recorded constant"),
     "clip_range": (0.15, "read as clip_range(progress); the trainer installs a constant function of this value"),
     "clip_range_vf": (None, "None = no value clipping, so no second function of progress"),
-    "ent_coef": (0.05, "a constant: no entropy schedule exists; a resume re-applies the namespace's value"),
+    "ent_coef": (float(arms.ENT_COEF), "the base every run types (PREREG §18 Amendment 2); a constant: no entropy "
+                                       "schedule exists; a resume re-applies the recorded value"),
     "n_epochs": (10, "re-applied from the namespace on a resume"),
     "overlap_collect": (False, "the loop collects the NEXT rollout during an update except on the last iteration "
                                "before the target (instrumented_ppo/loop.py); off = never, at any target"),

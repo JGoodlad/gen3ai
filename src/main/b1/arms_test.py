@@ -43,7 +43,8 @@ def test_the_argv_is_the_shared_head_the_arms_lever_and_the_shared_tail():
     for arm, lever in A.ARMS.items():
         seed = A.SEEDS[arm][0]
         argv = A.build_argv(arm, seed, PIN)
-        head = ["--restart-interval-hours", "6", "--pin-commit", PIN, "--arch", "production"]
+        head = ["--restart-interval-hours", "6", "--pin-commit", PIN, "--arch", "production",
+                "--ent-coef", "0.0125", "--behaviour-check", "warn"]
         tail = ["--checkpoint-every-steps", "1000000", "--steps", "50000000", "--seed", str(seed),
                 "--device", "cuda", "--log-level", "periodic", "--run-name", f"{E}_b1{arm}_s{seed}"]
         assert argv == head + list(lever) + tail
@@ -62,7 +63,28 @@ def test_each_arm_is_one_lever_from_the_control_in_the_argv_and_in_the_resolved_
         "allow_nonproduction_arch", "d_model", "run_name", "seed", "team_mix", "team_mix_sides", "trunk_ffn_dim"]
     assert (base["d_model"], base["trunk_ffn_dim"], wb["d_model"], wb["trunk_ffn_dim"]) == (128, 256, 256, 512)
     assert base["team_mix"] is None and wb["team_mix"] == "n1_proc_v1@ALL:0.5" and wb["team_mix_sides"] == "both"
-    assert (base["ent_coef"], base["n_epochs"], wb["ent_coef"], wb["n_epochs"]) == (0.05, 10, 0.05, 10)
+    assert (base["ent_coef"], base["n_epochs"], wb["ent_coef"], wb["n_epochs"]) == (0.0125, 10, 0.0125, 10)
+
+
+def test_every_run_types_the_base_and_the_production_default_is_not_moved(monkeypatch):
+    """PREREG §18 Amendment 2: ``ent_coef`` 0.0125 and K9(b) ``warn`` are typed by EVERY run, the control included,
+    and resolve as typed; a resume types neither (the run's record carries both); the production recipe itself
+    still resolves 0.05 and ``fatal``, so the kit moved nobody else's launch."""
+    assert A.BASE == ("--ent-coef", "0.0125", "--behaviour-check", "warn")
+    for arm, seed in A.LAUNCH_ORDER:
+        for steps in A.PHASE_STEPS:
+            argv = A.build_argv(arm, seed, PIN, steps)
+            at = argv.index("--arch")
+            assert tuple(argv[at + 2:at + 6]) == A.BASE and argv.count("--ent-coef") == 1
+            ns = A.resolved_namespace(argv) if (arm, seed, steps) in (("c", 5101, 50_000_000),
+                                                                      ("wb", 5113, 100_000_000)) else None
+            assert ns is None or (ns["ent_coef"], ns["behaviour_check"]) == (0.0125, "warn")
+        assert not set(A.BASE) & set(A.resume_argv(arm, seed, PIN))
+    plain = A.resolved_namespace([t for t in A.build_argv("c", 5101, PIN) if t not in A.BASE])
+    assert (plain["ent_coef"], plain["behaviour_check"]) == (0.05, "fatal"), "production's own default"
+    monkeypatch.setattr(A, "BASE", ())
+    bad = A.check_levers(PIN)
+    assert len(bad) == 2 and all(b.startswith("c @") and "the base resolves to" in b for b in bad)
 
 
 def test_a_lever_that_leaks_into_another_arm_is_named(monkeypatch):
@@ -150,8 +172,8 @@ def test_describe_prints_the_block_in_launch_order(capsys):
     assert [shlex.split(c)[3:] for c in cmds[:12]] == [A.build_argv(a, s, PIN) for a, s in A.LAUNCH_ORDER]
     assert [shlex.split(c)[3:] for c in cmds[12:]] == [A.resume_argv(a, s, PIN) for a, s in A.LAUNCH_ORDER]
     assert cmds[3] == (
-        f"python -m main.launcher --restart-interval-hours 6 --pin-commit {PIN} --arch production --d-model 256 "
-        "--trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both "
+        f"python -m main.launcher --restart-interval-hours 6 --pin-commit {PIN} --arch production --ent-coef 0.0125 "
+        "--behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both "
         f"--checkpoint-every-steps 1000000 --steps 50000000 --seed 5107 --device cuda --log-level periodic "
         f"--run-name {E}_b1wb_s5107")
     assert cmds[12] == (
@@ -161,6 +183,8 @@ def test_describe_prints_the_block_in_launch_order(capsys):
     assert lines.index(cmds[11]) < look < lines.index(cmds[12]), "the look sits between the phases"
     assert f"# C control          {E}_b1c_s5101, {E}_b1c_s5102, {E}_b1c_s5110" in out
     assert "12 FRESH launches" in out
+    assert "# every run types the base --ent-coef 0.0125 --behaviour-check warn (PREREG §18 Amendment 2)" in out
+    assert "# C control " in out and "nothing beyond the base" in out
 
 
 def test_the_fallback_block_is_twelve_fresh_launches_straight_to_the_second_target(capsys):
