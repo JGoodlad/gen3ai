@@ -1,9 +1,13 @@
 # CE-3d — the trailing-magnet screen: PRE-REGISTRATION (2026-11-11)
 
-**Status: REGISTERED 2026-11-11 (`08b998d12`) and AMENDED twice the same day (Amendment 1, §13: ONE arm, the SWAP,
-read against the banked C0 finals with X67's cross and rule; the two arms first registered are dropped. Amendment
-2, §14: a REPORTED cross of the swap forks against X67's three finals, which decides nothing). Written blind, before
-any launch, any game and any read. NOT LAUNCHED** (no `rb_x35_ce3d*` run and no CE-3d ledger family exists).
+**Status: REGISTERED 2026-11-11 (`08b998d12`) and AMENDED three times the same day (Amendment 1, §13: ONE arm, the
+SWAP, read against the banked C0 finals with X67's cross and rule; the two arms first registered are dropped.
+Amendment 2, §14: a REPORTED cross of the swap forks against X67's three finals, which decides nothing. Amendment 3,
+§15: a RE-PIN of the forks' training pin, after the first fork's launch died at step 0 in a startup check; the arm,
+its seeds, argv and dose, both crosses and the rule are unchanged). Amendments 1 and 2 were written blind, before
+any launch, any game and any read; Amendment 3 after ONE launch that took no training step, and before any training
+step, any game and any read. NO FORK HAS TRAINED** (the one attempt, `rb_x35_ce3dswap_s7321` at the first pin, wrote
+no checkpoint and no metadata, §15; no CE-3d ledger family exists).
 The launch is the orchestrator's GO through the Training session's kit (arm `ce3d_swap`); the hand-off is
 [`chain_items_ce3d.json`](chain_items_ce3d.json) (§7). Nothing below changes after the first fork launches except by
 a dated amendment, written before the cross is played, that says why.
@@ -81,7 +85,7 @@ regulariser whose claimed effect is on a slow cycle.
 | the pull toward the magnet | β 0.05; magnet = P\*'s weights at the fork, replaced at the first update boundary at or after each 2,000,000 steps of age (`--magnet-refresh-steps`, untyped: the pin's default) | none |
 | argv | C0's, token for token, + the four lever tokens before `--seed` ([`argv_ce3d_swap_s7321.txt`](argv_ce3d_swap_s7321.txt)) | its recorded `original_command` |
 | dose | +20,000,000 steps (`--steps 300000170`) | the same |
-| pin | **`333a73ddda7829b9ccdf9e17ef04624eb40edeba`** (tag `ce3d-pin-333a73dd`, §4) | `f4b25238def57900c0305bb2a3a5a8f9edaef285` |
+| pin | **`9e97cad5709da21a1f9d4d8846096c87eb17b1d0`** (tag `ce3d-pin-9e97cad5`, §4: the first CE-3d pin `333a73dd` + the startup fit check's fix, Amendment 3) | `f4b25238def57900c0305bb2a3a5a8f9edaef285` |
 | seeds | **7321, 7322, 7323** (new) | 3501–3508 (banked) |
 | GPU | ≈ 13 GPU-h (3 × ≈ 4.2–4.4) | 0 here |
 
@@ -111,15 +115,24 @@ no magnet, a second β, a second cadence, any control trained at the CE-3d pin.
   (the dry runs list them). C0's finals read `lr_median` 0.0001005 (`main.dose`). §8 checks the dose at the end and
   labels a moved rate.
 - **One look.** The stage is `CE3D` (`batch.CE3D_STAGES`): three seeds, no look 2, no extension, no substitute
-  seed. `kit stage-check` is PENDING until this file exists on the kit's checkout.
+  seed. `kit stage-check` is PENDING until this file exists on the kit's checkout. A fork whose launch died before
+  its first training step is relaunched at its own seed, argv and run name (§15): the same fork, not a substitute.
 - **Order.** 7321, 7322, 7323, one at a time.
 
 ## 4. The pin, and the confound it brings
 
-**The swap runs at `333a73ddda7829b9ccdf9e17ef04624eb40edeba`**: the production side pin `f4b25238` + ONE commit,
-annotated tag **`ce3d-pin-333a73dd`** on origin (`batch.CE3D_PIN`; `kit pin-check` requires the parent to be the
-side's written pin and the commit to change EXACTLY the 44 paths of `batch.CE3D_PIN_PATHS`, executed in §7). The pin
-is the first registration's, unchanged.
+**The swap TRAINS at `9e97cad5709da21a1f9d4d8846096c87eb17b1d0`** (Amendment 3, §15), annotated tag
+**`ce3d-pin-9e97cad5`** on origin (`batch.CE3D_PIN`): two commits on the production side pin `f4b25238`.
+
+| commit | on | paths | what | tag, kit constant |
+|---|---|---:|---|---|
+| `333a73ddda7829b9ccdf9e17ef04624eb40edeba`, **the first CE-3d pin** | the side pin `f4b25238` | 44 | the lever (§4.1). The first registration's, unchanged. **Both crosses are PLAYED here** (§5.1) | `ce3d-pin-333a73dd`, `batch.CE3D_MAGNET_PIN` |
+| `9e97cad5709da21a1f9d4d8846096c87eb17b1d0`, **the training pin** | the first CE-3d pin | 3 | the startup fit check's fix (§4.1, §15) | `ce3d-pin-9e97cad5`, `batch.CE3D_PIN` |
+
+`kit pin-check` requires both steps (executed in §7): the training pin's one parent is the first CE-3d pin and its
+commit changes EXACTLY the 3 paths of `batch.CE3D_PIN_PATHS`; the first pin's one parent is the side's written pin
+and its commit changes EXACTLY the 44 paths of `batch.CE3D_MAGNET_PIN_PATHS`. Below, "the CE-3d pin" is the training
+pin wherever a fork is launched, trained or checked (§7, §8), and the first pin wherever a game is played (§5).
 
 ### 4.1 What the commit carries
 
@@ -134,9 +147,21 @@ main is confounded with a 20M re-adaptation (X67 PREREG §4). `f4b25238` has no 
 
 **The config version stays 161.** The two fields (`magnet_kl_coef`, `magnet_refresh_steps`) are un-versioned
 additions with defaults 0.0 and 2,000,000; every run at this pin records them. Two consequences, both executed: the
-plain side pin REFUSES to load a config that carries them, so **both crosses are played at the CE-3d pin**, which
+plain side pin REFUSES to load a config that carries them, so **both crosses are played at the first CE-3d pin**, which
 loads the v161 finals trained at `f4b25238` (C0's and X67's: neither config has a magnet key) as `f4b25238` does
 (§5.4's load check, one final of each); and main loads a CE-3d config keeping the recorded values.
+
+**The training pin's commit (Amendment 3)** is main's fix of the startup update-fit check
+(`gen3_update_fit_fill_inputs_v1`, main `13c50a5e6`) and nothing else: `src/agents/training/update_fit.py`, its test,
+and the magnet's integration test. At `333a73dd` the three files are byte-identical to main's before the fix, and at
+the training pin to main's after it, so the commit IS main's change to them. The check runs once at startup, on the
+card only: one dry update on a fixture rollout, restored exactly, to refuse a first update that would not fit. No
+collector fills the fixture, so at `333a73dd` it had no magnet column and the lever's own `train()` refused it:
+every `--magnet-kl-coef > 0` launch on the card died there, before step 0 (§15). At the training pin the dry update
+fills the fixture's column as the collector does (`magnet.fill_column` through the run's own T2 magnet slot, from the
+magnet built off the loaded weights), so the check measures the update the run will train with; the magnet is
+neither skipped nor zeroed. It changes no loss, no collector, no version, no compile key and no play code, and with
+the magnet off the dry update is the one `333a73dd` runs.
 
 ### 4.2 Tested at the pin, CPU only (2026-11-11, rule 5b, no lease)
 
@@ -154,16 +179,31 @@ loads the v161 finals trained at `f4b25238` (C0's and X67's: neither config has 
   (2.6e-05 rising to 4.7e-04); the learner-freeze checks released with 6 passes;
 - the first registration's magnet smoke and control smoke, and a `main.h2h play` between their finals.
 
+All of the above was run at the first CE-3d pin. **At the training pin** (Amendment 3; the same shell rules):
+- **fail-on-revert:** with `update_fit.py` as `333a73dd` has it, the new CPU test of the dry update with the magnet
+  on fails with the incident's own error (`MagnetError … no magnet column`, raised in `PPO._magnet_args`);
+- with the fix: `update_fit_test` (it drives `check_update_fits`' dry-update path on the CPU with the magnet on, the
+  card's verdict stubbed; refuses by name, before `train()`, a lever whose fill input nothing provides; and holds
+  the collector's fill to a declared table, so a new collector-filled input fails the build),
+  `magnet_integration_test` (slow, real core and real T2: the dry update's column is the one T2's magnet slot
+  serves, the learner is restored bit for bit, and the next real fill is unchanged), the magnet's and the learner
+  golden's tests: 168 passed, 24 of them slow; the static tier, 261 passed;
+- §7's `checkargs` and launcher dry runs, re-run for all three seeds.
+- **Not re-run at the training pin:** the routine tier (the commit touches one runtime module, imported only by the
+  trainer's startup) and the smokes (a `--debug` run is CPU, where the fit check does not run).
+
 ### 4.3 The confound, stated: the swap forks and the C0 finals differ by more than the lever
 
-The decision reads forks trained at `333a73dd` against finals trained at `f4b25238`. **This is a REPORTED caveat,
-not a guard: nothing in the rule corrects for it, and the verdict is quoted with it.**
+The decision reads forks trained at `9e97cad5` (the first CE-3d pin `333a73dd` + the startup fit check's fix)
+against finals trained at `f4b25238`. **This is a REPORTED caveat, not a guard: nothing in the rule corrects for it,
+and the verdict is quoted with it.**
 
 | difference | what it is | evidence that it is not the result | status |
 |---|---|---|---|
 | the magnet code | the lever itself, live in the swap arm | it IS the treatment | — |
 | the near-tie judge | parity judging in the T2 service (training and play), reached only after a parity judgement has failed; two `dtype=` arguments in the damage op's forward | the judge decides only whether a failed check is fatal and serves no logit; the two tensors were float32 with and without the arguments (§4.2's probe) | CPU only |
-| everything else in the learner | nothing: 44 paths, enumerated and checked | **with β = 0 the learner golden is bit-identical in bf16 and fp32 at the pin** | **CPU only; never run on the card** |
+| the startup fit check's fix (Amendment 3) | before the first rollout, on the card: the dry update serves the fixture's rows through T2's magnet slot once, trains on them and is restored | the learner comes back bit for bit and the next real fill is unchanged (the pin's slow integration test); T2 is a function of its rows, so the pass moves no played bit. It does advance T2's serving counters by the fixture's rows | CPU only; **UNVERIFIED on the card** (§4.4 item 7) |
+| everything else in the learner | nothing: 44 + 3 paths, enumerated and checked | **with β = 0 the learner golden is bit-identical in bf16 and fp32 at the first pin**, and the fix's three paths leave a β = 0 dry update as it was | **CPU only; never run on the card** |
 | the day | C0 trained 2026-10-21 to 11-10; the swap after 11-11 | none (same card, same interpreter pin, one `torch_version` and `init_num_threads` enforced by the plan) | X67 carried the same difference |
 | the play pin | both CE-3d crosses are played at `333a73dd`; X67's was played at `f4b25238` | the row above; no play or inference path builds a magnet (the pin's h2h smoke printed none); a ledger row written at the pin carries the regime id, team set and Rust core source and schema hashes of X67's banked rows ([`x67_loadcheck_at_pin.txt`](x67_loadcheck_at_pin.txt)) | **UNVERIFIED**: no game was played at both pins |
 
@@ -177,13 +217,18 @@ the GPU confirmation of the CPU evidence. It is not bought here, and §10 limits
 
 1. the magnet's cost: one more full-bucket T2 slot of CUDA-graph captures, one more weight copy on the card, one
    inference pass over the buffer per rollout (ESTIMATED ≈ +3 %). Read `magnet/forward_ms` on the first fork;
-2. R1's compiled program with the magnet's tenth argument has never been compiled on the card, and the compile gate
-   and the canary have never run with it;
+2. R1's compiled program with the magnet's tenth argument, the compile gate and the canary with it. The dead attempt
+   of §15 is the only evidence: at `333a73dd` its launcher log shows T2's magnet slot declared, R1 compiled, the
+   region's parity gate PASS and the compile lock, once. The canary was armed and never ran (its first check is at
+   update 10);
 3. the size of the KL's floor: T2 serves fp32, R1's trunk is bf16, so the term is a small positive number, not 0,
    right after a refresh;
 4. a resume with the sidecar on the card (the CPU integration test passes);
 5. `ent_coef` 0 beside the magnet on the card (the CPU smoke only);
-6. that a β = 0 learner at this pin trains on the card as `f4b25238` does (§4.3: CPU golden only).
+6. that a β = 0 learner at this pin trains on the card as `f4b25238` does (§4.3: CPU golden only);
+7. the fit check's dry update with the magnet on (Amendment 3): the first flush through T2's magnet slot, before
+   any rollout; the size of its `fill_inputs` segment in `update_fit.json`; and the check's verdict. The first
+   relaunch is the first time this code meets the card. A FATAL there is §8's lever-own FATAL again.
 
 ## 5. The meter and the rule: X67's, unchanged
 
@@ -192,7 +237,10 @@ the GPU confirmation of the CPU evidence. It is not bought here, and §10 limits
 Two crosses, **one that decides and one that is only reported**, with the same settings: head to head, both sides
 greedy, the players' eval team builder, schedule seed 0, `--oracle-reveal-mode off`, protocol
 `gen3_eval_protocol_v1_h2h`, purpose `ab`, label `ce3d_magnet_screen`, played from a clean detached checkout **at
-the CE-3d pin** ([`cross/drive_cross.sh`](cross/drive_cross.sh), whose fourth argument picks the cross).
+the first CE-3d pin `333a73dd`** ([`cross/drive_cross.sh`](cross/drive_cross.sh), whose fourth argument picks the
+cross). The play pin did not move with Amendment 3: the training pin's three paths are a startup check of the
+trainer and two tests, which no play or inference path imports, so the two pins play the same program and
+[`x67_loadcheck_at_pin.txt`](x67_loadcheck_at_pin.txt) stands.
 
 | rows × columns | pairs a cell | games | family / request | role |
 |---|---:|---:|---|---|
@@ -207,11 +255,13 @@ classes, so its D sits directly beside X67's +1.97 pp (§9). §5.2 and §5.3 are
 [`cross/plan_cross.py`](cross/plan_cross.py) is run ONCE, after the third fork's arm-end checks. The three swap
 forks are REQUIRED; the five banked C0 finals (s3501–s3505) are REQUIRED and s3506–s3508 join when they pass (a
 top-up final that exists and fails a guard REFUSES the plan). Guards, every run: `final_model.zip`; one
-`pin_history` entry at ITS pin from 280,000,170 to ≥ 300,000,170; lineage FORK of P\*'s sha256; the seed; `n_epochs`
+`pin_history` entry at ITS pin (a swap fork: the training pin `9e97cad5`; C0 and X67: the side pin) from
+280,000,170 to ≥ 300,000,170; lineage FORK of P\*'s sha256; the seed; `n_epochs`
 10; `ent_coef` (swap 0.0, C0 0.05) in `metadata.ent_coef` and `cli_args.ent_coef`; `model_config.json` (swap:
 `magnet_kl_coef` 0.05 with `magnet_refresh_steps` 2,000,000; C0: both keys absent); `final_model.magnet.pt` present
 for a swap fork and absent for C0; K9(b) PASS; one `torch_version` and one `init_num_threads` across all. Executed
-2026-11-11: `--columns-only` → `columns OK`, all eight C0 finals; the full plan REFUSES (no swap final exists).
+2026-11-11, and again at Amendment 3 with the swap forks' pin moved: `--columns-only` → `columns OK`, all eight C0
+finals; the full plan REFUSES (no swap final exists).
 `--cols x67` plans the reported cross with the same guards (§5.4).
 
 ### 5.3 The statistic and the classes ([`screen_rule.py`](screen_rule.py))
@@ -253,8 +303,8 @@ family holds only the deciding cells. Played ONCE, after the third fork's arm-en
 deciding cross: neither reads the other's cells. `drive_cross.sh <PIN_DIR> <WORK_DIR> cpu|cuda x67`, in a work
 directory of its own.
 
-**The pin it plays at, and why X67's finals load there.** The CE-3d pin, as the deciding cross and for the same
-reason (the swap forks' configs carry the magnet's two fields, which `f4b25238` refuses). X67's forks trained at
+**The pin it plays at, and why X67's finals load there.** The first CE-3d pin `333a73dd`, as the deciding cross and
+for the same reason (the swap forks' configs carry the magnet's two fields, which `f4b25238` refuses). X67's forks trained at
 `f4b25238` exactly as C0's did: a version-161 `model_config.json` of the same 107 keys with neither magnet key, and
 the pin's two new fields are un-versioned with defaults (0.0 and 2,000,000), so the pin builds the same network
 from it. **Executed** ([`x67_loadcheck_at_pin.txt`](x67_loadcheck_at_pin.txt), CPU, no lease, a scratch ledger):
@@ -335,12 +385,15 @@ At 3 × 8 (the expected shape; the log also holds 3 × 5):
 
 ## 7. The launch commands, and their validation
 
-For the Training session, from the main checkout at or after this amendment's commit, holding the lease, one run at
-a time in the order of [`chain_items_ce3d.json`](chain_items_ce3d.json):
+For the Training session, from the main checkout at or after Amendment 3's commit, holding the lease, one run at
+a time in the order of [`chain_items_ce3d.json`](chain_items_ce3d.json). **First, once:** move fork 1's dead attempt
+aside (§15; e.g. `mv models/rb_x35_ce3dswap_s7321 models/rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN`, never
+deleted). While it is in place the kit HOLDs every production-side launch at `pin-check`, and this run's own
+"run dir exists" pre-check HOLDs too.
 
 ```bash
 STAGE=designs/research_state/measurements/x35_breakers_stage_2026-10-17
-PIN=333a73ddda7829b9ccdf9e17ef04624eb40edeba       # tag ce3d-pin-333a73dd; NOT the side pin
+PIN=9e97cad5709da21a1f9d4d8846096c87eb17b1d0       # tag ce3d-pin-9e97cad5; NOT the side pin, NOT the first CE-3d pin
 python -m main.x35.kit stage-check --stage $STAGE --arm ce3d_swap --seed $s    # ALLOWED: "CE-3d PREREG present"
 bash $STAGE/launch_x35.sh ce3d_swap $s --pin $PIN --lease-owner "<owner>" --thinning       # the kit's DRY RUN (default)
 bash $STAGE/launch_x35.sh ce3d_swap $s --pin $PIN --lease-owner "<owner>" --thinning GO    # only on the orchestrator's GO
@@ -353,29 +406,39 @@ for `$s` = 7321, 7322, 7323. The kit resolves each to `python -m main.launcher -
 --model /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip --behaviour-check warn --steps 300000170 --checkpoint-every-steps 1000000 --device cuda --ent-coef 0 --magnet-kl-coef 0.05 --seed 7321 --run-name rb_x35_ce3dswap_s7321
 ```
 
-Validated on 2026-11-11, CPU only, no lease, `CUDA_VISIBLE_DEVICES=""`, nice 19 on the agent cores, nothing created:
+Validated on 2026-11-11 at the training pin (every transcript below was re-made at Amendment 3), CPU only, no lease,
+`CUDA_VISIBLE_DEVICES=""`, nice 19 on the agent cores, nothing created:
 
 - `python -m main.checkargs --argv "<argv>" --pin $PIN` → `checkargs_ce3d_swap_s<seed>.txt`, all three: **exit 0**,
   every flag accepted by the PINNED parser, every ARCH-surface key the production mirror's, the two lever rows
   TYPED (§2), `✓ fork arch`.
 - `python -m main.launcher --dry-run --restart-interval-hours 24 --pin-commit $PIN <argv>` →
   `dryrun_ce3d_swap_s<seed>.txt`, all three: **role FORK of `rb_x26_s2601`**, +20,000,000 steps, the pin (source
-  `pin_commit`), both lever rows TYPED, 14.33 GiB REQUIRED. **Exit 3, "would NOT launch", on exactly two refusals,
+  `pin_commit`), both lever rows TYPED, 10.97 GiB REQUIRED (it read 14.33 at Amendment 1: the shared compile cache
+  now holds 22.00 GiB against its 20.00 GiB cap, so its row counts no growth). **s7321's transcript was made with
+  the dead attempt's directory still in place**: its run-dir line reads `[EXISTS — a real launch WRITES INTO IT]`
+  and it lists that directory's 14-snapshot pool; after the move it reads as the other two do.
+  **Exit 3, "would NOT launch", on exactly two refusals,
   both this unit's own shell and both expected:** the CUDA-visibility preflight (`CUDA_VISIBLE_DEVICES=''`: no
   lease) and the inherited-nice preflight (the shell ran at nice 19 by rule 5b; a GPU launch is refused above nice
   10). The kit's own dry run re-runs it with the card visible, at the launch shell's priority, before every GO. The
-  transcripts' `showdown deps` line names this amendment's worktree, which no longer exists.
-- `python -m main.x35.kit pin-check --pin $PIN --side production --arm ce3d_swap --stage $STAGE` → exit 0 ("the
-  CE-3d pin 333a73ddda78 = the side pin f4b25238def5 + one commit, exactly the 44 enumerated path(s)"); with the
-  plain side pin it exits 1 ("the CE-3d arm launches only at CE3D_PIN"). `kit required-check` passes at the pin; a
-  fourth seed and a retired seed are refused. [`kit_checks_ce3d.txt`](kit_checks_ce3d.txt).
+  transcripts' `showdown deps` line names the amending unit's worktree, which no longer exists.
+- `python -m main.x35.kit pin-check --pin $PIN --side production --arm ce3d_swap --stage $STAGE`
+  ([`kit_checks_ce3d.txt`](kit_checks_ce3d.txt)): the pin itself passes ("the CE-3d pin 9e97cad5709d = the first
+  CE-3d pin 333a73ddda78 + one commit, exactly the 3 enumerated path(s) …; 333a73ddda78 = the side pin f4b25238def5
+  + one commit, exactly the 44 enumerated path(s)"). Against `models/` as it stood, the check exits 1 on the dead
+  attempt ("no recorded pin … registered as a startup-dead attempt …, but it is still IN PLACE"). Against a scratch
+  view of `models/` with that directory under its moved-aside name (symlinks; nothing under `models/` written) it
+  exits 0 and lists the attempt as "a STARTUP-DEAD attempt at 333a73ddda78 …, moved aside". The first CE-3d pin and
+  the plain side pin each exit 1 ("the CE-3d arm launches only at CE3D_PIN"). `kit required-check` passes at the
+  pin; a fourth seed and a retired seed are refused.
 - `ce3d_test`: the kit's argv equals the three validated files token for token and is C0's plus the four lever
   tokens; `check_validation` PASSes the six transcripts (the two shell refusals modelled as absent) and FAILs them
   when either typed lever is absent, another value, or shown by one tool only, and when read as C0's or X67's.
 - `python -m main.ops.arm_chain plan <scratch chain> --check-pins --describe` on the three draft items →
   [`arm_chain_plan_ce3d.txt`](arm_chain_plan_ce3d.txt): PLAN OK, the kit agrees on all three; a fourth seed and a
-  dropped arm REFUSE. **The plan does not judge an arm's own pin** (an item at the plain side pin still plans OK):
-  that check is the launch script's `kit pin-check`, above.
+  dropped arm REFUSE. **The plan does not judge an arm's own pin** (an item at the plain side pin, or at the first
+  CE-3d pin, still plans OK): that check is the launch script's `kit pin-check`, above.
 
 **The chain items** ([`chain_items_ce3d.json`](chain_items_ce3d.json); `go_by` is the orchestrator's to fill): the
 arm, the seed, the pin, `thin: planner`, `flags: ["--thinning"]`, the throughput gate (1,000 steps/s within 60 min,
@@ -394,13 +457,17 @@ from the pin's source. The VOID lines are the hyperparameter table's rows for th
 mistyped or inherited launch could carry (the swap's own row is `ent_coef   | 0 `, which matches none). A fork that
 starts without its magnet, or with an entropy bonus, is stopped within the half hour.
 
-**Disk.** `disk_need_gib` is **16.0** a fork: the dry run's 14.33 plus the magnet's sidecars, which the launcher's
-arithmetic does not count (one `<checkpoint>.magnet.pt` a checkpoint, each at most a checkpoint zip's 54.7 MiB; the
-production size is unmeasured). The thinning planner does not recognise the sidecars and keeps them, so up to
+**Disk.** `disk_need_gib` is **16.0** a fork: Amendment 1's dry run's 14.33 plus the magnet's sidecars, which the
+launcher's arithmetic does not count (one `<checkpoint>.magnet.pt` a checkpoint, each at most a checkpoint zip's
+54.7 MiB; the production size is unmeasured). It is kept at 16.0 although the dry run now reads 10.97: the figure
+is a floor on free space, and the higher one is the safe one. The thinning planner does not recognise the sidecars
+and keeps them, so up to
 ≈ 1.1 GiB a fork stays behind after thinning.
 
-**Not executed at either amendment:** `launch_x35.sh` itself (a run is live, so its pre-check 1 HOLDs, and its
-checks read the lease) and either cross's play command (it writes eval-ledger rows). Executed: the plan's column
+**`launch_x35.sh` itself** was not run by any amending unit (no lease). The Training session ran it once, for fork
+1 at the first pin: its dry run and its GO passed every pre-check, and the launch died in the trainer's startup
+(§15). It has not been run at the training pin. **Not executed at any amendment:** either cross's play command (it
+writes eval-ledger rows). Executed: the plan's column
 check for both crosses, the rule, the report and their self-check; the driver's `family-register` line for both
 families and `read_cross.py` for both crosses, with the pin's code against an empty SCRATCH ledger (the deciding
 read: INCONCLUSIVE, 24 missing cells; the reported one: `"read": false`, 9 missing cells), never on a played cell;
@@ -413,7 +480,7 @@ swap final, exit 3; a work directory used by the other cross, exit 5; a checkout
 - not finished: the arm chain's completeness check (rc 0, `Last step` ≥ 300,000,170, `final_model.zip`, the newest
   checkpoint within 98,304 steps of it);
 - K9(b) not PASS at the arm's end;
-- the launcher log names another pin than the CE-3d pin, or the run is not `FORK of …/rb_x26_s2601`;
+- the launcher log names another pin than the training pin `9e97cad5`, or the run is not `FORK of …/rb_x26_s2601`;
 - the post-spawn pool-seed check fails;
 - **either half of the lever is not in the record**: §7's banner (the chain STOPS the run); any of §5.2's plan
   guards on `ent_coef`, `magnet_kl_coef`, `magnet_refresh_steps` or the sidecar; `main.dose` reads an epoch count
@@ -423,7 +490,9 @@ swap final, exit 3; a work directory used by the other cross, exit 5; a checkout
 
 **A FATAL that is the lever's own on the first fork** (the magnet's T2 slot, the compile gate or the canary with
 the magnet's argument, a sidecar refusal) **STOPS the screen**: no further fork launches, nothing is read, and a fix
-is a new pin and a dated amendment or a new registration. The orchestrator decides which.
+is a new pin and a dated amendment or a new registration. The orchestrator decides which. **Invoked once** (§15:
+the startup fit check, before step 0; the fix is the training pin and Amendment 3). A launch that dies before its
+first training step is a launch failure, not a fork: the VOID guards above judge the fork that trains.
 
 **Throughput < 1,000 steps/s in the first hour ⇒ PAGE**: HOLD and keep training; the orchestrator decides.
 
@@ -564,3 +633,64 @@ What changed against `71c20b521`, and why:
 
 Unchanged: the arm, its seeds and argv, the pin, the kit (`src/main/x35/`), the chain items, the deciding cross, its
 plan, rule, classes and power, every VOID guard and label, the licences, and every "moves no recipe" clause.
+
+## 15. Amendment 3 (2026-11-11, after fork 1's launch died at step 0; before any training step, game or read)
+
+**Blind.** Written the day of the registration, after ONE launch and before any data. On the orchestrator's GO the
+Training session launched fork 1, `rb_x35_ce3dswap_s7321`, at the first CE-3d pin
+`333a73ddda7829b9ccdf9e17ef04624eb40edeba` (22:23 local, through its chain: every kit pre-check, the pool-seed check
+and §7's banner passed). Twenty minutes later, before step 0, the trainer exited `FATAL_CONFIG` in the startup
+update-fit check (`update_fit.check_update_fits` → `dry_update` → `ppo.train` → `PPO._magnet_args`; the crash file
+reads `last step: 0`):
+
+```
+agents.training.magnet.MagnetError: --magnet-kl-coef > 0 but the rollout buffer has no magnet column: the collector's fill writes it (`agents.training.magnet.fill_column`); this buffer was filled without one
+```
+
+What the attempt left is all startup: the launcher's logs, a compile cache, `cuda_ledger.json` (four startup rows),
+the fork's seeded opponent pool (14 snapshots) and one crash file. It wrote no `metadata.json`, no checkpoint and
+no model. It collected no rollout and took no optimizer step. No CE-3d family or request exists in the eval ledger
+and no cell was played. Nothing that a rule, a label or a diagnostic of this file reads exists, so there was
+nothing to look at. The startup log is evidence about the build only; §4.4 item 2 quotes the part that bears on it.
+
+**The cause is a gap in the build, not in the design.** The fit check runs one dry update on a fixture rollout that
+no collector filled, and only the collector's fill writes the magnet's column. The check runs on CUDA only, and
+§4.2's tests and smokes were CPU, so no test had reached it with the lever on. Every `--magnet-kl-coef > 0` launch on
+the card would have died there. §4.4 already listed the lever's contact with the card as UNVERIFIED.
+
+**What the rules say (checked).**
+- §8's lever-own FATAL clause applies: the error is the lever's own (`MagnetError`, raised by the lever's code in
+  `train()`), on the first fork. The screen stopped (the chain HELD; forks 2 and 3 never launched), and the
+  orchestrator chose "a new pin and a dated amendment". The clause's list names the T2 slot, the compile gate, the
+  canary and the sidecar, not the fit check: this amendment reads the clause by its sense, and says so.
+- §3 forbids a substitute seed and a second look. The relaunch is neither: seed 7321 again, the same run name,
+  argv, parent and dose, and no number was seen between the two launches.
+- §8's VOID guard "not finished" judges the fork that trains, the relaunched `rb_x35_ce3dswap_s7321`. The dead
+  attempt is recorded as a **build-gap launch failure**: not a fork of the screen, not a VOID fork, never read.
+- `TRAINING_RUN_SOP` §4 is the same rule from the operations side: a defect that is not scientific relaunches
+  under the same run name, and the dead directory is moved aside with its cause, never deleted.
+
+What changed against `46c6532ff`, and why:
+
+| | Amendment 2 | Amendment 3 | why |
+|---|---|---|---|
+| the training pin | `333a73dd` (tag `ce3d-pin-333a73dd`) | `9e97cad5709da21a1f9d4d8846096c87eb17b1d0` (tag `ce3d-pin-9e97cad5`) = `333a73dd` + ONE commit of 3 paths, main's fix `13c50a5e6` of the fit check, byte-identical (§4, §4.1) | the fix must be in the code the forks launch with, and nothing else of main may enter |
+| the play pin | "the CE-3d pin" | the same commit, `333a73dd`, now named apart from the training pin (§5.1) | the three paths are not play code, so the load check and the scratch reads made at `333a73dd` stand |
+| the kit's pin check | one commit on the side pin, 44 paths | two commits, 44 then 3 paths, each parent and path list exact (`batch.ce3d_pin_check`); the first pin alone is refused for a launch | the arm launches only at the pin that carries the fix |
+| the dead attempt | — | named in `batch.STARTUP_DEAD_ATTEMPTS`. `kit pin-check` lists it and does not judge it, only once it is MOVED ASIDE (`models/rb_x35_ce3dswap_s7321.<CAUSE>`) and only while it holds no metadata, checkpoint or model; in place it HOLDs | a directory with no recorded pin fails the side's pin check for every production-side launch; one name in a registry is narrower than tolerating any directory without metadata |
+| fork 1 | not launched | relaunched at seed 7321 under its own run name, after the move | the rules above |
+| the plan's swap guard | one `pin_history` entry at `333a73dd` | at `9e97cad5` (`cross/plan_cross.py`); the driver's rule text names both pins | the guard names the pin the forks train at |
+| the confound table, the UNVERIFIED list | five rows; six items | + the fit check's fix (§4.3); + item 7, and item 2 quotes the dead attempt's startup log (§4.4) | the first relaunch is this code's first contact with the card |
+| validation | transcripts at `333a73dd`; 14.33 GiB REQUIRED | re-made at `9e97cad5` for the three seeds (10.97 GiB, §7); `kit_checks_ce3d.txt` and `arm_chain_plan_ce3d.txt` regenerated | a transcript must be the pin's |
+| chain items | pin `333a73dd`, a GO against Amendment 1 | pin `9e97cad5`; `go_by` is the orchestrator's to fill again, against this amendment | the old GO named the old pin |
+| cost | ≈ 13 GPU-h | + the dead attempt: 20 min of the lease, no training | recorded |
+
+Unchanged: the arm, its seeds (7321–7323), argv, parent and dose; the stage `CE3D` and its one look; the first pin,
+its tag and its 44 paths; both crosses, the plans' other guards, the rule, the classes, the power and the reported
+reading; every VOID guard and label; the banner; the canary family (none); the licences; and every "moves no
+recipe" clause.
+
+**Not done by this amendment** (it does not touch `models/`, the GPU or the chain): the move of the dead directory
+and the incident's ledger entry, both the Training session's (`TRAINING_RUN_SOP` §4, steps 3 and 6), and the
+relaunch. **UNVERIFIED:** all of §4.4, item 7 first; and `launch_x35.sh` at the training pin, whose pin and run-dir
+checks were run only against the scratch view of `models/` described in §7.

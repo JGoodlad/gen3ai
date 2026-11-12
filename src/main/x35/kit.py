@@ -53,8 +53,9 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   ``--ent-coef 0 --magnet-kl-coef 0.05`` (:data:`CE3D_SWAP_LEVER`: a reverse-KL pull toward a frozen copy of the
   policy refreshed every 2,000,000 steps IN PLACE OF the entropy bonus; the KL carries 0.05 of entropy weight of its
   own, so the weight on the entropy gradient stays C0's 0.05), seeds 7321-7323. One look, at its own pin
-  ``batch.CE3D_PIN`` (the production side pin + the magnet's backport), read head to head against the banked C0
-  finals. The registration's two arms (``ce3d_mag``, ``ce3d_ent``) were dropped before any launch;
+  ``batch.CE3D_PIN`` (the production side pin + the magnet's backport + the startup fit check's fix, PREREG
+  Amendment 3; the first of the two commits alone, ``batch.CE3D_MAGNET_PIN``, is refused), read head to head
+  against the banked C0 finals. The registration's two arms (``ce3d_mag``, ``ce3d_ent``) were dropped before any launch;
 * X63-C, THE X63 CONTROL REPLICATE (``design_x63_long_breadth_continuation.md``; ``reviews/x63_review_2026-10-27.md``
   B1 fix 3; PREREG ``x63c_control_replicate_2026-10-28/PREREG.md``): ``x63c`` -- X26c's recorded argv token for token
   with only ``--seed`` (6302) and ``--run-name`` changed, +100M, side-pinned at the production pin. It has NO lever:
@@ -222,7 +223,8 @@ X67_LEVER = ("--ent-coef", "0.0125")
 #: +20M), and LOSES the entropy bonus (``--ent-coef 0``). KL(pi || pi_magnet) = -H(pi) - sum pi log pi_magnet, so the
 #: weight on the entropy gradient stays the 0.05 that C0 inherits and the arm differs from C0 by the cross-entropy
 #: pull toward the magnet. TWO flags, typed together, ``--ent-coef`` first. ``--magnet-kl-coef`` exists at
-#: ``batch.CE3D_PIN`` only; a fork applies a typed ``--ent-coef 0`` (``model_build``'s resume path assigns it
+#: ``batch.CE3D_PIN`` (and its parent ``batch.CE3D_MAGNET_PIN``, where a launch on the card dies at the startup fit
+#: check) only; a fork applies a typed ``--ent-coef 0`` (``model_build``'s resume path assigns it
 #: unconditionally; the pin's CPU smoke printed ``ent_coef 0`` in the magnet's attach line).
 CE3D_SWAP_LEVER = ("--ent-coef", "0", "--magnet-kl-coef", "0.05")
 #: N4's ONE lever (``design_n4_capacity_screen.md`` §2; B-FFNW, T69; PREREG ``n4_capacity_screen_2026-10-27`` §2): every
@@ -330,7 +332,7 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("x48", "production", L_PROD, X48_SEEDS, "rb_x35_x48kffn_s{seed}", 0, "warn"),
     # X67, the entropy screen (PREREG x67_entropy_screen_2026-11-09): C0 + --ent-coef 0.0125, one look at s6701-s6703
     Arm("x67", "production", L_PROD, X67_SEEDS, "rb_x35_x67ent_s{seed}", 0, "warn"),
-    # CE-3d, the trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, Amendment 1), at batch.CE3D_PIN, one
+    # CE-3d, the trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, Amendments 1 and 3), at batch.CE3D_PIN, one
     # look: the swap (C0 + --ent-coef 0 --magnet-kl-coef 0.05), read against the banked C0 finals
     Arm("ce3d_swap", "production", L_PROD, CE3D_SWAP_SEEDS, "rb_x35_ce3dswap_s{seed}", 0, "warn"),
     # X63-C, the X63 control replicate (review B1 fix 3): X26c's argv, seed and run changed; start X26 @380M, not P*

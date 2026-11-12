@@ -1,4 +1,4 @@
-"""CE-3d, the trailing-magnet screen, Amendments 1 and 2 (PREREG §5.2, §5.4): the PLAN of a head-to-head cross.
+"""CE-3d, the trailing-magnet screen, Amendments 1 to 3 (PREREG §5.2, §5.4): the PLAN of a head-to-head cross.
 
 TWO crosses share this plan, chosen by ``--cols``: ``c0`` (the default; the REGISTERED cross, which decides) and
 ``x67`` (Amendment 2's REPORTED cross against X67's three finals, which decides nothing).
@@ -12,7 +12,8 @@ drop). X67's plan (``../../x67_entropy_screen_2026-11-09/cross/plan_cross.py``) 
 rows, under these same guards at ``ent_coef`` 0.0125).
 
 Every run in the plan must have: ``final_model.zip``; a ``pin_history`` of exactly ONE entry at ITS pin (the CE-3d
-backport pin for a swap fork, the production side pin for C0 and X67), from the fork step 280,000,170 to at least
+TRAINING pin for a swap fork -- since Amendment 3 ``9e97cad5``, the first CE-3d pin ``333a73dd`` + the startup fit
+check's fix; the production side pin for C0 and X67), from the fork step 280,000,170 to at least
 300,000,170; the lineage record of a FORK of P* (the parent checkpoint's sha256); its own seed; ``n_epochs`` 10; its
 arm's ``ent_coef`` (swap 0.0, C0 0.05, X67 0.0125) in ``metadata.json`` and its ``cli_args``; its arm's magnet record
 in ``model_config.json`` (swap: ``magnet_kl_coef`` 0.05 with ``magnet_refresh_steps`` 2,000,000; C0 and X67: both
@@ -38,7 +39,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 MODELS = Path(os.environ.get("GEN3AI_MODELS_DIR") or "/home/goodlad/dev/gen3ai/models")
 SIDE_PIN = "f4b25238def57900c0305bb2a3a5a8f9edaef285"
-CE3D_PIN = "333a73ddda7829b9ccdf9e17ef04624eb40edeba"
+#: The swap forks' TRAINING pin (PREREG Amendment 3, §15; ``main.x35.batch.CE3D_PIN``, tag ``ce3d-pin-9e97cad5``). The
+#: games are still PLAYED at the first CE-3d pin ``333a73dd`` (``drive_cross.sh``), whose play code is the same.
+CE3D_PIN = "9e97cad5709da21a1f9d4d8846096c87eb17b1d0"
 PSTAR_SHA256 = "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
 FORK_STEP, MIN_LAST_STEP = 280_000_170, 300_000_170
 N_EPOCHS = 10

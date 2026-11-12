@@ -1,7 +1,9 @@
-$ python -m main.ops.arm_chain plan <scratch chain: the three draft items of chain_items_ce3d.json, repo = this commit's tree> --check-pins --describe
- 0. ARM ce3d_swap s7321 -> rb_x35_ce3dswap_s7321 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 1, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
- 1. ARM ce3d_swap s7322 -> rb_x35_ce3dswap_s7322 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 1, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
- 2. ARM ce3d_swap s7323 -> rb_x35_ce3dswap_s7323 at pin 333a73ddda78 (GO by <orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 1, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+$ python -m main.ops.arm_chain plan <scratch chain: the three draft items of chain_items_ce3d.json, repo = the amendment's tree, models_dir = the real models/> --check-pins --describe
+# Amendment 3 (2026-11-11): regenerated at the TRAINING pin 9e97cad5. `plan` reads no run directory: the chain's PRELAUNCH step is
+# what HOLDs while models/rb_x35_ce3dswap_s7321 (the dead attempt) is in place, and it was not executed here.
+ 0. ARM ce3d_swap s7321 -> rb_x35_ce3dswap_s7321 at pin 9e97cad5709d (GO by <orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 3, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 1. ARM ce3d_swap s7322 -> rb_x35_ce3dswap_s7322 at pin 9e97cad5709d (GO by <orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 3, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 2. ARM ce3d_swap s7323 -> rb_x35_ce3dswap_s7323 at pin 9e97cad5709d (GO by <orchestrator, date>: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_screen_2026-11-11 Amendment 3, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
     arm:rb_x35_ce3dswap_s7321: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
     arm:rb_x35_ce3dswap_s7322: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
     arm:rb_x35_ce3dswap_s7323: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
@@ -18,12 +20,15 @@ rc=1
 # a variant: the first item as a DROPPED arm of the registration (ce3d_mag s7301; Amendment 1 removed it from the kit)
     arm:rb_x35_ce3dswap_s7322: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
     arm:rb_x35_ce3dswap_s7323: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
-REFUSED: arm:rb_x35_ce3dmag_s7301: the kit refuses arm 'ce3d_mag' seed 7301 (rc 2): python -m main.x35.kit describe: error: argument --arm: invalid choice: 'ce3d_mag' (choose from 'a1', 'a2', 'a3', 'a3_mx', 'a6', 'a6_lx', 'c0', ' ...)
+REFUSED: arm:rb_x35_ce3dmag_s7301: the kit refuses arm 'ce3d_mag' seed 7301 (rc 2): python -m main.x35.kit describe: error: argument --arm: invalid choice: 'ce3d_mag' (choose from 'a1', 'a2', 'a3', 'a3_mx', 'a6', 'a6_lx', 'c0',  ...)
 PLAN REFUSED (1 problem(s))
 rc=1
 
 # a variant: the first item at the plain production side pin f4b25238 (which has no magnet)
 PLAN OK
 rc=0
-# ^ NOT a refusal: `--check-pins` only resolves an item's pin. Whether a pin is the ARM'S OWN is judged by the launch
-#   script's `kit pin-check` (pre-check, and again at GO), which refuses this pin for the CE-3d arm: kit_checks_ce3d.txt.
+# a variant: the first item at the FIRST CE-3d pin 333a73dd (the magnet without the fit check's fix: the pin the dead attempt ran at)
+PLAN OK
+rc=0
+# ^ NOT refusals: `--check-pins` only resolves an item's pin. Whether a pin is the ARM'S OWN is judged by the launch
+#   script's `kit pin-check` (pre-check, and again at GO), which refuses both pins for the CE-3d arm: kit_checks_ce3d.txt.

@@ -118,9 +118,12 @@ look; a record for another arm or look is a refusal.
 * **CE-3d, THE TRAILING-MAGNET SCREEN** (``ce3d_magnet_screen_2026-11-11/PREREG.md``, :data:`CE3D_PREREG`):
   ONE arm since its Amendment 1, ``ce3d_swap`` (:data:`CE3D_ARMS`): C0's argv + ``--ent-coef 0 --magnet-kl-coef
   0.05`` (the magnet IN PLACE OF the entropy bonus, so the weight on the entropy gradient stays C0's 0.05), seeds
-  7321-7323. It runs at its own pin, :data:`CE3D_PIN` = the production side pin + ONE commit (the magnet's backport
-  from main ``251bbfb87`` and the T2 near-tie judge ``3260d7ae0``), checked by :func:`ce3d_pin_check` against
-  :data:`CE3D_PIN_PATHS` exactly; its control is the banked C0 finals at the side pin. The registration's two arms
+  7321-7323. It runs at its own pin, :data:`CE3D_PIN` = the production side pin + TWO commits, each checked by
+  :func:`ce3d_pin_check` against its enumerated paths exactly: :data:`CE3D_MAGNET_PIN` (the magnet's backport from
+  main ``251bbfb87`` and the T2 near-tie judge ``3260d7ae0``; :data:`CE3D_MAGNET_PIN_PATHS`; the pin the screen's
+  games are PLAYED at) and, since its Amendment 3, the startup fit check's fix on top of it
+  (:data:`CE3D_PIN_PATHS`). The first fork's attempt at the first pin died at step 0 and is a registered
+  :data:`STARTUP_DEAD_ATTEMPTS` entry. Its control is the banked C0 finals at the side pin. The registration's two arms
   (``ce3d_mag`` 7301-7303, ``ce3d_ent`` 7311-7313) were dropped before any launch and their seeds are retired
   (:data:`CE3D_RETIRED_SEEDS`). Held by :data:`CE3D_STAGES`; ONE look, no look 2: :func:`stage_status` gives it the
   AM-8 side gate and its PREREG. Read by the PREREG's own head-to-head cross (``screen_rule.py`` there), so no
@@ -360,16 +363,32 @@ X60T_PIN_PATHS: Tuple[str, ...] = (
     "src/utils/team_corpora/human_corpora.json",
     "src/utils/team_corpora/human_test.py",
 )
-#: CE-3d (PREREG ``ce3d_magnet_screen_2026-11-11`` §4): the pin the CE-3d arm runs at. The production side pin
-#: ``f4b25238`` + ONE commit: the trailing magnet (``--magnet-kl-coef``, ``gen3_magnet_kl_v1``) backported from main
-#: ``251bbfb87`` with NO config-version bump (v161; the two fields load at their defaults when absent), and the T2
-#: near-tie judge ``3260d7ae0`` (it judges a FAILING parity row again; no forward, loss or gradient value moves).
-#: Tagged on origin as ``ce3d-pin-333a73dd``.
-CE3D_PIN = "333a73ddda7829b9ccdf9e17ef04624eb40edeba"
-#: The commit CE3D_PIN sits directly on: the production side pin (C0's, X67's and P*'s fork pin).
-CE3D_PIN_BASE = D1_PIN_BASE
-#: EXACTLY the paths CE3D_PIN changes relative to CE3D_PIN_BASE (``pin-check`` enumerates them, as X60-T's).
+#: CE-3d (PREREG ``ce3d_magnet_screen_2026-11-11`` §4): the FIRST CE-3d pin. The production side pin ``f4b25238`` +
+#: ONE commit: the trailing magnet (``--magnet-kl-coef``, ``gen3_magnet_kl_v1``) backported from main ``251bbfb87``
+#: with NO config-version bump (v161; the two fields load at their defaults when absent), and the T2 near-tie judge
+#: ``3260d7ae0`` (it judges a FAILING parity row again; no forward, loss or gradient value moves). Tagged on origin
+#: as ``ce3d-pin-333a73dd``. Since Amendment 3 no fork TRAINS here (a magnet launch dies at the startup fit check on
+#: the card); it is the base of :data:`CE3D_PIN` and the pin the screen's games are PLAYED at (``cross/``).
+CE3D_MAGNET_PIN = "333a73ddda7829b9ccdf9e17ef04624eb40edeba"
+#: The commit CE3D_MAGNET_PIN sits directly on: the production side pin (C0's, X67's and P*'s fork pin).
+CE3D_MAGNET_PIN_BASE = D1_PIN_BASE
+#: CE-3d (PREREG §4 as amended by Amendment 3, §15): the pin the CE-3d arm TRAINS at. :data:`CE3D_MAGNET_PIN` + ONE
+#: commit: the startup fit check's dry update trains with the magnet the run trains with
+#: (``gen3_update_fit_fill_inputs_v1``, the backport of main's fix; the first fork died at step 0 without it, on
+#: ``MagnetError ... the rollout buffer has no magnet column``). Tagged on origin as ``ce3d-pin-9e97cad5``.
+CE3D_PIN = "9e97cad5709da21a1f9d4d8846096c87eb17b1d0"
+#: The commit CE3D_PIN sits directly on: the first CE-3d pin (a pin on a pin, as X60-T's on D1's).
+CE3D_PIN_BASE = CE3D_MAGNET_PIN
+#: EXACTLY the paths CE3D_PIN changes relative to CE3D_PIN_BASE: the fit check and its two test files. No loss,
+#: collector, model-version, compile-key or play path.
 CE3D_PIN_PATHS: Tuple[str, ...] = (
+    "src/agents/training/rust_rollout/magnet_integration_test.py",
+    "src/agents/training/update_fit.py",
+    "src/agents/training/update_fit_test.py",
+)
+#: EXACTLY the paths CE3D_MAGNET_PIN changes relative to CE3D_MAGNET_PIN_BASE (``pin-check`` enumerates them, as
+#: X60-T's).
+CE3D_MAGNET_PIN_PATHS: Tuple[str, ...] = (
     "designs/endstate/design_learner_recipe.md",
     "designs/ops/flag_census.md",
     "designs/production_config.json",
@@ -434,6 +453,14 @@ ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P", "x63u": 
                      "ce3d_swap": "CE-3d PREREG §4"}
 #: The own-pin arms whose run MAY also sit at the side's pin: D1's VOID pre-fix attempt (AM-D1-FIX-f) only.
 ARM_PIN_PREFIX_OK = ("d1",)
+#: A side-pinned run whose FIRST attempt died at startup before it wrote ``metadata.json`` (so it recorded no pin to
+#: judge): ``{run name: (the pin its launcher log names, the amendment that records the attempt)}``. :func:`pin_check`
+#: lists such a directory instead of failing the side on it only once it is MOVED ASIDE (``<run>.<CAUSE>``, never
+#: deleted: ``designs/ops/TRAINING_RUN_SOP.md`` §4) and only while it holds nothing a reader or a resume could take
+#: for training output (:func:`startup_dead_problems`). A closed list: an entry needs its own dated amendment.
+STARTUP_DEAD_ATTEMPTS: Dict[str, Tuple[str, str]] = {
+    "rb_x35_ce3dswap_s7321": (CE3D_MAGNET_PIN, "CE-3d PREREG Amendment 3 (§15)"),
+}
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
 #: look 2 (``b``) only on its own look-1 CONTINUE. The ORDER is the Training session's (AM-RP-e), not a gate; the
 #: conditions are :func:`_batch2_status`'s. Never merged into the closed :data:`STAGES`.
@@ -658,6 +685,24 @@ def _same_sha(a: str, b: str) -> bool:
     return n >= 7 and a[:n] == b[:n]
 
 
+def startup_dead_problems(run_dir: str) -> List[str]:
+    """Why ``run_dir`` is NOT a startup-dead attempt (empty = it is one): it wrote ``metadata.json``, a
+    ``latest.txt``, a checkpoint or a model zip at its top level. Any of those is training output or a resume
+    point, and a directory holding one is judged by its recorded pin like every other run. (A ``snapshots/`` pool
+    seeded from the fork parent before the first step is not training output.)"""
+    bad: List[str] = []
+    for name in ("metadata.json", "latest.txt"):
+        if os.path.lexists(os.path.join(run_dir, name)):
+            bad.append(f"it holds {name}")
+    ck = os.path.join(run_dir, "checkpoints")
+    if os.path.lexists(ck) and (not os.path.isdir(ck) or os.listdir(ck)):
+        bad.append("it holds checkpoints/")
+    zips = sorted(n for n in os.listdir(run_dir) if n.endswith(".zip"))
+    if zips:
+        bad.append(f"it holds model file(s) {zips[:3]}")
+    return bad
+
+
 def own_pin_check(arm: str, pin: str, side_pin: str, repo: str, *, want_pin: Optional[str], base: str,
                   paths: Tuple[str, ...], tree_want: Optional[str], tree_of: str) -> Tuple[bool, List[str]]:
     """An OWN-PIN arm's check (AM-D1-FIX, AM-D3): ``pin`` is ``want_pin``, sits directly on the side's written pin
@@ -759,29 +804,44 @@ def x60t_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]
                   f"one commit, exactly the {len(names)} enumerated path(s)", f"{am}: {line}"]
 
 
+def _one_commit_on(repo: str, pin: str, base: str, paths: Tuple[str, ...]) -> Optional[str]:
+    """None when ``pin`` is a commit of ``repo`` whose ONE parent is ``base`` and which changes EXACTLY ``paths``
+    relative to it; else what is wrong."""
+    parents = _git(repo, "rev-list", "--parents", "-n", "1", pin)
+    if parents.returncode != 0:
+        return f"{pin[:12]} is not a commit in {repo}: {parents.stderr.strip()[-200:]}"
+    if parents.stdout.split()[1:] != [base]:
+        return (f"{pin[:12]}'s parent(s) {[h[:12] for h in parents.stdout.split()[1:]]} != {base[:12]} (one commit on "
+                "top of it, no more)")
+    names = sorted(n for n in _git(repo, "diff", "--name-only", base, pin).stdout.splitlines() if n)
+    if names != sorted(paths):
+        extra, missing = sorted(set(names) - set(paths)), sorted(set(paths) - set(names))
+        return (f"{pin[:12]} must change EXACTLY the {len(paths)} enumerated paths relative to {base[:12]}; extra "
+                f"{extra[:10]}, missing {missing[:10]}")
+    return None
+
+
 def ce3d_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
-    """CE-3d (PREREG §4): ``pin`` is :data:`CE3D_PIN`; the side's written pin is :data:`CE3D_PIN_BASE`; ``pin``'s one
-    parent is that side pin; and ``pin`` changes EXACTLY :data:`CE3D_PIN_PATHS` relative to it (the magnet's backport
+    """CE-3d (PREREG §4, Amendment 3): ``pin`` is :data:`CE3D_PIN`; the side's written pin is
+    :data:`CE3D_MAGNET_PIN_BASE`; ``pin``'s one parent is :data:`CE3D_MAGNET_PIN` and ``pin`` changes EXACTLY
+    :data:`CE3D_PIN_PATHS` relative to it (the fit check's fix and its tests); and :data:`CE3D_MAGNET_PIN`'s one
+    parent is that side pin, changing EXACTLY :data:`CE3D_MAGNET_PIN_PATHS` relative to it (the magnet's backport
     and the near-tie judge, nothing else: no corpus, no Rust, no observation path)."""
     am = ARM_PIN_AMENDMENT["ce3d_swap"]
     if pin != CE3D_PIN:
         return False, [f"{am}: the CE-3d arm launches only at CE3D_PIN {CE3D_PIN[:12]}, not {pin[:12]}"]
-    if side_pin != CE3D_PIN_BASE:
-        return False, [f"{am}: CE3D_PIN rests on the side pin {CE3D_PIN_BASE[:12]}, but the side's written pin is "
-                       f"{side_pin[:12]}"]
-    parents = _git(repo, "rev-list", "--parents", "-n", "1", pin)
-    if parents.returncode != 0:
-        return False, [f"{am}: CE3D_PIN {pin[:12]} is not a commit in {repo}: {parents.stderr.strip()[-200:]}"]
-    if parents.stdout.split()[1:] != [CE3D_PIN_BASE]:
-        return False, [f"{am}: CE3D_PIN's parent(s) {[h[:12] for h in parents.stdout.split()[1:]]} != the side pin "
-                       f"{CE3D_PIN_BASE[:12]} (one commit on top of it, no more)"]
-    names = sorted(n for n in _git(repo, "diff", "--name-only", CE3D_PIN_BASE, pin).stdout.splitlines() if n)
-    if names != sorted(CE3D_PIN_PATHS):
-        extra, missing = sorted(set(names) - set(CE3D_PIN_PATHS)), sorted(set(CE3D_PIN_PATHS) - set(names))
-        return False, [f"{am}: CE3D_PIN must change EXACTLY the {len(CE3D_PIN_PATHS)} enumerated paths relative to "
-                       f"the side pin; extra {extra[:10]}, missing {missing[:10]}"]
-    return True, [f"{am}: the CE-3d pin {pin[:12]} = the side pin {side_pin[:12]} + one commit, exactly the "
-                  f"{len(names)} enumerated path(s)"]
+    if side_pin != CE3D_MAGNET_PIN_BASE:
+        return False, [f"{am}: CE3D_PIN rests on the side pin {CE3D_MAGNET_PIN_BASE[:12]}, but the side's written pin "
+                       f"is {side_pin[:12]}"]
+    for what, commit, base, paths in (("CE3D_PIN", pin, CE3D_PIN_BASE, CE3D_PIN_PATHS),
+                                      ("CE3D_MAGNET_PIN", CE3D_MAGNET_PIN, CE3D_MAGNET_PIN_BASE, CE3D_MAGNET_PIN_PATHS)):
+        bad = _one_commit_on(repo, commit, base, paths)
+        if bad:
+            return False, [f"{am}: {what} {bad}"]
+    return True, [f"{am}: the CE-3d pin {pin[:12]} = the first CE-3d pin {CE3D_MAGNET_PIN[:12]} + one commit, exactly "
+                  f"the {len(CE3D_PIN_PATHS)} enumerated path(s) (the startup fit check's fix, Amendment 3); "
+                  f"{CE3D_MAGNET_PIN[:12]} = the side pin {side_pin[:12]} + one commit, exactly the "
+                  f"{len(CE3D_MAGNET_PIN_PATHS)} enumerated path(s)"]
 
 
 def n4_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
@@ -861,8 +921,19 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
     for d, base in mine:
         hs = recorded_pins(os.path.join(models_dir, d))
         if not hs:
+            dead = STARTUP_DEAD_ATTEMPTS.get(base)
+            why_not = (["it is not a registered STARTUP_DEAD_ATTEMPTS entry"] if dead is None else
+                       ([f"it is still IN PLACE under the run's own name (move it aside as {base}.<CAUSE>, never delete "
+                         "it: TRAINING_RUN_SOP §4)"] if d == base else [])
+                       + startup_dead_problems(os.path.join(models_dir, d)))
+            if dead is not None and not why_not:
+                lines.append(f"{d}: a STARTUP-DEAD attempt at {dead[0][:12]} ({dead[1]}: it died before its first "
+                             "step and wrote no metadata, checkpoint or model; never trained, never read), moved aside")
+                continue
             ok = False
-            lines.append(f"{d}: no recorded pin (metadata.json absent or without git_hash): cannot show it is {label}")
+            lines.append(f"{d}: no recorded pin (metadata.json absent or without git_hash): cannot show it is {label}"
+                         + (f"; registered as a startup-dead attempt ({dead[1]}), but {'; '.join(why_not)}"
+                            if dead is not None else ""))
             continue
         run_arm = names[base][0]
         own = ARM_PINS.get(run_arm)

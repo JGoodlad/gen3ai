@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CE-3d, the trailing-magnet screen, Amendments 1 and 2: the CROSSES (PREREG §5), each run ONCE after the third swap
+# CE-3d, the trailing-magnet screen, Amendments 1 to 3: the CROSSES (PREREG §5), each run ONCE after the third swap
 # fork's arm-end checks. X67's cross (../../x67_entropy_screen_2026-11-09/cross/drive_cross.sh) with the swap forks
 # as its rows. The fourth argument picks the cross:
 #   c0  (the default) THE REGISTERED CROSS, which decides: 3 x c cells (rows rb_x35_ce3dswap_s7321..s7323, columns
@@ -12,12 +12,13 @@
 #   players' eval team builder (no panel), --oracle-reveal-mode off, purpose ab, label ce3d_magnet_screen, the
 #   archive's ledger. Neither waits on the other and neither reads the other's cells; give each its OWN WORK_DIR
 #   (the driver HOLDs on a WORK_DIR that another cross has used).
-# PLAYED AT THE CE-3d PIN (a detached checkout PIN_DIR, verified by rev-parse + clean src/data), never at HEAD and
-# never at the plain production pin: f4b25238 refuses a config that carries the magnet's two fields, and HEAD's game
-# and observation are not the ones these finals trained on (PREREG §4). The CE-3d pin loads the v161 finals trained
-# at f4b25238 (C0's and X67's: no magnet key in either) as f4b25238 does; its only non-magnet change is the T2
-# near-tie judge (PREREG §4.3). X67's own cross was played at f4b25238: the play pin differs between the two
-# screens and PREREG §4.3 says so.
+# PLAYED AT THE FIRST CE-3d PIN 333a73dd (a detached checkout PIN_DIR, verified by rev-parse + clean src/data), never
+# at HEAD and never at the plain production pin: f4b25238 refuses a config that carries the magnet's two fields, and
+# HEAD's game and observation are not the ones these finals trained on (PREREG §4). That pin loads the v161 finals
+# trained at f4b25238 (C0's and X67's: no magnet key in either) as f4b25238 does; its only non-magnet change is the
+# T2 near-tie judge (PREREG §4.3). X67's own cross was played at f4b25238: the play pin differs between the two
+# screens and PREREG §4.3 says so. Amendment 3 moved the swap forks' TRAINING pin to 9e97cad5 (SWAP_PIN below =
+# 333a73dd + the startup fit check's fix, three paths no play code imports); the PLAY pin did not move.
 #   git worktree add --detach "$PIN_DIR" 333a73ddda7829b9ccdf9e17ef04624eb40edeba
 #   (cd "$PIN_DIR" && ./scripts/bootstrap.sh --skip-env --with-rust)     # once, under mem_cap, rule 5b
 # usage: drive_cross.sh <PIN_DIR> <WORK_DIR> cpu|cuda [c0|x67]
@@ -30,15 +31,16 @@
 set -u
 PIN_DIR=${1:?PIN_DIR}; W=${2:?WORK_DIR}; DEV=${3:?cpu|cuda}; CROSS=${4:-c0}
 PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}
-PIN=333a73ddda7829b9ccdf9e17ef04624eb40edeba
+PIN=333a73ddda7829b9ccdf9e17ef04624eb40edeba          # the PLAY pin (the first CE-3d pin)
+SWAP_PIN=9e97cad5709da21a1f9d4d8846096c87eb17b1d0     # the swap forks' TRAINING pin (Amendment 3); named in RULE only
 MAIN=/home/goodlad/dev/gen3ai; OPS=$MAIN/scripts/ops
 HERE=$MAIN/designs/research_state/measurements/ce3d_magnet_screen_2026-11-11
 COMMON="D=mean(h)-50, V=s2R/3+s2C/c with binomial floors, Welch df, 90% interval"
 case "$CROSS" in
   c0)  FAMILY=ce3d_swap_vs_c0_h2h; REQUEST=ce3d_swap_vs_c0
-       RULE="ce3d_magnet_screen_2026-11-11/PREREG.md §5, Amendment 1 (play pin ${PIN:0:8}): swap forks (P*+20M, --ent-coef 0 --magnet-kl-coef 0.05, pin ${PIN:0:8}) x C0 finals (ent_coef 0.05, pin f4b25238), 3 x c cross, $COMMON; PASS iff lower end > 0, WORSE iff upper end < 0, else NOT-SHOWN; one look (screen_rule.py, X67's rule)" ;;
+       RULE="ce3d_magnet_screen_2026-11-11/PREREG.md §5, Amendments 1 and 3 (play pin ${PIN:0:8}): swap forks (P*+20M, --ent-coef 0 --magnet-kl-coef 0.05, pin ${SWAP_PIN:0:8}) x C0 finals (ent_coef 0.05, pin f4b25238), 3 x c cross, $COMMON; PASS iff lower end > 0, WORSE iff upper end < 0, else NOT-SHOWN; one look (screen_rule.py, X67's rule)" ;;
   x67) FAMILY=ce3d_swap_vs_x67_h2h; REQUEST=ce3d_swap_vs_x67
-       RULE="ce3d_magnet_screen_2026-11-11/PREREG.md §5.4, Amendment 2 (play pin ${PIN:0:8}): REPORTED, DECIDES NOTHING, NO CLASS. swap forks (P*+20M, --ent-coef 0 --magnet-kl-coef 0.05, pin ${PIN:0:8}) x X67 finals (ent_coef 0.0125, pin f4b25238), 3 x 3 cross, $COMMON; a reading only, quoted when the registered verdict is PASS: lower end > 0 = evidence the anchor adds something beyond lower entropy, else the gain over C0 is plausibly the lower uniform push alone; one look (screen_rule.report_x67)" ;;
+       RULE="ce3d_magnet_screen_2026-11-11/PREREG.md §5.4, Amendments 2 and 3 (play pin ${PIN:0:8}): REPORTED, DECIDES NOTHING, NO CLASS. swap forks (P*+20M, --ent-coef 0 --magnet-kl-coef 0.05, pin ${SWAP_PIN:0:8}) x X67 finals (ent_coef 0.0125, pin f4b25238), 3 x 3 cross, $COMMON; a reading only, quoted when the registered verdict is PASS: lower end > 0 = evidence the anchor adds something beyond lower entropy, else the gain over C0 is plausibly the lower uniform push alone; one look (screen_rule.report_x67)" ;;
   *)   echo "usage: drive_cross.sh <PIN_DIR> <WORK_DIR> cpu|cuda [c0|x67]" >&2; exit 2 ;;
 esac
 mkdir -p "$W"; LOG=$W/run.log

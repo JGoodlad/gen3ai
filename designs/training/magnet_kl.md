@@ -2,11 +2,13 @@
 
 **Owner of:** `src/agents/training/magnet.py` (the term, the magnet's state, the sidecar, the collector's side), the
 two flags, and the magnet's seams in the collector, the checkpoint commit and R1. Experiment CE-3d / X35-A4, task T56.
-**OFF by default; no run has trained with it.** Its screen is REGISTERED and not launched
+**OFF by default; no run has trained with it.** Its screen is REGISTERED
 ([`../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)):
 three forks of P\* with the magnet IN PLACE OF the entropy bonus (`--ent-coef 0 --magnet-kl-coef 0.05`, §2's swap),
-read against the banked C0 finals (and, reported only, against X67's), at a BACKPORT of this lever onto the production side pin (tag
-`ce3d-pin-333a73dd`, `main.x35.batch.CE3D_PIN`; config v161 there, the two fields un-versioned).
+read against the banked C0 finals (and, reported only, against X67's), at a BACKPORT of this lever onto the
+production side pin (tag `ce3d-pin-9e97cad5`, `main.x35.batch.CE3D_PIN`; config v161 there, the two fields
+un-versioned). The one launch so far died at step 0 in the startup fit check (§4), at the backport's first commit
+(tag `ce3d-pin-333a73dd`, `batch.CE3D_MAGNET_PIN`); the pin now carries that check's fix.
 
 ```
 loss += β · mean over rows of KL(π_θ(·|s) ‖ π_mag(·|s))       β = --magnet-kl-coef (unset = 0 = OFF)

@@ -1,12 +1,14 @@
-"""CE-3d (PREREG ``ce3d_magnet_screen_2026-11-11``, Amendment 1): the trailing-magnet screen's ONE kit arm,
+"""CE-3d (PREREG ``ce3d_magnet_screen_2026-11-11``, Amendments 1 and 3): the trailing-magnet screen's ONE kit arm,
 ``ce3d_swap`` (C0 + ``--ent-coef 0 --magnet-kl-coef 0.05``: the magnet in place of the entropy bonus) -- its own pin
-``batch.CE3D_PIN`` (the production side pin + ONE commit changing exactly the enumerated paths), its stage, and the
-committed registration files the kit and the arm chain read (argvs, transcripts, the draft chain items). The
+``batch.CE3D_PIN`` (the production side pin + the first CE-3d pin's ONE commit + the fit-check fix's ONE commit, each
+changing exactly its enumerated paths), its stage, the committed registration files the kit and the arm chain read
+(argvs, transcripts, the draft chain items), and the first fork's startup-dead attempt (Amendment 3). The
 registration's two arms (``ce3d_mag``, ``ce3d_ent``) were dropped before any launch: no name or seed of theirs
 reaches the kit.
 
-The real-pin tests read this checkout's object store (the pin is tag ``ce3d-pin-333a73dd`` on origin) and skip where
-it was not fetched. Nothing here launches, plays or touches ``models/``.
+The real-pin tests read this checkout's object store (the pins are tags ``ce3d-pin-9e97cad5`` and
+``ce3d-pin-333a73dd`` on origin) and skip where they were not fetched. Nothing here launches, plays or touches
+``models/``; the run directories are synthetic.
 """
 from __future__ import annotations
 
@@ -215,27 +217,43 @@ def test_the_committed_prereg_is_where_the_batch_looks_and_carries_the_amendment
     assert repo_path(B.CE3D_PREREG).parent == DIR
     text = repo_path(B.CE3D_PREREG).read_text()
     assert "Amendment 1" in text and "--ent-coef 0 --magnet-kl-coef 0.05" in text
+    # Amendment 3 (the re-pin after fork 1's step-0 launch failure) names the pin the kit launches at and its base
+    assert "## 15. Amendment 3" in text and B.CE3D_PIN in text and B.CE3D_MAGNET_PIN in text
+    assert f"ce3d-pin-{B.CE3D_PIN[:8]}" in text
 
 
 # ------------------------------------------------------------------------------------------ the pin
 def test_the_arm_has_its_own_pin_on_the_production_side_pin():
     assert B.ARM_PINS[ARM] == B.CE3D_PIN and len(B.CE3D_PIN) == 40
     assert not {"ce3d_mag", "ce3d_ent"} & (set(B.ARM_PINS) | set(B.ARM_PIN_AMENDMENT) | set(K.ARMS))
-    assert B.CE3D_PIN_BASE == SIDE_PIN and B.CE3D_PIN != SIDE_PIN
+    # a pin on a pin (Amendment 3): the training pin sits on the first CE-3d pin, which sits on the side pin
+    assert B.CE3D_PIN_BASE == B.CE3D_MAGNET_PIN and B.CE3D_MAGNET_PIN_BASE == SIDE_PIN
+    assert len({B.CE3D_PIN, B.CE3D_MAGNET_PIN, SIDE_PIN}) == 3 and len(B.CE3D_MAGNET_PIN) == 40
     assert B.ARM_PIN_AMENDMENT[ARM] == "CE-3d PREREG §4"
-    assert len(set(B.CE3D_PIN_PATHS)) == len(B.CE3D_PIN_PATHS) == 44
-    assert "src/agents/training/magnet.py" in B.CE3D_PIN_PATHS
-    assert not [p for p in B.CE3D_PIN_PATHS if p.startswith(("src/rust", "data/", "src/agents/observation/"))]
+    assert len(set(B.CE3D_MAGNET_PIN_PATHS)) == len(B.CE3D_MAGNET_PIN_PATHS) == 44
+    assert "src/agents/training/magnet.py" in B.CE3D_MAGNET_PIN_PATHS
+    # the fix's commit: the fit check and its two test files, none of them a loss, collector, version or play path
+    assert sorted(B.CE3D_PIN_PATHS) == ["src/agents/training/rust_rollout/magnet_integration_test.py",
+                                        "src/agents/training/update_fit.py",
+                                        "src/agents/training/update_fit_test.py"]
+    assert set(B.CE3D_PIN_PATHS) - set(B.CE3D_MAGNET_PIN_PATHS) == {"src/agents/training/update_fit.py",
+                                                                    "src/agents/training/update_fit_test.py"}
+    for paths in (B.CE3D_PIN_PATHS, B.CE3D_MAGNET_PIN_PATHS):
+        assert not [p for p in paths if p.startswith(("src/rust", "data/", "src/agents/observation/"))]
 
 
 @needs_pin
-def test_the_registered_pin_is_one_commit_on_the_side_pin_and_passes_its_own_check():
+def test_the_registered_pin_is_one_commit_on_the_first_pin_on_the_side_pin_and_passes_its_own_check():
     root = str(repo_root())
-    parents = subprocess.run(["git", "-C", root, "rev-list", "--parents", "-n", "1", B.CE3D_PIN], check=True,
-                             capture_output=True, text=True).stdout.split()
-    assert parents == [B.CE3D_PIN, SIDE_PIN]
+
+    def parents(sha: str) -> list:
+        return subprocess.run(["git", "-C", root, "rev-list", "--parents", "-n", "1", sha], check=True,
+                              capture_output=True, text=True).stdout.split()
+
+    assert parents(B.CE3D_PIN) == [B.CE3D_PIN, B.CE3D_MAGNET_PIN]
+    assert parents(B.CE3D_MAGNET_PIN) == [B.CE3D_MAGNET_PIN, SIDE_PIN]
     ok, lines = B.arm_pin_check(ARM, B.CE3D_PIN, SIDE_PIN, root)
-    assert ok and "exactly the 44 enumerated path(s)" in lines[0], lines
+    assert ok and "exactly the 3 enumerated path(s)" in lines[0] and "exactly the 44 enumerated path(s)" in lines[0], lines
 
 
 @needs_pin
@@ -243,11 +261,115 @@ def test_the_pin_check_refuses_the_wrong_pin_another_side_pin_and_a_moved_path_l
     root = str(repo_root())
     ok, lines = B.ce3d_pin_check(SIDE_PIN, SIDE_PIN, root)          # the plain production pin has no magnet
     assert not ok and "the CE-3d arm launches only at CE3D_PIN" in lines[0], lines
+    ok, lines = B.ce3d_pin_check(B.CE3D_MAGNET_PIN, SIDE_PIN, root)  # the first pin dies at the fit check (Amendment 3)
+    assert not ok and "the CE-3d arm launches only at CE3D_PIN" in lines[0], lines
     ok, lines = B.ce3d_pin_check(B.CE3D_PIN, D1_PIN, root)
     assert not ok and "the side's written pin" in lines[0], lines
-    monkeypatch.setattr(B, "CE3D_PIN_PATHS", B.CE3D_PIN_PATHS[:-1])
-    ok, lines = B.ce3d_pin_check(B.CE3D_PIN, SIDE_PIN, root)
-    assert not ok and "EXACTLY" in lines[0] and "extra" in lines[0], lines
+    for name in ("CE3D_PIN_PATHS", "CE3D_MAGNET_PIN_PATHS"):        # either commit's path list, one path short
+        with monkeypatch.context() as m:
+            m.setattr(B, name, getattr(B, name)[:-1])
+            ok, lines = B.ce3d_pin_check(B.CE3D_PIN, SIDE_PIN, root)
+            assert not ok and "EXACTLY" in lines[0] and "extra" in lines[0], (name, lines)
+    with monkeypatch.context() as m:                                # the training pin directly on the side pin
+        m.setattr(B, "CE3D_PIN_BASE", SIDE_PIN)
+        ok, lines = B.ce3d_pin_check(B.CE3D_PIN, SIDE_PIN, root)
+        assert not ok and "parent(s)" in lines[0], lines
+    assert B.ce3d_pin_check(B.CE3D_PIN, SIDE_PIN, root)[0]
+
+
+@needs_pin
+def test_the_training_pin_carries_the_fit_checks_fill_inputs_and_the_first_pin_does_not():
+    """Amendment 3's reason, read from the two commits: the first pin's fit check ran its dry update on a fixture
+    buffer with no magnet column (fork 1 died there); the training pin's fills it the way the collector does."""
+    def fit(sha: str) -> str:
+        return subprocess.run(["git", "-C", str(repo_root()), "show", f"{sha}:src/agents/training/update_fit.py"],
+                              check=True, capture_output=True, text=True).stdout
+
+    new, old = fit(B.CE3D_PIN), fit(B.CE3D_MAGNET_PIN)
+    for piece in ("FILL_INPUTS", "class FillInputMissing(FatalConfigError)", "fill_column"):
+        assert piece in new and piece not in old, piece
+
+
+# ------------------------------------------------------------------------------------------ the startup-dead attempt
+DEAD = "rb_x35_ce3dswap_s7321"
+
+
+def _stage_at_side_pin(tmp_path: Path) -> Path:
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    B.pin_write_if_absent(SIDE_PIN, str(stage), "production", "FP32_ALT")
+    return stage
+
+
+def _dead_dir(models: Path, name: str) -> Path:
+    """What fork 1's attempt left: logs, a crash file, the seeded pool, a compile cache -- no metadata, no
+    checkpoint, no model."""
+    d = models / name
+    (d / "crashes").mkdir(parents=True)
+    (d / "snapshots").mkdir()
+    (d / "compile_cache").mkdir()
+    (d / "snapshots" / "snapshot_280000170.zip").write_bytes(b"z")
+    (d / "crashes" / "restart_err.txt").write_text("MagnetError")
+    (d / "launcher_child.log").write_text("FATAL")
+    return d
+
+
+def _pin_check(stage: Path, models: Path):
+    return B.pin_check(SIDE_PIN, str(stage), str(models), "production")
+
+
+def test_the_startup_dead_attempt_is_registered_at_the_pin_it_died_at():
+    assert B.STARTUP_DEAD_ATTEMPTS == {DEAD: (B.CE3D_MAGNET_PIN, "CE-3d PREREG Amendment 3 (§15)")}
+    assert DEAD == K.run_name(ARM, SEEDS[0])
+
+
+def test_the_dead_attempt_in_place_holds_the_side_and_moved_aside_is_listed_not_judged(tmp_path):
+    stage, models = _stage_at_side_pin(tmp_path), tmp_path / "models"
+    _dead_dir(models, DEAD)
+    ok, lines = _pin_check(stage, models)                           # in place: the SOP move has not happened
+    assert not ok and any("no recorded pin" in x and "still IN PLACE" in x for x in lines), lines
+    (models / DEAD).rename(models / f"{DEAD}.FITCHECK_NO_MAGNET_COLUMN")
+    ok, lines = _pin_check(stage, models)
+    assert ok, lines
+    assert any("STARTUP-DEAD attempt" in x and B.CE3D_MAGNET_PIN[:12] in x and "Amendment 3" in x for x in lines), lines
+
+
+@pytest.mark.parametrize("leave", ["metadata", "latest", "checkpoint", "final", "empty_checkpoints_dir"])
+def test_a_moved_aside_dead_dir_that_holds_training_output_is_judged_like_any_run(tmp_path, leave):
+    stage, models = _stage_at_side_pin(tmp_path), tmp_path / "models"
+    d = _dead_dir(models, f"{DEAD}.FITCHECK_NO_MAGNET_COLUMN")
+    if leave == "metadata":
+        (d / "metadata.json").write_text("{}")                      # written, but with no git_hash
+    elif leave == "latest":
+        (d / "latest.txt").write_text("checkpoints/checkpoint_281000170_steps.zip")
+    elif leave == "checkpoint":
+        (d / "checkpoints").mkdir()
+        (d / "checkpoints" / "checkpoint_281000170_steps.zip").write_bytes(b"z")
+    elif leave == "final":
+        (d / "final_model_interrupted.zip").write_bytes(b"z")
+    else:
+        (d / "checkpoints").mkdir()
+    ok, lines = _pin_check(stage, models)
+    if leave == "empty_checkpoints_dir":                            # an empty directory is not a checkpoint
+        assert ok, lines
+        return
+    assert not ok and any("no recorded pin" in x and "registered as a startup-dead attempt" in x for x in lines), lines
+
+
+def test_the_allowance_is_the_registered_run_only_and_the_relaunch_is_judged_by_its_recorded_pin(tmp_path):
+    stage, models = _stage_at_side_pin(tmp_path), tmp_path / "models"
+    _dead_dir(models, f"{DEAD}.FITCHECK_NO_MAGNET_COLUMN")
+    _dead_dir(models, "rb_x35_ce3dswap_s7322.DIED")                 # the same remains, a run nobody registered
+    ok, lines = _pin_check(stage, models)
+    assert not ok and any(x.startswith("rb_x35_ce3dswap_s7322.DIED: no recorded pin") for x in lines), lines
+    assert not any("registered as a startup-dead attempt" in x for x in lines), lines
+    (models / "rb_x35_ce3dswap_s7322.DIED").rename(tmp_path / "gone")
+    relaunch = models / DEAD                                        # the relaunch under the same name records its pin
+    relaunch.mkdir()
+    for sha, good in ((B.CE3D_PIN, True), (B.CE3D_MAGNET_PIN, False), (SIDE_PIN, False)):
+        (relaunch / "metadata.json").write_text(json.dumps({"git_hash": sha}))
+        ok, lines = _pin_check(stage, models)
+        assert ok is good, (sha, lines)
 
 
 @needs_pin

@@ -1,6 +1,6 @@
 checked 9 flags from --argv
-  parser                         : the PINNED commit 333a73dd's — --pin
-  ✅ argv validated against PINNED parser @333a73dd via the pinned build_parser() [mode=build_parser, 390 options, 2.5s]
+  parser                         : the PINNED commit 9e97cad5's — --pin
+  ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 2.7s]
   accepted by the PINNED parser  : 9
   launcher-owned (not forwarded) : 0
   unrecognized                   : 0
