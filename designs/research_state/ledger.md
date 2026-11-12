@@ -31385,3 +31385,35 @@ on the agent cores (peak 0.87 GB each, 11 minutes of wall in all) while the R9 c
 `decide.json`, `scores.sha256`, `elo_compare.txt`); the eight score files are `~/gen3ai_archive/x69_move_label_only_2026-11-10/scores/`.
 
 Tag: **X69 · SCREEN · DROP · `moves_ll` arm − C0 on H: B +0.05 [+0.00, +0.09], A +0.55 [+0.48, +0.62], AB +0.49 [+0.43, +0.56] (bar: lower bound ≥ +0.6); F and `home72` bars met by all three · MF-3's move-leg gradient lever closes at this dose · never a verdict, never quoted as a claim**
+
+### 2026-11-11 · INCIDENT · **CE-3d fork 1 `rb_x35_ce3dswap_s7321` died at step 0 in the startup fit check at the first CE-3d pin `333a73dd`: the dry update trained with the magnet on a fixture buffer that has no magnet column (`MagnetError`); a build-gap launch failure, no training data, never read; relaunched as the same fork at `ce3d-pin-9e97cad5`**
+
+**What died.** The first-ever GPU run of the trailing magnet: the CE-3d swap's fork 1 (`--ent-coef 0 --magnet-kl-coef 0.05`,
+seed 7321, a FORK of `rb_x26_s2601` at 280,000,170; chain `x35-ce3d-nov11`). GO 22:22:57 PST; the post-spawn pool-seed check
+PASS and the banner (`🧲 [MAGNET] --magnet-kl-coef 0.05: loss += 0.05 · KL(π ‖ π_mag) … beside the entropy bonus (ent_coef 0
+…`) BANNER_OK; then, at 22:43:31, `🛑 Fatal config error — will NOT restart` (launcher rc 3, 0 restarts, step 0, no checkpoint).
+The chain held at BANNER_OK (the run ended before its throughput gate); forks 7322 / 7323 never launched.
+
+**The call site** (the child's traceback): `model_build.build_and_train:454` → `update_fit.check_update_fits:514` →
+`update_fit.dry_update:403` → `instrumented_ppo/ppo.py:433 train` → `ppo.py:132 _magnet_args` →
+`MagnetError: --magnet-kl-coef > 0 but the rollout buffer has no magnet column: the collector's fill writes it
+(agents.training.magnet.fill_column); this buffer was filled without one`. The update-fit gate (`gen3_update_fit_v2`) runs one
+dry PPO update on the K9 learner golden's FIXTURE buffer before the first rollout; only the collector fills the magnet column,
+so at `333a73dd` every `--magnet-kl-coef > 0` launch would die there. The gate runs on CUDA only, so the lever's CPU tests
+never reached it.
+
+**Evidence on disk.** The run dir moved aside, never deleted: `models/rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN`
+(`launcher_child.full.log`, `crashes/restart_err_20261111_224331_ae3fbd.txt`, `cuda_ledger.json`); the launcher log
+`~/.claude/jobs/x35/rb_x35_ce3dswap_s7321.launcher.log`; the chain's status lines in `~/.claude/jobs/x35/status.txt`.
+
+**Resolution.** The fix `13c50a5e6` (the dry update trains with the magnet the run trains with); the backport pin
+`ce3d-pin-9e97cad5` = `333a73dd` + that one commit; PREREG Amendment 3 (`e9f55e723`): the dead attempt is a build-gap launch
+failure, not VOID, never read; the relaunch is the SAME fork (seed 7321, name, argv, parent, dose) on a new chain
+`x35-ce3d-nov12`.
+
+**The durable lesson.** A lever that adds a rollout-buffer column must be exercised by EVERY path that trains on a buffer the
+collector did not fill — here the GPU-only startup fit check's fixture buffer. A lever's first GPU launch is its first test of
+those paths; the fork-1 watch at the new pin reads the dry update with the magnet (`update_fit.json`'s `fill_inputs`
+segment), the first flush through T2's magnet slot and the canary with the magnet before the throughput gate.
+
+Tag: **CE-3d · INCIDENT · fork 1 at `333a73dd` died in the fit check (no magnet column) · build gap, not VOID, never read · relaunched as the same fork at `ce3d-pin-9e97cad5`**
