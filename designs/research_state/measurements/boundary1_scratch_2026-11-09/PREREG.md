@@ -1,11 +1,13 @@
 # BOUNDARY-1 — the from-scratch 2 × 2, width × team breadth: PRE-REGISTRATION (2026-11-09)
 
 **Status: REGISTERED (tier FULL) before any launch, any game and any read; AMENDED 2026-11-10 (Amendment 1, §18:
-three runs a cell, twelve runs), also before any launch, game or read. NOT LAUNCHED** (no `rb_b1*` run exists),
-**and not launchable at the registered pin: §18's single re-pin comes first.**
-The launch is the orchestrator's GO through the Training session, after X66 and X67, the `ent_coef` decision, the
-re-pin, and §13's GPU checklist at the launch pin is
-green. Nothing below changes after the first run launches except by a dated amendment (§18), written before the look
+three runs a cell, twelve runs) and 2026-11-12 (Amendment 2, §18: every run types `--ent-coef 0.0125
+--behaviour-check warn`, the look judges K9(b), the memory fit at width 256), both also before any launch, game or
+read. NOT LAUNCHED** (no `rb_b1*` run exists). **The LAUNCH pin is PENDING: §18's re-pin record names it, and the
+registered pin launches nothing.**
+The launch is the orchestrator's GO through the Training session, after the re-pin record and after §13's GPU
+checklist at the launch pin is
+green, with its records in §18. Nothing below changes after the first run launches except by a dated amendment (§18), written before the look
 it touches is played, that says why. **Once the first look has been played, no amendment touches §5, §6, §8 or §9**
 except by the owner, and it is then recorded as written after data.
 
@@ -40,58 +42,65 @@ file disagree, this file is the registration).
 - **No critic or policy-tower change.** The architecture diagnosis (`a8265f36b`) found the tanh tower 0.897
   saturated but not dead, and the critic head's hidden layer unused; it recommends no change for this base. The
   draft's "critic is linear on 128" was wrong: the head has a hidden layer.
-- **`ent_coef` stays 0.05 in every arm** (the owner's 2026-09-29 ruling). An X67 PASS changes it only with the
-  owner's word, by an amendment that moves ALL twelve runs, before launch, at a new pin: the value is a constant of
-  the kit and of `designs/production_config.json` (§18, an OPEN HOLD).
-- **Not in this experiment:** the MF-3 off-pool belief work, human teams (X60-T, §10's HOLD), E9, any search.
+- **`ent_coef` is 0.0125 in every run (Amendment 2, §18)**: the owner's yes of 2026-11-11, after X67's PASS, for
+  this experiment only. Every fresh argv types `--ent-coef 0.0125`; `designs/production_config.json` stays at 0.05
+  and the owner's 2026-09-29 ruling stands for production. No arm trains at 0.05, so the experiment says nothing
+  about the coefficient (§16).
+- **Not in this experiment:** the MF-3 off-pool belief work, human teams (X60-T read NO-TRANSFER on 2026-11-11, so
+  §10's HOLD did not fire), E9, any search.
 - **The team is the unit against Kakuna** (`96adb152c`, `UNDERSTANDING.md` §8 rule 10): §6's interval is clustered
   by team.
 
 ## 2. The arms
 
 Every run is a FRESH `--arch production` launch: the architecture and the recipe both come from
-`designs/production_config.json` (ten PPO epochs, `ent_coef` 0.05). An arm types its lever and nothing else.
+`designs/production_config.json` (ten PPO epochs), plus **the base every run types (Amendment 2, §18): `--ent-coef
+0.0125 --behaviour-check warn`** (production's defaults are 0.05 and `fatal`; neither default moves). An arm types
+the base and its lever and nothing else; the control types the base alone.
 
 | arm | kit key | what differs from the control | lever typed | learner parameters | runs (seed) |
 |---|---|---|---|---|---|
-| **C** control | `c` | nothing | — | 2,609,183 | `rb_b1c_s5101`, `rb_b1c_s5102`, `rb_b1c_s5110` |
+| **C** control | `c` | nothing | — (the base alone) | 2,609,183 | `rb_b1c_s5101`, `rb_b1c_s5102`, `rb_b1c_s5110` |
 | **W** wide | `w` | the trunk at 256 with its feed-forward at 512 (production: 128 / 256) | `--d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch` | 6,258,079 | `rb_b1w_s5103`, `rb_b1w_s5104`, `rb_b1w_s5111` |
 | **Br** breadth | `br` | on EACH side, every fresh team draw is an `n1_proc_v1` team with probability 0.5, else the usual pool draw | `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both` | 2,609,183 | `rb_b1br_s5105`, `rb_b1br_s5106`, `rb_b1br_s5112` |
 | **WB** wide + breadth | `wb` | both | both levers | 6,258,079 | `rb_b1wb_s5107`, `rb_b1wb_s5108`, `rb_b1wb_s5113` |
 
 - **The two factors.** Width ON = {W, WB}, OFF = {C, Br}. Breadth ON = {Br, WB}, OFF = {C, W}.
-- **The shared tail of every fresh argv:** `--restart-interval-hours 6 --pin-commit <PIN> --arch production [lever]
-  --checkpoint-every-steps 1000000 --steps <target> --seed <seed> --device cuda --log-level periodic --run-name
-  <run>`. The 1M checkpoint series is typed because the looks and the equal-compute read need it.
+- **The shape of every fresh argv:** `--restart-interval-hours 6 --pin-commit <PIN> --arch production --ent-coef
+  0.0125 --behaviour-check warn [lever] --checkpoint-every-steps 1000000 --steps <target> --seed <seed> --device
+  cuda --log-level periodic --run-name <run>`. The 1M checkpoint series is typed because the looks and the
+  equal-compute read need it. A phase-2 resume types neither base knob: it inherits both from the run's record.
 - **`--allow-nonproduction-arch`** is the consent the launcher demands for a width other than production's; it is
   part of the wide lever, not a second lever.
 - **The corpus** is `n1_proc_v1`, tier `ALL`, 12,000 teams, data sha256 `99e3425a…0bad6`, as it verifies at the pin.
   Evaluation never draws from it: every look and the Kakuna read play the registered panels.
 - **The argvs are code**, `src/main/b1/arms.py` (`python -m main.b1.arms describe`); the committed transcripts are
-  what it printed at the REGISTERED pin, for eight runs:
-  [`launch_block_superseded_8runs_pin507d0c11.txt`](launch_block_superseded_8runs_pin507d0c11.txt) (renamed by
-  Amendment 1 so that nobody launches it), `argv_<run>.txt`, `checkargs_<run>.txt`, `dryrun_<run>.txt` for the first
-  seed of each arm. The re-pin regenerates all of them for twelve runs (§18). `python -m main.checkargs --argv`
-  accepts each with 0 unrecognised flags; each resolved config differs from the control's in its lever's keys alone
-  (`d_model`, `trunk_ffn_dim`, `allow_nonproduction_arch`; `team_mix`, `team_mix_sides`), at both step targets.
-  `python -m main.launcher --dry-run` on CPU refuses each for ONE reason, the CUDA preflight
-  (`CUDA_VISIBLE_DEVICES=""` with `--device cuda`); every other preflight passes.
+  what it prints at the LAUNCH pin (§3), written by §18's re-pin record: `launch_block.txt` (twelve fresh launches,
+  then twelve resumes) and `argv_<run>.txt`, `checkargs_<run>.txt`, `dryrun_<run>.txt` for the first seed of each
+  arm. The eight-run block of the registered pin is not kept past that record (history: `507d0c119`). `python -m
+  main.checkargs --argv` accepts each with 0 unrecognised flags; the control resolves the base as typed
+  (`ent_coef` 0.0125, `behaviour_check` `warn`) and each resolved config differs from the control's in its lever's
+  keys alone (`d_model`, `trunk_ffn_dim`, `allow_nonproduction_arch`; `team_mix`, `team_mix_sides`), at both step
+  targets. `python -m main.launcher --dry-run` on CPU, from an agent's nice-19 shell, refuses each for TWO reasons:
+  the CUDA preflight (`CUDA_VISIBLE_DEVICES=""` with `--device cuda`) and the inherited-nice gate
+  (`src/main/launcher/nice_gate.py`: a GPU launch from a shell above nice 10); every other preflight passes. The
+  dry run with the card visible, from a shell at nice ≤ 10, is §13 item 2.
 - **Parameter counts** are a CPU build of the four learners at the pin (`python -m main.b1.arms check --params`).
 
 ## 3. The pin, the seeds, and the checks before launch
 
-- **ONE pin for everything. Registered: `507d0c11961da8d4243a4c8877bcc04ef220058c`** (main at registration, the
-  commit that carries the kit, the cross statistic and the Kakuna rule). All runs train at it, every look plays at
-  it, and the Kakuna read plays at it. It is `0220f8408` plus the nine commits main gained while this was written
+- **ONE pin for everything: the LAUNCH pin, PENDING** (set once, by §18's re-pin record, which lists what main
+  gained since the registered pin). All runs train at it, every look plays at it, and the Kakuna read plays at it.
+- **Registered: `507d0c11961da8d4243a4c8877bcc04ef220058c`** (main at registration, the commit that carried the
+  kit, the cross statistic and the Kakuna rule). It is `0220f8408` plus the nine commits main gained while this was written
   (`c4a842d12` to `c8c212214`: the light-screen tier's docs, the heavy slots admitted by memory, the core split and
   its owner, the off-pool belief meter with X68's records, three gate-reliability fixes; none touches a trainer,
   launcher, model or head-to-head file) and this unit's tooling; `designs/production_config.json` and
   `src/agents/model/model_version/` are unchanged between `0220f8408` and the pin, and `checkargs` at the pin
   resolves the same production surface (`production_config@51496e4209fc`).
-- **The registered pin launches nothing (Amendment 1).** Its kit holds two seeds an arm; the three-seed kit, the
-  early check and the team bootstrap reached main after it. The LAUNCH pin is set ONCE, by §18's re-pin, after the
-  `ent_coef` decision. What this file says of "the pin" then holds for that commit, and the amendment that records
-  it lists what main gained in between, as this bullet's predecessor does.
+- **The registered pin launches nothing (Amendment 1).** Its kit holds two seeds an arm and no base knob; the
+  three-seed kit, the early check, the team bootstrap, Amendment 2's base and K9(b) reads, and the memory-fit unit
+  reached main after it. What this file says of "the pin" holds for the LAUNCH pin.
 - **The pin is an ARGUMENT of every command (`--pin`), never a constant in the code.** A commit cannot name
   itself, so the kit, the look and its driver carry no default pin and refuse without one. This file and the
   committed transcripts are the only places the pin is written.
@@ -103,7 +112,8 @@ Every run is a FRESH `--arch production` launch: the architecture and the recipe
   `metadata.json` files and 3,888 directory names under the main checkout's `models/` and `~/gen3ai_archive`: no
   recorded seed, no run name and no `_s51NN` directory name collides with 5101–5109 or the twelve run names. **Again
   2026-11-10, with the amended kit, for Amendment 1's seeds:** 646 `metadata.json` files and 3,922 directory names,
-  no collision with 5101–5113 or the sixteen run names (the twelve runs and the spare under each arm). The same
+  no collision with 5101–5113 or the sixteen run names (the twelve runs and the spare under each arm). **Again at
+  the launch pin** (§18's re-pin record carries the counts). The same
   command verifies the corpus identity and that each arm differs from the control by its lever alone. **It is re-run
   immediately before the first launch** (§13 item 1): a hit refuses the launch. Run again later, it lists the
   experiment's own folders as `own` (a folder whose immutable `original_command` and seed are the registered run's
@@ -121,7 +131,7 @@ Every run is a FRESH `--arch production` launch: the architecture and the recipe
   stopped, and none is needed: a stop at the 50M target is ONE MORE RESTART of the kind every run takes every six
   hours, at a chosen step, applied to all twelve runs alike. Measured by the kit's two-segment smoke on CPU
   (`python -m main.b1.resume_check smoke`, arm WB, a phased run against a run-through of the same seed, 2026-11-09;
-  §13 item 6 repeats it at the pin). Its coverage is that and no more: one arm (WB), on the CPU, a `--debug
+  repeated at the launch pin with the base typed, §13 item 6, in §18's re-pin record). Its coverage is that and no more: one arm (WB), on the CPU, a `--debug
   --no-pin` run with a typed rollout shape; the card and the other three arms are covered by item 6's static
   check alone:
   - the phase-2 command resolves to a same-run RESTART of the run's own folder, and its child's namespace equals the
@@ -256,7 +266,8 @@ agree?". Whether another 72 teams would agree is reported beside every full look
 - **Games.** Each run's 100M final plays Kakuna on H, F and P72, 720 games a panel (unit seeds 0–35), 25,920
   games. No Kakuna games on home72. Spec: [`read_spec_kakuna.json`](read_spec_kakuna.json) (read
   `boundary1_kakuna_2026-11-09`, rule `b1_kakuna`, `src/main/b1/kakuna_rule.py`). The committed spec names the
-  registration's eight runs at the registered pin; the re-pin rewrites it for the twelve (§18). The rule takes any
+  twelve runs; its `pin` is filled by §18's re-pin record (without one it is reviewed with `check-spec
+  --pin-pending` and plans nothing). The rule takes any
   number of runs an arm (the seed variance pooled on Σ(n − 1) df) and is not changed.
 - **Contrasts.** CONFIRMING: **`width_U`** = ½(W + WB) − ½(C + Br) on U, and **`breadth_F`** = ½(Br + WB) − ½(C +
   W) on F. REPORTED: `breadth_U`, `width_F`, and `interaction_U` = WB − W − Br + C on U (the full difference of
@@ -400,8 +411,9 @@ two-stage rule) before any of it is played.
   its look checkpoint exists and its sidecar's step equals the file's; the run and the checkpoint carry ONE pin
   entry, the registered pin, from step 0; its lineage role is `fresh` with no fork parent; its immutable
   `original_command` is token for token the registered argv of its arm and seed (at either phase target);
-  the last process still ran ten epochs at `ent_coef` 0.05 with the arm's `d_model`, `trunk_ffn_dim`, `team_mix`
-  and `team_mix_sides`. Across the look: one torch version and one init thread count (every fresh build records
+  the last process still ran ten epochs at `ent_coef` 0.0125 (the run's metadata, its recorded arguments and the
+  checkpoint's sidecar all say so) with the arm's `d_model`, `trunk_ffn_dim`, `team_mix` and `team_mix_sides`; and
+  its K9(b) read through the look checkpoint's step is PASS (the next bullet). Across the look: one torch version and one init thread count (every fresh build records
   a thread count of 1, so that half cannot fire: §13 item 9), and no two runs with the same
   bytes; and every run's last process records the same public `cli_args` as the first control run's, except its
   own keys (`model`, `run_dir`, `run_name`, `seed`, `steps`) and its arm's lever keys, so any other knob that moved
@@ -412,10 +424,32 @@ two-stage rule) before any of it is played.
   they stand for is compared where a resume cannot rewrite it, `metadata.json`'s top-level `batch_size` and
   `n_steps`, which must equal the control's in every run. REPORTED in the driver's log beside these guards, never a gate: `python -m main.sidecar_audit
   --strict` and `python -m main.checkargs models/<run>` on every run of the look.
+- **K9(b) is judged by the look, not by the trainer (Amendment 2).** Every run trains under `--behaviour-check
+  warn`: at a behaviour-policy violation the trainer logs, runs its bounded scan and continues, where `fatal`
+  would stop a 100M fresh run on one threshold crossing (X26 first crossed 1e-4 near 137M; the X35 forks train
+  under `warn`). The judged read is `main.b1.look.k9b_read`, by X35 AM-6's rule (`main.x35.batch.judge_k9b`): on
+  the rows it reads, the judged maximum below 1e-3 AND the 99th percentile below 1e-4, with X35's boundary
+  band; the required tag family present; no non-finite row and no non-finite FATAL line in any generation of the
+  child's full log; a full child log present. Verdicts PASS / VOID / INCONCLUSIVE; only PASS lets a run count. The
+  ceilings are X35's and were NOT re-derived for fresh runs or for width 256.
+  - **Where it is read:** at the early check, on the rows through 1M; at every look, for each run, on the rows
+    through the look checkpoint's own step (not PASS ⇒ `look plan` exits 3 and no game is played); and at each
+    run's END, on every row it wrote (§14's arm-end command, all twelve runs, after phase 2 and BEFORE the Kakuna
+    `plan`). Every record goes into §18.
+  - **VOID** ⇒ the run is "lost to its lever" (below): not a replacement cause, seed 5109 is not spent. The look
+    that refuses is not played: it is INCONCLUSIVE and goes to the owner with every run's K9(b) record, the
+    simple effects that remain REPORTED and unclassed.
+  - **A look already read stands.** An arm-end VOID whose fires all lie on rows after the 100M look checkpoint's
+    step leaves the 100M look standing and holds the Kakuna read (UNREAD, to the owner): the Kakuna read plays
+    `final_model.zip`, which those rows trained.
+  - **INCONCLUSIVE** (a missing record: no rows of the required family, no full child log) is repaired from the
+    run's own records and re-read; it is never waived. If it cannot be recovered it is treated as VOID.
+  - An early-check exit 3 on K9(b) stops that run before the next launch, like any other early-check refusal.
 - **The early check, one run at a time (Amendment 1).** As soon as a run has written its first checkpoint
   (1,000,000 steps), from a clean checkout of the pin: `python -m main.b1.look check-run --arm <C|W|Br|WB> --seed
   <seed> --pin <PIN>`. It applies the per-run guards above to that checkpoint (`check_run` with `expected_levers`
-  resolved by the pin's own parser) and prints a JSON record. Exit 0 is required. Exit 3 stops the run and goes to
+  resolved by the pin's own parser) and the K9(b) read on the rows through that checkpoint, and prints a JSON
+  record. Exit 0 is required. Exit 3 stops the run and goes to
   the orchestrator before the next launch: a wrong argv then costs an hour, not a run (the replacement rule below
   applies). Exit 2 is a seed that is not the arm's. The JSON goes into §18 with `git rev-parse HEAD` of the main
   checkout at that launch: main's launcher starts every run and main may move during the campaign, while the pin
@@ -435,7 +469,7 @@ two-stage rule) before any of it is played.
   - it was launched with an argv other than its registered one (an operator error, which the guard above
     catches).
   **Anything else is "lost to its lever"**, including a NaN or divergence, an out-of-memory failure at the arm's own
-  width, and a failure to load the corpus. The cause is written into §18 by the orchestrator before any look that
+  width, a failure to load the corpus, and a K9(b) VOID (Amendment 2). The cause is written into §18 by the orchestrator before any look that
   would contain the run is read. The look then takes `look plan --replace <the registered seed that 5109 replaced>`
   (for example `--replace 5103`). One replacement exists, for twelve runs now; a second loss goes to the owner.
 - **A run lost to its lever is the result**: not replaced, reported. The factor statistics need equal runs an arm,
@@ -450,8 +484,9 @@ two-stage rule) before any of it is played.
 - **No game is excluded for its outcome.** No panel, cell, seed or look is added after a look is read.
 - **HOLDs before launch** (the registration is re-read, not launched, if either holds): X60-T reads
   ADOPT-CANDIDATE (human teams would then enter the base of every run); the owner changes `ent_coef` after X67.
-  **`ent_coef` is an OPEN HOLD as of Amendment 1**: it is 0.05 here until X67 is read AND the owner says yes, and
-  the re-pin waits for that decision (§18).
+  **Both are closed (Amendment 2).** X60-T read NO-TRANSFER, final (`75abf79d8`, 2026-11-11): the HOLD fired only
+  on ADOPT-CANDIDATE, and the breadth arm's corpus and share are unchanged. The owner decided `ent_coef` (0.0125
+  for this experiment, 2026-11-11) and this file was re-read for it: Amendment 2 is that re-reading.
 
 ## 11. Power, registered honestly
 
@@ -466,6 +501,8 @@ Every row assumes what §5.2 assumes (independent runs, one seed variance in all
 
 - Measured: **1.76 pp**, pooled over 14 arm groups of FRESH 15M production-family runs (range 0.60–3.09; 90 nominal
   df that overstate it, the groups share seeds). [`seed_spread.log`](seed_spread.log).
+- **Measured at `ent_coef` 0.05** (every group above trained at it); the runs here train at 0.0125 (Amendment
+  2). UNVERIFIED that the spread is the same there. The floor does not move: Amendment 2 moves no bar.
 - **UNVERIFIED at 100M.** Every row is at 15M; the one deeper hint is three toy seeds, 0.67 pp at ≈ 47M and 1.82 pp
   at 100M. Hence the floor at 1.76 and the 2.5 and 3.1 columns.
 - **UNMEASURED on forum72 alone**, the view that decides breadth: every measured cross is on home teams. A
@@ -630,42 +667,65 @@ and one in two to three). It still carries no class: Amendment 1 moves no class 
   its withdrawn extension would have cost after an UNDECIDED. A look holds 2.25 times the cells (54 for 24), so
   the four looks cost ≈ 8 GPU-h instead of ≈ 4, and the Kakuna read half as much again.
 - Narrow runs: MEASURED on `rb_x26_s2601` (4.40 / 9.48 / 19.55 GPU-h to 25M / 50M / 100M). X26 carried five
-  ride-along heads and predates E13; **UNVERIFIED** that today's production costs the same.
+  ride-along heads and predates E13; **UNVERIFIED** that today's production costs the same, that it does at
+  `ent_coef` 0.0125 (X26 trained at 0.05), and what the first-update probes' own forwards add (`e112cbcbf`: about
+  1 % of the learner's wall on a diagnostics update, an estimate, UNMEASURED; both widths carry it).
 - **The wide arm's step-time ratio ρ = 1.65 is a GUESS (1.3–1.9)** until §13 item 4 measures it. On CPU the learner's
   forward + backward is 1.94× and the policy forward 1.27–1.48×. The draft sent a measured ρ above 1.9 back to the
   owner for the budget; the owner's standing rule since is no cap on GPU commitments, so **a measured ρ above 1.9 is
   reported to the orchestrator, who decides**; it is not an automatic hold. **The pilot's measured ρ REWRITES this
   table before the first launch** (a §18 record): the narrow half (≈ 118 GPU-h) is measured, the wide half is
   ≈ 118 × ρ, so ≈ 311 is ≈ 270 at ρ = 1.3 and ≈ 341 at 1.9.
-- **Timeline.** Registered Mon 2026-11-09, amended Tue 11-10. The launch day L is no longer a date: it follows X66,
-  X67, the `ent_coef` decision, the re-pin and §13. From L: phase 1 ends ≈ L + 6.5 days, the 50M look that day on
+- **Startup is not in ρ (Amendment 2).** The inference service's startup (its CUDA-graph captures) took 938 s and
+  989 s at width 256, 1,011 s at 256 on one lane, and 963 s at width 128 on the de-risk's four starts
+  (`~/.cache/gen3ai/b1_derisk_2026-11-11/logs/`), each on a COLD shared compile cache at a new commit. Every
+  six-hour restart and every phase-2 resume starts again; what a start costs on a warm cache is UNMEASURED, and so
+  is whether X26's hours above include its own starts. ρ is read over steady updates, so the rewrite of this table
+  (§18, slot S2) prices starts separately: about four a narrow run and six a wide one to 100M (ρ near 1.6), so
+  about sixty over the twelve runs, ≈ 16 GPU-h if every one cost the cold figure. The warm figure is read off the
+  first run's first restart and recorded in §18.
+- **Timeline.** Registered Mon 2026-11-09, amended Tue 11-10 and Thu 11-12. The launch day L is no longer a date:
+  it follows §13's GPU items at the launch pin. From L: phase 1 ends ≈ L + 6.5 days, the 50M look that day on
   the card, phase 2 ends ≈ L + 13.5 days, the 100M, 75M and EQ looks ≈ 6 GPU-h after it, Kakuna ≈ 2.5 days on
   three lanes, the decision ≈ L + 16 days.
 
 ## 13. The GPU pre-launch checklist
 
-Nothing here could be verified by the registrar or by Amendment 1: neither unit had a GPU lease. Every item is done
-at the LAUNCH pin (§18's re-pin), by the agent the orchestrator leases the card to, and its result is recorded in
-§18 before the first launch.
+Nothing here could be verified on the card by the registrar, by Amendment 1 or by the re-pin: none had a GPU
+lease. Every item is done at the LAUNCH pin. Items 1, 6 and 7 and the CPU form of item 2 are in §18's re-pin
+record. Items 3, 4 and 5 and the card-visible form of item 2 are done by the agent the orchestrator leases the card
+to (runbook: `~/.cache/gen3ai/handoffs/b1_pin_runbook_2026-11-12.md`), and each result is recorded in §18 before
+the first launch. **No record made at another commit satisfies an item (Amendment 2)**: the de-risk of 2026-11-11
+ran at `aee363bc9` and `e112cbcbf`, trainer code changed after both, and its pilots typed neither base knob.
 
 1. **The kit's check at the pin**, from a clean checkout of it: `python -m main.b1.arms check --tree <checkout>
    --pin <PIN> --params` (seeds and names still free; corpus identity; levers; parameter counts 2,609,183 /
    6,258,079).
-2. **Each first-seed dry run with the card visible**: `python -m main.launcher --dry-run <argv>` for the four arms
-   passes EVERY preflight (on CPU its one refusal was the CUDA preflight).
+2. **Each first-seed dry run with the card visible, from a shell at nice ≤ 10**: `python -m main.launcher
+   --dry-run <argv>` for the four arms passes EVERY preflight (on CPU from a nice-19 shell its two refusals are
+   the CUDA preflight and the inherited-nice gate, §2).
 3. **The CUDA-only slow tests at the pin**, banked in a leased `slow-gpu` window (`python -m
    main.ops.gpu_fill_window`, `../../../ops/testing.md` § The GPU slow tier). They have not run on the code this
    experiment trains: E13's ship skipped 9 (the compile-region gates on trained weights among them) and the width
    ship skipped 11 in `src/agents/model`. A FAIL in a test the wide or the production path touches holds the launch.
-4. **The wide-arm pilot, to trained weights** (Amendment 1; ≈ 1 h of the card, a guess): W's argv into a scratch
-   models dir, and C's the same, each run until it has written its first 1,000,000-step checkpoint, finished its
+   History, which satisfies nothing: at `aee363bc9` the window read 29 of 30 PASS, the one FAIL being the
+   production forward + backward compile at B = 2 on Triton 3.4.0 (fixed at `1d2aa1695`; its card run is UNVERIFIED
+   until this item); at `1fe7283f7` a shakedown read 30 of 32, the FAILs being that compile and the offload cell's
+   ledger assertion (fixed at `ef89ca99f`).
+4. **The wide-arm pilot, to trained weights** (Amendment 1; the two pilots take 1.2–2.6 GPU-h, an estimate that
+   predates the measured ≈ 16-minute cold start of each: the first evaluation is at 2M and the pool is seeded at
+   bots ≥ 0.55): W's argv into a scratch models dir, and C's the same, **each in the launch shape at the launch
+   pin (the base typed; only the seed and the run name differ from the kit's argv, Amendment 2)**, each run until
+   it has written its first 1,000,000-step checkpoint, finished its
    first evaluation cycle AND made its first promotion into the self-play pool, whichever comes last. The
    registration's pilot ran "a few updates", where every parity gate compares an initialisation; this one makes
    them compare TRAINED 256-wide weights and a promoted 256-wide snapshot. It gives (a) step time at 256 against
    128, over the steady updates after the compile → **ρ**, which REWRITES §12's budget and fixes §7's EQ step, both
    recorded in §18 before the first launch; (b) the bf16 compile at 256 completes and its compile-parity check
    passes; (c) the inference CUDA-graph capture at 256 succeeds; (d) peak GPU memory at 256 fits with the
-   production batch; (e) no parity gate FATALs through the first promotion. The width commit records (b) to (d) as
+   production batch: the startup fit check passes and `update_fit.json`'s headroom is at or above its 1,024 MiB
+   bar, recorded with the demand (§18 Amendment 2 item 6; at `e112cbcbf` it read 1,318.5 MiB at 256 and 3,472.5 at
+   128); (e) no parity gate FATALs through the first promotion. The width commit records (b) to (d) as
    UNVERIFIED on GPU. Any failure holds the launch and comes back as a build. The pilot's 1M checkpoints serve
    item 5. A FATAL after the launch is §10's rule.
 5. **A 128-against-256 head-to-head cell on the card**: one short `main.h2h` cell between the W and the C pilot's
@@ -677,12 +737,14 @@ at the LAUNCH pin (§18's re-pin), by the agent the orchestrator leases the card
 6. **The stop-and-resume check at the pin**: `python -m main.b1.resume_check static --tree <checkout> --pin <PIN>`
    prints `PASS` (CPU, seconds; no lease). Its two-segment smoke (`python -m main.b1.resume_check smoke --models-dir
    <an empty scratch dir> --arm wb --half 4000`, CPU, ≈ 35 min, 8 GB peak) is banked in
-   [`resume_check.log`](resume_check.log) from this unit's tree, PASS; it is repeated only if the trainer, launcher
-   or model code at the launch pin differs from the tree it ran on (§3 lists what the pin adds). Not green ⇒ §4's
-   fixed fallback block.
+   [`resume_check.log`](resume_check.log); it is repeated only if the trainer, launcher or model code at the launch
+   pin differs from the tree it ran on. It does (the base knobs, the memory-fit unit and more: §18's re-pin
+   record), so the re-pin repeats it at the launch pin and `resume_check.log` is that run's transcript. Not green
+   ⇒ §4's fixed fallback block.
 7. **The spec**: `python -m main.reads check-spec --spec <this folder>/read_spec_kakuna.json` at the pin reports
    `play_path_differs_at_head` 0, or names the files.
 8. **The HOLDs of §10** are checked against the day's STATUS: X60-T's verdict, the owner's word on `ent_coef`.
+   Both are closed by Amendment 2; the check at launch is that STATUS still says so.
 9. **The core split stays frozen from the first launch to the last run's end** (an operator rule; Amendment 1).
    `python -m utils.core_split show` is recorded in §18 at every launch, and a launch whose split differs from the
    first launch's is not made. No code enforces it. The registration relied on the look refusing runs whose
@@ -692,13 +754,13 @@ at the LAUNCH pin (§18's re-pin), by the agent the orchestrator leases the card
 
 ## 14. Commands
 
-Run every training command from the MAIN checkout with the launcher's interpreter (`$GEN3AI_PYTHON`), one at a time.
+Run every training command from the MAIN checkout with the launcher's interpreter (`$GEN3AI_PYTHON`), one at a time,
+**from a shell at nice ≤ 10** (Amendment 2: the launcher's inherited-nice gate, `src/main/launcher/nice_gate.py`,
+refuses a GPU launch typed from a shell above nice 10).
 
 - **Launch block** (the Training session's): `launch_block.txt`, which is `python -m
-  main.b1.arms describe --pin <PIN>` (twelve fresh launches, then twelve resumes). **It does not exist until the
-  re-pin writes it (§18)**; the eight-run block of the registered pin is kept, renamed, as
-  [`launch_block_superseded_8runs_pin507d0c11.txt`](launch_block_superseded_8runs_pin507d0c11.txt) and launches
-  nothing. The fallback is `python -m main.b1.arms describe --block fallback --pin <PIN>`.
+  main.b1.arms describe --pin <PIN>` (twelve fresh launches, then twelve resumes). **It is written by §18's re-pin
+  record and names the launch pin on its second line**; no other block launches anything. The fallback is `python -m main.b1.arms describe --block fallback --pin <PIN>`.
   The block is typed ONE COMMAND AT A TIME by the Training session: the arm chain (`main.x35`'s kit) knows only the
   X35 fork arms and refuses a fresh arm (`kind 'fresh' has no implementation`), and no chain backend was built for
   this unit. Each command is followed, commented, by its own `--dry-run` form; run it first, and expect "would
@@ -712,6 +774,13 @@ Run every training command from the MAIN checkout with the launcher's interprete
 
   ```bash
   python -m main.b1.look check-run --arm W --seed 5103 --pin <PIN>     # exit 0 required; 3 = stop the run
+  ```
+- **At each run's end, before the Kakuna `plan`** (Amendment 2; §10's K9(b) rule; no lease, seconds): for all
+  twelve runs, after phase 2, from a clean checkout of the pin. Each JSON goes into §18. No code orders it before
+  `plan`: it is an operator rule.
+
+  ```bash
+  python -m main.b1.look check-run --arm W --seed 5103 --pin <PIN> --step 100000000 --arm-end   # exit 0 required
   ```
 - **A look** (any agent holding the GPU lease for the `cuda` form; the `cpu` form needs no lease), from a clean
   detached checkout of the pin:
@@ -740,7 +809,7 @@ Run every training command from the MAIN checkout with the launcher's interprete
   python -m main.reads record --state ~/gen3ai_archive/boundary1_kakuna
   ```
 
-  `plan` runs as soon as phase 2 ends, before any run continues (§6). `run` is resumable: it is re-issued until no
+  `plan` runs as soon as phase 2 ends and the twelve arm-end K9(b) reads are PASS, before any run continues (§6). `run` is resumable: it is re-issued until no
   unit is unplayed (≈ 180 lane-hours; one lane alone would play a ninth of the read in 20 h). `record` on an
   unfinished read gives UNREAD (§6), never a label to act on.
 
@@ -748,10 +817,10 @@ Run every training command from the MAIN checkout with the launcher's interprete
 
 | tool | where | pinned by |
 |---|---|---|
-| the fresh-run kit: arms, argvs, seeds, the collision scan, the launch block | `src/main/b1/arms.py` | `arms_test.py` |
+| the fresh-run kit: arms, the base every run types (Amendment 2), argvs, seeds, the collision scan, the launch block | `src/main/b1/arms.py` | `arms_test.py` |
 | the stop-and-resume equivalence check | `src/main/b1/resume_check.py` | `resume_check_test.py` |
 | the multi-panel cross: views, the floored statistic, classes, the net rule, the confirming labels, the interaction | `src/main/b1/cross.py` | `cross_test.py` |
-| the look: run guards, checkpoint rule, cells plan, ledger names, the read; the per-run early check (`check-run`, Amendment 1) | `src/main/b1/look.py`, `looks/drive_look.sh` | `look_test.py` |
+| the look: run guards, checkpoint rule, cells plan, ledger names, the read; the per-run early check (`check-run`, Amendment 1); the K9(b) read at the early check, at each look and at arm end (`k9b_read`, `check-run --arm-end`, Amendment 2) | `src/main/b1/look.py`, `looks/drive_look.sh` | `look_test.py` |
 | the REPORTED team-cluster bootstrap (Amendment 1) | `src/main/b1/team_bootstrap.py` | `team_bootstrap_test.py` |
 | the Kakuna rule, clustered by team and seed | `src/main/b1/kakuna_rule.py` | `kakuna_rule_test.py` |
 | the two widths on one head-to-head engine (CPU) | (no new code: `main.h2h`'s two-architecture engine) | `width_pairing_integration_test.py` (slow) |
@@ -769,8 +838,12 @@ own tests.)
 
 - Nothing about the plateau from a 100M look.
 - Nothing about widths other than 256, about depth, the critic, the policy tower or entropy.
-- **Width is read under the 128-wide recipe alone**: the learning rate, batch, epochs and `ent_coef` are
-  production's, tuned at 128. A LOSS or a NO-USEFUL-GAIN is about 256 under that recipe, not about width with a
+- **Nothing about `ent_coef`** (Amendment 2). Every run trains at 0.0125 and none at 0.05, so no number here says
+  what the coefficient did. It is a base choice resting on X67 (late forks, each LR-MOVED, no Kakuna game), not a
+  finding of this experiment; a bad base cannot confound a contrast between arms that share it, but it can lower
+  all four.
+- **Width is read under the 128-wide recipe alone**: the learning rate, batch and epochs are production's, tuned
+  at 128, and `ent_coef` 0.0125 was screened at 128 only. A LOSS or a NO-USEFUL-GAIN is about 256 under that recipe, not about width with a
   recipe of its own.
 - Nothing about other corpora or shares than `n1_proc_v1` at 0.5 on both sides.
 - No pp against Kakuna from a pp in-house: the mapping is unmeasured.
@@ -851,6 +924,32 @@ them):
     NEGATIVE reaches 5.6 %. It labels and never decides; widening it would be a rule change after a simulation,
     which is the orchestrator's to make, by an amendment before the read.
 
+**Amendment 2's choices** (2026-11-12; the `ent_coef` decision is the owner's, the rest the orchestrator's;
+these are the registrar's readings of them):
+
+29. **`ent_coef` is TYPED by the kit, and `designs/production_config.json` is not moved.** That overrides §18's
+    re-pin step 1 as Amendment 1 wrote it and X67 §10's sentence that the config and the recipe design move
+    together in this registration: the owner's yes is for this experiment only.
+30. **`--behaviour-check warn` with X35's ceilings**, not re-derived for fresh runs or width 256 (§10).
+31. **K9(b) is read through the look checkpoint's step at a look, and on every row at arm end.** That the arm-end
+    reads come before the Kakuna `plan` is an operator rule; no code enforces it (§14).
+32. **A K9(b) VOID is "lost to its lever"**, and an INCONCLUSIVE that cannot be repaired is treated as VOID (§10).
+33. **This reader is stricter than X35's own**: a run with no full child log is INCONCLUSIVE, and a fresh run has
+    no inherited rows to exclude, so every row is judged.
+34. **No skip rule for §13.** The pre-launch review's F19 / F20 proposed letting a record made at another commit
+    satisfy a GPU item under a code-equality rule. None is registered: trainer code changed after the de-risk, so
+    every GPU item runs at the launch pin in full, and nothing here needs the rule.
+35. **The de-risk's pilots fill no slot.** They typed neither base knob, reached no checkpoint and gave no ρ; they
+    are read only as the memory-fit history and the cold-start readings (§12, §18).
+36. **The pin holds this amendment and the kit; the records that name it are a later commit** (a commit cannot
+    name itself, §3). Between the two the spec has no `pin` and the record-bound tests skip.
+37. **No fit lever is typed.** The memory fit at width 256 is a trainer-code unit applying to every run (§18
+    Amendment 2 item 6). What a fit refusal at a RESTART of a running campaign means is not decided here: §10's
+    "the cause is written into §18 by the orchestrator" applies before any look that would contain the run.
+38. **The two-segment smoke is repeated at the launch pin on CPU** (§13 item 6): trainer code moved.
+39. **The seed floor and the narrow arm's cost were measured at 0.05** and are not re-measured at 0.0125; no bar
+    moves for it (§11.1, §12).
+
 ## 18. Amendments and pre-launch records
 
 ### Amendment 1 (2026-11-10): three runs a cell, and the pre-launch review's fixes
@@ -883,7 +982,7 @@ net rule, the panels, the pairs a cell and the Kakuna rule are the registration'
     survivor look three against three on 4 df, still unclassed; curve dominance five of six; the Kakuna read
     25,920 games (§5 to §8, §17 items 19 to 28).
 
-**`ent_coef` stays an OPEN HOLD.** It is 0.05 in every arm until X67 is read AND the owner says yes. This amendment
+**`ent_coef` stays an OPEN HOLD.** (Closed by Amendment 2, below.) It is 0.05 in every arm until X67 is read AND the owner says yes. This amendment
 does not touch it. The value is a constant of the kit (`main.b1.look`) and of `designs/production_config.json`, so
 changing it is a code change and therefore a new pin (the review's finding 4).
 
@@ -900,7 +999,9 @@ names, recorded here as the next amendment before the first launch:
 
 1. **Choose the pin**: a main commit that holds this amendment's kit and, if the owner changed `ent_coef`, that
    change (in `designs/production_config.json`, in `main.b1.look`'s `ENT_COEF`, in §1, §2 and §10 of this file,
-   with their tests). If X60-T read ADOPT-CANDIDATE the registration is re-read first (§10).
+   with their tests). If X60-T read ADOPT-CANDIDATE the registration is re-read first (§10). *(Amendment 2: the
+   change is typed by the kit's base, `main.b1.arms`, and `designs/production_config.json` is not moved; the pin
+   also holds Amendment 2 and the memory-fit unit with its follow-ups.)*
 2. **Say what the pin adds**: the commits main gained since `507d0c119`, as §3 does, naming any that touch a
    trainer, launcher, model, observation or head-to-head file; `checkargs` at the pin states the production
    surface it resolves.
@@ -912,14 +1013,116 @@ names, recorded here as the next amendment before the first launch:
    disjointness scan for 5101–5113; the corpus; the levers; the parameter counts), `python -m main.b1.resume_check
    static --tree <checkout> --pin <PIN>`, and `pytest src/main/b1`, where no record-bound test may skip.
 5. **Repeat §13 items 1, 2, 6 and 7 at the pin**; item 6's two-segment smoke again only if trainer, launcher or
-   model code moved. Items 3, 4 and 5 are done at the pin on the card as written; items 8 and 9 at the launch.
+   model code moved *(it did: the smoke is repeated)*. Items 3, 4 and 5 are done at the pin on the card as
+   written; items 8 and 9 at the launch.
 6. **Write the pin** into §3 and §14, `designs/STATUS.md` and the backlog's MF-5 row.
 
 Until that amendment exists nothing launches, and no command of §14 is run with the registered pin.
 
-**Pre-launch and launch records** (written here, each before the launch or look it gates): the re-pin; §13's
+### Amendment 2 (2026-11-12): the base every run types, K9(b) judged by the look, the memory fit at width 256
+
+Written before any launch, any game and any read, on the owner's decision of 2026-11-11 and the orchestrator's
+decisions after the pre-launch review and the de-risk of 2026-11-11. **Blind: no `rb_b1*` run, checkpoint, game or
+Kakuna row exists.** The de-risk's pilots (scratch models dirs, pilot seeds, the registered design's argvs without
+this amendment's base) reached no checkpoint and played no game; what they gave is items 6 and 9. **It moves no
+bar**: the +4 pp bar, the −2 pp harm stop, the 1.76 pp floor, the 90 % level, the 0.005 pp band, the views, the
+classes and their order, the net rule, the panels, the pairs a cell, the seeds and the Kakuna rule are Amendment
+1's. It changes the base all twelve runs share, and adds one condition for a run to count.
+
+1. **`ent_coef` is 0.0125 in every run** (§1, §2, §10, §16; closes Amendment 1's OPEN HOLD).
+   - **The decision is the owner's**: yes to 0.0125 for BOUNDARY-1, in writing to the orchestrator on 2026-11-11.
+     It lifts the 2026-09-29 ruling for this experiment only.
+   - **The basis is X67's PASS** (verdict at `aee363bc9`): D +1.97 pp [+1.35, +2.59] for 0.0125 against 0.05.
+   - **Its caveats, which the decision was made with:** X67 read LATE FORKS (P* + 20M), not fresh 100M runs ("a
+     late fork is not a fresh run", its §10); every fork was LR-MOVED (8.372e-05 against 1.0047e-04, a dose rate
+     of 0.83×); it played no Kakuna game; its REPORTED fresh-run-floor interval, [−0.65, +4.58], spans zero.
+     0.0125 is a base choice here, not a result of this experiment, which cannot test it (§16).
+   - **Not re-measured at 0.0125:** §11's seed floor (1.76 pp) and §12's narrow-arm cost, both measured at 0.05.
+     UNVERIFIED there; no bar moves for it.
+   - **How it is carried:** every fresh argv types `--ent-coef 0.0125` (the kit's `BASE`); a resume inherits it;
+     the look and the early check refuse a run whose metadata, recorded arguments or checkpoint sidecar say
+     otherwise. `designs/production_config.json` stays at 0.05 (a kit test pins that).
+2. **`--behaviour-check warn` in every run, and K9(b) judged by the look** (the review's F1; §2, §10, §14). The
+   trainer warns and continues; `main.b1.look.k9b_read` judges by X35 AM-6's rule at the early check, at every
+   look through its checkpoint's step, and at each run's end on every row. A VOID is "lost to its lever"; the look
+   that refuses is not played and goes to the owner; a look already read stands; an INCONCLUSIVE is repaired or
+   treated as VOID. §10 holds the full rule.
+3. **Launch shells at nice ≤ 10** (F6; §14, §13 item 2, §2): the launcher's inherited-nice gate refuses a GPU
+   launch typed from a shell above nice 10, so an agent's nice-19 shell cannot launch a run and its CPU dry runs
+   show two refusals, not one.
+4. **§13 item 4's cost** (F4): 1.2–2.6 GPU-h for the two pilots, plus each one's cold start, not "≈ 1 h".
+5. **§10's HOLDs are closed**: X60-T read NO-TRANSFER (final, `75abf79d8`); `ent_coef` is decided (item 1).
+6. **The memory fit at width 256** (§13 item 4(d), §17 item 37). All figures are MiB on the training card.
+   - **The finding** (`aee363bc9`, the de-risk's wide pilot): the startup fit check refused the run
+     (`UpdateWontFit`): demand 10,768.0 of a 10,770.5 card, headroom 2.5 against the 1,024 bar. The binding term
+     was the first update's gradient probes (peak allocated 9,053 at the grad-balance probes and 9,106 at the
+     per-term noise probe, against 7,139 at the forward), then the mid-run canary's fp32 reference (8,703). No
+     argv lever that leaves the numbers identical cleared the bar.
+   - **The fix** (`e112cbcbf`, trainer code, every run): the probes take their gradients from their own re-run of
+     R1 on the same rows and parameters instead of holding the update's graph, and the canary's fp32 reference
+     keeps 2,048 MiB of saved activations on the card and holds the rest in host memory. Training numbers are
+     bit-identical in every arm; the probe values equal the old ones to the bit on one CPU thread.
+   - **Read on the card at `e112cbcbf`** (the de-risk's validation starts, pre-amendment argvs): width 256 demand
+     9,452.0, peak allocated 7,210.6, headroom **1,318.5** (294.5 above the bar); width 128 demand 7,298.0,
+     headroom 3,472.5. Evidence: `~/.cache/gen3ai/b1_derisk_2026-11-11/results/` (`update_fit_w.json`,
+     `probeval/`).
+   - **Follow-ups the pin also holds:** `1fe7283f7` (the per-term noise estimator's state is always written, item
+     7); `ef89ca99f` (the reference offload's ledger; its CUDA cell passed on the card); `13c50a5e6` (the dry
+     update of the fit check is given the collector-only columns a run trains with, such as the magnet's);
+     `1d2aa1695` (the production forward + backward compiles at B = 2 again on Triton 3.4.0; its card run is §13
+     item 3's); `90699348f` (test-only: two CPU slow tests that pinned the update's compiled-dispatch and
+     host-read counts were red on main since `e112cbcbf`, because the probes' re-runs of R1 are counted
+     dispatches; they now count the training micro-batches and the re-runs separately, and no production code
+     moved).
+   - **`13c50a5e6` and this experiment:** no B1 run types `--magnet-kl-coef`, so the fix supplies nothing to a B1
+     dry update. It is still on every B1 launch's path: the fit check's fixture buffer no longer inherits optional
+     columns and its inputs go through the new table. Its logic passed on the card in a magnet run at the CE-3d
+     pin (`9e97cad57`, a different base); main's commit has NOT run on the card. §13 item 4(d) at the launch pin
+     is that run.
+   - **What is NOT settled:** the margin at 256 is 294.5 above the bar on one reading; the card's free memory at
+     a start varies with what else holds it (10,770.5 at the de-risk, 10,742.5 at the CE-3d start of 11-12). A fit
+     refusal at a restart of a running wide run is not classified by this amendment (§17 item 37). Nothing in the
+     probe path is caught any more: an out-of-memory error in the dry update is `UpdateWontFit`, and one mid-run
+     stops the run.
+7. **The per-term noise keys may be absent, at either width, by their own gate.** The estimator's state
+   (`train/noise_scale_g2_<g>`, `train/noise_scale_trsigma_<g>`, `train/noise_per_term_groups`) is always
+   written; the derived value and ratio keys of a term are written only where that term's squared gradient is at
+   least 1e-12. A fresh run's policy is uniform, so the entropy term's keys are absent at first at 128 and at 256
+   alike. Nothing BOUNDARY-1 reads uses any of them, at any look, so no run types the switch that turns the probe
+   off and no measurement exists in one arm only.
+8. **No skip rule: every GPU item of §13 runs at the launch pin, in full** (F19 / F20; §13, §17 item 34). Trainer
+   code changed after `aee363bc9` and after `e112cbcbf`, and the de-risk typed pre-amendment argvs, so none of its
+   records satisfies an item. The code-equality rule the review proposed is not registered and not invoked.
+9. **Costs the budget does not yet hold** (§12): a start cost 938 to 1,011 s on the de-risk's four starts, at both
+   widths, each on a cold shared compile cache; what a warm start costs is UNMEASURED. The probes' own forwards
+   add about 1 % of the learner's wall on a diagnostics update, an estimate, UNMEASURED.
+10. **What only the card can fill** is listed under "Pre-launch and launch records" below (slots S1 to S8).
+    Nothing launches until S1 to S7 are written there.
+
+**Code.** The kit's change (the base, `k9b_read`, `check-run --arm-end`, the twelve-model spec without a pin) is
+on main at `35362d348`, the commit before this amendment's. The memory-fit unit and its follow-ups are the commits
+item 6 names. **The launch pin is not in this commit**: it is a main commit that holds this amendment, the kit and every
+fix above, and the re-pin record that names it is a later commit (§17 item 36).
+
+### Pre-launch and launch records
+
+Written here, each before the launch or look it gates: the re-pin; §13's
 results; ρ, §12 rewritten from it, and the EQ step; which block launched (phased or fallback); for EVERY launch its
 date, run, `git rev-parse HEAD` of the main checkout, `python -m utils.core_split show`, and the early check's
-JSON once the run has its first checkpoint; every FATAL, resume and replacement with its cause.
+JSON once the run has its first checkpoint; every FATAL, resume and replacement with its cause; every K9(b) record
+(Amendment 2).
 
-None yet.
+**The re-pin record: PENDING.** It is the commit after the launch pin.
+
+**Slots only the card can fill (all at the launch pin; none filled):**
+
+| slot | what | from |
+|---|---|---|
+| S1 | ρ (`rho_pre.rho_total`: wall-clock per step at 256 over 128, steady updates after the compile), with its provenance and regime | §13 item 4's two pilots |
+| S2 | §12's table rewritten from ρ, with starts priced separately (cold, and warm once read) | S1 |
+| S3 | the EQ step, 1,000,000 × ⌊100 / ρ⌋ (§7) | S1 |
+| S4 | §13 item 3's record: the CUDA slow tests, each PASS / FAIL | the slow-gpu window |
+| S5 | §13 item 4 (b) to (e)'s records, with the fit check's demand and headroom at 256 and at 128 | the pilots |
+| S6 | §13 item 5's record: the cross-width cell | one played cell |
+| S7 | §13 item 2 with the card visible, from a shell at nice ≤ 10: four dry runs, every preflight green | the leased agent |
+| S8 | §13 items 8 and 9; the per-launch records; the warm start's cost; the twelve arm-end K9(b) records | at and after launch |

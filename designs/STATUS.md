@@ -55,7 +55,7 @@ Read on the evening of 2026-11-11 (17:40 PST) from the orchestrator's log (`~/.c
 |---|---|---|
 | GPU (since 11-11 17:18) | **The R9 human clone train** (`hclone_r2_s5901`, seed 5901, 45-minute chunks), started by the orchestrator's R9C driver when X69's last fork ended (17:18; X69 is in the landed rows below). Read from the log: this row is a pointer, and the R9 unit owns its detail. | The clone that the R9 kit's `--human-data init:` / `opp:` take (`d0e2715d8`). |
 | GPU next | **CE-3d, the trailing-magnet screen: REGISTERED 11-11 and AMENDED three times the same day; one launch attempted, NO fork has trained** ([PREREG](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md), Amendments 1 to 3, full tier). Fork 1's first launch (11-11, at the first pin `ce3d-pin-333a73dd`) died at step 0 in the startup fit check, a build gap, before any training step; the fix is on main and Amendment 3 RE-PINS the forks; the relaunch of seed 7321 is the orchestrator's GO, after the Training session moves the dead run dir aside. ONE arm, the swap: three P\* + 20M forks with the entropy bonus replaced at the same weight by a pull toward a trailing copy of themselves (`--ent-coef 0 --magnet-kl-coef 0.05`, seeds 7321–7323), ≈ 13 GPU-h, at the backport pin (tag `ce3d-pin-9e97cad5`: the side pin `f4b25238` + the lever + the fit check's fix). The two arms first registered (seeds 7301–7303, 7311–7313) are dropped. The magnet has never trained on the GPU. | Do the swap forks beat the eight banked C0 finals head to head (3 × 8, 1,000 pairs a cell, X67's cross and rule)? C0 trained at `f4b25238` on earlier days, a reported caveat. A second cross, against X67's three finals (3 × 3), is REPORTED and decides nothing. A PASS licenses registering a follow-up only; it moves no recipe and never holds BOUNDARY-1. |
-| GPU after CE-3d | **The BOUNDARY-1 GPU checklist.** Amendment 1 (`d0e0ad52e`, three seeds a cell, ≈ 311 GPU-h) is NOT launchable until ONE re-pin after the `ent_coef` decision: X67 read PASS with LR-MOVED (§2's landed row), so it waits on the orchestrator and the owner's yes (§6). | MF-5 (§3). |
+| GPU after CE-3d | **The BOUNDARY-1 GPU checklist.** Amendment 2 (2026-11-12, blind, before any launch) sets the base every one of the twelve runs types: `--ent-coef 0.0125` (the owner's yes of 2026-11-11 to X67's PASS) and `--behaviour-check warn`, with K9(b) judged by the look, at every look and at arm end. The launch pin is PENDING (its §18 re-pin record). At that pin §13's GPU items run in full, ≈ 3.6 GPU-h (the CUDA-only slow tests, the two pilots to their first pool entry, the cross-width cell, ρ), and their records go into §18 before any launch. ≈ 311 GPU-h to the decision until ρ rewrites it. | MF-5 (§3). |
 | CPU: the play lanes are FREE | **X60-T look 2 READ 11-11 16:52 PST: NO-TRANSFER** (the landed row below). Its two lanes held the agent cores from 11-09 03:36 to 11-11 16:45; no registered read holds them now. | The next CPU read is the orchestrator's pick from §3 (X67's conditional Kakuna read and the searched player's cost read both waited on these lanes). |
 
 ### Landed since 2026-11-01
@@ -97,9 +97,9 @@ its GO.
   ([`research_state/measurements/x67_entropy_screen_2026-11-09/README.md`](research_state/measurements/x67_entropy_screen_2026-11-09/README.md)):
   three P\* + 20M forks with a quarter of the entropy bonus (`ent_coef` 0.0125) beat the eight banked no-lever forks
   head to head, **D +1.97 pp [+1.35, +2.59]**, all three LR-MOVED (the controller's rate 8.372e-05 against C0's
-  1.0047e-04). By its registration that names 0.0125 for the base recipe of every BOUNDARY-1 arm, but it first goes
-  to the orchestrator with the LR label, and the registration stands at 0.05 until the owner's word, given as an
-  amendment before launch (§6).
+  1.0047e-04). By its registration that names 0.0125 for the base recipe of every BOUNDARY-1 arm. **The owner said
+  yes on 2026-11-11** (in writing, to the orchestrator), and BOUNDARY-1's Amendment 2 (2026-11-12) types it on
+  every run. For BOUNDARY-1 only: the production default stays 0.05.
 - **CE-3d, the trailing-magnet screen: REGISTERED 2026-11-11, AMENDED three times the same day (Amendments 1 to 3); one
   launch died at step 0 in a startup check (a build gap, re-pinned by Amendment 3), no fork has trained**
   ([`research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)):
@@ -134,11 +134,15 @@ its GO.
   **AMENDED 2026-11-10 to three seeds a cell, twelve fresh runs to 100M** (Amendment 1, after an independent
   pre-launch review), NOT LAUNCHED
   ([`research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md));
-  the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options. **Not launchable at the
-  registered pin:** the three-seed kit is newer, and ONE re-pin is taken after the `ent_coef` decision, an OPEN HOLD
-  (0.05 until the owner says yes to X67's PASS; a change is a new pin). ≈ 311 GPU-h (270–340: the wide arms' share
-  is a guess until the GPU pilot, which now runs to trained weights and rewrites the budget), ≈ 16 days from launch,
-  after the re-pin and its GPU checklist. Width is decided on the in-house cross over all four panels,
+  the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options. **AMENDED 2026-11-12
+  (Amendment 2, blind):** every run types `--ent-coef 0.0125 --behaviour-check warn` (the owner's yes to X67's
+  PASS; the production default untouched), the look judges K9(b) itself (only a PASS lets a run count; a VOID run
+  is lost to its lever and is not replaced), and the width-256 memory fit is recorded (it failed the startup fit check by 2.5 MiB of headroom at
+  `aee363bc9`, and fits with 1,318.5 MiB against a 1,024 bar since `e112cbcbf`). **The launch pin is PENDING**
+  (its §18 re-pin record; the registered pin launches nothing). ≈ 311 GPU-h (270–340: the wide arms' share is a
+  guess until the GPU pilots at the launch pin, which run to trained weights and rewrite the budget), ≈ 16 days
+  from launch, after §13's GPU checklist at the launch pin. Width is decided on the in-house cross over all four
+  panels,
   breadth on forum72 alone and kept only if home72 pays no more than forum72 gains; Kakuna clustered by team
   confirms either. Honest power: a true +4 pp reads WIN 19 times in 20 if the seed spread at 100M is the 1.76 pp
   measured at 15M, 4 in 5 at 2.5 pp, 5 in 8 at 3.1; a true zero reads "not shown at this size" 93 % of the time and
@@ -282,11 +286,10 @@ Every open owner question, in one place.
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
    yes, staged, launched once the boundary's fixes are in (X60-T's verdict is in: NO-TRANSFER, 11-11, so its HOLD
    does not fire), so the owner's answer is needed before then.
-6. **`ent_coef` 0.0125 for BOUNDARY-1** (2026-11-10; X67 read PASS 2026-11-11, §3). The screen passed,
-   D +1.97 pp [+1.35, +2.59] head to head, with every fork LR-MOVED (rate 8.372e-05 against C0's 1.0047e-04), so it
-   goes to the orchestrator with both numbers first. The owner's yes then names 0.0125 for the base recipe of every
-   BOUNDARY-1 arm and the ONE re-pin is taken at it; without the yes it stays 0.05. Needed before the boundary can
-   launch.
+6. **`ent_coef` 0.0125 for BOUNDARY-1: ANSWERED YES, 2026-11-11** (asked 2026-11-10; X67 read PASS 2026-11-11,
+   §3). The screen passed, D +1.97 pp [+1.35, +2.59] head to head, with every fork LR-MOVED (rate 8.372e-05
+   against C0's 1.0047e-04); the owner said yes in writing to the orchestrator. BOUNDARY-1's Amendment 2
+   (2026-11-12) types 0.0125 on every arm, for that experiment only. Nothing is asked here any more.
 7. **The quota hook** (2026-11-10). It blocked every session from 10:28 to 12:59 when the Fable weekly window hit
    100 %. A fix scoped to the model that is out of quota is proposed; it waits on the owner's yes.
 

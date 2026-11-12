@@ -460,6 +460,10 @@ matches its control at the SAME dose is its secondary read.
     three P\* + 20M forks at 0.0125 against the banked no-lever forks, head to head. It reads no Lane S meter, so
     it does not discharge the owner's 2026-09-29 condition: a PASS names 0.0125 for BOUNDARY-1's base recipe in that
     registration, and this section and §3.22 move only there.
+  - **2026-11-11: X67 read PASS** (D +1.97 pp [+1.35, +2.59], every fork LR-MOVED), **and the owner said yes to
+    0.0125 for BOUNDARY-1.** Its Amendment 2 (2026-11-12) types `--ent-coef 0.0125` on every run of that
+    experiment. `recipe.fresh` and the parser default do not move: production still trains at 0.05, and the
+    2026-09-29 condition stands for everything else.
 - **Literature.**
   - Huang et al. 2022: 0.01 on Atari, 0 on MuJoCo, "no evidence that entropy term improves
     performance".

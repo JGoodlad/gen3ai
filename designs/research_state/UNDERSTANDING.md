@@ -811,9 +811,11 @@ would be [−0.65, +4.58].
   the lever's own effect, but the forks did not learn at C0's rate.
 - **What it does not show.** A late fork is not a fresh run, and siblings are not Kakuna: no outside game was
   played. One coefficient, one dose.
-- **What it moves.** By its registration a PASS names 0.0125 for the base of both BOUNDARY-1 arms. That waits on
-  the orchestrator, who weighs the LR label, and on the owner's yes. The owner's 2026-09-29 ruling ("no direct
-  adoption of a lower bonus") stands until then. No recipe has moved.
+- **What it moves.** By its registration a PASS names 0.0125 for the base of every BOUNDARY-1 arm. The owner said
+  yes on 2026-11-11 (in writing, to the orchestrator), and BOUNDARY-1's Amendment 2 (2026-11-12) types
+  `--ent-coef 0.0125` on all twelve runs. The owner's 2026-09-29 ruling ("no direct adoption of a lower bonus") is lifted for that
+  experiment only: the production recipe still trains at 0.05, and a fresh run at 0.0125 is unmeasured until
+  BOUNDARY-1's runs exist.
 
 [MEASURED · in-house head to head at pin `f4b25238`, CPU · ledger 2026-11-11 · *X67 the entropy screen: PASS*]
 
