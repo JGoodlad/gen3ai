@@ -375,10 +375,10 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   labels where it trained (best scale 0.5 in the pool; the label loss's descent shrinks it on 8 of 8 batches). Two
   measured gradients hold it up: the losses that read the head's published posterior (≈ 350 times the label's
   gradient, unrelated in direction; X68's fine-tune drove the leg 9 to 12 nats below the prior through this route
-  alone) and the move latent loss's variance hinge. Which one holds production's table is NOT shown: no training
-  contrast exists. The lever `--belief-grad-mode move_label_only` (off by default) cuts the first for the move head
-  alone; the light screen X69 (registered 2026-11-10, not launched) is its first training contrast. No strength
-  claim. [MEASURED · DESCRIPTIVE; ledger 2026-11-10 · *MOVE-LEG DIAGNOSIS*;
+  alone) and the move latent loss's variance hinge. Which one holds production's table is NOT shown: no full-tier
+  training contrast exists. The lever `--belief-grad-mode move_label_only` (off by default) cuts the first for the
+  move head alone; its light screen X69 read DROP on 2026-11-11 (ledger 2026-11-11 SCREEN; screen evidence, never a
+  claim), so the lever stays off and is closed at the P\* + 20M dose. No strength claim. [MEASURED · DESCRIPTIVE; ledger 2026-11-10 · *MOVE-LEG DIAGNOSIS*;
   `measurements/move_leg_offpool_2026-11-10/`; `../endstate/design_offpool_belief.md` §8]
 - **Breadth at 10⁴ teams (N1-P / X61P) at the plateau: NULL (final), at a resolved in-pool cost.** Every system
   that generalises across teams trained on 10⁴–10⁵ of them; every breadth test here ran at 10³. A fork of P\* with half

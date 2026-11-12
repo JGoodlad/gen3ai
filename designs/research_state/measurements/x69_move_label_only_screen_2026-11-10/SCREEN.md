@@ -101,3 +101,19 @@ is reported with no outcome. This registration launches nothing.
 
 ## 9. Result (filled AFTER the look)
 
+**DROP (rule 3), 2026-11-11.** All three arms launched and ended clean; none is VOID. `moves_ll`, d = arm − C0,
+72 teams a panel, in rule 2's order:
+
+| arm | H (bar: lower bound ≥ +0.6) | F (bar: > 0) | `home72` (bar: ≥ −0.2) | rule 1 |
+|---|---|---|---|---|
+| B (`rb_x35_x69b_s6902`) | +0.046 [+0.001, +0.088]: NOT met | +0.093 [+0.047, +0.140]: met | +0.046 [+0.015, +0.077]: met | does not pass |
+| A (`rb_x35_x69a_s6901`) | +0.552 [+0.480, +0.624]: NOT met | +0.571 [+0.497, +0.649]: met | +0.531 [+0.463, +0.599]: met | does not pass |
+| AB (`rb_x35_x69ab_s6903`) | +0.494 [+0.427, +0.559]: NOT met | +0.546 [+0.476, +0.621]: met | +0.544 [+0.475, +0.616]: met | does not pass |
+
+No bound is within 1e-6 of a threshold. Every d equals a by-hand recomputation from the eight score files to
+1e-12 (`read/decide.py`, `read/decide.json`). Cost 12.55 GPU-h (753 min: AB 261, B 250, A 242; under the 15.4
+GPU-h stop) and 11 minutes of scoring on the agent cores. The eight finals were scored at `75abf79d8` on the
+registered banks; the five C0 scores of 2026-11-09 predate `moves_ll` and were not reused. Reported columns and
+the FINDINGs: ledger `### 2026-11-11 · SCREEN · X69 …`; files `read/` (`table.md`, `table.json` sha256
+`f4722cabe84ed150…`, `scores.sha256`, `elo_compare.txt`); the score files are
+`~/gen3ai_archive/x69_move_label_only_2026-11-10/scores/`.

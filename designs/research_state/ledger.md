@@ -31304,3 +31304,84 @@ View: `UNDERSTANDING.md` (TL;DR 5, §3.1's bullet, §5, §6), `STATUS.md` (§2's
 `EXPERIMENT_BACKLOG.md` (§3's row, §2.0's MF-6 / MF-7 order and the outcome note).
 
 Tag: **VERDICT · X60-T H-TEAMS look 2 (final) · NO-TRANSFER · Δ_F −0.23 pp [−1.95, +1.49] (8 v 8, 9,600 games an arm, floor-bound) · R72 +1.69 pp DELIVERED · I_F −0.34 pp · Δ_P −2.12 pp [−2.99, −1.25] · T − D1 +0.60 pp NO-DIFFERENCE-AT-3PP · reported Δ_H +2.77, Δ_P72 +5.80 · stops H-TEAMS for this six-seen, loser-enriched slice at the plateau; BOUNDARY-1's human-team HOLD does not fire**
+
+### 2026-11-11 · SCREEN · **X69 reads DROP: no fork of P\* trained with the move head's gradient changed clears the +0.6-nat bar on held-out teams; the two forks whose move head is trained by its labels alone gain +0.55 [+0.48, +0.62] and +0.49 [+0.43, +0.56] nats a unit on H against the five C0 finals (and as much on F, in the pool and on P72), turning the move latent loss off gains +0.05; a light screen, never a verdict, adopts nothing**
+
+**Registration:** `measurements/x69_move_label_only_screen_2026-11-10/SCREEN.md` (light screen, registered at `228dec074`; ONE look; no
+amendment). **What ran:** three forks of P\* (`rb_x26_s2601` at 280,000,170 steps) to 300M steps, one run an arm, launched in the order AB, B,
+A by the Training session: **A** `rb_x35_x69a_s6901` (`--belief-grad-mode move_label_only`: the losses that read the move head's published
+posterior no longer send gradient into it; pin `65c7374b`), **B** `rb_x35_x69b_s6902` (`--move-belief-latent-coef 0`: the move latent loss off;
+pin `f4b25238`), **AB** `rb_x35_x69ab_s6903` (both; pin `65c7374b`). Control **C0**: the five banked finals `rb_x35_c0_s3501`–`s3505`. Every
+arm ended clean with one pin span, a dose equal to C0's (`python -m main.dose`: 2.044e-08, median learning rate 1.005e-04) and no resume.
+753 GPU-minutes (12.55 GPU-h: AB 261, B 250, A 242), under the 15.4 GPU-h stop. No arm is VOID: A and AB log the `MIGRATION 'shaping' ->
+'move_label_only'` and `APPLIED at runtime -> 'move_label_only'` lines, B and AB log no `movelatent_loss` row (A logs it), and no run logs
+`[ModelVersion] FATAL`. Finals (sha256): A `1aaec74f0f65`, B `c18d72d88c2a`, AB `82f171547d3f`; C0's five match the page's §3.
+
+**The meter (`moves_ll`: the log-likelihood of a revealed mon's whole candidate move set, nats a unit; mean over 72 teams of team means; d =
+arm − C0 with C0 the mean of its five finals inside each team; paired team bootstrap, 10,000 draws, seed 20261109, 95 %).** All eight finals
+were scored at `75abf79d8` (`score --mix 0.25`) on the registered banks (rows sha256 `21545e87b1fb` H, `0caf6037fee3` F, `5207d8c100df`
+`home72`, and `p72`), then one `table --versus C0`. The bank guards ran unchanged and refused nothing.
+
+| panel | prior | C0 | B | A | AB | d B | d A | d AB |
+|---|---|---|---|---|---|---|---|---|
+| H (`heldout72_hpfix`), PRIMARY | −4.969 | −6.795 | −6.749 | −6.243 | −6.301 | +0.046 [+0.001, +0.088] | +0.552 [+0.480, +0.624] | +0.494 [+0.427, +0.559] |
+| F (`forum72`), PRIMARY | −5.114 | −5.738 | −5.645 | −5.168 | −5.192 | +0.093 [+0.047, +0.140] | +0.571 [+0.497, +0.649] | +0.546 [+0.476, +0.621] |
+| `home72` (in-pool), PRIMARY | −4.799 | −4.405 | −4.360 | −3.874 | −3.861 | +0.046 [+0.015, +0.077] | +0.531 [+0.463, +0.599] | +0.544 [+0.475, +0.616] |
+| `p72`, reported | −5.597 | −7.823 | −7.709 | −7.284 | −7.317 | +0.114 [+0.070, +0.158] | +0.540 [+0.452, +0.626] | +0.506 [+0.433, +0.580] |
+
+**The rule, applied mechanically (§6).** An arm passes iff the lower bound of d is ≥ +0.6 on H, > 0 on F and ≥ −0.2 on `home72`. In the
+registered order: **B** H +0.001 NOT met, F +0.047 met, `home72` +0.015 met; **A** H +0.480 NOT met, F +0.497 met, `home72` +0.463 met;
+**AB** H +0.427 NOT met, F +0.476 met, `home72` +0.475 met. No arm passes: **DROP**. No bound is within 1e-6 of its threshold (the nearest
+is B's on F, 0.047 above its bar; A's on H is 0.120 below). Every d equals a by-hand recomputation from the eight score files with numpy alone, to 1e-12
+(`read/decide.py`).
+
+**Reported, never deciding.**
+- *Arm − prior on `moves_ll`* (H / F / `home72` / `p72`): C0 −1.826 [−2.201, −1.464] / −0.624 [−1.074, −0.245] / +0.394 [−0.001, +0.755] /
+  −2.226 [−2.556, −1.920]; B −1.780 / −0.532 / +0.440 / −2.112; A −1.274 [−1.627, −0.933] / −0.054 [−0.474, +0.290] / +0.925 [+0.558,
+  +1.265] / −1.686 [−1.989, −1.410]; AB −1.332 [−1.690, −0.984] / −0.078 [−0.497, +0.266] / +0.938 [+0.571, +1.274] / −1.720 [−2.032,
+  −1.435]. A and AB are still WORSE than the Smogon prior on H and `p72`; on F their gap to the prior is NOT DETECTED.
+- *`moves_logp`* (the true moves' mean log probability), arm − C0 on H / F / `home72` / `p72`: B −0.004 [−0.015, +0.007] / +0.006 [−0.003,
+  +0.015] / −0.011 [−0.020, −0.002] / −0.001 [−0.012, +0.010]; A −0.067 [−0.083, −0.051] / −0.041 [−0.060, −0.023] / −0.051 [−0.068,
+  −0.034] / −0.069 [−0.090, −0.050]; AB −0.086 [−0.102, −0.070] / −0.051 [−0.067, −0.037] / −0.051 [−0.067, −0.036] / −0.079 [−0.099,
+  −0.061]. A and AB are WORSE on every panel on this column while BETTER on `moves_ll`.
+- *The species leg* (`species_logp`), arm − C0 on H / F / `home72` / `p72`: B −0.024 / −0.023 / −0.003 / −0.126 [−0.230, −0.021]; A −0.004 /
+  +0.006 / +0.000 / +0.094 [−0.009, +0.199]; AB −0.034 / +0.050 / +0.010 / −0.041. NOT DETECTED everywhere except B on `p72` (WORSE).
+  Against the prior every arm stays where C0 is (C0 −3.006 / −4.022 / +1.231 / −7.804).
+- *The item leg* (`items_logp`), arm − C0: B −0.004 / −0.004 / −0.003 / +0.008; A −0.005 / +0.000 / −0.005 / +0.013; AB +0.006 / +0.018 /
+  +0.012 / −0.030 [−0.061, −0.002]. NOT DETECTED everywhere except AB on `p72` (WORSE). C0 − prior −0.017 / −0.011 / +0.185 / −0.395.
+- *C0's `checkpoint_range` on `moves_ll`* (the lowest and highest of its five finals, its seed spread): H [−6.895, −6.693] (0.20 wide), F
+  [−5.809, −5.654] (0.15), `home72` [−4.444, −4.325] (0.12), `p72` [−7.897, −7.754] (0.14).
+- *End-of-run ladder ELO* (`python -m main.elo compare`, matched count n = 1 own-rated snapshot, refit from `games.jsonl`;
+  `read/elo_compare.txt`): A 2035.0 ± 43.5 at 292M; B 2113.1 ± 52.7 at 298M; C0 `s3501` 2101.0 ± 51.0 at 298M, `s3503` 2078.9 ± 48.2 at
+  296M, `s3505` 2065.4 ± 46.6 at 282M. A − C0 `s3501` −66.0 (95 % CI −133.0 to +1.0); B − C0 `s3501` +12.1 (−61.2 to +85.4). AB and C0
+  `s3502`, `s3504` have no ladder to read (FINDING 3).
+
+**What DROP does (the page's §7).** MF-3's move-leg gradient lever closes at this dose. `--belief-grad-mode` stays `shaping` and
+`--move-belief-latent-coef` stays at its recipe value (0.05); the three checkpoints play nothing and seed nothing. A bounded residual or a
+trained-in prior floor (`designs/endstate/design_offpool_belief.md` §7, §8) stays open for a fresh run. The lever reopens only with a longer
+dose argued from this DROP's own numbers.
+
+**FINDINGs.** (1) The DROP is a miss of the bar's SIZE on H alone, not an absent effect: A and AB read BETTER than C0 on all four panels with
+a d of +0.49 to +0.57, 27 to 30 % of C0's 1.83-nat deficit on H against a bar of a third; d on H is 2.5 to 2.7 times the width of C0's
+five-seed range. This is one run an arm at +20M steps, so candidate seed noise is not measured,
+and the screen's rule stands as registered. (2) B's gain is +0.05 to +0.11 and AB is not above A (AB − A on H −0.058 by the point estimates;
+no paired interval was registered or computed), so on this screen the larger share of the movable part came with the consumers' gradient cut
+and little with the move latent loss off. Screen evidence, never a claim: the diagnosis's "which of the two holds production's table" stays
+un-shown at full tier. (3) The reported ELO item is incomplete and weak: AB has no `snapshot_ladder/` at all and C0 `s3502` and `s3504` have
+no `ladder.json` (`main.elo compare` REFUSED; the suggested `--backfill` plays games and writes under `models/`, outside this unit, so it was
+not run); every ladder that exists has ONE own node, the newest and so the widest (± 43 to 53), at a different step in each run (282M to
+298M), and A's was fitted before its run ended. A's −66 against C0 `s3501` is inside that noise and is no strength reading; the screen plays
+no game. (4) `moves_logp` and `moves_ll` moved in opposite directions for A and AB: the head puts less mass on a mon's true moves and is
+charged far less for raised moves that are not there. `moves_prec` (reported by the table, not listed in §5) reads BETTER for A on all four
+panels (+0.017 H, +0.012 F, +0.035 `home72`, +0.015 `p72`). (5) The early-check lines of §5 are in each run's `launcher_child.full.log`
+(lines 22–23), not in `launcher_child.log`, the file §5 names; the full log is its superset. (6) The five C0 score files of 2026-11-09
+(`~/gen3ai_archive/offpool_belief_2026-11-09/scores/`) were written before the meter had `moves_ll` (`811c08ddc`), so none was reused: all
+eight finals were scored fresh at `75abf79d8` on the same banks. (7) As in the baseline entry: the rows are P\*'s greedy self-play states,
+and every run is read through the six warn-level `obs_gap` rows (162, 163, 165 to 168). (8) Arm A's pin differs from C0's by the one backport
+commit (forward bit-identical under `shaping`, the page's §3); B trained at C0's pin. (9) The eight scores ran four at a time under 6 GB caps
+on the agent cores (peak 0.87 GB each, 11 minutes of wall in all) while the R9 clone train held the GPU.
+
+**Record:** `measurements/x69_move_label_only_screen_2026-11-10/read/` (`table.md`, `table.json` sha256 `f4722cabe84e…`, `decide.py`,
+`decide.json`, `scores.sha256`, `elo_compare.txt`); the eight score files are `~/gen3ai_archive/x69_move_label_only_2026-11-10/scores/`.
+
+Tag: **X69 · SCREEN · DROP · `moves_ll` arm − C0 on H: B +0.05 [+0.00, +0.09], A +0.55 [+0.48, +0.62], AB +0.49 [+0.43, +0.56] (bar: lower bound ≥ +0.6); F and `home72` bars met by all three · MF-3's move-leg gradient lever closes at this dose · never a verdict, never quoted as a claim**

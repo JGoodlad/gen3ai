@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-31,307-line file. **The ledger itself is append-only and is never edited by this**;
+31,388-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1006 headings · 951 dated · 2026-08-01 → 2026-11-11 · ledger 31,307 lines.**
+**1007 headings · 952 dated · 2026-08-01 → 2026-11-11 · ledger 31,388 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1026,3 +1026,4 @@ rename.
   - `L31109` · `2026-11-10` · VERDICT · **X66 ExIt-0H: NOT-DELIVERED — the three P\* students distilled from the HONEST search's banked choices agree with it on their held-out panels LESS than P\* does (pooled Δagree −7.05 pp [−7.31, −6.78]; H −6.48, F −7.16, P72 −7.50); no Kakuna game is played; by pre-commitment this is NOT evidence for the scale bet (MF-5) and plans no ExIt-1**
   - `L31184` · `2026-11-11` · VERDICT · **X67 the entropy screen: PASS — three P\* + 20M forks at a quarter of the entropy bonus (`ent_coef` 0.0125) beat the eight banked C0 forks (0.05) head to head, D +1.97 pp [+1.35, +2.59]; LR-MOVED on all three (the controller cut the rate twice, 8.372e-05 vs C0's 1.0047e-04); entropy 0.68 vs 1.01 nats; moves no recipe on its own**
   - `L31236` · `2026-11-11` · VERDICT · **X60-T / H-TEAMS look 2 (FINAL): NO-TRANSFER — eight P\* + 20M forks with human-built ladder teams in half the pool score F (forum72 vs Kakuna) −0.23 pp [−1.95, +1.49] against C0's eight (NO-USEFUL-GAIN); the positive control R72 +1.69 pp [+1.08, +2.30] DELIVERED, I_F −0.34 pp not a gain, Δ_P −2.12 pp [−2.99, −1.25]; T − D1 NO-DIFFERENCE-AT-3PP; moves no recipe**
+  - `L31308` · `2026-11-11` · SCREEN · **X69 reads DROP: no fork of P\* trained with the move head's gradient changed clears the +0.6-nat bar on held-out teams; the two forks whose move head is trained by its labels alone gain +0.55 [+0.48, +0.62] and +0.49 [+0.43, +0.56] nats a unit on H against the five C0 finals (and as much on F, in the pool and on P72), turning the move latent loss off gains +0.05; a light screen, never a verdict, adopts nothing**

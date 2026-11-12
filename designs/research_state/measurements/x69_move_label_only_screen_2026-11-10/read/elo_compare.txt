@@ -1,0 +1,57 @@
+$ python -m main.elo compare models/rb_x35_x69a_s6901 models/rb_x35_c0_s3501
+MATCHED-COUNT ladder read at n=1 own-rated snapshots (max matched 1); reference = rb_x35_x69a_s6901
+
+rb_x35_x69a_s6901   [refit from games.jsonl]   [transport: rust_eval]   [era: rb Rustboro]   [finished]
+  rated ever (own): 1   groomed out of the committed file: 0   fork_step: 280000170
+    n=1     292.00M   ELO  2035.0 +- 43.5
+  AT n=1: 292.00M -> ELO 2035.0 +- 43.5
+
+rb_x35_c0_s3501   [refit from games.jsonl]   [transport: rust_eval]   [era: rb Rustboro]   [finished]
+  rated ever (own): 1   groomed out of the committed file: 0   fork_step: 280000170
+    n=1     298.00M   ELO  2101.0 +- 51.0
+  AT n=1: 298.00M -> ELO 2101.0 +- 51.0
+  DELTA vs rb_x35_x69a_s6901: +66.0 Elo (95% CI -1.0 to +133.0, ci95 = 67.0)
+[exit 0]
+
+$ python -m main.elo compare models/rb_x35_x69b_s6902 models/rb_x35_c0_s3501
+MATCHED-COUNT ladder read at n=1 own-rated snapshots (max matched 1); reference = rb_x35_x69b_s6902
+
+rb_x35_x69b_s6902   [refit from games.jsonl]   [transport: rust_eval]   [era: rb Rustboro]   [finished]
+  rated ever (own): 1   groomed out of the committed file: 0   fork_step: 280000170
+    n=1     298.00M   ELO  2113.1 +- 52.7
+  AT n=1: 298.00M -> ELO 2113.1 +- 52.7
+
+rb_x35_c0_s3501   [refit from games.jsonl]   [transport: rust_eval]   [era: rb Rustboro]   [finished]
+  rated ever (own): 1   groomed out of the committed file: 0   fork_step: 280000170
+    n=1     298.00M   ELO  2101.0 +- 51.0
+  AT n=1: 298.00M -> ELO 2101.0 +- 51.0
+  DELTA vs rb_x35_x69b_s6902: -12.1 Elo (95% CI -85.4 to +61.2, ci95 = 73.3)
+[exit 0]
+
+$ python -m main.elo compare models/rb_x35_x69ab_s6903 models/rb_x35_c0_s3501
+REFUSED: rb_x35_x69ab_s6903: no models/rb_x35_x69ab_s6903/snapshot_ladder/ladder.json. The endpoint is the DENSE ladder (+-10), not `eval/elo` (+-29); there is no substitute. Build it with: python -m agents.training.snapshot_ladder models/rb_x35_x69ab_s6903 --backfill
+[exit 2]
+
+$ python -m main.elo compare models/rb_x35_c0_s3503 models/rb_x35_c0_s3505
+MATCHED-COUNT ladder read at n=1 own-rated snapshots (max matched 1); reference = rb_x35_c0_s3503
+
+rb_x35_c0_s3503   [refit from games.jsonl]   [transport: rust_eval]   [era: rb Rustboro]   [finished]
+  rated ever (own): 1   groomed out of the committed file: 0   fork_step: 280000170
+    n=1     296.00M   ELO  2078.9 +- 48.2
+  AT n=1: 296.00M -> ELO 2078.9 +- 48.2
+
+rb_x35_c0_s3505   [refit from games.jsonl]   [transport: rust_eval]   [era: rb Rustboro]   [finished]
+  rated ever (own): 2   groomed out of the committed file: 0   fork_step: 280000170
+    n=1     282.00M   ELO  2065.4 +- 46.6
+  AT n=1: 282.00M -> ELO 2065.4 +- 46.6
+  DELTA vs rb_x35_c0_s3503: -13.5 Elo (95% CI -80.6 to +53.6, ci95 = 67.1)
+[exit 0]
+
+$ python -m main.elo compare models/rb_x35_c0_s3502 models/rb_x35_c0_s3501
+REFUSED: rb_x35_c0_s3502: no models/rb_x35_c0_s3502/snapshot_ladder/ladder.json. The endpoint is the DENSE ladder (+-10), not `eval/elo` (+-29); there is no substitute. Build it with: python -m agents.training.snapshot_ladder models/rb_x35_c0_s3502 --backfill
+[exit 2]
+
+$ python -m main.elo compare models/rb_x35_c0_s3504 models/rb_x35_c0_s3501
+REFUSED: rb_x35_c0_s3504: no models/rb_x35_c0_s3504/snapshot_ladder/ladder.json. The endpoint is the DENSE ladder (+-10), not `eval/elo` (+-29); there is no substitute. Build it with: python -m agents.training.snapshot_ladder models/rb_x35_c0_s3504 --backfill
+[exit 2]
+

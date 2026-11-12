@@ -1,0 +1,108 @@
+{
+ "rule": "SCREEN.md \u00a76",
+ "seed": 20261109,
+ "draws": 10000,
+ "eps": 1e-06,
+ "arms": {
+  "B": {
+   "H": {
+    "d": 0.045947161140513754,
+    "lo": 0.0014441344849167093,
+    "hi": 0.088451178144533,
+    "bar": 0.6,
+    "strict": false,
+    "within_eps_of_bar": false,
+    "met": false,
+    "by_hand_equal": true
+   },
+   "F": {
+    "d": 0.09273258465844991,
+    "lo": 0.04737605746281455,
+    "hi": 0.13953147155153095,
+    "bar": 0.0,
+    "strict": true,
+    "within_eps_of_bar": false,
+    "met": true,
+    "by_hand_equal": true
+   },
+   "home72": {
+    "d": 0.04550249251232372,
+    "lo": 0.015487682010966735,
+    "hi": 0.07699955024119194,
+    "bar": -0.2,
+    "strict": false,
+    "within_eps_of_bar": false,
+    "met": true,
+    "by_hand_equal": true
+   },
+   "passes": false
+  },
+  "A": {
+   "H": {
+    "d": 0.5515191758921311,
+    "lo": 0.4797344022671178,
+    "hi": 0.6240592060795171,
+    "bar": 0.6,
+    "strict": false,
+    "within_eps_of_bar": false,
+    "met": false,
+    "by_hand_equal": true
+   },
+   "F": {
+    "d": 0.5706240821336718,
+    "lo": 0.49732578067102273,
+    "hi": 0.6494794702501172,
+    "bar": 0.0,
+    "strict": true,
+    "within_eps_of_bar": false,
+    "met": true,
+    "by_hand_equal": true
+   },
+   "home72": {
+    "d": 0.5305255676706999,
+    "lo": 0.46313888315035423,
+    "hi": 0.5990783640065342,
+    "bar": -0.2,
+    "strict": false,
+    "within_eps_of_bar": false,
+    "met": true,
+    "by_hand_equal": true
+   },
+   "passes": false
+  },
+  "AB": {
+   "H": {
+    "d": 0.4938874081307001,
+    "lo": 0.4274558257309253,
+    "hi": 0.5594570425853886,
+    "bar": 0.6,
+    "strict": false,
+    "within_eps_of_bar": false,
+    "met": false,
+    "by_hand_equal": true
+   },
+   "F": {
+    "d": 0.546266921562608,
+    "lo": 0.4762729215096375,
+    "hi": 0.6208508900963956,
+    "bar": 0.0,
+    "strict": true,
+    "within_eps_of_bar": false,
+    "met": true,
+    "by_hand_equal": true
+   },
+   "home72": {
+    "d": 0.5437749661051813,
+    "lo": 0.47537552006091705,
+    "hi": 0.6160137642594684,
+    "bar": -0.2,
+    "strict": false,
+    "within_eps_of_bar": false,
+    "met": true,
+    "by_hand_equal": true
+   },
+   "passes": false
+  }
+ },
+ "outcome": "DROP"
+}
