@@ -1,0 +1,21 @@
+{
+ "schema": "x35_dose_v1",
+ "run": "rb_x35_ce3dswap_s7321",
+ "arm": "ce3d_swap",
+ "seed": 7321,
+ "pin": "9e97cad5709da21a1f9d4d8846096c87eb17b1d0",
+ "wall_min": 264.8,
+ "gpu_h": 4.412,
+ "gpu_h_note": "one card: GPU-h = wall START\u2192END",
+ "steps_per_s": 1374,
+ "steps_per_s_source": "launcher summary 'FPS'",
+ "first_step": 280000170,
+ "last_step": 300061272,
+ "target_steps": 300000170,
+ "restarts": 0,
+ "launcher_rc": 0,
+ "start": "2026-11-12T00:19:12-08:00",
+ "end": "2026-11-12T04:43:57-08:00",
+ "segments": 1,
+ "segments_note": "wall = the sum of every START\u2192END segment; FPS / last step from the newest launcher log"
+}
