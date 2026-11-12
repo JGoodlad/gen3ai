@@ -83,10 +83,10 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 import torch
 
 from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, POKEMON_COUNTER_OFFSET,
-                                          POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_DIM,
-                                          POKEMON_SPREAD_OFFSET, TEAM_SIZE, WEATHER_ONEHOT_DIM)
-from agents.model.damage_kinds import (our_hp_points, our_max_hp, our_spread, residual_points, their_max_hp,
-                                       their_residual_points)
+                                          POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, TEAM_SIZE,
+                                          WEATHER_ONEHOT_DIM)
+from agents.model.damage_kinds import (our_hp_points, our_max_hp, our_spread, our_team_spread, residual_points,
+                                       their_max_hp, their_residual_points)
 from agents.model.damage_op_pairwise import toxic_next_stage
 from agents.model.extractor_ctx import ability_known, held_item_ids, revealed_ability1_ids
 from agents.observation.gen3_effects import VOLATILE_SLOTS
@@ -333,7 +333,7 @@ class EotResidualRule(torch.nn.Module):
         harmonic mean, so each fraction is the expected one; their Shedinja is exactly 1 there)."""
         our_ids = ctx.species_ids[:, :TEAM_SIZE]
         base_hp = op.BASE_STATS[our_ids][..., 0].to(ctx.pokemon_part.dtype)                  # [B,6]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        spread = our_team_spread(ctx)
         iv, ev_points, _nat = our_spread(spread)
         ours = our_max_hp(base_hp, iv[..., 0], ev_points[..., 0])                         # the one spelling
         shedinja = self.SHEDINJA_HP_ONE[our_ids]

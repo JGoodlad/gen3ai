@@ -61,7 +61,7 @@ from agents.model.index_max import max_by_index
 from agents.model.op_reduction import believed_reduce, noisy_or
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup_swap, gather_beatup,
                                        gather_bp, gather_nonformula, nonformula_rolls, our_healed_hp, our_hp_points,
-                                       our_stats, override_rolls, their_hp_slots, their_max_hp,
+                                       our_stats, our_team_spread, override_rolls, their_hp_slots, their_max_hp,
                                        their_residual_frac_slots)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
@@ -933,8 +933,7 @@ class DamageOperatorPairwise:
             att_gate = _x5.alive * not_active_j
         # --- defenders = our 6 (the _incoming_rolls real-spread recipe) ---
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        spread = our_team_spread(ctx)
         maxhp, d_st = our_stats(d_base, spread)                                        # [B,6], [B,6,5]
         def_stat, spd_stat = d_st[..., _NAT_DEF], d_st[..., _NAT_SPD]                  # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]

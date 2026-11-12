@@ -64,8 +64,8 @@ from agents.gen3_data import format_spec
 from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
                                        beatup_party_opp, beatup_swap, gather_beatup, gather_bp,
                                        gather_nonformula, is_priced, nonformula_rolls,
-                                       nonformula_rolls_their, our_hp_points, our_stats, their_hp_slots, their_max_hp,
-                                       override_rolls, typeless_move_type)
+                                       nonformula_rolls_their, our_hp_points, our_stats, our_team_spread,
+                                       their_hp_slots, their_max_hp, override_rolls, typeless_move_type)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -1124,8 +1124,7 @@ class DamageOperatorBlocks:
         at2 = ctx.type2_ids[ar, opp_act]
         # --- Defenders = our 6 (REAL spread reconstructed from the obs, like forward) ---
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                          # [B,6,6]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        spread = our_team_spread(ctx)
         maxhp, d_st = our_stats(d_base, spread)                                           # [B,6], [B,6,5]
         def_stat, spd_stat = d_st[..., 1], d_st[..., 3]                                   # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]                                     # [B,6]

@@ -1,0 +1,470 @@
+# size_hints={'x': 16, 'r0_': 512}
+# configs=[('XBLOCK: 1, R0_BLOCK: 512, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None', 'OK'), ('XBLOCK: 16, R0_BLOCK: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None', "FAIL RuntimeError('PassManager::run failed')"), ('XBLOCK: 16, R0_BLOCK: 64, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None', "FAIL RuntimeError('PassManager::run failed')"), ('XBLOCK: 8, R0_BLOCK: 512, num_warps: 16, num_ctas: 1, num_stages: 1, maxnreg: None', 'OK'), ('XBLOCK: 16, R0_BLOCK: 4, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None', 'OK')]
+def triton_red_fused__to_copy_abs_add_bitwise_or_ceil_clamp_clamp_min_div_eq_floor_gather_ge_gt_minimum_mul_neg_ones_like_prod_reciprocal_round_rsub_stack_sub_sum_where_405(in_out_ptr0, in_ptr0, in_ptr1, in_ptr2, in_ptr3, in_ptr4, in_ptr5, in_ptr6, in_ptr7, in_ptr8, in_ptr9, in_ptr10, in_ptr11, in_ptr12, in_ptr13, in_ptr14, in_ptr15, in_ptr16, in_ptr17, in_ptr18, in_ptr19, in_ptr20, in_ptr21, in_ptr22, in_ptr23, in_ptr24, in_ptr25, out_ptr0, out_ptr1, out_ptr2, out_ptr3, out_ptr7, out_ptr8, out_ptr9, out_ptr19, out_ptr20, out_ptr32, out_ptr33, out_ptr34, out_ptr35, out_ptr36, out_ptr37, out_ptr38, out_ptr39, out_ptr40, out_ptr41, out_ptr42, out_ptr43, out_ptr44, out_ptr45, out_ptr46, xnumel, r0_numel, XBLOCK : tl.constexpr, R0_BLOCK : tl.constexpr):
+    xnumel = 12
+    r0_numel = 400
+    rnumel = r0_numel
+    RBLOCK: tl.constexpr = R0_BLOCK
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+    xmask = xindex < xnumel
+    r0_base = tl.arange(0, R0_BLOCK)[None, :]
+    rbase = r0_base
+    x2 = xindex
+    x0 = (xindex % 6)
+    x1 = xindex // 6
+    tmp0 = tl.load(in_ptr0 + (6*x2), xmask, eviction_policy='evict_last')
+    tmp1 = 2.0
+    tmp2 = tmp0 * tmp1
+    tmp3 = x0
+    tmp4 = tl.full([1, 1], 0, tl.int64)
+    tmp5 = tmp3 >= tmp4
+    tmp6 = tl.full([1, 1], 6, tl.int64)
+    tmp7 = tmp3 < tmp6
+    tmp8 = tl.load(in_ptr1 + (71 + 122*(x0) + 1472*x1), tmp7 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp9 = tmp3 >= tmp6
+    tmp10 = tl.full([1, 1], 12, tl.int64)
+    tmp11 = tmp3 < tmp10
+    tmp12 = tl.load(in_ptr2 + (6*x1 + ((-6) + x0)), tmp9 & xmask, eviction_policy='evict_last', other=0.0).to(tl.int1)
+    tmp13 = tl.load(in_ptr3 + (71 + 122*((-6) + x0) + 732*x1), tmp9 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp14 = tl.load(in_ptr1 + (803 + 122*((-6) + x0) + 1472*x1), tmp9 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp15 = tl.where(tmp12, tmp13, tmp14)
+    tmp16 = tl.full(tmp15.shape, 0.0, tmp15.dtype)
+    tmp17 = tl.where(tmp9, tmp15, tmp16)
+    tmp18 = tl.where(tmp7, tmp8, tmp17)
+    tmp19 = 31.0
+    tmp20 = tmp18 * tmp19
+    tmp21 = libdevice.nearbyint(tmp20)
+    tmp22 = tmp2 + tmp21
+    tmp23 = tl.load(in_ptr1 + (77 + 122*(x0) + 1472*x1), tmp7 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp24 = tl.load(in_ptr3 + (77 + 122*((-6) + x0) + 732*x1), tmp9 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp25 = tl.load(in_ptr1 + (809 + 122*((-6) + x0) + 1472*x1), tmp9 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp26 = tl.where(tmp12, tmp24, tmp25)
+    tmp27 = tl.full(tmp26.shape, 0.0, tmp26.dtype)
+    tmp28 = tl.where(tmp9, tmp26, tmp27)
+    tmp29 = tl.where(tmp7, tmp23, tmp28)
+    tmp30 = 252.0
+    tmp31 = tmp29 * tmp30
+    tmp32 = libdevice.nearbyint(tmp31)
+    tmp33 = 0.25
+    tmp34 = tmp32 * tmp33
+    tmp35 = libdevice.floor(tmp34)
+    tmp36 = tmp22 + tmp35
+    tmp37 = tl.full([1, 1], 0, tl.int32)
+    tmp38 = tl.full([1, 1], 46, tl.int32)
+    tmp39 = tmp37 == tmp38
+    tmp40 = tl.load(in_ptr1 + (67 + 122*(x0) + 1472*x1), tmp7 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp41 = tl.load(in_ptr3 + (67 + 122*((-6) + x0) + 732*x1), tmp9 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp42 = tl.load(in_ptr1 + (799 + 122*((-6) + x0) + 1472*x1), tmp9 & xmask, eviction_policy='evict_last', other=0.0)
+    tmp43 = tl.where(tmp12, tmp41, tmp42)
+    tmp44 = tl.full(tmp43.shape, 0.0, tmp43.dtype)
+    tmp45 = tl.where(tmp9, tmp43, tmp44)
+    tmp46 = tl.where(tmp7, tmp40, tmp45)
+    tmp47 = 0.0
+    tmp48 = tl.where(tmp39, tmp47, tmp46)
+    tmp49 = 1.0
+    tmp50 = tmp0 == tmp49
+    tmp51 = 110.0
+    tmp52 = tmp36 + tmp51
+    tmp53 = tl.where(tmp50, tmp49, tmp52)
+    tmp54 = tmp48 * tmp53
+    tmp55 = libdevice.nearbyint(tmp54)
+    tmp56 = tmp48 > tmp47
+    tmp57 = 1e-06
+    tmp58 = tmp53 + tmp57
+    tmp59 = tl.full([1, 1], 1, tl.int32)
+    tmp60 = (tmp59 / tmp58)
+    tmp61 = tmp60 * tmp49
+    tl.store(out_ptr0 + (x2), tmp36, xmask)
+    tl.store(out_ptr1 + (x2), tmp55, xmask)
+    tl.store(out_ptr2 + (x2), tmp56, xmask)
+    tl.store(out_ptr3 + (x2), tmp61, xmask)
+    tmp95 = tl.load(in_ptr13 + (1596 + 2845*x1), xmask, eviction_policy='evict_last')
+    tmp98 = tl.load(in_ptr13 + (1598 + 2845*x1), xmask, eviction_policy='evict_last')
+    tmp117 = tl.load(in_ptr19 + (x1), xmask, eviction_policy='evict_last')
+    tmp118 = tl.load(in_ptr20 + (x1), xmask, eviction_policy='evict_last')
+    tmp328 = tl.load(in_ptr25 + (x1), xmask, eviction_policy='evict_last')
+    _tmp333 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp338 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp342 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp349 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp353 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp357 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp362 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp366 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp370 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp374 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp378 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp382 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp386 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+    _tmp389 = tl.full([XBLOCK, R0_BLOCK], 1, tl.float32)
+    _tmp392 = tl.full([XBLOCK, R0_BLOCK], 1, tl.float32)
+    for r0_offset in range(0, r0_numel, R0_BLOCK):
+        r0_index = r0_offset + r0_base
+        r0_mask = r0_index < r0_numel
+        roffset = r0_offset
+        rindex = r0_index
+        r0_3 = r0_index
+        tmp62 = tl.load(in_ptr4 + (r0_3 + 400*x1), r0_mask & xmask, eviction_policy='evict_last', other=0.0)
+        tmp65 = tl.load(in_ptr5 + (r0_3 + 400*x1), r0_mask & xmask, eviction_policy='evict_last', other=0.0)
+        tmp78 = tl.load(in_ptr8 + (r0_3 + 400*x1), r0_mask & xmask, eviction_policy='evict_last', other=0.0)
+        tmp80 = tl.load(in_ptr9 + (r0_3), r0_mask, eviction_policy='evict_last', other=0.0)
+        tmp87 = tl.load(in_ptr11 + (r0_3 + 400*x1), r0_mask & xmask, eviction_policy='evict_last', other=0.0)
+        tmp96 = tl.load(in_ptr14 + (r0_3), r0_mask, eviction_policy='evict_last', other=0.0)
+        tmp106 = tl.load(in_ptr15 + (r0_3), r0_mask, eviction_policy='evict_last', other=0.0)
+        tmp238 = tl.load(in_ptr23 + (r0_3), r0_mask, eviction_policy='evict_last', other=0.0)
+        tmp322 = tl.load(in_ptr24 + (r0_3 + 400*x1), r0_mask & xmask, eviction_policy='evict_last', other=0.0)
+        tmp63 = 0.84
+        tmp64 = tmp62 * tmp63
+        tmp66 = tl.full([XBLOCK, R0_BLOCK], 3, tl.int32)
+        tmp67 = tmp65 + tmp66
+        tmp68 = tmp65 < 0
+        tmp69 = tl.where(tmp68, tmp67, tmp65)
+        tl.device_assert(((0 <= tmp69) & (tmp69 < 3)) | ~(r0_mask & xmask), "index out of bounds: 0 <= tmp69 < 3")
+        tmp71 = tl.load(in_ptr6 + (tmp69 + 3*x1), r0_mask & xmask, eviction_policy='evict_last')
+        tmp72 = tmp64 * tmp71
+        tmp73 = tl.load(in_ptr7 + (tmp69 + 3*x2), r0_mask & xmask, eviction_policy='evict_last')
+        tmp74 = tmp73 + tmp57
+        tmp75 = (tmp59 / tmp74)
+        tmp76 = tmp75 * tmp49
+        tmp77 = tmp72 * tmp76
+        tmp79 = tmp77 + tmp78
+        tmp81 = tl.full([XBLOCK, R0_BLOCK], 19, tl.int32)
+        tmp82 = tmp80 + tmp81
+        tmp83 = tmp80 < 0
+        tmp84 = tl.where(tmp83, tmp82, tmp80)
+        tl.device_assert(((0 <= tmp84) & (tmp84 < 19)) | ~(r0_mask), "index out of bounds: 0 <= tmp84 < 19")
+        tmp86 = tl.load(in_ptr10 + (tmp84 + 19*x2), r0_mask & xmask, eviction_policy='evict_last')
+        tmp88 = tmp86 * tmp87
+        tmp89 = tmp79 * tmp88
+        tmp90 = tl.load(in_ptr12 + (tmp69 + 3*x1), r0_mask & xmask, eviction_policy='evict_last')
+        tmp91 = tmp64 * tmp90
+        tmp92 = tmp91 * tmp76
+        tmp93 = tmp92 + tmp78
+        tmp94 = tmp93 * tmp88
+        tmp97 = tmp95 * tmp96
+        tmp99 = tmp49 - tmp96
+        tmp100 = tmp98 * tmp99
+        tmp101 = tmp97 + tmp100
+        tmp102 = 0.5
+        tmp103 = tmp101 * tmp102
+        tmp104 = tmp49 - tmp103
+        tmp105 = tmp94 * tmp104
+        tmp107 = tl.full([XBLOCK, R0_BLOCK], 400, tl.int32)
+        tmp108 = tmp106 + tmp107
+        tmp109 = tmp106 < 0
+        tmp110 = tl.where(tmp109, tmp108, tmp106)
+        tl.device_assert(((0 <= tmp110) & (tmp110 < 400)) | ~(r0_mask), "index out of bounds: 0 <= tmp110 < 400")
+        tmp112 = tl.load(in_ptr16 + (tmp110), r0_mask, eviction_policy='evict_last')
+        tmp113 = tl.load(in_ptr17 + (tmp110), r0_mask, eviction_policy='evict_last')
+        tmp114 = tmp113 * tmp55
+        tmp115 = tmp112 + tmp114
+        tmp116 = tl.load(in_ptr18 + (tmp110), r0_mask, eviction_policy='evict_last')
+        tmp119 = tmp118 + tmp107
+        tmp120 = tmp118 < 0
+        tmp121 = tl.where(tmp120, tmp119, tmp118)
+        tl.device_assert(((0 <= tmp121) & (tmp121 < 400)) | ~(xmask), "index out of bounds: 0 <= tmp121 < 400")
+        tmp123 = tl.load(in_ptr21 + (tmp121), xmask, eviction_policy='evict_last')
+        tmp124 = tmp117 * tmp123
+        tmp125 = tmp55 - tmp124
+        tmp126 = triton_helpers.maximum(tmp125, tmp47)
+        tmp127 = tmp116 * tmp126
+        tmp128 = tmp115 + tmp127
+        tmp129 = (tmp128 / tmp58)
+        tmp130 = tmp112 + tmp113
+        tmp131 = tmp130 + tmp116
+        tmp132 = tmp131 > tmp47
+        tmp133 = 1.5
+        tmp134 = triton_helpers.minimum(tmp129, tmp133)
+        tmp135 = tmp86 > tmp47
+        tmp136 = tmp135.to(tl.float32)
+        tmp137 = tmp134 * tmp136
+        tmp138 = tmp89 * tmp104
+        tmp139 = tmp138 * tmp61
+        tmp140 = triton_helpers.minimum(tmp139, tmp133)
+        tmp141 = tl.where(tmp132, tmp137, tmp140)
+        tmp142 = 0.85
+        tmp143 = tmp138 * tmp142
+        tmp144 = tmp143 * tmp61
+        tmp145 = triton_helpers.minimum(tmp144, tmp133)
+        tmp146 = tl.where(tmp132, tmp137, tmp145)
+        tmp147 = 3.0
+        tmp148 = triton_helpers.minimum(tmp129, tmp147)
+        tmp149 = tmp148 * tmp136
+        tmp150 = tmp89 * tmp1
+        tmp151 = tmp150 * tmp61
+        tmp152 = triton_helpers.minimum(tmp151, tmp147)
+        tmp153 = tl.where(tmp132, tmp149, tmp152)
+        tmp154 = tmp105 * tmp61
+        tmp155 = triton_helpers.minimum(tmp154, tmp133)
+        tmp156 = tl.where(tmp132, tmp137, tmp155)
+        tmp157 = tmp105 * tmp1
+        tmp158 = (tmp157 / tmp104)
+        tmp159 = 1.081081081081081
+        tmp160 = tmp158 * tmp159
+        tmp161 = tmp160 * tmp142
+        tmp162 = tmp55 - tmp102
+        tmp163 = tmp161 - tmp162
+        tmp164 = tmp55 + tmp102
+        tmp165 = tmp164 - tmp162
+        tmp166 = triton_helpers.maximum(tmp165, tmp57)
+        tmp167 = (tmp163 / tmp166)
+        tmp168 = tmp160 * tmp49
+        tmp169 = tmp168 - tmp162
+        tmp170 = (tmp169 / tmp166)
+        tmp171 = triton_helpers.minimum(tmp167, tmp170)
+        tmp172 = tl_math.abs(tmp160)
+        tmp173 = 0.01
+        tmp174 = tmp172 * tmp173
+        tmp175 = (tmp174 / tmp166)
+        tmp176 = tmp138 * tmp159
+        tmp177 = tmp176 * tmp142
+        tmp178 = tmp177 - tmp162
+        tmp179 = (tmp178 / tmp166)
+        tmp180 = tmp176 * tmp49
+        tmp181 = tmp180 - tmp162
+        tmp182 = (tmp181 / tmp166)
+        tmp183 = triton_helpers.minimum(tmp179, tmp182)
+        tmp184 = tl_math.abs(tmp176)
+        tmp185 = tmp184 * tmp173
+        tmp186 = (tmp185 / tmp166)
+        tmp187 = tl.load(in_ptr22 + (tmp110), r0_mask, eviction_policy='evict_last')
+        tmp188 = tmp49 - tmp187
+        tmp189 = tmp49 - tmp183
+        tmp190 = 1e-30
+        tmp191 = triton_helpers.maximum(tmp186, tmp190)
+        tmp192 = (tmp189 / tmp191)
+        tmp193 = libdevice.floor(tmp192)
+        tmp194 = tmp193 + tmp49
+        tmp195 = triton_helpers.maximum(tmp194, tmp47)
+        tmp196 = 16.0
+        tmp197 = triton_helpers.minimum(tmp195, tmp196)
+        tmp198 = tmp196 - tmp197
+        tmp199 = -tmp183
+        tmp200 = (tmp199 / tmp191)
+        tmp201 = libdevice.ceil(tmp200)
+        tmp202 = triton_helpers.maximum(tmp201, tmp47)
+        tmp203 = triton_helpers.minimum(tmp202, tmp196)
+        tmp204 = tmp197 - tmp203
+        tmp205 = tmp203 + tmp197
+        tmp206 = tmp205 - tmp49
+        tmp207 = tmp206 * tmp102
+        tmp208 = tmp186 * tmp207
+        tmp209 = tmp183 + tmp208
+        tmp210 = tmp204 * tmp209
+        tmp211 = tmp198 + tmp210
+        tmp212 = 0.0625
+        tmp213 = tmp211 * tmp212
+        tmp214 = tmp188 * tmp213
+        tmp215 = tmp49 - tmp171
+        tmp216 = triton_helpers.maximum(tmp175, tmp190)
+        tmp217 = (tmp215 / tmp216)
+        tmp218 = libdevice.floor(tmp217)
+        tmp219 = tmp218 + tmp49
+        tmp220 = triton_helpers.maximum(tmp219, tmp47)
+        tmp221 = triton_helpers.minimum(tmp220, tmp196)
+        tmp222 = tmp196 - tmp221
+        tmp223 = -tmp171
+        tmp224 = (tmp223 / tmp216)
+        tmp225 = libdevice.ceil(tmp224)
+        tmp226 = triton_helpers.maximum(tmp225, tmp47)
+        tmp227 = triton_helpers.minimum(tmp226, tmp196)
+        tmp228 = tmp221 - tmp227
+        tmp229 = tmp227 + tmp221
+        tmp230 = tmp229 - tmp49
+        tmp231 = tmp230 * tmp102
+        tmp232 = tmp175 * tmp231
+        tmp233 = tmp171 + tmp232
+        tmp234 = tmp228 * tmp233
+        tmp235 = tmp222 + tmp234
+        tmp236 = tmp235 * tmp212
+        tmp237 = tmp187 * tmp236
+        tmp239 = tmp113 >= tmp49
+        tmp240 = tmp112 >= tmp55
+        tmp241 = tmp239 | tmp240
+        tmp242 = tmp241.to(tl.float32)
+        tmp243 = tmp238 * tmp242
+        tmp244 = tmp55 > tmp47
+        tmp245 = tmp244.to(tl.float32)
+        tmp246 = tmp243 * tmp245
+        tmp247 = tmp246 * tmp136
+        tmp248 = tmp150 * tmp159
+        tmp249 = tmp248 * tmp142
+        tmp250 = tmp249 - tmp162
+        tmp251 = (tmp250 / tmp166)
+        tmp252 = tmp248 * tmp49
+        tmp253 = tmp252 - tmp162
+        tmp254 = (tmp253 / tmp166)
+        tmp255 = triton_helpers.minimum(tmp251, tmp254)
+        tmp256 = -tmp255
+        tmp257 = tl_math.abs(tmp248)
+        tmp258 = tmp257 * tmp173
+        tmp259 = (tmp258 / tmp166)
+        tmp260 = triton_helpers.maximum(tmp259, tmp190)
+        tmp261 = (tmp256 / tmp260)
+        tmp262 = libdevice.ceil(tmp261)
+        tmp263 = triton_helpers.maximum(tmp262, tmp47)
+        tmp264 = tmp49 - tmp255
+        tmp265 = (tmp264 / tmp260)
+        tmp266 = libdevice.floor(tmp265)
+        tmp267 = tmp266 + tmp49
+        tmp268 = triton_helpers.minimum(tmp263, tmp196)
+        tmp269 = triton_helpers.maximum(tmp267, tmp47)
+        tmp270 = triton_helpers.minimum(tmp269, tmp196)
+        tmp271 = tmp268 + tmp270
+        tmp272 = tmp271 - tmp49
+        tmp273 = tmp272 * tmp102
+        tmp274 = tmp259 * tmp273
+        tmp275 = tmp255 + tmp274
+        tmp276 = tmp196 - tmp270
+        tmp277 = tmp270 - tmp268
+        tmp278 = tmp277 * tmp275
+        tmp279 = tmp276 + tmp278
+        tmp280 = tmp279 * tmp212
+        tmp281 = tmp187 * tmp280
+        tmp282 = tmp214 + tmp281
+        tmp283 = tmp238 * tmp282
+        tmp284 = tl.where(tmp132, tmp247, tmp283)
+        tmp285 = tmp105 * tmp159
+        tmp286 = tmp285 * tmp142
+        tmp287 = tmp286 - tmp162
+        tmp288 = (tmp287 / tmp166)
+        tmp289 = tmp285 * tmp49
+        tmp290 = tmp289 - tmp162
+        tmp291 = (tmp290 / tmp166)
+        tmp292 = triton_helpers.minimum(tmp288, tmp291)
+        tmp293 = -tmp292
+        tmp294 = tl_math.abs(tmp285)
+        tmp295 = tmp294 * tmp173
+        tmp296 = (tmp295 / tmp166)
+        tmp297 = triton_helpers.maximum(tmp296, tmp190)
+        tmp298 = (tmp293 / tmp297)
+        tmp299 = libdevice.ceil(tmp298)
+        tmp300 = triton_helpers.maximum(tmp299, tmp47)
+        tmp301 = triton_helpers.minimum(tmp300, tmp196)
+        tmp302 = tmp49 - tmp292
+        tmp303 = (tmp302 / tmp297)
+        tmp304 = libdevice.floor(tmp303)
+        tmp305 = tmp304 + tmp49
+        tmp306 = triton_helpers.maximum(tmp305, tmp47)
+        tmp307 = triton_helpers.minimum(tmp306, tmp196)
+        tmp308 = tmp301 + tmp307
+        tmp309 = tmp308 - tmp49
+        tmp310 = tmp309 * tmp102
+        tmp311 = tmp296 * tmp310
+        tmp312 = tmp292 + tmp311
+        tmp313 = tmp196 - tmp307
+        tmp314 = tmp307 - tmp301
+        tmp315 = tmp314 * tmp312
+        tmp316 = tmp313 + tmp315
+        tmp317 = tmp316 * tmp212
+        tmp318 = tmp188 * tmp317
+        tmp319 = tmp318 + tmp237
+        tmp320 = tmp238 * tmp319
+        tmp321 = tl.where(tmp132, tmp247, tmp320)
+        tmp323 = tmp322 * tmp284
+        tmp324 = tmp323 * tmp96
+        tmp325 = tmp49 - tmp324
+        tmp326 = tmp323 * tmp99
+        tmp327 = tmp49 - tmp326
+        tmp329 = (tmp322 / tmp328)
+        tmp330 = tmp329 * tmp96
+        tmp331 = tmp330 * tmp146
+        tmp332 = tl.broadcast_to(tmp331, [XBLOCK, R0_BLOCK])
+        tmp334 = _tmp333 + tmp332
+        _tmp333 = tl.where(r0_mask & xmask, tmp334, _tmp333)
+        tmp335 = tmp329 * tmp99
+        tmp336 = tmp335 * tmp146
+        tmp337 = tl.broadcast_to(tmp336, [XBLOCK, R0_BLOCK])
+        tmp339 = _tmp338 + tmp337
+        _tmp338 = tl.where(r0_mask & xmask, tmp339, _tmp338)
+        tmp340 = tmp330 * tmp141
+        tmp341 = tl.broadcast_to(tmp340, [XBLOCK, R0_BLOCK])
+        tmp343 = _tmp342 + tmp341
+        _tmp342 = tl.where(r0_mask & xmask, tmp343, _tmp342)
+        tmp344 = tmp141 > tmp47
+        tmp345 = tmp344.to(tl.float32)
+        tmp346 = tmp238 * tmp345
+        tmp347 = tmp330 * tmp346
+        tmp348 = tl.broadcast_to(tmp347, [XBLOCK, R0_BLOCK])
+        tmp350 = _tmp349 + tmp348
+        _tmp349 = tl.where(r0_mask & xmask, tmp350, _tmp349)
+        tmp351 = tmp335 * tmp346
+        tmp352 = tl.broadcast_to(tmp351, [XBLOCK, R0_BLOCK])
+        tmp354 = _tmp353 + tmp352
+        _tmp353 = tl.where(r0_mask & xmask, tmp354, _tmp353)
+        tmp355 = tmp335 * tmp141
+        tmp356 = tl.broadcast_to(tmp355, [XBLOCK, R0_BLOCK])
+        tmp358 = _tmp357 + tmp356
+        _tmp357 = tl.where(r0_mask & xmask, tmp358, _tmp357)
+        tmp359 = tmp322 * tmp345
+        tmp360 = tmp329 * tmp359
+        tmp361 = tl.broadcast_to(tmp360, [XBLOCK, R0_BLOCK])
+        tmp363 = _tmp362 + tmp361
+        _tmp362 = tl.where(r0_mask & xmask, tmp363, _tmp362)
+        tmp364 = tmp330 * tmp153
+        tmp365 = tl.broadcast_to(tmp364, [XBLOCK, R0_BLOCK])
+        tmp367 = _tmp366 + tmp365
+        _tmp366 = tl.where(r0_mask & xmask, tmp367, _tmp366)
+        tmp368 = tmp335 * tmp153
+        tmp369 = tl.broadcast_to(tmp368, [XBLOCK, R0_BLOCK])
+        tmp371 = _tmp370 + tmp369
+        _tmp370 = tl.where(r0_mask & xmask, tmp371, _tmp370)
+        tmp372 = tmp330 * tmp284
+        tmp373 = tl.broadcast_to(tmp372, [XBLOCK, R0_BLOCK])
+        tmp375 = _tmp374 + tmp373
+        _tmp374 = tl.where(r0_mask & xmask, tmp375, _tmp374)
+        tmp376 = tmp335 * tmp284
+        tmp377 = tl.broadcast_to(tmp376, [XBLOCK, R0_BLOCK])
+        tmp379 = _tmp378 + tmp377
+        _tmp378 = tl.where(r0_mask & xmask, tmp379, _tmp378)
+        tmp380 = tmp330 * tmp156
+        tmp381 = tl.broadcast_to(tmp380, [XBLOCK, R0_BLOCK])
+        tmp383 = _tmp382 + tmp381
+        _tmp382 = tl.where(r0_mask & xmask, tmp383, _tmp382)
+        tmp384 = tmp330 * tmp321
+        tmp385 = tl.broadcast_to(tmp384, [XBLOCK, R0_BLOCK])
+        tmp387 = _tmp386 + tmp385
+        _tmp386 = tl.where(r0_mask & xmask, tmp387, _tmp386)
+        tmp388 = tl.broadcast_to(tmp325, [XBLOCK, R0_BLOCK])
+        tmp390 = _tmp389 * tmp388
+        _tmp389 = tl.where(r0_mask & xmask, tmp390, _tmp389)
+        tmp391 = tl.broadcast_to(tmp327, [XBLOCK, R0_BLOCK])
+        tmp393 = _tmp392 * tmp391
+        _tmp392 = tl.where(r0_mask & xmask, tmp393, _tmp392)
+        tl.store(out_ptr7 + (r0_3 + 400*x2), tmp141, r0_mask & xmask)
+        tl.store(out_ptr8 + (r0_3 + 400*x2), tmp146, r0_mask & xmask)
+        tl.store(out_ptr9 + (r0_3 + 400*x2), tmp153, r0_mask & xmask)
+        tl.store(in_out_ptr0 + (r0_3 + 400*x2), tmp284, r0_mask & xmask)
+        tl.store(out_ptr19 + (r0_3 + 400*x2), tmp325, r0_mask & xmask)
+        tl.store(out_ptr20 + (r0_3 + 400*x2), tmp327, r0_mask & xmask)
+    tmp333 = tl.sum(_tmp333, 1)[:, None]
+    tmp338 = tl.sum(_tmp338, 1)[:, None]
+    tmp342 = tl.sum(_tmp342, 1)[:, None]
+    tmp349 = tl.sum(_tmp349, 1)[:, None]
+    tmp353 = tl.sum(_tmp353, 1)[:, None]
+    tmp357 = tl.sum(_tmp357, 1)[:, None]
+    tmp362 = tl.sum(_tmp362, 1)[:, None]
+    tmp366 = tl.sum(_tmp366, 1)[:, None]
+    tmp370 = tl.sum(_tmp370, 1)[:, None]
+    tmp374 = tl.sum(_tmp374, 1)[:, None]
+    tmp378 = tl.sum(_tmp378, 1)[:, None]
+    tmp382 = tl.sum(_tmp382, 1)[:, None]
+    tmp386 = tl.sum(_tmp386, 1)[:, None]
+    tmp389 = triton_helpers.prod(_tmp389, 1)[:, None]
+    tmp392 = triton_helpers.prod(_tmp392, 1)[:, None]
+    tl.store(out_ptr32 + (x2), tmp382, xmask)
+    tl.store(out_ptr33 + (x2), tmp386, xmask)
+    tl.store(out_ptr34 + (x2), tmp389, xmask)
+    tl.store(out_ptr35 + (x2), tmp392, xmask)
+    tl.store(out_ptr36 + (12*x2), tmp333, xmask)
+    tl.store(out_ptr37 + (12*x2), tmp342, xmask)
+    tl.store(out_ptr38 + (12*x2), tmp366, xmask)
+    tl.store(out_ptr39 + (12*x2), tmp374, xmask)
+    tl.store(out_ptr40 + (12*x2), tmp349, xmask)
+    tl.store(out_ptr41 + (12*x2), tmp338, xmask)
+    tl.store(out_ptr42 + (12*x2), tmp357, xmask)
+    tl.store(out_ptr43 + (12*x2), tmp370, xmask)
+    tl.store(out_ptr44 + (12*x2), tmp378, xmask)
+    tl.store(out_ptr45 + (12*x2), tmp353, xmask)
+    tl.store(out_ptr46 + (12*x2), tmp362, xmask)

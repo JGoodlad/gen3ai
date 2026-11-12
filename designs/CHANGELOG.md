@@ -15918,3 +15918,28 @@ was downloaded or written under `data/`.
   hands the learner to a callee, that `update_fit` does not declare.
 - **Not shown.** Anything on the GPU (built without a lease): the segment's size, and T2's reservation counters after
   a magnet-slot flush from an emptied cache. The restore is shown bit-exact on the CPU learner and the real T2.
+## 2026-11-11 — OUR spread is read off the real context, so the CUDA forward + backward compiles at B = 2 again (no config / `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change; every number bit-identical)
+
+- **Why.** `extractor_compiles_test.py::test_production_arch_compiles_forward_and_backward_on_cuda` went red on the
+  card at B = 2 (`PassManager::run failed`). On the CPU (Inductor's Triton codegen under fake device properties): 1 of
+  the 1,059 kernels fails, the non-formula damage roll with OUR max-HP chain fused in, at the `XBLOCK = 16` configs
+  (16, 8, 2) and (16, 64, 8); the same kernel fails at B = 4 (`XBLOCK` 32); first present at `7a0153b46`, 0 at its
+  parent. It is the Triton 3.4.0
+  `RemoveLayoutConversions` bug of 2026-10-25 reached through a second kernel; Triton 3.1.0 compiles it.
+- **What.** The chain read OUR IV / EV through a hypothesis context's ``cat([ours, where(hidden, dex_row, theirs)])``.
+  `damage_kinds.our_team_spread(ctx)` now reads OUR rows off the REAL context (`extractor_ctx.our_rows`; a hypothesis
+  context carries `real`) at the five places the op reads the whole team's spread. Same values, a kernel shape that
+  compiles. The cell stays at B = 2.
+- **Shown (CPU).** Bit-identity: `our_rows_spelling_test.py` (the old spelling swapped back at all five sites; 168
+  tensors of the damage op, both stashes and the extractor's outputs equal bit for bit; a control that sees a changed
+  spread; a source guard). The pin: `triton_xblock16_cat_read_test.py` (the hand-cut kernel, both spellings, per
+  config; Triton 3.4.0 and 3.1.0 outcomes recorded). The screen at the fix: 0 failing kernels, forward + backward at
+  B = 2, 3, 4, 5, 6, 8 and the no-grad forward at B = 2, 3, 4, 8, 16.
+- **Also.** `GEN3AI_COMPILE_DIAG=1` on the CUDA cells compiles in the pytest process, so Triton's verifier message
+  reaches the terminal (Inductor's compile workers discard their stderr; a plain failure now carries a note naming the
+  switch).
+- **Not shown.** Everything on the GPU: the cell's pass at the fix, the kernel's identity on the card, the switch on a
+  real CUDA compile (`~/.cache/gen3ai/triton_fwdbwd_2026-11-11/gpu_confirm.sh`). The direct read is
+  necessary, not a guarantee: the kernel generated at the fix compiles at every `XBLOCK` 16 / 32 / 64 config, but the
+  pin's cut-down kernel, which keeps the pre-fix kernel's stored partial, still fails at 32 and 64 with it. Detail: `training/compile_flags.md` "Triton
+  RemoveLayoutConversions", `research_state/measurements/triton_xblock16_cat_read_2026-11-11/`.

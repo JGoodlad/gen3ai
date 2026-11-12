@@ -22,7 +22,7 @@ Two separate obligations live here, and they are easy to conflate:
    | | forward | forward + backward |
    |---|---|---|
    | **CPU** | ✅ the offline opponent compile (`maybe_compile_extractor`, B=1; the trainer-side `--compile-opponents` path was deleted, U3 — under the Rust env core every policy opponent is served by the T2 inference service) | ❌ **does not lower** — Inductor's C++ backend asserts on an `atomic_add` scatter |
-   | **CUDA** | ✅ eval / inference on the card | ✅ the TRAINER's step, the ~1.75x lever |
+   | **CUDA** | ✅ eval / inference on the card | ✅ the extractor's share of the learner's compiled step (R1, `compile_regions`: a train-mode forward + backward) |
 
    Each cell has its own test below, including the ❌ one — that is a LIMITATION PIN, and it fails
    if the limitation ever LIFTS, because three things in the codebase currently assume it holds
@@ -34,12 +34,23 @@ Two separate obligations live here, and they are easy to conflate:
 **A supported CUDA compile needs the card.** With `CUDA_VISIBLE_DEVICES=""` an Inductor cuda compile
 dies with `RuntimeError: No CUDA GPUs are available` (the backend queries live device properties;
 measured 2026-08-14, torch 2.5.1). Two narrower things DO run on the CPU (measured 2026-10-25, torch
-2.8 + triton 3.4): Triton's own compile of a kernel for sm_86 (`triton.compile` with a `GPUTarget`,
-which is how `triton_xblock16_remat_test.py` pins the bug behind the B = 8 choice below), and, through
-a harness of fakes that is a diagnostic and not a gate, Inductor's whole Triton codegen of this
-extractor (`designs/research_state/measurements/triton_xblock16_2026-10-25/`). So the CUDA cells still
-need the real card — and because this box normally carries a training run, they SKIP THEMSELVES when
-the GPU is busy rather than risk an OOM in it. See `_cuda_skip_reason`.
+2.8 + triton 3.4): Triton's own compile of a kernel for sm_86 (`triton.compile` with a `GPUTarget`),
+and, through a harness of fakes that is a diagnostic and not a gate, Inductor's whole Triton codegen of
+this extractor (`designs/research_state/measurements/triton_xblock16_2026-10-25/`). The first is how the
+two reds these cells have had are pinned in the routine tier, both one Triton 3.4.0 bug at `XBLOCK = 16`,
+which only B = 2 autotunes: `triton_xblock16_remat_test.py` (2026-10-25, the inference cell, behind its
+B = 8 below) and `triton_xblock16_cat_read_test.py` (2026-11-11, the forward + backward cell, fixed by
+where the op reads OUR spread; that cell stays at B = 2). So the CUDA cells still need the real card —
+and because this box normally carries a training run, they SKIP THEMSELVES when the GPU is busy rather
+than risk an OOM in it. See `_cuda_skip_reason`.
+
+**When a CUDA cell fails inside Triton, the reason is not in the failure.** Inductor compiles kernels
+in worker processes whose stderr it discards, so the test shows `PassManager::run failed` and nothing
+of which kernel, which autotune config or what Triton's verifier said. `GEN3AI_COMPILE_DIAG=1` compiles
+the CUDA cells' kernels in the test's own process (`_cuda_compile`), so all of that lands in the
+failing test's captured stderr; it is slower, so it is a re-run switch, not the default:
+
+    GEN3AI_COMPILE_DIAG=1 GEN3AI_TEST_ALLOW_GPU=1 pytest src/agents/model/extractor_compiles_test.py -q
 
 Costs, measured on an idle RTX 3080 Ti at the batch these tests use: cuda forward ~5 s / 552 MiB
 of process VRAM, cuda forward+backward ~57 s / ~1.1 GiB. The CPU cells are ~10 s each on a warm
@@ -54,6 +65,7 @@ the GPU from the whole suite so a stray `device="auto"` can never steal VRAM fro
 
     GEN3AI_TEST_ALLOW_GPU=1 pytest src/agents/model/extractor_compiles_test.py -q
 """
+import contextlib
 import inspect
 import os
 
@@ -158,6 +170,51 @@ _skip_cuda = pytest.mark.skipif(_cuda_skip_reason() is not None,
 # Small on purpose: these gates ask "does it lower", not "how fast is it". Batch 2 (not 1) keeps the
 # batch dim from being a degenerate broadcast that could hide a shape bug.
 _BATCH = 2
+
+# The re-run switch for a CUDA cell that failed inside Triton (module docstring).
+_COMPILE_DIAG_ENV = "GEN3AI_COMPILE_DIAG"
+
+
+@contextlib.contextmanager
+def _cuda_compile(diag=None):
+    """Around a CUDA cell's compile. With ``GEN3AI_COMPILE_DIAG=1`` the kernels compile in THIS process
+    (Inductor's ``compile_threads`` = 1: no worker pool), so Triton's own diagnostic reaches the test's stderr;
+    without it a failure is re-raised carrying a note that names the switch, because the default failure does
+    not say why it failed."""
+    import torch._inductor.config as inductor_config
+    diag = os.environ.get(_COMPILE_DIAG_ENV) == "1" if diag is None else diag
+    try:
+        if diag:
+            with inductor_config.patch(compile_threads=1):
+                yield
+        else:
+            yield
+    except Exception as exc:
+        if not diag:
+            exc.add_note(f"Inductor's compile workers discard their stderr: re-run this cell with "
+                         f"{_COMPILE_DIAG_ENV}=1 to see which kernel and autotune config failed, and why.")
+        raise
+
+
+def test_the_compile_diag_switch_compiles_in_process_and_a_plain_failure_names_it():
+    """The switch's two halves, on the CPU: on, Inductor has ONE compile thread inside the block (what
+    `AsyncCompile.use_process_pool` reads, live, to stay off its worker pool) and the outer setting back after;
+    off, nothing is patched and a failure carries the note naming the switch."""
+    import torch._inductor.config as inductor_config
+    with inductor_config.patch(compile_threads=8):      # a known parallel setting, whatever the box's is
+        with _cuda_compile(diag=True):
+            assert inductor_config.compile_threads == 1
+        assert inductor_config.compile_threads == 8
+        with pytest.raises(RuntimeError) as plain:
+            with _cuda_compile(diag=False):
+                assert inductor_config.compile_threads == 8
+                raise RuntimeError("PassManager::run failed")
+        assert any(_COMPILE_DIAG_ENV in n for n in plain.value.__notes__)
+        with pytest.raises(RuntimeError) as shown:
+            with _cuda_compile(diag=True):
+                raise RuntimeError("PassManager::run failed")
+        assert not getattr(shown.value, "__notes__", [])
+        assert inductor_config.compile_threads == 8
 
 
 def test_species_posterior_matches_plain_softmax():
@@ -462,7 +519,7 @@ def test_production_arch_compiles_on_cuda():
     # max-HP epilogue fused into the speed mixture's fp64 cumsum, autotuned at XBLOCK 16, which only
     # 6B in (8, 16] asks for), the 2026-10-25 red; `triton_xblock16_remat_test.py` pins that bug on the CPU.
     obs = _obs(layout, "cuda", batch=MIN_BUCKET)
-    with torch.no_grad():
+    with torch.no_grad(), _cuda_compile():
         ref = fe(obs)
         got = compile_on(fe.forward, device="cuda")(obs)
     err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
@@ -491,17 +548,21 @@ def test_production_arch_compiles_to_one_graph_on_cuda():
 @_skip_compile
 @_skip_cuda
 def test_production_arch_compiles_forward_and_backward_on_cuda():
-    """CUDA cell 2 — the TRAINER's actual step, and the one this whole file exists to keep available.
+    """CUDA cell 2: the extractor in TRAIN mode, forward + backward, as the learner's compiled step (R1,
+    `compile_regions`) lowers it; the backward is AOTAutograd's graph, which no forward cell exercises.
 
-    Measured on this arch at batch 4096: eager 150.85 ms -> compiled 86.21 ms fwd+bwd (1.75x), which
-    at the ~89% train share of production wall is worth ~+60% end-to-end FPS. That lever is only
-    real while this test passes, and nothing else in the suite would notice it going away — the
-    trainer does not compile its forward today, so the loss would be silent until someone tried.
+    It runs at ``_BATCH`` = 2, a shape no launch compiles (R1 compiles the micro-batch), and that is on purpose:
+    6B = 12 rows autotune at ``XBLOCK = 16``, where Triton 3.4.0 fails a looped reduction with a ``[B, 6]``
+    pointwise chain fused in. This cell went red on exactly that on 2026-11-11 (the non-formula damage roll
+    with OUR max-HP chain, once `7a0153b46` floored the EV inside it); the fix is where the op reads OUR spread
+    (`damage_kinds.our_team_spread`), and `triton_xblock16_cat_read_test.py` pins the kernel on the CPU. A red
+    here with `PassManager::run failed` is most likely that class again: re-run with `GEN3AI_COMPILE_DIAG=1`.
     """
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
     fe, layout = _build_production_extractor()
     fe = fe.cuda()
     fe.train()
-    grads = _backward_through(fe, compile_on(fe.forward, device="cuda")(_obs(layout, "cuda")))
+    with _cuda_compile():
+        grads = _backward_through(fe, compile_on(fe.forward, device="cuda")(_obs(layout, "cuda")))
     _assert_real_gradient(fe, grads, "cuda fwd+bwd")

@@ -67,7 +67,9 @@ from typing import Any, Optional, Tuple
 import torch
 
 from agents.model.damage_op_layout import _DMG_CHIP_CAP, _DMG_CRIT_CAP
-from agents.observation.constants import CONDITION_DIM, POKEMON_CONDITION_OFFSET, TEAM_SIZE
+from agents.model.extractor_ctx import our_rows
+from agents.observation.constants import (CONDITION_DIM, POKEMON_CONDITION_OFFSET, POKEMON_SPREAD_DIM,
+                                          POKEMON_SPREAD_OFFSET, TEAM_SIZE)
 from agents.observation.types import TypeEncoder
 
 #: The TypeEncoder index of '???' — the type Beat Up has in battle (neutral row/column of every table).
@@ -125,6 +127,15 @@ def our_spread(spread: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.
     iv = (spread[..., _SPREAD_IV] * _OBS_IV_SCALE).round()
     ev_points = ((spread[..., _SPREAD_EV] * _OBS_EV_SCALE).round() / 4.0).floor()
     return iv, ev_points, spread[..., _SPREAD_NATURE]
+
+
+def our_team_spread(ctx: Any) -> torch.Tensor:
+    """OUR six mons' spread block ``[B, 6, POKEMON_SPREAD_DIM]``, `our_stats` / `our_spread`'s input for the whole
+    team: read off the REAL rows (`extractor_ctx.our_rows`), never as ``ctx.pokemon_part[:, :TEAM_SIZE, ...]``. The
+    values are the same; through a hypothesis context's block each of the IV and EV reads is a three-load select
+    chain, and the ``[B, 6]`` max-HP sum built on them is what Triton 3.4.0 fails to compile at ``XBLOCK = 16``
+    (B = 2: `triton_xblock16_cat_read_test.py`; identity: `our_rows_spelling_test.py`)."""
+    return our_rows(ctx)[..., POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
 
 
 def our_max_hp(base_hp: torch.Tensor, iv_hp: torch.Tensor, ev_points_hp: torch.Tensor) -> torch.Tensor:

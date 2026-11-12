@@ -161,7 +161,10 @@ neutral 0-EV estimate. The HP IV is taken as 31 (an HP-IV-30 Hidden Power set is
 **Our spread has ONE decode (`gen3_stat_ev_points_v1`, `gen3_nature_floor_v1`).** Every stat of OUR mon, Speed
 included, comes from `damage_kinds.our_spread` / `our_stats` / `our_max_hp`: the IV and EV back to their integers, the EV
 as ``⌊EV / 4⌋`` stat points and the nature truncated (`gen3_nature_stat`, ``tr(stat · 110 / 100)``), as Showdown's
-`statModify` does; our Shedinja's max HP is 1. **Every end-of-turn amount has ONE spelling (`gen3_residual_exact_v1`):**
+`statModify` does; our Shedinja's max HP is 1. The whole team's spread is read with `damage_kinds.our_team_spread(ctx)`
+(OUR rows off the REAL context, `extractor_ctx.our_rows`), never as ``ctx.pokemon_part[:, :TEAM_SIZE, …]``: the values
+are the same, but through a hypothesis context's cat the read is a kernel shape Triton 3.4.0 fails at B = 2
+(`../training/compile_flags.md` "Triton RemoveLayoutConversions"; `our_rows_spelling_test.py` pins both). **Every end-of-turn amount has ONE spelling (`gen3_residual_exact_v1`):**
 `damage_kinds.residual_points(maxhp, d)` = Showdown's integer ``max(1, ⌊maxhp / d⌋)`` for OUR mon's exact max HP,
 and `their_residual_frac(op, species_ids, d)` = the same rule's expectation over THEIR max-HP belief (a Shedinja:
 its one HP). Never write `* 252`, `ev / 4`, a nature column or multiplier, a residual's `/ 16` / `/ 8`, or

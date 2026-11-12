@@ -30,12 +30,11 @@ from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 
 import torch
 
-from agents.model.damage_kinds import our_stats
+from agents.model.damage_kinds import our_stats, our_team_spread
 from agents.model.damage_op_layout import (_COND_PAR_IDX, _NAT_SPE)
 from agents.model.extractor_ctx import held_item_ids, item_unrevealed
 from agents.model.move_order import gen3_final_speed, p_first_same_priority
-from agents.observation.constants import (POKEMON_CONDITION_OFFSET, POKEMON_SPREAD_DIM,
-                                          POKEMON_SPREAD_OFFSET, TEAM_SIZE)
+from agents.observation.constants import POKEMON_CONDITION_OFFSET, TEAM_SIZE
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -62,8 +61,7 @@ class DamageOperatorSpeed:
         B = ctx.batch_size
         ar = torch.arange(B, device=ctx.device)
         base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                               # [B,6,6]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        spread = our_team_spread(ctx)
         stat = our_stats(base, spread)[1][..., _NAT_SPE]                                       # [B,6]
         if stage_rows is None:
             stage_rows = torch.zeros_like(stat)

@@ -51,7 +51,8 @@ class OppPresence(NamedTuple):
 
 def hypothesis_ctx(ctx: ExtractorContext, hs: HypothesisSet, layout: Dict[str, Any]) -> ExtractorContext:
     """``ctx`` with every hidden opponent slot's per-mon row replaced by its hypothesis's dex row and
-    the categorical ids re-sliced from the substituted block; every mask and index is the REAL one."""
+    the categorical ids re-sliced from the substituted block; every mask and index is the REAL one. OUR rows are
+    untouched, and ``real`` names the context to read them from without the cat (`extractor_ctx.our_rows`)."""
     opp = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE]
     rows = hs.slot_rows.to(opp.dtype)
     sub = torch.where(hs.slot_is_hypothesis.unsqueeze(-1), rows, opp)
@@ -62,7 +63,8 @@ def hypothesis_ctx(ctx: ExtractorContext, hs: HypothesisSet, layout: Dict[str, A
         all_move_type_ids=ids["all_move_type_ids"], item_ids=ids["item_ids"],
         ability1_ids=ids["ability1_ids"], ability2_ids=ids["ability2_ids"],
         type1_ids=ids["type1_ids"], type2_ids=ids["type2_ids"], hp_probs=ids["hp_probs"],
-        hp_and_active=ids["hp_and_active"], last_move_ids=ids["last_move_ids"])
+        hp_and_active=ids["hp_and_active"], last_move_ids=ids["last_move_ids"],
+        real=ctx if ctx.real is None else ctx.real)
 
 
 def splice_hypothesis_tokens(role_tokens: torch.Tensor, opp_hyp: torch.Tensor,

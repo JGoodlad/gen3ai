@@ -1163,27 +1163,48 @@ at B = 1 and then serve B = 16 / 32 / 64 COMPILED (it fails on the fallback warn
 option the production extractor's CPU compile FAILS in g++ at B = 16 and B = 64 no-grad and at B = 16 with grad, so
 `maybe_compile_extractor`'s first B >= 16 call had been FALLING BACK to eager since the end state became production.
 
-### Triton RemoveLayoutConversions at XBLOCK 16 (triton 3.4.0, 2026-10-25): the CUDA inference compile at B = 2 only
+### Triton RemoveLayoutConversions at XBLOCK 16 (triton 3.4.0): the CUDA compiles at B = 2
 
-`extractor_compiles_test.py::test_production_arch_compiles_on_cuda` (the CUDA eval / no-grad cell) failed at B = 2 in the
-2026-10-25 window (`InductorError … make_ttgir … PassManager::run failed`); its last pass was 2026-10-04 and it was skipped
-(busy card) until 10-21, so no window saw it go red.
+**The bug.** Triton 3.4.0's `TritonGPURemoveLayoutConversions` rejects some autotune configs of a LOOPED reduction that has a
+`[B,6]` pointwise chain fused in as its `[XBLOCK, 1]` prologue or epilogue ("operand #N does not dominate this use"; pytest
+shows only `InductorError … make_ttgir … PassManager::run failed`). `XBLOCK = 16` is autotuned only when the `6B` rows round to
+16, i.e. B = 2. Triton 3.1.0 compiles both pinned kernels: a Triton regression. It has reached two cells of
+`extractor_compiles_test.py`, each through its own kernel. Both causes were found on the CPU (Inductor's Triton codegen driven
+with fake device properties, every kernel compiled for sm_86 by `triton.compile`, which needs no GPU):
 
-**The cause** (found on the CPU: Inductor's Triton codegen driven with fake device properties, every kernel compiled for sm_86
-by `triton.compile`, which needs no GPU; `designs/research_state/measurements/triton_xblock16_2026-10-25/`): at B = 2, 2 of the
-forward's 656 kernels fail (0 at B = 4, 8, 64, 256), both `triton_red_fused__to_copy_add_clamp_cumsum_index_mul_ones_like_reciprocal_sub_where`:
-the speed mixture's fp64 cumsum (`damage_op_speed._opp_speed_mix`) with the `[B,6]` Beat-Up / max-HP pointwise epilogue
-(`damage_kinds.beatup_base_def`) fused in, which makes that epilogue `[XBLOCK, 1]`-shaped. Every autotune config with `XBLOCK =
-16` fails Triton's `TritonGPURemoveLayoutConversions` ("operand #1 does not dominate this use"); `XBLOCK = 16` is chosen only
-when the `6B` rows round to 16, i.e. B = 2. The epilogue alone fails (`triton_xblock16_remat_test.py` pins it, routine tier) and
-the fp64 is not the cause; triton 3.1.0 compiles the pinned kernel: a Triton regression, reaching this graph with the discrete
-speed mixture (the op's only speed rule since legacy deletion U1, config v156). Confirmed on the card
-(`~/gen3ai_archive/extractor_crash_2026-10-25/`).
+| | 2026-10-25 | 2026-11-11 |
+|---|---|---|
+| cell | `test_production_arch_compiles_on_cuda` (no-grad) | `test_production_arch_compiles_forward_and_backward_on_cuda` |
+| kernel | the speed mixture's fp64 cumsum (`damage_op_speed._opp_speed_mix`) + the Beat-Up / max-HP epilogue (`damage_kinds.beatup_base_def`) | the non-formula roll (`damage_kinds.nonformula_rolls`, looped over the 400 moves) + OUR max-HP chain (`our_max_hp`) |
+| failing (CPU screen) | B = 2: 2 of 656 kernels, every `XBLOCK = 16` config | B = 2: 1 of 1,059, configs (XBLOCK, R0_BLOCK, warps) (16, 8, 2) and (16, 64, 8). B = 4: the same kernel, (32, 8, 2) and (32, 64, 16). B = 6: 0 (the prologue is not fused there); B = 8: 0 |
+| since | the discrete speed mixture (config v156) | `7a0153b46` (`gen3_stat_ev_points_v1`: the EV floor joined the chain); `96f661e90` has 0 |
+| fix | the CELL runs at `MIN_BUCKET`; kernels untouched | the READ: `damage_kinds.our_team_spread` (below); the cell stays at B = 2 |
+| pin (routine tier, CPU) | `triton_xblock16_remat_test.py` | `triton_xblock16_cat_read_test.py` |
+| record | `designs/research_state/measurements/triton_xblock16_2026-10-25/`; confirmed on the card | `designs/research_state/measurements/triton_xblock16_cat_read_2026-11-11/`; the card run is OPEN |
+
+**The 11-11 fix is where OUR spread is read.** The chain read OUR IV / EV as ``ctx.pokemon_part[:, :TEAM_SIZE, …]`` on a
+hypothesis context, whose block is ``cat([ours, where(hidden, dex_row, theirs)])``: Inductor lowers the cat pointwise, so each
+read was three masked loads and a select chain, and with those two `XBLOCK = 16` configs fail. `our_team_spread(ctx)` reads OUR
+rows off the REAL context (`extractor_ctx.our_rows`; a hypothesis context carries `real`), where the same kernel compiles. No
+number changes: `our_rows_spelling_test.py` swaps the old spelling back at all five sites and compares the damage op's block,
+the enriched tokens, every stashed tensor and the extractor's outputs bit for bit (168 tensors), and refuses a new read through
+the block. No reassociation inside `our_max_hp` compiled, so the fix cannot sit in the arithmetic. With the fix the CPU screen
+shows 0 failing kernels for the forward + backward at B = 2, 3, 4, 5, 6 and 8 and for the no-grad forward at B = 2, 3, 4, 8 and
+16 (**UNVERIFIED on the card**; the screen covers the extractor's graphs only, never T2's policy graph or the bf16 R1).
+
+**The direct read is necessary, not a guarantee.** At the fix Inductor forms the same fused kernel at each of B = 2 to 6 and it
+compiles at all nine `XBLOCK` 16 / 32 / 64 configs. The pin's cut-down kernel shows why that is empirical: with the pre-fix
+kernel's stored partial kept, it still fails at 32 and 64 with the direct read; with the store dropped it compiles in both
+spellings. The failing shape is a stored prologue value whose chain feeds the loop, not a block size. A new
+`PassManager::run failed` is this class again. **Read the reason first:** Inductor's compile workers discard their stderr, so
+re-run the red cell with `GEN3AI_COMPILE_DIAG=1` (`extractor_compiles_test._cuda_compile`: the compile runs in the pytest
+process and Triton's verifier message reaches the terminal); the record's `triton_diag_plugin.py` also names the kernel and
+recompiles each config alone.
 
 **No launch is at risk.** The served forward is compiled only at T2's buckets, `>= MIN_BUCKET = 8` by default
-(`rust_rollout/build.py`; a smaller `--t2-buckets` would fail LOUD at T2 startup, `suppress_errors` off), and R1 compiles a
-train-mode forward + backward. **The fix** is the cell's shape: it runs at `MIN_BUCKET`, the smallest shape a default launch
-compiles; production kernels and numerics are untouched. When the pin reports the bug lifted, the cell may return to `_BATCH`.
-**B = 1 fails differently** (UNVERIFIED on the card): 33 kernels with `xnumel = 1` die in Triton's frontend
+(`rust_rollout/build.py`; a smaller `--t2-buckets` would fail LOUD at T2 startup, `suppress_errors` off), and R1 compiles its
+forward + backward at ONE row count, `batch_size` (2,048 in production). The no-grad cell stays at `MIN_BUCKET`: on 2026-11-11 the CPU screen shows 0 failing kernels for the
+no-grad forward at B = 2, before and after the fix, but its return to `_BATCH` needs the card.
+**B = 1 fails differently** (UNVERIFIED on the card): 34 kernels with `xnumel = 1` (33 before the fix) die in Triton's frontend
 (`tl.broadcast_to` of a constant index: `'constexpr_type' object has no attribute 'is_block'`). Nothing compiles the extractor
 at B = 1 on CUDA today; a new CUDA B = 1 compile (a `--t2-buckets 1`) must be proven on the card first.

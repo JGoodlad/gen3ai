@@ -1,0 +1,513 @@
+{
+ "signature": {
+  "in_out_ptr0": "*fp32",
+  "in_out_ptr1": "*fp32",
+  "in_ptr0": "*fp32",
+  "in_ptr1": "*i1",
+  "in_ptr2": "*fp32",
+  "in_ptr3": "*fp32",
+  "in_ptr4": "*fp32",
+  "in_ptr5": "*i64",
+  "in_ptr6": "*fp32",
+  "in_ptr7": "*fp32",
+  "in_ptr8": "*fp32",
+  "in_ptr9": "*i64",
+  "in_ptr10": "*fp32",
+  "in_ptr11": "*fp32",
+  "in_ptr12": "*fp32",
+  "in_ptr13": "*fp32",
+  "in_ptr14": "*fp32",
+  "in_ptr15": "*i64",
+  "in_ptr16": "*fp32",
+  "in_ptr17": "*fp32",
+  "in_ptr18": "*fp32",
+  "in_ptr19": "*fp32",
+  "in_ptr20": "*i64",
+  "in_ptr21": "*fp32",
+  "in_ptr22": "*fp32",
+  "in_ptr23": "*fp32",
+  "in_ptr24": "*fp32",
+  "in_ptr25": "*fp32",
+  "out_ptr0": "*i1",
+  "out_ptr1": "*fp32",
+  "out_ptr5": "*fp32",
+  "out_ptr6": "*fp32",
+  "out_ptr7": "*fp32",
+  "out_ptr17": "*fp32",
+  "out_ptr18": "*fp32",
+  "out_ptr30": "*fp32",
+  "out_ptr31": "*fp32",
+  "out_ptr32": "*fp32",
+  "out_ptr33": "*fp32",
+  "out_ptr34": "*fp32",
+  "out_ptr35": "*fp32",
+  "out_ptr36": "*fp32",
+  "out_ptr37": "*fp32",
+  "out_ptr38": "*fp32",
+  "out_ptr39": "*fp32",
+  "out_ptr40": "*fp32",
+  "out_ptr41": "*fp32",
+  "out_ptr42": "*fp32",
+  "out_ptr43": "*fp32",
+  "out_ptr44": "*fp32",
+  "xnumel": "i32",
+  "r0_numel": "i32",
+  "XBLOCK": "constexpr",
+  "R0_BLOCK": "constexpr"
+ },
+ "constants": {},
+ "attrs": [
+  [
+   [
+    0
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    1
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    2
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    3
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    4
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    5
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    6
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    7
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    8
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    9
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    10
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    11
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    12
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    13
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    14
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    15
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    16
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    17
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    18
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    19
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    20
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    21
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    22
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    23
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    24
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    25
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    26
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    27
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    28
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    29
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    30
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    31
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    32
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    33
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    34
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    35
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    36
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    37
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    38
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    39
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ],
+  [
+   [
+    51
+   ],
+   [
+    [
+     "tt.divisibility",
+     16
+    ]
+   ]
+  ]
+ ],
+ "configs": []
+}

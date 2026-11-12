@@ -18,8 +18,6 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional, Tuple, TYPE_CHECKING
 from agents.observation.constants import (
     TEAM_SIZE,
-    POKEMON_SPREAD_OFFSET,
-    POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
     POKEMON_COUNTER_OFFSET,  # noqa: F401  (re-export — consequence_edges_test imports it from here)
     )
@@ -138,8 +136,8 @@ class OpStashes:
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather_beatup, gather_bp,
-                                       gather_nonformula, nonformula_rolls, our_hp_points, our_stats, override_rolls,
-                                       TheirHp, their_ko_given_hit, their_max_hp)
+                                       gather_nonformula, nonformula_rolls, our_hp_points, our_stats, our_team_spread,
+                                       override_rolls, TheirHp, their_ko_given_hit, their_max_hp)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.damage_op_speed import DamageOperatorSpeed
 from agents.model.extractor_ctx import held_item_ids, item_unrevealed
@@ -915,8 +913,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
 
         # --- Defenders = our 6 mons (revealed → REAL spread reconstructed from the obs) ---
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]          # [B,6,6]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        spread = our_team_spread(ctx)
         maxhp, d_st = our_stats(d_base, spread)                           # [B,6], [B,6,5] [atk,def,spa,spd,spe]
         def_stat, spd_stat = d_st[..., 1], d_st[..., 3]                   # [B,6]
         # OUR ACTIVE defender's DEFENSIVE boosts (only the active mon carries boosts in gen3 — bench reset).

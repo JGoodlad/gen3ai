@@ -105,6 +105,20 @@ def held_item_ids(ctx: 'ExtractorContext') -> torch.Tensor:
     return torch.where(gone, torch.zeros_like(ctx.item_ids), ctx.item_ids)
 
 
+def our_rows(ctx: 'ExtractorContext') -> torch.Tensor:
+    """``[B, 6, POKEMON_FULL_DIM]``: OUR six per-mon rows, read off the REAL context.
+
+    The same values as ``ctx.pokemon_part[:, :TEAM_SIZE]`` on every context: a hypothesis context
+    (`hypothesis_tokens.hypothesis_ctx`) substitutes OPPONENT rows only. The spelling is the point. A hypothesis
+    context's block is ``cat([ours, where(hidden, dex_row, theirs)])``, and a compiled read of OUR rows through it
+    keeps the cat's dead opponent branch in the kernel (three masked loads and a select chain per field). That shape
+    in a ``[B, 6]`` chain is what Triton 3.4.0 fails to compile at ``XBLOCK = 16``, i.e. at B = 2
+    (`triton_xblock16_cat_read_test.py`, `designs/training/compile_flags.md`), so the op's exact-stat chain
+    (`damage_kinds.our_team_spread`) reads OUR rows here."""
+    real = getattr(ctx, "real", None)
+    return (ctx if real is None else real).pokemon_part[:, :TEAM_SIZE]
+
+
 def item_unrevealed(ctx: 'ExtractorContext') -> torch.Tensor:
     """``[B, 12]`` float: 1.0 where nothing is known of the mon's item (the all-zero item id: an opponent's item not
     yet revealed) — the branch that takes the species' Smogon prior. A consumed item is NOT unrevealed (its id stays):
@@ -293,6 +307,10 @@ class ExtractorContext:
     # gen3_obs_facts_v1: the [B, OBS_FACTS_DIM] OBS-FACTS block (None on a pre-facts layout). Read only
     # by `ObsFactsInject` under `--obs-facts v1`; its move id goes through the move embedding.
     obs_facts: "Optional[torch.Tensor]" = None
+    # A HYPOTHESIS context's REAL context (`hypothesis_tokens.hypothesis_ctx` sets it; None on a real context). The
+    # substitution touches OPPONENT rows only, so `our_rows` reads OURS off the real one, past the spliced block's
+    # cat. To change OUR rows, change the real context and derive the hypothesis context again.
+    real: "Optional[ExtractorContext]" = None
 
 
 class Embeddings(torch.nn.Module):
