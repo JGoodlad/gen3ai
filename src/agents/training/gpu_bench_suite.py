@@ -728,6 +728,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     return int(a.fn(a) or 0)
 
 
+def sigterm_exit(argv: Sequence[str]) -> Any:
+    """The SIGTERM handler `__main__` installs: leave through `SystemExit(143)`, so every `finally` runs. A PHASE
+    process compiles its update under the compile lock, where a plain Python handler is rejected inside a compiled
+    call and never runs (`compile_control.lock_immune`): its handler is registered immune. The driver compiles
+    nothing and stays torch-free."""
+    def handler(*_: Any) -> None:
+        sys.exit(143)
+
+    if list(argv[:1]) in (["_phase"], ["_collect_worker"]):
+        from agents.model.compile_control import lock_immune
+        return lock_immune(handler)
+    return handler
+
+
 if __name__ == "__main__":
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    signal.signal(signal.SIGTERM, sigterm_exit(sys.argv[1:]))
     sys.exit(main())

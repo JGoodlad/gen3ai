@@ -331,10 +331,15 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         # cycle is already running. Driven by the launcher's "force eval" button (SIGUSR2).
         request_forced_eval()
 
+    # EVERY handler is registered through `lock_immune`: a signal that lands while a compiled call is in
+    # flight under the compile lock runs its handler inside that call, where dynamo rejects a plain
+    # Python frame, so the handler never ran and the sentinel exited FATAL with no save (rb_b1c_s5101).
+    from agents.model.compile_control import lock_immune
+
     # The stop signals only RECORD the request (`DeferredAbort.request`: attribute stores + raw
     # `os.write`s); the main thread runs the abort at its next safe point (gen3_deferred_abort_v1).
-    signal.signal(signal.SIGINT,  lambda sig, frame: abort.request("SIGINT received"))
-    signal.signal(signal.SIGTERM, lambda sig, frame: abort.request("SIGTERM received"))
+    signal.signal(signal.SIGINT, lock_immune(lambda sig, frame: abort.request("SIGINT received")))
+    signal.signal(signal.SIGTERM, lock_immune(lambda sig, frame: abort.request("SIGTERM received")))
     # SIGHUP = the controlling terminal/window closed. The launcher spawns the child in the
     # SAME session (no start_new_session), so closing the tmux window SIGHUPs the whole group;
     # without this handler the child died mid-iteration with NO checkpoint (lost ~1h once).
@@ -342,12 +347,13 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     # window close costs nothing. (Running the launcher under `nohup` also prevents the SIGHUP;
     # this is the in-code backstop for when it isn't.)
     if hasattr(signal, "SIGHUP"):
-        signal.signal(signal.SIGHUP, lambda sig, frame: abort.request("SIGHUP received (terminal/window closed)"))
+        signal.signal(signal.SIGHUP, lock_immune(
+            lambda sig, frame: abort.request("SIGHUP received (terminal/window closed)")))
     # SIGUSR1 = the launcher's "forced checkpoint" key — RECORDED, saved at the next safe point (P10-A2:
     # the in-handler save could tear a checkpoint mid-update, exactly as the abort's could).
-    signal.signal(signal.SIGUSR1, lambda sig, frame: abort.request_checkpoint("SIGUSR1 received"))
+    signal.signal(signal.SIGUSR1, lock_immune(lambda sig, frame: abort.request_checkpoint("SIGUSR1 received")))
     # SIGUSR2 = the launcher's "force eval" button — run an off-cadence eval cycle now.
-    signal.signal(signal.SIGUSR2, _forced_eval)
+    signal.signal(signal.SIGUSR2, lock_immune(_forced_eval))
     if start_watchdog:
         abort.start()
     return abort

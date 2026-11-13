@@ -266,3 +266,41 @@ def test_render_markdown_one_row_per_card_and_reference_reads_one():
     md2 = S.render_markdown([rows[0], no_collect], rows[0]).splitlines()
     assert "| 2.00x |" in md2[3] and md2[3].rstrip().endswith("| — |")     # the update ratio needs no collect read
     assert "OOM" in md[2]
+
+
+# ------------------------------------------------------------------------------- SIGTERM inside a compiled update
+@pytest.mark.filterwarnings("ignore:Dynamo does not know how to trace the builtin")
+def test_a_phase_process_SIGTERM_inside_a_compiled_call_under_the_lock_still_exits_143():
+    """A phase compiles its update under the compile lock, where a plain Python signal handler is rejected inside
+    the compiled call (`compile_control.lock_immune`): the phase's handler must still run and leave through
+    `SystemExit(143)`. Fails on a revert to the plain lambda (the call raises "Detected recompile ..." instead).
+    The signal is raised by the compiled function at itself, so the outcome is decided by call order."""
+    import signal
+
+    import torch
+
+    def update(x):
+        y = x + 1
+        signal.raise_signal(signal.SIGTERM)       # a graph break: run natively inside the compiled frame
+        return y * 2
+
+    assert not hasattr(S.sigterm_exit(["run", "--out", "d"]), "_torchdynamo_orig_callable"), \
+        "the driver compiles nothing: its handler stays plain (and the driver torch-free)"
+    torch._dynamo.reset()
+    prev = signal.getsignal(signal.SIGTERM)
+    try:
+        compiled = torch.compile(update, backend="eager")
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        compiled(torch.ones(3))
+        compiled(torch.ones(3))                   # both halves compile BEFORE the lock, as a prewarm does
+        signal.signal(signal.SIGTERM, S.sigterm_exit(["_phase", "update_bf16", "cfg.json"]))
+        torch.compiler.set_stance("fail_on_recompile")
+        try:
+            with pytest.raises(SystemExit) as e:
+                compiled(torch.ones(3))
+            assert e.value.code == 143
+        finally:
+            torch.compiler.set_stance("default")
+    finally:
+        signal.signal(signal.SIGTERM, prev)
+        torch._dynamo.reset()

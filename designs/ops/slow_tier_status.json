@@ -668,18 +668,18 @@
   },
   "src/agents/model/compile_cache_shared_test.py::test_T2s_startup_parity_gate_runs_every_slot_x_bucket_on_a_hit": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:42:10Z",
-   "duration_s": 2.76,
-   "contention": 1.57,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 5.11,
+   "contention": 1.97,
    "detail": ""
   },
   "src/agents/model/compile_cache_shared_test.py::test_two_real_processes_share_one_compile": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:42:10Z",
-   "duration_s": 15.7,
-   "contention": 1.46,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 19.05,
+   "contention": 1.8,
    "detail": ""
   },
   "src/agents/model/compile_cache_test.py::test_a_real_compile_lands_in_the_run_cache": {
@@ -692,90 +692,90 @@
   },
   "src/agents/model/compile_canary_test.py::test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 32.75,
-   "contention": 1.69,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 31.18,
+   "contention": 1.72,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_FATAL_record_carries_the_watch_of_the_scheduled_check_and_of_BOTH_confirmations": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 32.22,
-   "contention": 1.9,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 25.19,
+   "contention": 1.6,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_PASS_record_carries_the_watch_lists_per_parameter_numbers": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 33.39,
-   "contention": 1.79,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 40.77,
+   "contention": 2.21,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_PERSISTENT_fault_is_CONFIRMED_and_FATAL_in_the_SAME_update_with_a_checkpoint": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 27.89,
-   "contention": 1.38,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 25.37,
+   "contention": 1.74,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_backward_only_drift_is_caught_on_EVERY_canary_including_the_first": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 29.04,
-   "contention": 1.66,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 27.09,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_disagreement_carried_by_ONE_row_does_NOT_confirm_itself": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 34.28,
-   "contention": 1.38,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 47.72,
+   "contention": 1.92,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_healthy_compiled_learner_passes_with_the_gradient_checked": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 30.99,
-   "contention": 1.51,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 29.99,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_one_shot_BLIP_warns_counts_and_training_continues": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 34.51,
-   "contention": 1.38,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 28.51,
+   "contention": 1.73,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_u1700_shaped_EAGER_tail_on_the_real_learner_reads_PASS_with_a_yardstick_event": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 22.07,
-   "contention": 1.38,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 25.4,
+   "contention": 1.6,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_the_cadence_runs_every_N_updates_and_writes_nothing_between": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 29.66,
-   "contention": 1.42,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 27.91,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_the_canary_changes_nothing_about_training": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 29.33,
-   "contention": 1.38,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 26.58,
+   "contention": 1.74,
    "detail": ""
   },
   "src/agents/model/compile_regions_bf16_test.py::test_a_COMPILED_error_beyond_K_x_eager_bf16s_own_error_is_the_typed_FATAL": {
@@ -1224,10 +1224,10 @@
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cpu": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T05:08:05Z",
-   "duration_s": 279.2,
-   "contention": 1.51,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 293.86,
+   "contention": 1.73,
    "detail": ""
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cuda": {
@@ -1237,8 +1237,8 @@
    "duration_s": 181.38,
    "contention": 1.01,
    "detail": "",
-   "last_skipped_at": "2026-11-12T05:08:05Z",
-   "last_skipped_commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
+   "last_skipped_at": "2026-11-13T03:02:40Z",
+   "last_skipped_commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
    "last_skip_detail": ""
   },
   "src/agents/model/cpu_compile_sites_slow_test.py::test_the_opponent_compile_serves_the_failing_batches_compiled": {
@@ -2201,18 +2201,18 @@
   },
   "src/agents/training/gpu_bench_suite_integration_test.py::test_quick_suite_end_to_end": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 105.64,
-   "contention": 1.4,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 139.43,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/gpu_bench_suite_integration_test.py::test_update_cell_quick": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 8.14,
-   "contention": 1.4,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 16.08,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/training/host_sync_guard_test.py::test_a_diagnostics_update_batches_every_probe_read": {
@@ -2423,26 +2423,26 @@
   },
   "src/agents/training/loop_hooks_test.py::test_learn_opens_the_declared_points_in_their_nesting": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 11.83,
-   "contention": 2.08,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 12.24,
+   "contention": 1.6,
    "detail": ""
   },
   "src/agents/training/loop_hooks_test.py::test_the_per_update_region_call_window_is_reset_by_the_update_hook": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 11.88,
-   "contention": 1.96,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 12.24,
+   "contention": 1.6,
    "detail": ""
   },
   "src/agents/training/loop_hooks_test.py::test_the_real_freeze_guard_registers_into_the_table": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 10.64,
-   "contention": 1.86,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 12.3,
+   "contention": 1.6,
    "detail": ""
   },
   "src/agents/training/matchup_spec_test.py::test_default_spec_builders_match_legacy": {
@@ -5007,10 +5007,10 @@
   },
   "src/main/train/fatal_config_exits_integration_test.py::test_a_bot_weights_typo_exits_FATAL_CONFIG_not_CRASH": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T17:32:55Z",
-   "duration_s": 9.55,
-   "contention": 1.34,
+   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
+   "at": "2026-11-13T03:02:40Z",
+   "duration_s": 6.85,
+   "contention": 1.87,
    "detail": ""
   },
   "src/main/train/fresh_build_threads_test.py::test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads[fixture]": {
@@ -5902,5 +5902,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-13T02:11:59Z"
+ "last_written": "2026-11-13T03:02:40Z"
 }

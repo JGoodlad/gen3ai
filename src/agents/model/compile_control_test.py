@@ -682,6 +682,55 @@ def test_contract_stance_rejects_a_recompile_AND_a_new_frame_at_the_call_site_an
         torch._dynamo.reset()
 
 
+@pytest.mark.skipif(_MODE != "stance", reason="the fail_on_recompile stance exists from torch 2.6")
+@pytest.mark.filterwarnings("ignore:Dynamo does not know how to trace the builtin")
+def test_contract_a_signal_handler_inside_a_locked_compiled_call_is_REJECTED_unless_lock_immune():
+    """torch 2.8: under `fail_on_recompile` a signal that lands INSIDE a compiled call has its Python handler
+    rejected like any uncompiled frame — the body never runs and the rejection surfaces in the call (rb_b1c_s5101:
+    the SIGTERM's abort request was lost and the sentinel exited FATAL with no save). `lock_immune(handler)` runs
+    it, its plain-Python callee included, and the call returns. The first half is the CONTROL: when torch stops
+    rejecting, `lock_immune` is no longer needed. The signal is raised by the compiled function at itself
+    (`raise_signal` is a graph break, run natively inside the compiled frame), so the outcome is decided by call
+    order."""
+    import signal
+    torch._dynamo.reset()
+    prev = signal.getsignal(signal.SIGUSR1)
+    seen = []
+
+    def callee(tag):
+        seen.append(tag)
+
+    def handler(_sig, _frame):
+        callee("ran")
+
+    def g(x):
+        y = x + 1
+        signal.raise_signal(signal.SIGUSR1)
+        return y * 2
+
+    try:
+        cg = torch.compile(g, backend="eager")
+        signal.signal(signal.SIGUSR1, signal.SIG_IGN)
+        cg(torch.ones(3))                                     # both halves of the frame compile BEFORE the lock
+        cg(torch.ones(3))
+        torch.compiler.set_stance("fail_on_recompile")
+        try:
+            signal.signal(signal.SIGUSR1, handler)
+            with pytest.raises(RuntimeError) as e:
+                cg(torch.ones(3))
+            assert find_recompile_error(e.value) is e.value and seen == []
+            signal.signal(signal.SIGUSR1, cc.lock_immune(handler))
+            assert torch.equal(cg(torch.ones(3)), torch.full((3,), 4.0)) and seen == ["ran"]
+            with pytest.raises(RuntimeError):                 # and the lock is still on after the handler
+                cg(torch.ones(3, 3))
+            assert seen == ["ran"]
+        finally:
+            torch.compiler.set_stance("default")
+    finally:
+        signal.signal(signal.SIGUSR1, prev)
+        torch._dynamo.reset()
+
+
 def test_contract_graph_counter_entry_list_and_reset():
     from torch._dynamo.utils import counters
     torch._dynamo.reset()

@@ -443,6 +443,14 @@ snapshot ladder and opponents are other processes with a fresh dynamo. `rank_pro
 inside the compiled frame. A launcher restart is a fresh process (a fresh dynamo cache, gate and lock; the on-disk cache is the
 run's own, reused only under a matching stamp).
 
+**A signal under the lock.** While a compiled call is in flight, the stance rejects every Python frame that is neither
+cached nor skipped by dynamo's rules (torch's own), and a signal handler runs as such a frame: its body never ran and
+the sentinel exited FATAL with no save (`rb_b1c_s5101`, 2026-11-12, a SIGTERM mid-update). Every signal handler of a
+process that takes the lock is registered through `compile_control.lock_immune` (`torch._dynamo.disable`: the frame
+callback is off for the handler's whole extent, callees included); `main/train/signals_under_compile_lock_test.py`
+delivers each trainer signal inside a locked compiled call. Not covered: an own-code `__del__` that first runs there is
+dropped ("Exception ignored", the call goes on).
+
 **The behavioural backstop, independent of dynamo** (`TrainMsWatch`): the baseline is the median `train/train_ms` of the
 first 5 post-lock updates after the process's first update (which runs every diagnostic probe), then FROZEN;
 `train_ms > 1.4x` it for 3 consecutive updates prints `⚠️ [COMPILE REGRESSION?] …` once and sets
@@ -465,7 +473,8 @@ The 2.8 differences that matter: `config.cache_size_limit` is an alias of `confi
 **Tests** (`compile_control_test.py`, CPU with dynamo's `eager` backend, since the cache, guards, limit and recompile path are
 dynamo's): >8 signatures trip the detector; after the lock a new shape raises the typed FATAL at the call site; a SWALLOWED
 `RecompileError` and a late FIRST compile are caught; the healthy two-shape alternation locks clean; **the sentinel changes no
-numerics** (bit-identical on vs off); the version refusal and the hash tripwire.
+numerics** (bit-identical on vs off); the version refusal and the hash tripwire; a handler inside a locked call is rejected
+unless `lock_immune`.
 
 History: archive, same heading (why the reset, with its entry-count table; the end-to-end smoke; the full late-shape table
 with the iteration-1 signature found 2026-09-30; the per-torch rows and the 2.5.1 mode).

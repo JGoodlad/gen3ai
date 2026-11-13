@@ -120,6 +120,9 @@ _STANCE_REJECT_TEXT = "Detected recompile when torch.compile stance is 'fail_on_
 #     CUDAGRAPH_RECORDING triggers (all late compile work, all counted after the lock).
 #   NEW: eval_frame._callback_from_stance (the "fail_on_recompile" branch) + eval_frame._set_stance
 #     + decorators.set_stance — what `stance` mode rests on.
+#   decorators.disable + DisableContext.__call__ — what `lock_immune` rests on: the wrapper's own frame is a
+#     torch frame (the stance callback skips it) and it turns the frame callback OFF for the handler's whole
+#     dynamic extent.
 _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
     "2.8.0+cu126": {
         "torch._dynamo.cache_size.compute_cache_size":
@@ -152,6 +155,10 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
             "ceac5c59c840964d6962b08228a9fa621367bd75c4b6507a1259c802f4867dcd",
         "torch._dynamo.eval_frame._set_stance":
             "b4abd0bdeab1342f21be96ae0bdf3b033e793398d2784877a4f100b17ba0ad14",
+        "torch._dynamo.decorators.disable":
+            "b75376dc9efadfe83b89aa22f165887dbdebc98c919211248ca1089a97a422af",
+        "torch._dynamo.eval_frame.DisableContext.__call__":
+            "78a40a0cbf00959d5ee8f8c8cdf7c68dec676ca56f49877d95d2df4b1d133018",
         "torch._dynamo.decorators.set_stance":
             "9ca4f2d3cc7aa6da5421e9723cb517ca44fcef8c010f6edbb9bc60b7d4ccb13b",
         "torch.compiler.set_stance":
@@ -171,6 +178,7 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
 # compile-config keys present, `compile_control_test` + `compile_sentinel_scope_test` + `compile_cache_test`
 # 68 / 69 green (the one red was the test that used "2.8.0+cu128" as its unknown-version example), and the
 # end-state learner compiled + passed the R1 startup parity gate there. So the row is an exact copy.
+# (`lock_immune`'s two rows were added 2026-11-12 and hashed in the local cu128 env: identical too.)
 _SUPPORTED["2.8.0+cu128"] = _SUPPORTED["2.8.0+cu126"]
 _SOURCE_HASHES["2.8.0+cu128"] = dict(_SOURCE_HASHES["2.8.0+cu126"])
 
@@ -335,6 +343,22 @@ def current_stance() -> str:
         return str(getattr(st, "stance", "default"))
     except Exception:                                     # pragma: no cover — introspection only
         return "unknown"
+
+
+def lock_immune(handler: Callable[..., Any]) -> Callable[..., Any]:
+    """`handler`, made safe to run ASYNCHRONOUSLY on the main thread while a compiled call is in flight
+    under the lock: register every signal handler of a process that takes the lock through this.
+
+    Why: under `fail_on_recompile` the frame callback stays armed for the whole compiled call, and it
+    REJECTS every Python frame that is neither in the cache nor torch's own (`_callback_from_stance`).
+    A signal handler is such a frame: its body never runs, the rejection surfaces inside the compiled
+    call, and the sentinel reads it as a recompile and exits FATAL_CONFIG with no save (rb_b1c_s5101,
+    2026-11-12: a SIGTERM mid-update lost the abort's checkpoint). `torch._dynamo.disable` wraps the
+    handler in a torch frame (skipped) that turns the callback off for the handler's whole dynamic
+    extent, so its callees are immune too, and restores it on the way out: the compiled call resumes
+    untouched. The callback is per thread, so a worker thread needs none of this."""
+    immune: Callable[..., Any] = torch._dynamo.disable(handler, recursive=True)
+    return immune
 
 
 def dynamo_graphs_total() -> int:

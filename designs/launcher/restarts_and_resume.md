@@ -52,7 +52,9 @@
   and the abort (pending-scalar dump, `final_model_interrupted.zip`, exit 15) runs on the main thread
   at the next loop event (a collector step, a rollout start / end, training start / end) or at
   every HOST STEP of the in-process Rust eval cycle (P10-A2), never inside an update or a logger
-  dump. A signal mid-update therefore waits for that update (`train_ms` median ~41 s, max 50.6 s at
+  dump. Every handler is registered through `compile_control.lock_immune`: a signal that lands inside
+  a compiled update under the compile lock otherwise never reaches its handler, and the child exits
+  FATAL with no save (`designs/training/compile_flags.md`, "The compile sentinel"). A signal mid-update therefore waits for that update (`train_ms` median ~41 s, max 50.6 s at
   the production recipe, five `sizing_*` runs 2026-10-02/03); one mid-eval waits one host step. If no
   safe point comes within `SAFE_POINT_DEADLINE_SEC` (120 s: ~2x the worst measured stretch without
   one, ~58.5 s = that max + the ~8 s of loop around an update) a watchdog exits 15
