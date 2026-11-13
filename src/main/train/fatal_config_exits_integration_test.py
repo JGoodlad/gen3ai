@@ -15,6 +15,7 @@ import sys
 import pytest
 
 from main.exit_codes import TrainExitCode
+from utils.child_guard import guarded_popen
 from utils.contention import scale_timeout
 from utils.paths import repo_root, src_root
 
@@ -28,11 +29,11 @@ def _trainer(tmp_path, *args, timeout=600):
     """Run the real trainer entry point to its exit; return ``(rc, log_text)``."""
     log = tmp_path / "trainer.log"
     with open(log, "wb") as fh:
-        proc = subprocess.Popen([sys.executable, "-c", _RUNNER, "--debug", *args],
-                                stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                                cwd=str(repo_root()),
-                                env={**os.environ, "PYTHONPATH": str(src_root()),
-                                     "CUDA_VISIBLE_DEVICES": ""})
+        proc = guarded_popen([sys.executable, "-c", _RUNNER, "--debug", *args],
+                             stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                             cwd=str(repo_root()),
+                             env={**os.environ, "PYTHONPATH": str(src_root()),
+                                  "CUDA_VISIBLE_DEVICES": ""})
         try:
             rc = proc.wait(timeout=scale_timeout(timeout))
         finally:

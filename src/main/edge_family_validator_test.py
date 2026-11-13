@@ -20,12 +20,12 @@ the reject direction — which does exit immediately — is driven end to end.
 """
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 from agents.model.features_extractor import _EDGE_FAMILIES
 from main.train import entry_source
+from utils.child_guard import guarded_run
 from utils.paths import src_root
 
 _ENTRY = Path(__file__).with_name("train_rl_agent.py")   # still the process to RUN
@@ -80,8 +80,8 @@ def test_an_unimplemented_family_is_still_rejected():
     """
     env = {**os.environ,
            "PYTHONPATH": os.environ.get("PYTHONPATH", "") + os.pathsep + str(src_root())}
-    p = subprocess.run([sys.executable, str(_ENTRY), "--edge-bias-families", "d1,notafamily"],
-                       capture_output=True, text=True, timeout=120, env=env)
+    p = guarded_run([sys.executable, str(_ENTRY), "--edge-bias-families", "d1,notafamily"],
+                    capture_output=True, text=True, timeout=120, env=env)
     out = p.stdout + p.stderr
     assert _MARKER in out, f"a bogus family was accepted:\n{out[-600:]}"
     assert "notafamily" in out

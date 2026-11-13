@@ -54,6 +54,7 @@ import textwrap
 
 import pytest
 
+from utils.child_guard import guarded_run
 from utils.contention import scale_timeout
 from utils.paths import repo_path, repo_root, src_root
 
@@ -331,8 +332,8 @@ def test_a_debug_smoke_with_eval_runs_with_poke_env_blocked(tmp_path):
     env["GEN3AI_POKE_ENV_BLOCK_LOG"] = str(log)
     argv = [sys.executable, "-c", _RUNNER, "--debug", "--steps", "10000", "--debug-eval", "--eval-freq", "4000",
             "--run-name", "p1_blocked_smoke"]
-    proc = subprocess.run(argv, cwd=str(tmp_path), env=env, capture_output=True, text=True,
-                          stdin=subprocess.DEVNULL, timeout=scale_timeout(1500))
+    proc = guarded_run(argv, cwd=str(tmp_path), env=env, capture_output=True, text=True,
+                       stdin=subprocess.DEVNULL, timeout=scale_timeout(1500))
     assert proc.returncode == 0, f"smoke failed:\n{proc.stdout[-3000:]}\n{proc.stderr[-4000:]}"
     assert "Training complete" in proc.stdout and "[EVAL] step 4,000" in proc.stdout, proc.stdout[-2000:]
     assert not log.exists() or not log.read_text().strip(), log.read_text()

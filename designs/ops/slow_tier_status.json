@@ -3183,9 +3183,9 @@
   },
   "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
    "status": "pass",
-   "commit": "d79f08ec21dc9ff3c4b04ef704e996ebecdfd08e",
-   "at": "2026-11-12T04:28:31Z",
-   "duration_s": 175.22,
+   "commit": "5fecaee439a88f01fad17f46ffbce4102fc1b100",
+   "at": "2026-11-13T14:10:43Z",
+   "duration_s": 171.23,
    "contention": 1.0,
    "detail": ""
   },
@@ -3463,10 +3463,10 @@
   },
   "src/main/b1/resume_check_test.py::test_the_two_segment_smoke_finds_no_difference_between_phased_and_run_through": {
    "status": "pass",
-   "commit": "60efef08cc52157e35bbb109d49c6ef84cb4f9f3",
-   "at": "2026-11-13T02:11:59Z",
-   "duration_s": 1706.97,
-   "contention": 1.62,
+   "commit": "5fecaee439a88f01fad17f46ffbce4102fc1b100",
+   "at": "2026-11-13T14:06:12Z",
+   "duration_s": 1277.65,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/b1/width_pairing_integration_test.py::test_every_cell_of_the_look_writes_one_valid_row_of_its_two_pairs": {
@@ -5007,10 +5007,10 @@
   },
   "src/main/train/fatal_config_exits_integration_test.py::test_a_bot_weights_typo_exits_FATAL_CONFIG_not_CRASH": {
    "status": "pass",
-   "commit": "657c44ad90a9495424c491ceb3f786c5f0f01163",
-   "at": "2026-11-13T04:33:58Z",
-   "duration_s": 5.97,
-   "contention": 1.7,
+   "commit": "5fecaee439a88f01fad17f46ffbce4102fc1b100",
+   "at": "2026-11-13T14:10:43Z",
+   "duration_s": 3.68,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/train/fresh_build_threads_test.py::test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads[fixture]": {
@@ -5902,5 +5902,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-13T04:33:58Z"
+ "last_written": "2026-11-13T14:10:43Z"
 }

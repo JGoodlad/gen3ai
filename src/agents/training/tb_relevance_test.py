@@ -53,7 +53,6 @@ Run:
 from __future__ import annotations
 
 import os
-import subprocess
 import sys
 
 import pytest
@@ -66,6 +65,7 @@ from agents.training.reward_term_stats import (
     term_class_map,
     tracked_terms,
 )
+from utils.child_guard import guarded_run
 from utils.paths import repo_path, src_path
 
 # ═══════════════════════════════════════════════════ G1 — grad_balance: value counted ONCE ══
@@ -306,7 +306,7 @@ def _run_smoke(tmp_path, name, extra):
             # main at 900de5e2 — P10-F2), a hard FATAL that has nothing to do with tags. (Since
             # `gen3_k9_excluded_min_rows_v1` a probe under 1,024 rows no longer FATALs on the ceiling; the smoke shape stays.)
             "--debug", "--steps", "10000", "--run-name", name, *extra]
-    proc = subprocess.run(argv, cwd=str(tmp_path), env=env, capture_output=True, text=True)
+    proc = guarded_run(argv, cwd=str(tmp_path), env=env, capture_output=True, text=True)
     assert proc.returncode == 0, f"smoke failed:\n{proc.stdout[-4000:]}\n{proc.stderr[-4000:]}"
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
     acc = EventAccumulator(str(tmp_path / "models" / name / "tb"), size_guidance={"scalars": 0})

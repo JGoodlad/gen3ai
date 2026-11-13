@@ -110,6 +110,34 @@ a claimed port is refused to the next picker, in another process too, until it e
 claim is respected; each fails on a revert to bind-and-release) and `ports_test.py`. A port that must stay
 CLOSED (a dead proxy) needs no claim, and an in-process `websockets.serve(..., 0)` has no window.
 
+### A trainer or launcher a test starts DIES WITH THE TEST (`utils.child_guard`, 2026-11-13)
+
+A test that starts `main.launcher` or the trainer (a `runpy` runner, the script path, `-m main.launcher`) starts it
+through **`utils.child_guard.guarded_popen` / `guarded_run`**, never a plain `subprocess` call. Why: a peer's
+`timeout 900 pytest` killed pytest but not the launcher's tree (`main.b1.resume_check.run_smoke`'s smoke), and an orphaned
+`--debug` trainer ran three hours, so the BOUNDARY-1 driver saw "something is live" at the next run boundary and HELD
+the GPU idle. `try/finally: proc.kill()` covers an exception and only the DIRECT child; a SIGTERM or SIGKILL of pytest
+runs no `finally`.
+
+The mechanism changes nothing a launcher or trainer does: the child leads a SESSION of its own (the launcher keeps its
+trainer in its session, `rust_env_proc` stays in the trainer's, so the tree is ONE session) and a small detached watcher
+holds a LEASH pipe whose write end only the test process keeps. When the leash is cut (the test process dies by any
+signal, or its `Popen` is dropped) or its parent pid changes, the watcher SIGTERMs every group of the child's session
+and SIGKILLs the rest after `GRACE_S` (5 s); it exits once the session is empty. `guarded_run`'s timeout kills the whole
+tree where `subprocess.run` kills the direct child. Not `PR_SET_PDEATHSIG` (`utils.mem_cap`'s supervisor is a direct
+child): the kernel clears it across `fork`, so it would reach the launcher and miss its trainer. A descendant that
+`setsid()`s itself leaves the session. Pinned by `src/utils/child_guard_test.py`: an intermediate process starts a
+guarded launcher-shaped tree and is SIGKILLed or SIGTERMed, and the whole tree must be gone (fails on a revert of the
+watcher); and a scan refuses a plain `subprocess` call in any `*_test.py` or in `resume_check.py` whose argv names the
+trainer or the launcher. A trainer's own death takes its `rust_env_proc` workers with it (the worker exits on EOF of
+its stdin pipe, `src/rust_env/src/bin/rust_env_proc.rs`).
+
+The trainer has its own backstop for a `--debug` smoke whose parent died (`agents.training.watchdog`, started in
+`main.train.config`): it exits when reparented. Its message used to be printed BEFORE the `os._exit`, and a launcher's
+child writes to a pipe the dead launcher no longer reads (`PYTHONUNBUFFERED=1`), so the `print` raised
+`BrokenPipeError` and killed the watchdog thread first (measured: alive 12 s after the parent's death); the exit now
+runs in a `finally` (`watchdog_test.py`, the pipe case).
+
 ### Test tiers — TWO AXES, and keeping them apart is the point
 
 A marker says **what a test NEEDS** (capability). A separate marker says **what it COSTS** (`slow`).

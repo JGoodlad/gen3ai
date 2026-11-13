@@ -32,8 +32,16 @@ def start_orphan_watchdog(label="debug", poll_seconds=2.0, shutdown_event=None):
                 time.sleep(poll_seconds)
             current_ppid = os.getppid()
             if current_ppid != original_ppid:
-                print(f"\n🛑 [{label}] Parent process {original_ppid} died "
-                      f"(reparented to {current_ppid}). Exiting orphaned run.")
-                os._exit(1)
+                # The message is best effort and the exit is NOT: a launcher-managed child's stdout is a pipe to its
+                # launcher (`main.launcher.child`, PYTHONUNBUFFERED=1), so when the launcher is the parent that died
+                # the pipe has no reader and this `print` raises BrokenPipeError. Unguarded, that killed this thread
+                # before the `os._exit` and the orphan lived on (measured 2026-11-13: alive 12 s after its parent died).
+                try:
+                    print(f"\n🛑 [{label}] Parent process {original_ppid} died "
+                          f"(reparented to {current_ppid}). Exiting orphaned run.")
+                except Exception:  # noqa: BLE001
+                    pass
+                finally:
+                    os._exit(1)
 
     threading.Thread(target=_watch, daemon=True).start()

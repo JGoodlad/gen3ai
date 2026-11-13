@@ -56,6 +56,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from main.b1 import arms
+from utils.child_guard import guarded_popen
 from utils.era import prefixed
 
 #: dest -> (the value that keeps the step target out of training, why it matters). Checked on every arm's
@@ -477,7 +478,8 @@ def run_smoke(models_dir: str, arm: str = "wb", half: int = 4000, python: str = 
     command form, then that same command once more (it must train nothing). Returns the paths ``compare`` takes.
 
     The launches are this process's own foreground children, through ``python -m main.launcher``; A and B's first
-    segment run side by side."""
+    segment run side by side. Each is GUARDED (`utils.child_guard`): the launcher's whole tree (its trainer, the
+    trainer's ``rust_env_proc`` workers) dies with this process, however this process ends (the 2026-11-13 orphan)."""
     import shutil
     root = Path(models_dir)
     runs, logs, stop = root / "runs", root / "logs", root / "stop"
@@ -495,9 +497,9 @@ def run_smoke(models_dir: str, arm: str = "wb", half: int = 4000, python: str = 
     a_dir, b_dir = runs / a_name, runs / b_name
 
     def launch(argv: Sequence[str], log: str, extra: Sequence[str] = ()) -> subprocess.Popen:
-        fh = open(logs / log, "w")
-        return subprocess.Popen([python, "-m", "main.launcher", *argv, *extra], stdout=fh, stderr=subprocess.STDOUT,
-                                stdin=subprocess.DEVNULL, env=env, cwd=cwd)
+        with open(logs / log, "w") as fh:
+            return guarded_popen([python, "-m", "main.launcher", *argv, *extra], stdout=fh, stderr=subprocess.STDOUT,
+                                 stdin=subprocess.DEVNULL, env=env, cwd=cwd)
 
     rcs: Dict[str, int] = {}
     pa = launch(smoke_fresh_argv(arm, a_name, 2 * half), "a.log")

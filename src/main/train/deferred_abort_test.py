@@ -156,6 +156,38 @@ def test_the_normal_end_of_training_claims_the_exit_first():
         abort.close()
 
 
+def test_an_abort_whose_body_raises_still_exits():
+    """The body's own output can raise: a launcher-managed trainer's stdout is a pipe the launcher reads, and once the
+    launcher is gone the body's first `print` raises BrokenPipeError. The safe point has claimed the exit and the
+    fallback stood down, so before the `finally` NOTHING ever ended the process: it parked, ignoring every later
+    SIGTERM, until a SIGKILL (the orphaned smoke trainer, 2026-11-13). The abort exits whatever its body did; so does the
+    disk stop."""
+    from main.exit_codes import TrainExitCode
+
+    def boom(_reason: str) -> None:
+        raise BrokenPipeError(32, "Broken pipe")
+
+    ex = _Exit()
+    abort = DeferredAbort(boom, exit_fn=ex)
+    try:
+        abort.request("SIGTERM received")
+        with pytest.raises(_Exited) as e:
+            abort.safe_point("rollout_end")
+        assert e.value.code == int(TrainExitCode.INTERRUPTED) and ex.calls == [(15, "main")]
+        assert abort.claimed_by == "safe point"
+    finally:
+        abort.close()
+
+    ex2 = _Exit()
+    disk = DeferredAbort(lambda _r: None, disk_commit=boom, exit_fn=ex2)
+    try:
+        with pytest.raises(_Exited) as e2:
+            disk.disk_stop("disk full")
+        assert e2.value.code == int(TrainExitCode.FATAL_DISK) and ex2.calls == [(int(TrainExitCode.FATAL_DISK), "main")]
+    finally:
+        disk.close()
+
+
 def test_a_safe_point_with_nothing_requested_does_nothing():
     abort, commits, ex, _in_wait, _release = _controlled()
     abort.safe_point()

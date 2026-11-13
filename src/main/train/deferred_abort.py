@@ -35,6 +35,8 @@ before it still has time to finish its save.
 end of training (`stand_down`), a `learn()` that raised (`stand_down("exception")`) — first CLAIMS
 the exit under one lock; a loser never writes anything (the main thread parks until the winner exits
 it). So the fallback can never fire into a save that a safe point (or the normal end) has started.
+The winner's exit does not depend on its body: `abort` and `disk_stop` exit in a `finally` (a body that raises, a
+`print` into a dead stdout pipe, would otherwise leave the claim held, the fallback stood down and nothing to end it).
 
 **The forced checkpoint is deferred too** (P10-A2, `gen3_deferred_checkpoint_v1`). SIGUSR1 used to
 `model.save` inside its handler — the same mid-update torn save and `print` re-entry. It now only
@@ -195,8 +197,13 @@ class DeferredAbort:
         graceful restart's rollout end, or `safe_point`). Does not return."""
         if not self._claim("safe point"):
             self._park()
-        self._commit(reason)
-        self._exit(int(TrainExitCode.INTERRUPTED))
+        try:
+            self._commit(reason)
+        finally:
+            # The claim is taken and the fallback has stood down, so nothing else will ever end this process: a body
+            # that RAISES (a `print` into a stdout pipe whose launcher died is enough: BrokenPipeError) must not leave
+            # it alive, parked, ignoring every later SIGTERM. The exit is the abort's whatever the save did.
+            self._exit(int(TrainExitCode.INTERRUPTED))
 
     def disk_stop(self, reason: str) -> None:
         """THE DISK GUARD's stop (`utils.disk_guard`): main thread, at the checkpoint callback's step (a
@@ -206,9 +213,11 @@ class DeferredAbort:
         return."""
         if not self._claim("disk guard"):
             self._park()
-        if self._disk_commit is not None:
-            self._disk_commit(reason)
-        self._exit(int(TrainExitCode.FATAL_DISK))
+        try:
+            if self._disk_commit is not None:
+                self._disk_commit(reason)
+        finally:                                    # as `abort`: the claim is held, so the exit must follow
+            self._exit(int(TrainExitCode.FATAL_DISK))
 
     #: The run's "save a checkpoint and exit 15" path is CALLED with a reason (the graceful restart's
     #: ``abort_fn``) — the same as `abort`.

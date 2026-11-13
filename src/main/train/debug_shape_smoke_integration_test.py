@@ -21,6 +21,7 @@ import sys
 import pytest
 
 from main.train.debug_shape import SMOKE_THREAD_ENV
+from utils.child_guard import guarded_popen
 from utils.contention import scale_timeout
 from utils.paths import repo_root, src_root
 
@@ -37,7 +38,7 @@ def test_arch_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive, a
     was deleted by the legacy deletion's U0.)"""
     log = tmp_path / "trainer.log"
     with open(log, "wb") as fh:
-        proc = subprocess.Popen(
+        proc = guarded_popen(
             [sys.executable, "-c", _RUNNER, "--arch", arch, "--debug", "--steps", "10000"],
             stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=str(repo_root()),
             env={**os.environ, "PYTHONPATH": str(src_root()), "CUDA_VISIBLE_DEVICES": "", **SMOKE_THREAD_ENV})

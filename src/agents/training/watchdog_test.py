@@ -33,6 +33,7 @@ _POLL = 0.3
 _NO_FIRE_WINDOW_S = 7 * _POLL       # parent alive: the child must outlive ~7 of its own polls
 _ORPHAN_LIFETIME_S = 60.0           # orphaned: far past the deadline, so only the watchdog ends it
 _FIRED = "Exiting orphaned run."    # start_orphan_watchdog's own exit line
+_PIPE = "pipe"                      # the parent hands the child a stdout PIPE (and PYTHONUNBUFFERED=1), not a log file
 
 
 def _run_helper(*argv: str) -> subprocess.CompletedProcess:
@@ -40,6 +41,20 @@ def _run_helper(*argv: str) -> subprocess.CompletedProcess:
         [sys.executable, os.path.abspath(__file__), *argv],
         capture_output=True, text=True, timeout=scale_timeout(60),
     )
+
+
+def _gone(pid: int, bound_s: float) -> bool:
+    """Did ``pid`` leave (or become a zombie) within ``bound_s``? Polls; never signals."""
+    deadline = time.monotonic() + scale_timeout(bound_s)
+    while time.monotonic() < deadline:
+        try:
+            with open(f"/proc/{pid}/stat", "rb") as f:
+                if f.read().rsplit(b")", 1)[1].split()[0] in (b"Z", b"X"):
+                    return True
+        except OSError:
+            return True
+        time.sleep(0.1)
+    return False
 
 
 def test_orphan_watchdog_exits_when_reparented(tmp_path):
@@ -53,10 +68,7 @@ def test_orphan_watchdog_exits_when_reparented(tmp_path):
             gcpid = int(ln.split("=", 1)[1])
     assert gcpid is not None, f"helper did not report a grandchild pid: {out.stdout!r} {out.stderr!r}"
 
-    deadline = time.monotonic() + scale_timeout(8.0)
-    while os.path.exists(f"/proc/{gcpid}") and time.monotonic() < deadline:
-        time.sleep(0.1)
-    if os.path.exists(f"/proc/{gcpid}"):
+    if not _gone(gcpid, 8.0):
         try:
             os.kill(gcpid, 9)  # don't leak the stuck process if we failed
         except ProcessLookupError:
@@ -64,6 +76,26 @@ def test_orphan_watchdog_exits_when_reparented(tmp_path):
         raise AssertionError(f"orphaned grandchild {gcpid} still alive past the deadline")
     text = log.read_text()
     assert _FIRED in text, f"the grandchild exited, but not through the watchdog: {text!r}"
+
+
+def test_orphan_watchdog_exits_when_the_dead_parent_held_its_stdout_pipe(tmp_path):
+    """THE LAUNCHER'S SHAPE: a launcher-managed child's stdout is a PIPE the launcher reads (``PYTHONUNBUFFERED=1``),
+    so when the launcher is the parent that died the pipe has no reader and the watchdog's own message raises
+    ``BrokenPipeError``. Unguarded, that ended the watchdog thread before its ``os._exit`` and the orphan lived on
+    (measured 2026-11-13: still alive 12 s after its parent died). The child prints nothing else, so only a
+    watchdog that exits THROUGH the dead pipe can pass; there is no log line to read, the exit is the evidence."""
+    out = _run_helper(_PARENT_MODE, str(tmp_path / "armed"), str(tmp_path / "unused.log"), _PIPE)
+    gcpid = None
+    for ln in out.stdout.splitlines():
+        if ln.startswith("GCPID="):
+            gcpid = int(ln.split("=", 1)[1])
+    assert gcpid is not None, f"helper did not report a grandchild pid: {out.stdout!r} {out.stderr!r}"
+    if not _gone(gcpid, 8.0):
+        try:
+            os.kill(gcpid, 9)  # don't leak the stuck process if we failed
+        except ProcessLookupError:
+            pass
+        raise AssertionError(f"orphaned grandchild {gcpid} (stdout pipe dead) still alive past the deadline")
 
 
 def test_orphan_watchdog_no_false_fire_while_parent_alive():
@@ -91,14 +123,18 @@ def _child_main(lifetime_s: float, armed_path: str = ""):
     print("CHILD-ALIVE-OK", flush=True)  # only reached if the watchdog never fired
 
 
-def _parent_main(armed_path: str, log_path: str):
+def _parent_main(armed_path: str, log_path: str, stdout_kind: str = ""):
     # Spawn the grandchild with its OWN stdout (never our caller's pipe, which would make the caller
     # wait out the grandchild's lifetime), wait until it has armed the watchdog, report its pid, exit.
-    with open(log_path, "w") as log:
-        # -u: the watchdog leaves through os._exit, which never flushes a block-buffered file stdout
-        gc = subprocess.Popen([sys.executable, "-u", os.path.abspath(__file__), _CHILD_MODE,
-                               str(_ORPHAN_LIFETIME_S), armed_path],
-                              stdout=log, stderr=subprocess.STDOUT)
+    # ``_PIPE``: its stdout is a pipe to THIS process, unbuffered, as a launcher's child's is; this process dies
+    # without ever reading it, so the orphan's watchdog has to exit through a pipe with no reader.
+    argv = [sys.executable, "-u", os.path.abspath(__file__), _CHILD_MODE, str(_ORPHAN_LIFETIME_S), armed_path]
+    if stdout_kind == _PIPE:
+        gc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={**os.environ, "PYTHONUNBUFFERED": "1"})
+    else:
+        with open(log_path, "w") as log:
+            # -u: the watchdog leaves through os._exit, which never flushes a block-buffered file stdout
+            gc = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT)
     deadline = time.monotonic() + 50.0
     while not os.path.exists(armed_path):
         if gc.poll() is not None or time.monotonic() > deadline:
@@ -114,7 +150,7 @@ if __name__ == "__main__":
     if mode == _CHILD_MODE:
         _child_main(float(sys.argv[2]), sys.argv[3] if len(sys.argv) > 3 else "")
     elif mode == _PARENT_MODE:
-        _parent_main(sys.argv[2], sys.argv[3])
+        _parent_main(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else "")
     else:
         print("run via pytest, not directly", file=sys.stderr)
         sys.exit(2)
