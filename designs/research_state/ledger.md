@@ -31417,3 +31417,77 @@ those paths; the fork-1 watch at the new pin reads the dry update with the magne
 segment), the first flush through T2's magnet slot and the canary with the magnet before the throughput gate.
 
 Tag: **CE-3d · INCIDENT · fork 1 at `333a73dd` died in the fit check (no magnet column) · build gap, not VOID, never read · relaunched as the same fork at `ce3d-pin-9e97cad5`**
+
+### 2026-11-12 · VERDICT · **CE-3d the trailing-magnet screen: PASS — three P\* + 20M forks trained with a trailing anchor in place of the entropy bonus (`--ent-coef 0 --magnet-kl-coef 0.05`, refreshed every 2M steps) beat the eight banked C0 forks head to head, D +3.97 pp [+3.31, +4.63]; ENT-LOW (end entropy 0.49 vs C0's 1.01 and X67's 0.68 nats); no fork LR-MOVED; the reported cross against X67's finals reads +1.01 pp [−0.12, +2.13], "the swap's gain over C0 is plausibly the lower uniform push alone"; licenses registering a follow-up only; moves no recipe**
+
+**Question** (PREREG `08b998d12` 2026-11-11, full tier; Amendment 1 `71c20b521` the one-arm SWAP, Amendment 2
+`46c6532ff` the reported cross against X67's finals, Amendment 3 `e9f55e723` the re-pin; all before any training
+step). Does a plateau policy get stronger when the entropy bonus (a pull toward the uniform policy) is replaced, at
+the same weight, by a pull toward a trailing copy of the policy itself? Rows: `rb_x35_ce3dswap_s7321..s7323` (P\*
+@280,000,170 + 20M; loss += 0.05·KL(π‖π_mag), no entropy bonus; training pin `9e97cad5`, tag `ce3d-pin-9e97cad5`).
+Columns: C0 `rb_x35_c0_s3501..s3508` (`ent_coef` 0.05, pin `f4b25238`; `plan_cross.py` admitted all eight). 1,000
+mirrored team pairs a cell, played on CPU at the play pin `333a73dd` (tag `ce3d-pin-333a73dd`), X67's cross and
+rule unchanged, one look.
+
+**Verdict: PASS** (`screen_rule.decide`, `record/deciding/verdict.json`, `near_boundary: []`). D = mean(h) − 50 =
+**+3.968 pp**, 90 % interval **[+3.306, +4.629]** (SE 0.351, Welch df 7.32). The row floor bound (sample 0.146 pp²
+→ 1.25/8), the column floor did not (0.572). Row means 53.59 / 53.95 / 54.36; all 24 cells above 50 (the lowest,
+s7322 vs s3504, 51.13). 48,000 games, every cell OK, 0 aborted, 205 draws. **Reported:** the fresh-run-floor
+(1.76 pp) interval [+1.35, +6.58] excludes 0 (X67's spanned it); banked columns +4.14 pp, top-up columns +3.68 pp.
+
+**VOID guards (§8), executed per fork 2026-11-12 23:43 PST from main at `4d327c5a1`: none fired, three valid
+forks.** rc 0, `Last step` 300,061,272 / 300,060,944 / 300,061,282, `final_model.zip`, the newest checkpoint at
+300,000,383 / 300,000,375 / 300,000,204; K9(b) PASS at arm end (max 2.20e-4 / 2.04e-4 / 1.84e-4, p99 ≤ 3.4e-5);
+the launcher log names only `9e97cad5709d…`; a fork of `rb_x26_s2601` (lineage: step 280,000,170, sha256
+`814823c5…`); `sidecar_audit` one span, 0 PIN-SPLIT; pool-seed PASS; the `[MAGNET]` banner; `ent_coef` 0 in the
+table, `metadata` and `cli_args`; `magnet_kl_coef` 0.05, `magnet_refresh_steps` 2,000,000 and the magnet sidecar
+in the record; 10 epochs, effective batch 65,536; `magnet/refreshes` above 0 on 183 of 204 points, last value 9.
+0 restarts. Arm-end records `31b0b402c`, `4662ebb53`, `60efef08c`.
+
+**Labels.** `ENT-LOW`: fires (highest swap end entropy 0.4962 < 1.00406, the lowest C0 final's). `ENT-HIGH`: no.
+`LR-MOVED`: no fork (`lr_median` 0.0001005, C0's own; s7322 took a second cut to 8.372e-05 only at 298.0M).
+
+**Reported (§9), never decided.** End entropy 0.484 / 0.496 / 0.492 (mean 0.491) against C0 1.004–1.018 and X67
+0.659–0.687; by 5M window ≈ 0.77 → 0.60 → 0.53 → 0.50, still falling at the end. approx KL median 0.0186–0.0189
+(C0 0.0179–0.0183). `train/magnet_kl` is the expected saw-tooth: ≈ 0.010 nats at the first update after a refresh
+(an upper bound on the bf16 floor), ≈ 0.09–0.10 before the next (0.13 before the first); median 0.070. Nine
+refreshes a fork. `magnet/forward_ms` ≈ 3.5 s a rollout, ≈ 4.9 % of an iteration (estimate was ≈ +3 %); `time/fps`
+medians 1,372 / 1,398 / 1,384 against C0's 1,382–1,501 (uncontrolled: other pin, other days). **Against X67's
+finals, directly** (family `ce3d_swap_vs_x67_h2h`, 9 cells, 18,000 games, 0 aborted, 79 draws, read once): D =
+**+1.008 pp**, 90 % interval **[−0.115, +2.132]** (SE 0.527, df 4.0, both floors bound); all nine cells above 50;
+it decides nothing. **Beside X67:** +3.97 against X67's +1.97 pp, a difference of +2.00 pp with no interval and no
+class. The indirect +2.00 lies inside the direct cross's interval, as does 0; both are quoted, neither preferred.
+
+**Against the GUESS (§1).** D ∈ [0, +2.5]: missed, the swap won by more. `ENT-LOW`: held. End entropy between 0.68
+and 1.01 nats: missed, it ended below X67's.
+
+**What it licenses (§10).** "It licenses REGISTERING a follow-up, and nothing else": on new seeds, with the
+control that separates the anchor from the missing uniform push (an `--ent-coef 0` arm with no magnet at the CE-3d
+pin, or the magnet against an arm matched on realised entropy) and, if the claim is to be quoted, a C0-recipe
+control at the same pin. With `ENT-LOW` the PASS is reported as "the swap won and ended sharper; not separable from
+X67's effect here". D is above X67's +1.97 pp, so the "no gain over simply lowering `ent_coef`" line does not
+fire. The §5.4 reading, word for word: "the swap's gain over C0 is plausibly the lower uniform push alone"; it
+names the `--ent-coef 0` no-magnet arm as the control the follow-up most needs. No follow-up is registered by this
+entry. `production_config.json`, `design_learner_recipe.md` and BOUNDARY-1's arms are untouched. **Limits,
+registered:** one loss term, two effects; the control trained at another pin and on other days (CPU-only evidence
+that this does not matter); the meter is not exploitability or cycling; a late fork and nine refreshes; one β and
+one cadence; head to head against siblings is not strength against others (no Kakuna game).
+
+**FINDINGs** (PREREG §16.9): CE3D-R1, s7323's gradient canary read `unconfirmed` at update 10 (R1 bf16 rule, one
+parameter, reproduced on neither re-check slice; updates 100 and 200 passed; no VOID, the arm has no canary
+family); CE3D-R2, 18 K9(b) warn notices a fork, fewer than the 25 and 22 of the two C0 forks counted (s3501, s3506) and X67's 29–34; CE3D-R3, the launcher log
+has no literal "FORK of" line (verified from the dry-run role line, the lineage and `sidecar_audit`); CE3D-R4, of
+PREREG §4.4's UNVERIFIED items, 1, 3, 5 and 7 now have first GPU numbers, 4 (a resume with the sidecar) was not
+exercised and 6 and the play-pin row stay UNVERIFIED; CE3D-R5, the crosses held a heavy slot for 16,579 s and
+6,114 s as single chunks; CE3D-R6, guards and diagnostics ran from main's code, not the pin's; CE3D-R7, s7322's
+late rate cut.
+
+**Record:** `measurements/ce3d_magnet_screen_2026-11-11/PREREG.md` §16 and `record/` (`deciding/` and `x67/`:
+`verdict.json` / `report_x67.json`, `h.json`, `cells.json`, `cells_plan.json`, `shas.json`, `run.log`;
+`driver.log`, `run_both.sh`, `void_guards.{sh,txt}`, `diag9_ce3d.{py,json,txt}`, `tb_read_ce3d.txt`,
+`fps_compare.txt`). Eval ledger families `ce3d_swap_vs_c0_h2h` (request `ce3d_swap_vs_c0`) and
+`ce3d_swap_vs_x67_h2h` (request `ce3d_swap_vs_x67`).
+View: `UNDERSTANDING.md` (§4.16, TL;DR item 5, §6), `STATUS.md` (§2 the CE-3d row and the landed row, the §3
+CE-3d bullet), `EXPERIMENT_BACKLOG.md` (the CE-3d row).
+
+Tag: **VERDICT · CE-3d trailing-magnet swap · PASS · D +3.97 pp [+3.31, +4.63] (3 × 8, row floor bound) · pessimistic [+1.35, +6.58] · banked +4.14 / top-up +3.68 · ENT-LOW (0.49 vs 1.01 nats; X67 0.68) · no LR-MOVED · vs X67's finals +1.01 pp [−0.12, +2.13] ⇒ "plausibly the lower uniform push alone" · licenses registering a follow-up (the `--ent-coef 0` no-magnet control), nothing else**

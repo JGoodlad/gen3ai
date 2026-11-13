@@ -1,0 +1,39 @@
+{
+ "h_pp": [
+  [
+   51.1,
+   50.975,
+   51.975
+  ],
+  [
+   51.324999999999996,
+   50.125,
+   51.65
+  ],
+  [
+   50.375,
+   50.24999999999999,
+   51.300000000000004
+  ]
+ ],
+ "rows": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7321/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7322/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7323/final_model.zip"
+ ],
+ "cols": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6701/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6702/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6703/final_model.zip"
+ ],
+ "row_seeds": [
+  7321,
+  7322,
+  7323
+ ],
+ "col_seeds": [
+  6701,
+  6702,
+  6703
+ ]
+}

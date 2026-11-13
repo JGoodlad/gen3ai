@@ -1,0 +1,102 @@
+##### python -m main.ops.tb_read rb_x35_ce3dswap_s7321 --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl --tag train/magnet_kl --tag magnet/age_steps --tag magnet/refreshes --tag magnet/forward_ms   (code: main at 4d327c5a1, 2026-11-12 23:52:18 PST)
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+train/entropy_loss
+  points 204   steps 280,204,170 .. 300,061,272   (last 20)
+  median -0.4833   min -0.4919   max -0.4716   last -0.4754
+
+train/learning_rate
+  points 204   steps 280,204,170 .. 300,061,272   (last 20)
+  median +0.0001   min +0.0001   max +0.0001   last +0.0001
+
+train/approx_kl
+  points 204   steps 280,204,170 .. 300,061,272   (last 20)
+  median +0.0194   min +0.0167   max +0.0206   last +0.0189
+
+train/magnet_kl
+  points 204   steps 280,204,170 .. 300,061,272   (last 20)
+  median +0.0691   min +0.0099   max +0.0970   last +0.0836
+
+magnet/age_steps
+  points 204   steps 280,105,208 .. 300,061,272   (last 20)
+  median +1032641.0000   min +98280.0000   max +2063565.0000   last +1475085.0000
+
+magnet/refreshes
+  points 204   steps 280,105,208 .. 300,061,272   (last 20)
+  median +9.0000   min +8.0000   max +9.0000   last +9.0000
+
+magnet/forward_ms
+  points 204   steps 280,105,208 .. 300,061,272   (last 20)
+  median +3502.5198   min +3500.2500   max +3506.0691   last +3500.2500
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+##### python -m main.ops.tb_read rb_x35_ce3dswap_s7322 --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl --tag train/magnet_kl --tag magnet/age_steps --tag magnet/refreshes --tag magnet/forward_ms   (code: main at 4d327c5a1, 2026-11-12 23:52:32 PST)
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+train/entropy_loss
+  points 204   steps 280,203,889 .. 300,060,944   (last 20)
+  median -0.4954   min -0.5023   max -0.4863   last -0.4907
+
+train/learning_rate
+  points 204   steps 280,203,889 .. 300,060,944   (last 20)
+  median +0.0001   min +0.0001   max +0.0001   last +0.0001
+
+train/approx_kl
+  points 204   steps 280,203,889 .. 300,060,944   (last 20)
+  median +0.0174   min +0.0157   max +0.0186   last +0.0180
+
+train/magnet_kl
+  points 204   steps 280,203,889 .. 300,060,944   (last 20)
+  median +0.0649   min +0.0092   max +0.0934   last +0.0772
+
+magnet/age_steps
+  points 204   steps 280,105,970 .. 300,060,944   (last 20)
+  median +1031944.5000   min +97702.0000   max +2064041.0000   last +1474020.0000
+
+magnet/refreshes
+  points 204   steps 280,105,970 .. 300,060,944   (last 20)
+  median +9.0000   min +8.0000   max +9.0000   last +9.0000
+
+magnet/forward_ms
+  points 204   steps 280,105,970 .. 300,060,944   (last 20)
+  median +3502.7229   min +3501.0593   max +3511.1458   last +3511.1458
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+##### python -m main.ops.tb_read rb_x35_ce3dswap_s7323 --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl --tag train/magnet_kl --tag magnet/age_steps --tag magnet/refreshes --tag magnet/forward_ms   (code: main at 4d327c5a1, 2026-11-12 23:52:46 PST)
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+train/entropy_loss
+  points 204   steps 280,204,514 .. 300,061,282   (last 20)
+  median -0.4934   min -0.4988   max -0.4800   last -0.4844
+
+train/learning_rate
+  points 204   steps 280,204,514 .. 300,061,282   (last 20)
+  median +0.0001   min +0.0001   max +0.0001   last +0.0001
+
+train/approx_kl
+  points 204   steps 280,204,514 .. 300,061,282   (last 20)
+  median +0.0193   min +0.0173   max +0.0201   last +0.0200
+
+train/magnet_kl
+  points 204   steps 280,204,514 .. 300,061,282   (last 20)
+  median +0.0707   min +0.0100   max +0.0939   last +0.0810
+
+magnet/age_steps
+  points 204   steps 280,106,403 .. 300,061,282   (last 20)
+  median +1032194.0000   min +98112.0000   max +2065097.0000   last +1474252.0000
+
+magnet/refreshes
+  points 204   steps 280,106,403 .. 300,061,282   (last 20)
+  median +9.0000   min +8.0000   max +9.0000   last +9.0000
+
+magnet/forward_ms
+  points 204   steps 280,106,403 .. 300,061,282   (last 20)
+  median +3522.0665   min +3507.3201   max +3538.6475   last +3507.3201
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0

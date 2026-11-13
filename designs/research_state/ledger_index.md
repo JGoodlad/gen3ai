@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-31,420-line file. **The ledger itself is append-only and is never edited by this**;
+31,494-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1008 headings · 953 dated · 2026-08-01 → 2026-11-11 · ledger 31,420 lines.**
+**1009 headings · 954 dated · 2026-08-01 → 2026-11-12 · ledger 31,494 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1028,3 +1028,4 @@ rename.
   - `L31236` · `2026-11-11` · VERDICT · **X60-T / H-TEAMS look 2 (FINAL): NO-TRANSFER — eight P\* + 20M forks with human-built ladder teams in half the pool score F (forum72 vs Kakuna) −0.23 pp [−1.95, +1.49] against C0's eight (NO-USEFUL-GAIN); the positive control R72 +1.69 pp [+1.08, +2.30] DELIVERED, I_F −0.34 pp not a gain, Δ_P −2.12 pp [−2.99, −1.25]; T − D1 NO-DIFFERENCE-AT-3PP; moves no recipe**
   - `L31308` · `2026-11-11` · SCREEN · **X69 reads DROP: no fork of P\* trained with the move head's gradient changed clears the +0.6-nat bar on held-out teams; the two forks whose move head is trained by its labels alone gain +0.55 [+0.48, +0.62] and +0.49 [+0.43, +0.56] nats a unit on H against the five C0 finals (and as much on F, in the pool and on P72), turning the move latent loss off gains +0.05; a light screen, never a verdict, adopts nothing**
   - `L31389` · `2026-11-11` · INCIDENT · **CE-3d fork 1 `rb_x35_ce3dswap_s7321` died at step 0 in the startup fit check at the first CE-3d pin `333a73dd`: the dry update trained with the magnet on a fixture buffer that has no magnet column (`MagnetError`); a build-gap launch failure, no training data, never read; relaunched as the same fork at `ce3d-pin-9e97cad5`**
+  - `L31421` · `2026-11-12` · VERDICT · **CE-3d the trailing-magnet screen: PASS — three P\* + 20M forks trained with a trailing anchor in place of the entropy bonus (`--ent-coef 0 --magnet-kl-coef 0.05`, refreshed every 2M steps) beat the eight banked C0 forks head to head, D +3.97 pp [+3.31, +4.63]; ENT-LOW (end entropy 0.49 vs C0's 1.01 and X67's 0.68 nats); no fork LR-MOVED; the reported cross against X67's finals reads +1.01 pp [−0.12, +2.13], "the swap's gain over C0 is plausibly the lower uniform push alone"; licenses registering a follow-up only; moves no recipe**

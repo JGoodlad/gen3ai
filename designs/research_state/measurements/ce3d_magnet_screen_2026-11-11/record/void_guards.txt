@@ -1,0 +1,256 @@
+# CE-3d §8 VOID guards; code: 4d327c5a1d0ca8fd2eb5e9abce907a4cbae76535 (main); agent cpus 5-7,13-15; 2026-11-12T23:43:31-08:00
+
+================================================================ rb_x35_ce3dswap_s7321
+--- [1] completeness (main.ops.arm_chain.armend.completeness on the launcher log + the run dir; rc from the wrapper's END line)
+[2026-11-12T04:44:08-08:00] CE3DB: 7321 ended: [2026-11-12T04:43:57-08:00] ce3d_swap s7321: END rb_x35_ce3dswap_s7321 launcher_rc=0
+launcher_rc 0 | last_step 300061272 | fps 1374 | restarts 0 | pins named ['9e97cad5709da21a1f9d4d8846096c87eb17b1d0']
+checkpoints on disk: [290000189, 300000383]
+complete: last step 300,061,272 >= --steps 300,000,170, final_model.zip present, newest checkpoint 300,000,383 >= --steps - 98,304
+rc=0
+--- [2] K9(b) at the arm's end (python -m main.x35.kit k9b --run-dir; no record written)
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_ce3dswap_s7321",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.0002200603485107422,
+  "p99": 3.162741631967947e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+rc=0
+--- [3] the launcher log's pin, and the fork role
+5:[00:19:16] ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 1.8s]
+25:[00:19:18] 📌 --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 → 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+distinct --pin-commit shas in the launcher log: --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 
+pin: ONLY the training pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+the kit's GO-time dry run (/home/goodlad/.claude/jobs/x35/rb_x35_ce3dswap_s7321.go.dryrun.txt):
+3:  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+9:  pin         : 9e97cad5709da21a1f9d4d8846096c87eb17b1d0  (source: pin_commit)
+10:                ↳ ce3d pin 2: the CE-3d pin 333a73dd + the startup fit check's dry update trains with the magnet (gen3_update_fit_fill_inputs_v1)
+[2026-11-11T22:22:57-08:00] ARMCHAIN[x35-ce3d-nov11]: arm:rb_x35_ce3dswap_s7321: PENDING -> PRECHECKED: dry run PASS at pin 333a73ddda78: FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps; disk 169.9 GiB free (need >= 46)
+[2026-11-11T22:22:57-08:00] ARMCHAIN[x35-ce3d-nov11]: arm:rb_x35_ce3dswap_s7321: PRECHECKED -> GOING: GO at pin 333a73ddda78 (GO by gen3ai-29 (orchestrator), GO 2026-11-11, go_by 2026-11-13 12:00: CE-3d trailing-magnet screen, the swap (PREREG ce3d_magnet_scre
+[2026-11-12T00:19:01-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7321: PENDING -> PRECHECKED: dry run PASS at pin 9e97cad5709d: FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps; disk 165.2 GiB free (need >= 46)
+[2026-11-12T00:19:01-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7321: PRECHECKED -> GOING: GO at pin 9e97cad5709d (GO by gen3ai-29 (orchestrator), GO 2026-11-12 (relaunch after the 11-11 fit-check build gap), go_by 2026-11-13 12:00: CE-3d trailing-m
+
+== rb_x35_ce3dswap_s7321 ==
+   run-level git_hash : 9e97cad5  (pin_source=pin_commit)
+   num_timesteps      : 300,061,272
+   pin_history        : 1 span(s)
+       [1] 9e97cad5 pin_source=pin_commit  steps 280000170 → 300061272
+   sidecars           : 3
+
+SUMMARY: 1 run(s) · 3 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+rc=0
+lineage: role fork | parent run /home/goodlad/dev/gen3ai/models/rb_x26_s2601 | parent step 280000170 | parent sha256 814823c514fb791e | fork_step 280000170
+FORK of .../rb_x26_s2601 (P* sha256 814823c5...): yes
+--- [4] the post-spawn pool-seed check (python -m main.x35.kit pool-seed-check, re-run now on the finished run)
+at the launch: [x35 kit] pool seed: PASS
+[x35 kit] pool seed: PASS
+rc=0
+--- [5] both halves of the lever in the record
+[2026-11-11T22:26:13-08:00] ARMCHAIN[x35-ce3d-nov11]: arm:rb_x35_ce3dswap_s7321: SPAWNED -> BANNER_OK: banner OK: [22:23:33] 🧲 [MAGNET] --magnet-kl-coef 0.05: loss += 0.05 · KL(π ‖ π_mag) over the legal actions, beside the entropy bonus (ent_coef 0; the KL's own entropy part adds 0.05 to that weight). The magnet:
+[2026-11-12T00:22:17-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7321: SPAWNED -> BANNER_OK: banner OK: [00:19:40] 🧲 [MAGNET] --magnet-kl-coef 0.05: loss += 0.05 · KL(π ‖ π_mag) over the legal actions, beside the entropy bonus (ent_coef 0; the KL's own entropy part adds 0.05 to that weight). The magnet:
+hyperparameter-table ent_coef rows in the full child log:
+395:|    ent_coef   | 0        |
+VOID strings (ent_coef 0.05 / 0.1 / 0.0125 rows, [ModelVersion] FATAL): 0 line(s)
+{'metadata_ent_coef': 0.0, 'cli_ent_coef': 0.0, 'cfg_magnet_kl_coef': 0.05, 'cfg_magnet_refresh_steps': 2000000, 'sidecar': True, 'cli_seed': 7321}
+lever in the record: yes
+--- [6] python -m main.dose rb_x35_ce3dswap_s7321
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                    steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+---------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_ce3dswap_s7321  300,061,272  65,536     10      0.0001005  0.0002035     2.044e-08  0.95x 
+rc=0
+--- [7] python -m main.ops.tb_read rb_x35_ce3dswap_s7321 --tag magnet/refreshes
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+magnet/refreshes
+  points 204   steps 280,105,208 .. 300,061,272   (last 20)
+  median +9.0000   min +8.0000   max +9.0000   last +9.0000
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+
+================================================================ rb_x35_ce3dswap_s7322
+--- [1] completeness (main.ops.arm_chain.armend.completeness on the launcher log + the run dir; rc from the wrapper's END line)
+[2026-11-12T13:00:39-08:00] ce3d_swap s7322: END rb_x35_ce3dswap_s7322 launcher_rc=0
+launcher_rc 0 | last_step 300060944 | fps 1379 | restarts 0 | pins named ['9e97cad5709da21a1f9d4d8846096c87eb17b1d0']
+checkpoints on disk: [290000228, 300000375]
+complete: last step 300,060,944 >= --steps 300,000,170, final_model.zip present, newest checkpoint 300,000,375 >= --steps - 98,304
+rc=0
+--- [2] K9(b) at the arm's end (python -m main.x35.kit k9b --run-dir; no record written)
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_ce3dswap_s7322",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.00020396709442138672,
+  "p99": 3.324151111883111e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+rc=0
+--- [3] the launcher log's pin, and the fork role
+5:[08:53:03] ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 1.6s]
+25:[08:53:04] 📌 --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 → 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+distinct --pin-commit shas in the launcher log: --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 
+pin: ONLY the training pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+the kit's GO-time dry run (/home/goodlad/.claude/jobs/x35/rb_x35_ce3dswap_s7322.go.dryrun.txt):
+3:  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+9:  pin         : 9e97cad5709da21a1f9d4d8846096c87eb17b1d0  (source: pin_commit)
+10:                ↳ ce3d pin 2: the CE-3d pin 333a73dd + the startup fit check's dry update trains with the magnet (gen3_update_fit_fill_inputs_v1)
+[2026-11-12T08:52:49-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7322: PENDING -> PRECHECKED: dry run PASS at pin 9e97cad5709d: FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps; disk 167.2 GiB free (need >= 46)
+[2026-11-12T08:52:49-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7322: PRECHECKED -> GOING: GO at pin 9e97cad5709d (GO by gen3ai-29 (orchestrator), GO 2026-11-12 (relaunch after the 11-11 fit-check build gap), go_by 2026-11-13 12:00: CE-3d trailing-m
+
+== rb_x35_ce3dswap_s7322 ==
+   run-level git_hash : 9e97cad5  (pin_source=pin_commit)
+   num_timesteps      : 300,060,944
+   pin_history        : 1 span(s)
+       [1] 9e97cad5 pin_source=pin_commit  steps 280000170 → 300060944
+   sidecars           : 3
+
+SUMMARY: 1 run(s) · 3 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+rc=0
+lineage: role fork | parent run /home/goodlad/dev/gen3ai/models/rb_x26_s2601 | parent step 280000170 | parent sha256 814823c514fb791e | fork_step 280000170
+FORK of .../rb_x26_s2601 (P* sha256 814823c5...): yes
+--- [4] the post-spawn pool-seed check (python -m main.x35.kit pool-seed-check, re-run now on the finished run)
+at the launch: [x35 kit] pool seed: PASS
+[x35 kit] pool seed: PASS
+rc=0
+--- [5] both halves of the lever in the record
+[2026-11-12T08:56:05-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7322: SPAWNED -> BANNER_OK: banner OK: [08:53:25] 🧲 [MAGNET] --magnet-kl-coef 0.05: loss += 0.05 · KL(π ‖ π_mag) over the legal actions, beside the entropy bonus (ent_coef 0; the KL's own entropy part adds 0.05 to that weight). The magnet:
+hyperparameter-table ent_coef rows in the full child log:
+46:|    ent_coef   | 0        |
+VOID strings (ent_coef 0.05 / 0.1 / 0.0125 rows, [ModelVersion] FATAL): 0 line(s)
+{'metadata_ent_coef': 0.0, 'cli_ent_coef': 0.0, 'cfg_magnet_kl_coef': 0.05, 'cfg_magnet_refresh_steps': 2000000, 'sidecar': True, 'cli_seed': 7322}
+lever in the record: yes
+--- [6] python -m main.dose rb_x35_ce3dswap_s7322
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                    steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+---------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_ce3dswap_s7322  300,060,944  65,536     10      0.0001005  0.0002035     2.044e-08  0.95x 
+rc=0
+--- [7] python -m main.ops.tb_read rb_x35_ce3dswap_s7322 --tag magnet/refreshes
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+magnet/refreshes
+  points 204   steps 280,105,970 .. 300,060,944   (last 20)
+  median +9.0000   min +8.0000   max +9.0000   last +9.0000
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+
+================================================================ rb_x35_ce3dswap_s7323
+--- [1] completeness (main.ops.arm_chain.armend.completeness on the launcher log + the run dir; rc from the wrapper's END line)
+[2026-11-12T17:16:19-08:00] ce3d_swap s7323: END rb_x35_ce3dswap_s7323 launcher_rc=0
+launcher_rc 0 | last_step 300061282 | fps 1350 | restarts 0 | pins named ['9e97cad5709da21a1f9d4d8846096c87eb17b1d0']
+checkpoints on disk: [290000118, 300000204]
+complete: last step 300,061,282 >= --steps 300,000,170, final_model.zip present, newest checkpoint 300,000,204 >= --steps - 98,304
+rc=0
+--- [2] K9(b) at the arm's end (python -m main.x35.kit k9b --run-dir; no record written)
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_ce3dswap_s7323",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.00018393993377685547,
+  "p99": 3.390193160157651e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+rc=0
+--- [3] the launcher log's pin, and the fork role
+5:[13:03:39] ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 1.6s]
+25:[13:03:40] 📌 --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 → 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+distinct --pin-commit shas in the launcher log: --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 
+pin: ONLY the training pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+the kit's GO-time dry run (/home/goodlad/.claude/jobs/x35/rb_x35_ce3dswap_s7323.go.dryrun.txt):
+3:  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+9:  pin         : 9e97cad5709da21a1f9d4d8846096c87eb17b1d0  (source: pin_commit)
+10:                ↳ ce3d pin 2: the CE-3d pin 333a73dd + the startup fit check's dry update trains with the magnet (gen3_update_fit_fill_inputs_v1)
+[2026-11-12T13:03:26-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7323: PENDING -> PRECHECKED: dry run PASS at pin 9e97cad5709d: FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps; disk 168.3 GiB free (need >= 46)
+[2026-11-12T13:03:26-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7323: PRECHECKED -> GOING: GO at pin 9e97cad5709d (GO by gen3ai-29 (orchestrator), GO 2026-11-12 (relaunch after the 11-11 fit-check build gap), go_by 2026-11-13 12:00: CE-3d trailing-m
+
+== rb_x35_ce3dswap_s7323 ==
+   run-level git_hash : 9e97cad5  (pin_source=pin_commit)
+   num_timesteps      : 300,061,282
+   pin_history        : 1 span(s)
+       [1] 9e97cad5 pin_source=pin_commit  steps 280000170 → 300061282
+   sidecars           : 3
+
+SUMMARY: 1 run(s) · 3 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+rc=0
+lineage: role fork | parent run /home/goodlad/dev/gen3ai/models/rb_x26_s2601 | parent step 280000170 | parent sha256 814823c514fb791e | fork_step 280000170
+FORK of .../rb_x26_s2601 (P* sha256 814823c5...): yes
+--- [4] the post-spawn pool-seed check (python -m main.x35.kit pool-seed-check, re-run now on the finished run)
+at the launch: [x35 kit] pool seed: PASS
+[x35 kit] pool seed: PASS
+rc=0
+--- [5] both halves of the lever in the record
+[2026-11-12T13:06:41-08:00] ARMCHAIN[x35-ce3d-nov12]: arm:rb_x35_ce3dswap_s7323: SPAWNED -> BANNER_OK: banner OK: [13:04:01] 🧲 [MAGNET] --magnet-kl-coef 0.05: loss += 0.05 · KL(π ‖ π_mag) over the legal actions, beside the entropy bonus (ent_coef 0; the KL's own entropy part adds 0.05 to that weight). The magnet:
+hyperparameter-table ent_coef rows in the full child log:
+46:|    ent_coef   | 0        |
+VOID strings (ent_coef 0.05 / 0.1 / 0.0125 rows, [ModelVersion] FATAL): 0 line(s)
+{'metadata_ent_coef': 0.0, 'cli_ent_coef': 0.0, 'cfg_magnet_kl_coef': 0.05, 'cfg_magnet_refresh_steps': 2000000, 'sidecar': True, 'cli_seed': 7323}
+lever in the record: yes
+--- [6] python -m main.dose rb_x35_ce3dswap_s7323
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                    steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+---------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_ce3dswap_s7323  300,061,282  65,536     10      0.0001005  0.0002035     2.044e-08  0.95x 
+rc=0
+--- [7] python -m main.ops.tb_read rb_x35_ce3dswap_s7323 --tag magnet/refreshes
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+magnet/refreshes
+  points 204   steps 280,106,403 .. 300,061,282   (last 20)
+  median +9.0000   min +8.0000   max +9.0000   last +9.0000
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0

@@ -1,0 +1,39 @@
+{
+ "decides": "nothing",
+ "read": true,
+ "reading_if_pass": "the swap's gain over C0 is plausibly the lower uniform push alone",
+ "lower_end_above_0": false,
+ "upper_end_below_0": false,
+ "near_boundary": [],
+ "delta_hat_pp": 1.0083333333333329,
+ "se_pp": 0.5270462766947299,
+ "df": 4.0,
+ "t_0.95": 2.1318467863266495,
+ "interval90_pp": [
+  -0.11524857788375331,
+  2.1319152445504193
+ ],
+ "s2_rows_raw": 0.12590277777777595,
+ "s2_cols_raw": 0.3592361111111171,
+ "s2_rows": 0.4166666666666667,
+ "s2_cols": 0.4166666666666667,
+ "floor_rows_bound": true,
+ "floor_cols_bound": true,
+ "row_means_pp": [
+  51.35,
+  51.03333333333333,
+  50.64166666666667
+ ],
+ "col_means_pp": [
+  50.93333333333334,
+  50.449999999999996,
+  51.64166666666667
+ ],
+ "shape": [
+  3,
+  3
+ ],
+ "n_cells_read": 9,
+ "family": "ce3d_swap_vs_x67_h2h",
+ "request": "ce3d_swap_vs_x67"
+}

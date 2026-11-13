@@ -1,5 +1,13 @@
 # CE-3d — the trailing-magnet screen: PRE-REGISTRATION (2026-11-11)
 
+**READ 2026-11-12 (§16): PASS.** The three swap forks trained (every VOID guard executed, none fired) and beat the
+eight banked C0 finals head to head: **D = +3.97 pp, 90 % interval [+3.31, +4.63]**. Label `ENT-LOW` (the swap ended
+at 0.48–0.50 nats, sharper than every C0 final and than X67's forks); no fork `LR-MOVED`. The reported cross against
+X67's finals read D = +1.01 pp [−0.12, +2.13], so the reading quoted with the PASS is "**the swap's gain over C0 is
+plausibly the lower uniform push alone**". The PASS licenses REGISTERING a follow-up and nothing else; none is
+registered here and no recipe moves. The status paragraph below is the registration's own, as it stood at
+Amendment 3 (before any fork trained); §1 to §15 are unchanged.
+
 **Status: REGISTERED 2026-11-11 (`08b998d12`) and AMENDED three times the same day (Amendment 1, §13: ONE arm, the
 SWAP, read against the banked C0 finals with X67's cross and rule; the two arms first registered are dropped.
 Amendment 2, §14: a REPORTED cross of the swap forks against X67's three finals, which decides nothing. Amendment 3,
@@ -694,3 +702,196 @@ recipe" clause.
 and the incident's ledger entry, both the Training session's (`TRAINING_RUN_SOP` §4, steps 3 and 6), and the
 relaunch. **UNVERIFIED:** all of §4.4, item 7 first; and `launch_x35.sh` at the training pin, whose pin and run-dir
 checks were run only against the scratch view of `models/` described in §7.
+
+## 16. The READ (2026-11-12)
+
+Written after both crosses were read, each once (§3). Nothing in §1 to §15 is changed by it. Every number below is
+in [`record/`](record/): copies of the two crosses' result directories (the originals are the eval ledger
+`models/_ledger` and `~/gen3ai_archive/ce3d_cross_2026-11-12/`), and the guard and diagnostic commands with their
+output. The guards and the diagnostics were run from main's code at `4d327c5a1`, on the CPU, with no GPU lease.
+
+### 16.1 The deciding cross
+
+Family `ce3d_swap_vs_c0_h2h`, request `ce3d_swap_vs_c0`, protocol `gen3_eval_protocol_v1_h2h`, eval ledger regime
+`adfdbee824c9eb0a`. Played at the play pin `333a73dd` on the CPU (rule 5b's shape: nice 19, three threads on the
+agent cores, under `mem_cap` 24 GB, peak 1.52 GB). Planned 2026-11-12 17:21:45 PST, read 21:58:05 PST, once.
+**24 cells × 1,000 mirrored pairs = 48,000 games; every cell complete, 0 aborted; all eight columns
+admitted** (`left_out: []`). Games: 25,802 won, 21,993 lost, 205 drawn. h = the swap fork's score in pp:
+
+| swap ↓ / C0 → | s3501 | s3502 | s3503 | s3504 | s3505 | s3506 | s3507 | s3508 | row mean |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| s7321 | 53.250 | 54.325 | 53.375 | 54.450 | 54.075 | 53.525 | 52.400 | 53.350 | 53.594 |
+| s7322 | 54.100 | 55.175 | 53.500 | 51.125 | 56.400 | 53.425 | 54.225 | 53.675 | 53.953 |
+| s7323 | 51.725 | 55.625 | 54.525 | 55.650 | 54.800 | 54.400 | 55.525 | 52.600 | 54.356 |
+| column mean | 53.025 | 55.042 | 53.800 | 53.742 | 55.092 | 53.783 | 54.050 | 53.208 | **53.968** |
+
+All 24 cells are above 50 (lowest 51.125, s7322 against s3504; highest 56.400, s7322 against s3505).
+
+### 16.2 The verdict
+
+**Class: PASS** (`record/deciding/verdict.json`; `near_boundary: []`, the lower end is 3.3 pp from the boundary).
+
+| | |
+|---|---|
+| D = mean(h) − 50 | **+3.9677 pp** |
+| 90 % interval | **[+3.3061, +4.6293]** (SE 0.3515, Welch df 7.318, t 1.8823) |
+| row (swap fork) variance | sample 0.1455, below the binomial floor: FLOORED to 0.15625 |
+| column (C0 final) variance | sample 0.5717; the floor does not bind |
+| rule | PASS iff the lower end > 0 (§5.3) |
+
+### 16.3 Labels (§8; they never change the class)
+
+- **`ENT-LOW`: fires.** End entropy (mean of the last 20 points of −`train/entropy_loss`): 0.4838 (s7321), 0.4962
+  (s7322), 0.4921 (s7323). The highest, 0.49621, is below 1.00406, the lowest banked C0 final's. Nothing is within
+  1e-9 of a bound.
+- **`ENT-HIGH`: no.**
+- **`LR-MOVED`: no fork.** `lr_median` (`main.dose`, as printed) is 0.0001005 for all three, C0's own value, inside
+  0.0000905 to 0.0001105.
+
+### 16.4 What the PASS licenses (§10, quoted)
+
+> **PASS** ⇒ at β 0.05 and a 2M cadence, a P\* + 20M fork trained with the trailing anchor in place of the entropy
+> bonus beats the unchanged recipe's forks head to head. **It licenses REGISTERING a follow-up, and nothing else**:
+> on new seeds, with the control that separates the anchor from the missing uniform push — an `--ent-coef 0` arm
+> with no magnet at the CE-3d pin, or the magnet against an arm matched on REALISED entropy — and, if the claim is
+> to be quoted, a C0-recipe control at the same pin (§4.3).
+
+The sub-lines of §10, each applied:
+
+- **`ENT-LOW` fired**, so the PASS is reported as "**the swap won and ended sharper; not separable from X67's effect
+  here**".
+- **D is above X67's +1.97 pp** (+3.97 against +1.97; the difference of the two D is +2.00 pp, with no interval
+  and no class, §9), so the line "shows no gain over simply lowering `ent_coef`" does NOT fire.
+- **§5.4's reading, word for word** (the reported interval [−0.1152, +2.1319] holds 0, so the second row of the
+  table applies): "**the swap's gain over C0 is plausibly the lower uniform push alone**". As §10 says, the reading
+  neither widens nor narrows the licence; it says which control the follow-up most needs: the `--ent-coef 0` arm
+  with no magnet.
+- **`LR-MOVED` did not fire**; the "goes to the orchestrator with both numbers" line does not apply.
+
+**This read registers nothing and moves no recipe.** No follow-up is registered by this section; no magnet and no
+`ent_coef` enters `production_config.json`, `design_learner_recipe.md` or any BOUNDARY-1 arm.
+
+### 16.5 The limits (§10's six, as they bear on this number)
+
+1. **One loss term, two effects.** The PASS is for "the trailing anchor in place of the uniform one". Both
+   registered pieces of evidence say the removed push may be all of it: `ENT-LOW` fired (the swap ended sharper
+   than X67's forks, 0.49 against 0.68 nats), and the direct cross against X67's finals holds 0. Neither is a
+   test: X67 keeps a quarter of the bonus, and that cross reads a true +1 pp as "lower push alone" three times in
+   four.
+2. **The control was trained at another pin and on other days.** C0 at `f4b25238`, 2026-10-21 to 11-10; the swap
+   at `9e97cad5`, 2026-11-12. The evidence that the pin does not matter is CPU only (§4.3), and no same-pin
+   control exists. The +3.97 pp is quoted with that caveat.
+3. **The meter is not the card's question.** Nothing here measures exploitability or cycling; no best-responder
+   read was made.
+4. **A late fork, a short horizon.** Nine refreshes over 20M steps from a 280M-step policy; nothing is claimed
+   about a magnet from step 0. The entropy was still falling at the end (16.7), so +20M is not a settled state.
+5. **One spelling.** β 0.05, a 2M cadence, no entropy bonus beside it.
+6. **Head to head against siblings is not strength against others.** No Kakuna game and no external anchor was
+   played.
+
+### 16.6 VOID guards (§8), executed per fork: none fired, three valid forks
+
+Commands and output: [`record/void_guards.sh`](record/void_guards.sh),
+[`record/void_guards.txt`](record/void_guards.txt) (2026-11-12 23:43 PST).
+
+| guard | s7321 | s7322 | s7323 |
+|---|---|---|---|
+| finished: launcher rc / `Last step` (≥ 300,000,170) | 0 / 300,061,272 | 0 / 300,060,944 | 0 / 300,061,282 |
+| `final_model.zip`; newest checkpoint (within 98,304) | present; 300,000,383 | present; 300,000,375 | present; 300,000,204 |
+| K9(b) at the arm's end (`kit k9b`; ceilings 1e-3 max, 1e-4 p99) | PASS: max 2.20e-4, p99 3.16e-5 | PASS: 2.04e-4, 3.32e-5 | PASS: 1.84e-4, 3.39e-5 |
+| the launcher log's pin | only `9e97cad5709d…` | the same | the same |
+| a FORK of `rb_x26_s2601` | yes: fork step 280,000,170, parent sha256 `814823c5…` | yes | yes |
+| `main.sidecar_audit` | one span at `9e97cad5`, 0 PIN-SPLIT | the same | the same |
+| the post-spawn pool-seed check | PASS (at launch, and re-run) | PASS | PASS |
+| the banner `[MAGNET] … (ent_coef 0 …)` | present | present | present |
+| `ent_coef` in metadata and `cli_args` | 0.0 / 0.0 | 0.0 / 0.0 | 0.0 / 0.0 |
+| `magnet_kl_coef` / `magnet_refresh_steps` / the sidecar | 0.05 / 2,000,000 / `final_model.magnet.pt` present | the same | the same |
+| `main.dose`: epochs / effective batch | 10 / 65,536 | 10 / 65,536 | 10 / 65,536 |
+| `tb_read … --tag magnet/refreshes` | 183 of 204 points above 0; last value 9 | the same | the same |
+
+Arm-end records: `31b0b402c`, `4662ebb53`, `60efef08c`. Restarts: 0 in every fork. The lowest `time/fps` point of any
+fork's first hour is 1,357 steps/s (no PAGE). The lever-own FATAL clause was invoked once, before any training step
+(§15), and not again.
+
+### 16.7 REPORTED diagnostics (§9; they decide nothing)
+
+Script and output: [`record/diag9_ce3d.py`](record/diag9_ce3d.py), [`record/diag9_ce3d.txt`](record/diag9_ce3d.txt),
+[`record/tb_read_ce3d.txt`](record/tb_read_ce3d.txt), [`record/fps_compare.txt`](record/fps_compare.txt).
+
+| diagnostic | swap s7321 / s7322 / s7323 | C0 (eight finals) | X67 (three finals) |
+|---|---|---|---|
+| end entropy, nats | 0.484 / 0.496 / 0.492 (mean 0.491) | 1.004 to 1.018 (mean 1.010) | 0.659 / 0.683 / 0.687 (mean 0.676) |
+| entropy by 5M window, nats | 0.767 → 0.598 → 0.536 → 0.495; 0.759 → 0.589 → 0.529 → 0.501; 0.768 → 0.597 → 0.523 → 0.496 | — | — |
+| learning rate: median, cuts | 1.005e-4, one cut / 1.005e-4, two cuts (the second to 8.372e-5 at step 297,996,939) / 1.005e-4, one cut | 1.005e-4, one cut each | 8.372e-5 (all `LR-MOVED`) |
+| `train/approx_kl`, median | 0.0186 / 0.0189 / 0.0187 | 0.0179 to 0.0183 | 0.0185 to 0.0188 |
+| `train/magnet_kl`, nats | median 0.070, mean 0.066; a saw-tooth | — | — |
+| … right after a refresh (the first update's value) | 0.0092 to 0.0106 | — | — |
+| … right before a refresh | 0.127 to 0.133 before the first; 0.097 to 0.100 before the second; 0.090 to 0.097 after that | — | — |
+| `magnet/refreshes` / `magnet/age_steps` max | 9 / ≈ 2.07M in every fork | — | — |
+| `magnet/forward_ms`, median per rollout | 3,506 / 3,505 / 3,517 | — | — |
+| `time/fps`, median | 1,372 / 1,398 / 1,384 (mean 1,385) | 1,382 to 1,501 (mean 1,420) | 1,335 / 1,344 / 1,412 (mean 1,364) |
+| hours between the first and the last logged update | 4.05 / 4.03 / 4.12 | 3.75 to 4.08 | 4.00 to 4.40 |
+
+- **Entropy.** The swap forks ended at half of C0's entropy and below X67's, and were still falling in the last
+  5M steps. With no uniform push and an anchor that follows the policy, nothing in the loss holds entropy up.
+- **The magnet's meters behaved as §9 expected.** The KL is a saw-tooth that drops at each refresh and rises to
+  ≈ 0.09 to 0.10 nats over the next 2M steps. Its value at the first update after a refresh, ≈ 0.010 nats, already
+  holds that update's own ten epochs of drift, so it is an UPPER BOUND on §4.4 item 3's bf16 floor, not the floor.
+- **The magnet's cost.** ≈ 3.5 s a rollout, ≈ 4.9 % of a ≈ 71 s iteration (98,304 steps at ≈ 1,385 steps/s),
+  against §11's ESTIMATE of ≈ +3 %. The `time/fps` medians are ≈ 2.5 % below C0's and ≈ 1.5 % above X67's; that
+  comparison is across pins, days and CPU load and is not a controlled one.
+- **Beside X67.** D = +3.97 pp [+3.31, +4.63] next to X67's +1.97 pp [+1.35, +2.59]; the difference of the two D
+  is **+2.00 pp**, with no interval and no class (§9).
+- **Against X67's finals, directly** (§5.4; family `ce3d_swap_vs_x67_h2h`, request `ce3d_swap_vs_x67`; planned
+  21:58:11 PST, read 23:40:05 PST, once; 9 cells, 18,000 games, every cell complete, 0 aborted; 9,142 won, 8,779
+  lost, 79 drawn): **D = +1.0083 pp, 90 % interval [−0.1152, +2.1319]** (SE 0.5270, df 4.0; both variances
+  floored to 0.41667, from samples 0.1259 and 0.3592). `decides: nothing`. All nine cells are above 50:
+
+  | swap ↓ / X67 → | s6701 | s6702 | s6703 | row mean |
+  |---|---:|---:|---:|---:|
+  | s7321 | 51.100 | 50.975 | 51.975 | 51.350 |
+  | s7322 | 51.325 | 50.125 | 51.650 | 51.033 |
+  | s7323 | 50.375 | 50.250 | 51.300 | 50.642 |
+  | column mean | 50.933 | 50.450 | 51.642 | **51.008** |
+
+- **The indirect and the direct line.** Indirect: +2.00 pp over X67 (through C0, no interval). Direct: +1.01 pp,
+  an interval that holds both 0 and +2.00. They do not contradict each other, and the direct point is half the
+  indirect one. Both are quoted and neither is preferred (§9).
+- **The pessimistic interval** (the fresh-run floor of 1.76 pp on the rows): **[+1.353, +6.583]** (SE 1.192, df
+  3.635). It excludes 0; X67's own spanned 0. **Banked columns** (s3501 to s3505): D = +4.14 pp; **top-up columns**
+  (s3506 to s3508): +3.68 pp.
+- **Cost, against §11.** Training: 264.8 + 247.7 + 252.7 min = 12.75 GPU-h (ESTIMATE ≈ 13). The crosses: 16,579 s
+  and 6,114 s on three threads, 6.3 h in all (ESTIMATE ≈ 10.6 h).
+- No Kakuna game was played.
+
+### 16.8 Against the prediction (§1, a GUESS)
+
+D ∈ [0, +2.5] pp: **missed**, the swap won by more (+3.97, the whole interval above +2.5). `ENT-LOW`: **held**. An
+end entropy between X67's 0.68 and C0's 1.01 nats: **missed**, the swap ended below X67 (0.49).
+
+### 16.9 FINDINGs
+
+- **CE3D-R1 — a canary "unconfirmed" on s7323.** At update 10 (step 280,990,290) the gradient canary's R1 bf16
+  rule tripped on one parameter (`features_extractor.move_resolution_cell.switch_proj.bias`: compiled 1.29e-01
+  against eager 1.05e-02) and reproduced on neither of the two re-check slices, so the verdict is `unconfirmed`, not FATAL; the
+  run continued, and its checks at updates 100 and 200 passed. s7321 and s7322 passed all three checks. §8 has no
+  canary family for this arm and only a FATAL HOLDs, so this is no VOID; it is evidence on §4.4 item 2 (R1 with
+  the magnet's argument) and belongs to the compile gate's owner. The run keeps `canary_disagreements.jsonl` and
+  `canary_u10_unconfirmed_policy.pt`.
+- **CE3D-R2 — K9(b) warn notices.** Each swap fork logged 18 single-check `BEHAVIOUR-POLICY MISMATCH` notices
+  under `--behaviour-check warn` (largest 1.84e-4 to 2.20e-4, against a 1e-4 per-check bar). The same count in the
+  comparators' logs is 25 and 22 (C0 s3501, s3506) and 29 to 34 (X67's three), so the swap is not worse; the
+  arm-end K9(b) guard is PASS for all three.
+- **CE3D-R3 — "FORK of" is not a literal line of the launcher log.** §8 words the guard as the run being
+  `FORK of …/rb_x26_s2601`. The real launcher log carries no such line; the fork was verified from the GO dry-run
+  transcript's role line, `metadata.json`'s lineage (parent sha256 and fork step) and `main.sidecar_audit`.
+- **CE3D-R4 — §4.4's UNVERIFIED items, after three forks on the GPU.** Items 1 (cost: ≈ 3.5 s a rollout), 3 (the
+  floor: at most ≈ 0.010 nats), 5 (`ent_coef` 0 beside the magnet) and 7 (the fit check: `update_fit.json` written with no OOM, three times)
+  now have first numbers from these forks. Item 4 (a resume with the sidecar) was NOT exercised: no fork
+  restarted. Item 6 (a β = 0 learner at this pin on the GPU) and §4.3's play-pin row remain UNVERIFIED.
+- **CE3D-R5 — heavy-slot holds.** The deciding cross held one heavy slot for 16,579 s and the reported cross for
+  6,114 s, each as one chunk; `heavy_slots` logged a LONG HOLD notice (its policy is ≤ 45 min a chunk).
+- **CE3D-R6 — the guards and diagnostics ran from main's code**, not the pin's (`main.dose`, `main.ops.tb_read`,
+  `main.sidecar_audit`, the kit). They read the runs' own files; no number of the rule depends on them.
+- **CE3D-R7 — s7322's late learning-rate cut** (to 8.372e-5 at step 297,996,939, the last 2M steps). Its median is
+  unmoved, so the label does not fire; it is reported because X67's forks sat at that rate for most of their run.

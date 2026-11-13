@@ -1,0 +1,49 @@
+{
+ "cols_arm": "c0",
+ "rows": [
+  "c068bb1a0df29afe3ebdaba4e15452c42df76020f02e1d48871ba68216100cb7",
+  "f1306f8dc3c62a4660db1fccc1e2ab9c96a08bc7895304160cb989329fc8aaff",
+  "7eee05c7cc06502284f8373001d47975c0f2c2cd0430e224a2b590ecf7c647dd"
+ ],
+ "cols": [
+  "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+  "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+  "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+  "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+  "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+  "21409eee22839b3c6040c43b7b58d7886c49569d6dd288353beb36ec7976b560",
+  "455f73c8d2bd570bf3eca176e3e3953a9b9ac5c059ec35a9a40169a4da1687af",
+  "8db0a96e55b751fdfac18bc7fe2cbabf5dd5ce7eddd7560f04bea3fa41fb262e"
+ ],
+ "row_seeds": [
+  7321,
+  7322,
+  7323
+ ],
+ "col_seeds": [
+  3501,
+  3502,
+  3503,
+  3504,
+  3505,
+  3506,
+  3507,
+  3508
+ ],
+ "row_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7321/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7322/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7323/final_model.zip"
+ ],
+ "col_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3504/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3505/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3506/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3507/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3508/final_model.zip"
+ ],
+ "left_out": []
+}

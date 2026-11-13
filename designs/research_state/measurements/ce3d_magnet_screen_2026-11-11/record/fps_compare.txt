@@ -1,0 +1,18 @@
+# time/fps (TensorBoard, the arm's own points) per run, read 2026-11-12 23:50 PST with main's code at 4d327c5a1 via
+# main.ops.run_ref.scalar_events(models/<run>, ["time/fps"]): n points, median, mean, wall hours first..last point.
+# REPORTED, decides nothing. NOT a controlled comparison: C0 and X67 trained at pin f4b25238 on other days, the swap
+# forks at 9e97cad5 on 2026-11-12, under different agent CPU load.
+rb_x35_c0_s3501 204 fps med 1400 mean 1426 wall h 4.02
+rb_x35_c0_s3502 204 fps med 1430 mean 1461 wall h 3.92
+rb_x35_c0_s3503 204 fps med 1438 mean 1468 wall h 3.91
+rb_x35_c0_s3504 204 fps med 1501 mean 1535 wall h 3.75
+rb_x35_c0_s3505 204 fps med 1392 mean 1421 wall h 4.05
+rb_x35_c0_s3506 204 fps med 1410 mean 1437 wall h 4.03
+rb_x35_c0_s3507 204 fps med 1411 mean 1432 wall h 4.08
+rb_x35_c0_s3508 204 fps med 1382 mean 1417 wall h 4.02
+rb_x35_x67ent_s6701 209 fps med 1335 mean 1399 wall h 4.40
+rb_x35_x67ent_s6702 204 fps med 1344 mean 1367 wall h 4.23
+rb_x35_x67ent_s6703 204 fps med 1412 mean 1442 wall h 4.00
+rb_x35_ce3dswap_s7321 204 fps med 1372 mean 1387 wall h 4.05
+rb_x35_ce3dswap_s7322 204 fps med 1398 mean 1432 wall h 4.03
+rb_x35_ce3dswap_s7323 204 fps med 1384 mean 1415 wall h 4.12
