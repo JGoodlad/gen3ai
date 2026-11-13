@@ -85,7 +85,8 @@ The run stays PAUSED (no child, launcher alive, lease kept) whenever one of thes
   names the job's live pids.
 
 The reason goes to `current.json`, to the events (`🛑 GPU WINDOW HOLD …`) and to the red status badge.
-Only an operator ends a HOLD: `python -m main.launcher.gpu_window resume <run_dir> --reason "…"`, or a quit.
+Only an operator ends a HOLD: `python -m main.launcher.gpu_window resume <run_dir> --reason "…"`, or a quit
+(which exits 9, an UNSAVED stop, when the HOLD was for a paused child that did not exit INTERRUPTED).
 The launcher never auto-resumes over a failure (`TRAINING_RUN_SOP.md` §3 rule 3). A window left OPEN by a launcher
 that died is closed as `abandoned` by the next `--gpu-window` launcher of the run, so it cannot block `arm` forever.
 

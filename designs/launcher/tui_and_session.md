@@ -34,7 +34,9 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
 - **Quit / Ctrl-C:** `q` (or ctrl-c) opens a confirm overlay; `y` (or a second ctrl-c) pushes
   `"__quit__"` → the supervisor SIGTERMs the child (which checkpoints on SIGTERM) and waits, then
   the app exits. The on-screen "waiting for child to save…" event covers the wait; `_reap`
-  (`run()`'s `finally`) narrates it on stderr if the screen is already down.
+  (`run()`'s `finally`) narrates it on stderr if the screen is already down. The quit is "Quit
+  complete" (exit 0) only when the child ended `INTERRUPTED`; anything else is an UNSAVED stop, exit 9
+  ([`crashes_and_exit_codes.md`](crashes_and_exit_codes.md), row 9).
 - **SIGHUP / SIGTERM (closed terminal / external kill):** the child stays in the launcher's
   session (`child._launch_child`, no `start_new_session`), so a closed tmux/SSH terminal SIGHUPs
   the whole group — and `train_rl_agent` now handles SIGHUP itself (checkpoints, like SIGTERM),
@@ -43,7 +45,7 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
   **launcher** tears down cleanly too rather than dying abruptly. Two complementary backstops →
   a closed terminal never costs a checkpoint or orphans the run.
 - **No orphan child:** on any exit `run()`'s `finally` sets a `shutdown` Event and `_reap`s the
-  tracked child (SIGTERM → 10s grace → SIGKILL), narrating progress on stderr.
+  tracked child (SIGTERM → the 150 s `KILL_GRACE_SECONDS` → SIGKILL), narrating progress on stderr.
 - **🚨 Headless when stdin is not a TTY (`run.headless_mode()`).** A detached launch
   (`nohup … < /dev/null &`, systemd, cron, an agent's background shell) leaves stdin on
   /dev/null, and Textual's input thread then **busy-loops a whole core forever**: an fd at EOF

@@ -22,7 +22,7 @@ import threading
 import time
 from dataclasses import dataclass
 
-from main.exit_codes import CUDA_LEAK_RESTART_CAP, TrainExitCode
+from main.exit_codes import CUDA_LEAK_RESTART_CAP, LAUNCHER_UNSAVED_STOP, TrainExitCode
 from main.launcher.checkpoint import (
     find_latest_checkpoint,
     run_dir_for_checkpoint,
@@ -137,6 +137,52 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
                   if s.startswith("agents.inference.service.spec.") and "Parity" in s][-1:]
         return ["non-recoverable configuration error (see crash log)"] + [s[:300] for s in parity]
     return None
+
+
+def _stop_was_unsaved(rc: int, log_lines: "list | None") -> bool:
+    """True when a child the launcher stopped for a QUIT did not make the stop's save. The one saved stop
+    is `INTERRUPTED` (15: the deferred abort's checkpoint, then exit); any other exit code (a FATAL, a
+    crash, a death by signal) confirms no save, and so does a FATAL signature in the child's output
+    whatever the code. Called only after `COMPLETE` (0) has been handled."""
+    if rc != int(TrainExitCode.INTERRUPTED):
+        return True
+    return any(sig in line for line in (log_lines or []) for sig in _FATAL_CONFIG_SIGNATURES)
+
+
+def _resume_point(run_dir: "str | None") -> str:
+    """Where the run stands, for the unsaved-stop line: the checkpoint `latest.txt` names, or what is on
+    disk when it names none."""
+    if not run_dir:
+        return "no run dir, so no checkpoint"
+    try:
+        with open(os.path.join(run_dir, "latest.txt")) as f:
+            name = f.read().strip()
+    except OSError:
+        name = ""
+    if name and os.path.exists(os.path.join(run_dir, name)):
+        return f"latest.txt → {name}"
+    found = find_latest_checkpoint(run_dir=run_dir)
+    if found:
+        return f"latest.txt names no file; the newest checkpoint on disk is {os.path.relpath(found, run_dir)}"
+    return "NO checkpoint in the run dir"
+
+
+def _unsaved_stop(run_dir: "str | None", state: LauncherState, rc: int, how: str) -> int:
+    """Report a quit whose child did not stop cleanly as what it is, and return the launcher's exit code
+    for it (`LAUNCHER_UNSAVED_STOP`), never "Quit complete" / 0 (rb_b1c_s5101, 2026-11-12: the child died
+    FATAL on the launcher's SIGTERM with no save and the launcher exited 0). The event names the child's
+    exit code and the checkpoint the run stands at; the child's FATAL lines follow it; its output is saved
+    as a crash log and dumped after the screen closes."""
+    lines = state.snapshot().log_lines
+    err_path = _save_crash_log(run_dir, state, rc)
+    saved = f" — saved {os.path.join('crashes', os.path.basename(err_path))}" if err_path else ""
+    state.add_event(f"🛑 UNSAVED stop ({how}) — the child exited {rc}, not INTERRUPTED "
+                    f"({int(TrainExitCode.INTERRUPTED)}): no save is confirmed for this stop. The run stands "
+                    f"at {_resume_point(run_dir)}{saved} — launcher exit {LAUNCHER_UNSAVED_STOP}")
+    for line in (_fatal_config_reason(rc, lines) or [])[:4]:
+        state.add_event(f"   {line[:300]}")
+    atexit.register(_print_crash_log, lines)
+    return LAUNCHER_UNSAVED_STOP
 
 
 def _print_crash_log(log_lines: "list | None") -> None:
@@ -726,10 +772,16 @@ def _supervise(
             return 0
 
         if flags.quit_requested:
-            state.add_event("👋 Quit complete.")
+            # A quit is "complete" only when the child made the stop's save (INTERRUPTED); anything else is
+            # an UNSAVED stop with its own exit code, never 0.
+            if _stop_was_unsaved(rc, state.snapshot().log_lines):
+                code = _unsaved_stop(run_dir, state, rc, "quit")
+            else:
+                state.add_event("👋 Quit complete.")
+                code = 0
             _tick()
             time.sleep(1)
-            return 0
+            return code
 
         # T46: the child stopped for a GPU window — run it (GO, the guest, DONE; or a HOLD) with the
         # launcher alive, then fall through to the ordinary same-run RESTART below (same pin, same command,
@@ -739,9 +791,15 @@ def _supervise(
             outcome = window.run_window(window_req, rc, window_sigterm_epoch,
                                         should_quit=lambda: _window_should_quit(cmd_q, shutdown, state))
             if outcome == "quit":
-                state.add_event("👋 Quit complete (during a GPU window).")
+                # A window that HELD because the paused child did not stop cleanly ends, on a quit, as the
+                # unsaved stop it was.
+                if _stop_was_unsaved(rc, state.snapshot().log_lines):
+                    code = _unsaved_stop(run_dir, state, rc, "quit during a GPU window")
+                else:
+                    state.add_event("👋 Quit complete (during a GPU window).")
+                    code = 0
                 _tick()
-                return 0
+                return code
             window_resumed = True
 
         # K6's CUDA memory trend STOPPED the child (`CudaMemoryLeakError`): it checkpointed
@@ -939,6 +997,25 @@ def _reap(proc_box: "list | None", grace: float = KILL_GRACE_SECONDS) -> None:
         pass
 
 
+#: How long `run()` waits, after an ABNORMAL app exit, for the supervisor's verdict on the child `_reap` just
+#: stopped: the child's own stop bound plus slack for the classification.
+_VERDICT_WAIT_SECONDS = KILL_GRACE_SECONDS + 30.0
+
+
+def _session_exit_code(app, proc_box: "list | None", supervisor_done: threading.Event,
+                       wait_s: float = _VERDICT_WAIT_SECONDS) -> int:
+    """The launcher's exit code: the SUPERVISOR's verdict. On the normal path the supervisor has recorded it
+    before the app exits. After an abnormal app exit (a Textual fault) it is still classifying the child
+    `_reap` stopped, and reading `app.exit_code` at once returned the app's initial 0: "clean", whatever the
+    child did. So wait for the verdict (bounded); a supervisor that gives none in time is exit 1, never 0.
+    With no child ever launched there is no verdict to wait for."""
+    if proc_box and not supervisor_done.wait(wait_s):
+        print(f"⚠ launcher: no supervisor verdict within {wait_s:.0f}s of the app's exit — exit 1 "
+              "(the child's stop is unclassified; read the child log)", file=sys.stderr, flush=True)
+        return 1
+    return int(getattr(app, "exit_code", 0))
+
+
 def headless_mode(stream=None) -> bool:
     """True when there is no keyboard attached and the TUI must not drive a terminal.
 
@@ -1075,6 +1152,7 @@ def run(
         window.announce()
 
     app = LauncherApp(state, cmd_q)
+    supervisor_done = threading.Event()
 
     def _supervisor() -> None:
         try:
@@ -1094,6 +1172,7 @@ def run(
             state.add_event(f"❌ launcher supervisor error: {e}")
             code = 1
         app.exit_code = code
+        supervisor_done.set()
         try:
             app.call_from_thread(app.exit)
         except Exception:
@@ -1107,7 +1186,7 @@ def run(
         # (a Textual startup/runtime fault after the supervisor worker spawned a child).
         shutdown.set()
         _reap(proc_box)
-    sys.exit(getattr(app, "exit_code", 0))
+    sys.exit(_session_exit_code(app, proc_box, supervisor_done))
 
 
 def build_launcher_parser():

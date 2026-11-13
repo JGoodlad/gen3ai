@@ -511,7 +511,10 @@ run must be LAUNCHED with `--gpu-window` to take one.
    point it exits 15 WITHOUT a save (`[ABORT] no safe point within 120s`), and the last periodic
    checkpoint is the resume point; the launcher SIGKILLs at 150 s (`gen3_deferred_abort_v1`,
    `src/main/launcher/CLAUDE.md`). A forced checkpoint (SIGUSR1 / the `c` key) is deferred the same
-   way: its `💾 [CHECKPOINT] Forced save` line can come an update after the signal.
+   way: its `💾 [CHECKPOINT] Forced save` line can come an update after the signal. Read the LAUNCHER's
+   exit too: 0 with `Quit complete` only when the trainer ended INTERRUPTED; 9 with `🛑 UNSAVED stop` when
+   it did not (the stop saved nothing; the line names the checkpoint `latest.txt` points to, the resume
+   point: `designs/launcher/crashes_and_exit_codes.md`, row 9).
 2. **An arm is not killed until the pid is gone and the GPU is free** — verify with `ps -p` and
    `nvidia-smi`. A session restart does not kill a launcher child; "killed" was once said for an arm
    that then ran 7 more hours (ledger `81016942`).

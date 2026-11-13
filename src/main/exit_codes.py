@@ -47,6 +47,15 @@ class TrainExitCode(IntEnum):
 #: 2026-10-01: "a small cap per run").
 CUDA_LEAK_RESTART_CAP = 2
 
+#: THE LAUNCHER'S OWN exit code (never a child's, and never a `TrainExitCode` value): an UNSAVED STOP. The
+#: launcher stopped the child for a quit (the `q` key, a SIGTERM / SIGHUP to the launcher, a quit during a GPU
+#: window's HOLD, an app teardown) and the child did NOT end INTERRUPTED: it exited some other code or logged a
+#: FATAL, so no save is confirmed for the stop and the run stands at whatever `latest.txt` names. Until
+#: 2026-11-12 the launcher logged "Quit complete" and exited 0 for it (rb_b1c_s5101: the child died FATAL on
+#: the launcher's SIGTERM, saved nothing, and the launcher exited 0). The run is resumable from `latest.txt`;
+#: the code says only that this stop saved nothing new.
+LAUNCHER_UNSAVED_STOP = 9
+
 
 class NonFiniteLearnerError(FloatingPointError):
     """A non-finite loss or gradient in the learner — fail CLOSED (Lane K, K9).
