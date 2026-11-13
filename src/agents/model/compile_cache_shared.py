@@ -23,7 +23,10 @@ written into the entry's `stamp.json` and compared on every open — a mismatch 
 * the RUN's compile surface: the model config (`extractor_arch.arch_toggles_from_args` — every
   version-checked architecture toggle) and the trainer flags that shape what is compiled
   (`COMPILE_ARG_KEYS`: the compile switch, device, batch size, grad checkpointing, the graphed-R1 switch, T2's backend /
-  buckets / lanes / caps). The compile REGIONS themselves are code, so the commit names them.
+  buckets / lanes / caps), each at the value the run COMPILES AT: the batch size is the learner's own — on a
+  `--model` launch the checkpoint's restored one, never the argv's inert default (`EFFECTIVE_COMPILE_ARG_KEYS`,
+  `main.train.compile_surface`) — so a fresh start and its resumes share ONE key. The compile REGIONS
+  themselves are code, so the commit names them.
 
 THE CLEAN RULE (`workspace_state`): a shared entry is read or written only when the checkout the code
 was imported from is CLEAN — no tracked change anywhere (staged or not) and no untracked file under
@@ -81,7 +84,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from utils import procfs
 
@@ -118,6 +121,9 @@ COMPILE_ARG_KEYS = ("batch_size", "compile_trainer", "device", "device_batch", "
                     "t2_backend", "t2_buckets", "t2_grouped_opponents", "t2_lanes", "t2_lead_trainee",
                     "t2_opponent_bucket_cap",
                     "trunk_precision")      # R1 traces the trunk rounds' bf16 / fp32 classes (T25 lever A)
+#: The `COMPILE_ARG_KEYS` whose ARGV value is INERT on a `--model` launch (SB3 restores the checkpoint's;
+#: `main.train.recipe_surface.INERT_ON_RESUME`): keyed at their EFFECTIVE value (`run_fields`'s `effective`).
+EFFECTIVE_COMPILE_ARG_KEYS = ("batch_size",)
 NOT_COMPILE_ARG_KEYS = ("checkpoint_every_steps",)     # matched by the regex; a save cadence
 #: Compile keys added AFTER entries were already keyed: each enters the key only when SET (truthy), so a run
 #: that leaves it off keeps the key it had before the flag existed (X45, 2026-10-19: no cold compile for
@@ -306,13 +312,28 @@ def torch_env_fields(environ: Optional[Dict[str, str]] = None) -> Dict[str, str]
             if k.startswith(_ENV_PREFIXES) and k not in _ENV_EXCLUDED}
 
 
-def run_fields(args: Any) -> Dict[str, Any]:
+def run_fields(args: Any, effective: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     """The RUN's compile surface: the model config (every version-checked architecture toggle) and
-    the trainer flags that shape what is compiled."""
+    the trainer flags that shape what is compiled.
+
+    `effective` = the `EFFECTIVE_COMPILE_ARG_KEYS` at the value the learner will really HOLD
+    (`main.train.compile_surface.effective_compile_args`): on a `--model` launch SB3 restores them from the
+    checkpoint and the argv's are inert, so keying the argv filed one graph under two keys (a fresh start's
+    and its resume's). A `--model` namespace WITHOUT them raises — the caller then shares nothing — rather
+    than key a value the run does not compile at."""
     from agents.model.extractor_arch import arch_toggles_from_args
-    return {"arch": arch_toggles_from_args(args),
-            "compile_args": {k: getattr(args, k, None) for k in COMPILE_ARG_KEYS
-                             if k not in COMPILE_ARG_KEYS_WHEN_SET or getattr(args, k, None)}}
+    eff = dict(effective or {})
+    stray = sorted(set(eff) - set(EFFECTIVE_COMPILE_ARG_KEYS))
+    if stray:
+        raise ValueError(f"not an effective compile key: {stray} (EFFECTIVE_COMPILE_ARG_KEYS)")
+    missing = sorted(set(EFFECTIVE_COMPILE_ARG_KEYS) - set(eff))
+    if missing and getattr(args, "model", None):
+        raise ValueError(f"a --model launch restores {missing} from its checkpoint: the argv's value is inert "
+                         f"and must not enter the compile-cache key (pass `effective`)")
+    compile_args = {k: getattr(args, k, None) for k in COMPILE_ARG_KEYS
+                    if k not in COMPILE_ARG_KEYS_WHEN_SET or getattr(args, k, None)}
+    compile_args.update(eff)
+    return {"arch": arch_toggles_from_args(args), "compile_args": compile_args}
 
 
 def canonical(obj: Any) -> str:

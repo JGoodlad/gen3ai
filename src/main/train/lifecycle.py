@@ -44,7 +44,9 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
 def _declare_compile_cache(args, model_dir: str) -> None:
     """K3 (gen3_hermetic_compile_cache_v1): declare this process tree's ONLY compile cache — the
     SHARED entry for the run's key when the code's checkout is clean (gen3_shared_compile_cache_v1,
-    owner 2026-10-10; the key includes `run_fields(args)`, the model config + the compile flags),
+    owner 2026-10-10; the key includes `run_fields(args, effective)`, the model config + the compile flags at
+    their EFFECTIVE values — `compile_surface.effective_compile_args`: on a `--model` launch the checkpoint's
+    restored micro-batch, never the argv's inert one, so a fresh start and its resumes share ONE key),
     else `<run>/compile_cache/`: EMPTY at a fresh launch or a fork, reused only on this run's own
     restart when its stamp (code commit + torch + compile-config row) matches. Must run the moment the run
     dir exists: before any compile, env worker, forkserver, eval subprocess or T2 service, every one
@@ -55,8 +57,9 @@ def _declare_compile_cache(args, model_dir: str) -> None:
     from agents.model.compile_cache_shared import run_fields
     from main.launcher.ipc import emit
     from main.train.fork_lr import is_same_run_checkpoint
+    from main.train.compile_surface import effective_compile_args
     try:
-        run = run_fields(args)
+        run = run_fields(args, effective_compile_args(args))
     except Exception as exc:  # noqa: BLE001 — an unreadable surface never shares; it never kills the run
         print(f"[CompileCache] the run's compile surface is unreadable ({type(exc).__name__}: {exc}) "
               f"— this run will not share a compile cache", file=sys.stderr, flush=True)

@@ -668,26 +668,26 @@
   },
   "src/agents/model/compile_cache_shared_test.py::test_T2s_startup_parity_gate_runs_every_slot_x_bucket_on_a_hit": {
    "status": "pass",
-   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
-   "at": "2026-11-13T03:02:40Z",
-   "duration_s": 5.11,
-   "contention": 1.97,
+   "commit": "657c44ad90a9495424c491ceb3f786c5f0f01163",
+   "at": "2026-11-13T04:33:58Z",
+   "duration_s": 4.35,
+   "contention": 1.71,
    "detail": ""
   },
   "src/agents/model/compile_cache_shared_test.py::test_two_real_processes_share_one_compile": {
    "status": "pass",
-   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
-   "at": "2026-11-13T03:02:40Z",
-   "duration_s": 19.05,
-   "contention": 1.8,
+   "commit": "657c44ad90a9495424c491ceb3f786c5f0f01163",
+   "at": "2026-11-13T04:33:58Z",
+   "duration_s": 20.65,
+   "contention": 2.24,
    "detail": ""
   },
   "src/agents/model/compile_cache_test.py::test_a_real_compile_lands_in_the_run_cache": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:42:10Z",
-   "duration_s": 12.06,
-   "contention": 1.77,
+   "commit": "657c44ad90a9495424c491ceb3f786c5f0f01163",
+   "at": "2026-11-13T04:33:58Z",
+   "duration_s": 8.66,
+   "contention": 1.43,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL": {
@@ -4991,26 +4991,26 @@
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[endstate]": {
    "status": "pass",
-   "commit": "ebb151923f1b731241b69cf666107f17799dcea9",
-   "at": "2026-11-10T23:04:50Z",
-   "duration_s": 1532.0,
-   "contention": 2.48,
+   "commit": "657c44ad90a9495424c491ceb3f786c5f0f01163",
+   "at": "2026-11-13T04:33:58Z",
+   "duration_s": 1458.27,
+   "contention": 1.7,
    "detail": ""
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[production]": {
    "status": "pass",
-   "commit": "0467489bbaf5c8d09bdd36738d41aa4a41cf0ba5",
-   "at": "2026-11-10T22:09:51Z",
-   "duration_s": 1498.77,
-   "contention": 3.25,
+   "commit": "657c44ad90a9495424c491ceb3f786c5f0f01163",
+   "at": "2026-11-13T04:33:58Z",
+   "duration_s": 1457.53,
+   "contention": 1.82,
    "detail": ""
   },
   "src/main/train/fatal_config_exits_integration_test.py::test_a_bot_weights_typo_exits_FATAL_CONFIG_not_CRASH": {
    "status": "pass",
-   "commit": "b38c1fcb758e86e003297cb29237ca18c2ad3081",
-   "at": "2026-11-13T03:02:40Z",
-   "duration_s": 6.85,
-   "contention": 1.87,
+   "commit": "657c44ad90a9495424c491ceb3f786c5f0f01163",
+   "at": "2026-11-13T04:33:58Z",
+   "duration_s": 5.97,
+   "contention": 1.7,
    "detail": ""
   },
   "src/main/train/fresh_build_threads_test.py::test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads[fixture]": {
@@ -5902,5 +5902,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-13T03:02:40Z"
+ "last_written": "2026-11-13T04:33:58Z"
 }

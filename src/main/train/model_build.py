@@ -29,6 +29,7 @@ from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit, send_event
 from main.train.checkpoint_state import _validate_or_reset_optimizer_state
+from main.train.compile_surface import fresh_batch_size, resolve_model_arg
 from main.train.fork_arch import resume_version_build
 from main.train.fork_lr import apply_fork_lr_pin, read_recorded_pin, resolve_fork_lr
 from main.train.lifecycle import (
@@ -235,17 +236,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
     _fork_source_model = args.model
 
     if args.model:
-        model_path = args.model
-        if not os.path.exists(model_path) and not model_path.endswith(".zip"):
-            potential_paths = [
-                os.path.join("models", "goldens", model_path),
-                os.path.join("models", "goldens", model_path, "final_model"),
-                os.path.join("models", "goldens", model_path, "final_model.zip"),
-            ]
-            for p in potential_paths:
-                if os.path.exists(p) or os.path.exists(p + ".zip"):
-                    model_path = p
-                    break
+        model_path = resolve_model_arg(args.model)      # a bare golden NAME resolves under models/goldens/
 
         # The current-code version for the compatibility check — the ONE construction, shared with
         # `main.checkargs` / `launcher --dry-run` (`main.train.fork_arch`, F-BI-2), so a fork they pass
@@ -577,10 +568,11 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         }
         
         # --- Model Initialization ---
-        total_rollout_size = args.n_steps * n_envs
-        if args.batch_size > total_rollout_size:
-            print(f"Note: Capping batch_size from {args.batch_size} to {total_rollout_size} to match rollout capacity.")
-            args.batch_size = total_rollout_size
+        # ONE rule with the shared compile cache's key (`compile_surface.effective_compile_args`).
+        _capped = fresh_batch_size(batch_size=args.batch_size, n_steps=args.n_steps, n_envs=n_envs)
+        if _capped != args.batch_size:
+            print(f"Note: Capping batch_size from {args.batch_size} to {_capped} to match rollout capacity.")
+            args.batch_size = _capped
 
         model = construct_fresh_learner(args, env, policy_kwargs)
 

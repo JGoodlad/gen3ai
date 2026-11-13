@@ -131,9 +131,14 @@ the root `conftest.py` sets `GEN3AI_SHARED_COMPILE_CACHE=0` so no test touches t
   `INDUCTOR_*` variable except the two cache-dir ones (an environment knob can change codegen without changing the graph);
 - the run's compile surface: `extractor_arch.arch_toggles_from_args(args)` plus `COMPILE_ARG_KEYS` (batch size,
   `compile_trainer`, `device`, `device_batch`, `grad_checkpointing`, `learner_cudagraphs`, the `t2_*` keys, `trunk_precision`).
-  A new trainer flag whose name says compile / precision / device / batch / T2 FAILS
-  `test_every_compile_flag_is_keyed_or_declared_irrelevant` until it is keyed or declared irrelevant; a key added later enters
-  only when SET (`COMPILE_ARG_KEYS_WHEN_SET`: `t2_grouped_opponents` and `magnet_kl_coef`, the latter also appending a column to R1's call, `magnet_kl.md` §4), so existing runs keep their key. The compile REGIONS are code, named by the commit.
+  A new trainer flag named compile / precision / device / batch / T2 FAILS
+  `test_every_compile_flag_is_keyed_or_declared_irrelevant` until keyed or declared irrelevant; a key added later enters
+  only when SET (`COMPILE_ARG_KEYS_WHEN_SET`: `t2_grouped_opponents`, `magnet_kl_coef`), so existing runs keep their key.
+  The compile REGIONS are code, named by the commit.
+- **A flag whose argv is inert on a `--model` launch is keyed at the value the learner HOLDS** (`EFFECTIVE_COMPILE_ARG_KEYS`:
+  `batch_size`; `main.train.compile_surface`, `compile_surface_test.py`): the checkpoint zip's own `data` value there, the
+  argv's after `model_build`'s rollout cap on a fresh launch, so a run's restarts share its fresh start's entry. An unreadable
+  checkpoint shares nothing. A pin before 2026-11-12 keys a restart on the parser default: one cold compile (≈ 15 min), a second entry.
 
 **THE CLEAN RULE** (`workspace_state`, run in the CHILD's checkout, i.e. `repo_root()` of the imported code):
 
