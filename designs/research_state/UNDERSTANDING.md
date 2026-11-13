@@ -838,8 +838,10 @@ all 24 cells above 50). Under the fresh-run seed floor the interval is [+1.35, +
   not matter is CPU only). A late fork with nine refreshes is not a fresh run, siblings are not Kakuna, and nothing
   here measures exploitability or cycling, which is what the lever was proposed for. One weight, one cadence.
 - **What it moves: nothing.** The PASS licenses REGISTERING a follow-up on new seeds, and its reading names the
-  control that follow-up most needs: an `--ent-coef 0` arm with no magnet at the CE-3d pin (§6). None is
-  registered. The production recipe and BOUNDARY-1's arms are untouched.
+  control that follow-up most needs: an `--ent-coef 0` arm with no magnet at the CE-3d pin (§6). It is
+  REGISTERED 2026-11-13 as X70 and not launched
+  ([`measurements/x70_ent0_control_2026-11-13/PREREG.md`](measurements/x70_ent0_control_2026-11-13/PREREG.md)). The
+  production recipe and BOUNDARY-1's arms are untouched.
 
 [MEASURED · in-house head to head, forks at tag `ce3d-pin-9e97cad5` vs C0 at pin `f4b25238`, played at tag `ce3d-pin-333a73dd`, CPU · ledger 2026-11-12 · *CE-3d the trailing-magnet screen: PASS*]
 
@@ -898,7 +900,7 @@ primary cannot be powered on the toy, and it costs more than the production read
 | Did Kakuna's self-play see near copies of our unfamiliar panels (assumption A-K)? | the sealed `forum216b` panel and the reverse cell; the open part needs downloads not made |
 | Does Foul Play beat P\*? | a direct read; only the Kakuna proxy exists (§3.1) |
 | Do a human's choices identify a human's team (L3-H)? | the L3 read on ladder states with a human opponent model |
-| Is the trailing anchor worth anything beyond removing the entropy bonus (CE-3d, §4.16)? | an `--ent-coef 0` fork with NO magnet at the CE-3d pin, on new seeds, against the magnet arm (or the magnet against an arm matched on realised entropy); a C0-recipe control at the same pin if the gain is to be quoted. Licensed to be registered by CE-3d's PASS; not registered |
+| Is the trailing anchor worth anything beyond removing the entropy bonus (CE-3d, §4.16)? | **X70, REGISTERED 2026-11-13, not launched** ([`measurements/x70_ent0_control_2026-11-13/PREREG.md`](measurements/x70_ent0_control_2026-11-13/PREREG.md)): four `--ent-coef 0` forks with NO magnet at the CE-3d pin, on new seeds, head to head against the three swap forks (`ANCHOR-ADDS` / `ANCHOR-COSTS` / `NOT-SEPARATED`; a +1.5 pp effect is seen with probability 0.87–0.99, +1 pp with 0.58–0.83). It reads the whole KL term: the anchor's direction and the entropy it holds stay unseparated (the matched-realised-entropy arm is the next control, not registered), and a C0-recipe control at the same pin is not registered either |
 | Does one-ply search add to a best responder, or defend its target? | R0's search cells, DEFERRED (S′-HONEST un-paused search for goal (b) only) |
 | Can P\* + S′h's gain be bought cheaper, and played as a deployable player? | search ledger Q19: the player is designed (`../endstate/design_searched_player.md`) and its cost read DRAFTED, not registered; CPU-side, below the model-first GPU queue (owner, 2026-11-09; [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md) §2.0) |
 | Can the network absorb honest search's gain? | Supervised distillation at two recipes did not deliver the search's choices: X65 on the leak-inclusive labels and X66 (ExIt-0H) on S′h's 188k honest labels both read NOT-DELIVERED (§4). What stays open, each needing its own case and registration and none planned on X66 alone: a de-noised target (several search keys a decision; a third of S′h's departures reproduce under another key), whether the network can memorise the honest departures in-sample at all, more labels, an in-loop form (ExIt-1). X66 is not evidence for or against the scale bet |

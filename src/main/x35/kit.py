@@ -56,6 +56,11 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   ``batch.CE3D_PIN`` (the production side pin + the magnet's backport + the startup fit check's fix, PREREG
   Amendment 3; the first of the two commits alone, ``batch.CE3D_MAGNET_PIN``, is refused), read head to head
   against the banked C0 finals. The registration's two arms (``ce3d_mag``, ``ce3d_ent``) were dropped before any launch;
+* X70, THE ENT-0 CONTROL (CE-3d's follow-up, licensed by its PASS; PREREG ``x70_ent0_control_2026-11-13/PREREG.md``):
+  ``x70`` -- the swap's argv token for token MINUS ``--magnet-kl-coef 0.05``, i.e. C0's + the ONE flag ``--ent-coef 0``
+  (:data:`X70_LEVER`: no entropy bonus and no magnet), seeds 7331-7334, at the swap's own training pin
+  ``batch.CE3D_PIN``. One look, read head to head against the three banked swap forks (the deciding cross isolates
+  ``--magnet-kl-coef 0.05`` at ``--ent-coef 0``);
 * X63-C, THE X63 CONTROL REPLICATE (``design_x63_long_breadth_continuation.md``; ``reviews/x63_review_2026-10-27.md``
   B1 fix 3; PREREG ``x63c_control_replicate_2026-10-28/PREREG.md``): ``x63c`` -- X26c's recorded argv token for token
   with only ``--seed`` (6302) and ``--run-name`` changed, +100M, side-pinned at the production pin. It has NO lever:
@@ -227,6 +232,10 @@ X67_LEVER = ("--ent-coef", "0.0125")
 #: check) only; a fork applies a typed ``--ent-coef 0`` (``model_build``'s resume path assigns it
 #: unconditionally; the pin's CPU smoke printed ``ent_coef 0`` in the magnet's attach line).
 CE3D_SWAP_LEVER = ("--ent-coef", "0", "--magnet-kl-coef", "0.05")
+#: X70's ONE flag (PREREG ``x70_ent0_control_2026-11-13`` §2): the swap's lever MINUS the magnet. No entropy bonus and
+#: no anchor: the policy loss and the value loss alone. ``magnet_kl_coef`` is untyped, so the run records the pin's
+#: default 0.0 and builds no magnet (no T2 magnet slot, no sidecar, no ``magnet/`` meter).
+X70_LEVER = CE3D_SWAP_LEVER[:2]
 #: N4's ONE lever (``design_n4_capacity_screen.md`` §2; B-FFNW, T69; PREREG ``n4_capacity_screen_2026-10-27`` §2): every
 #: trunk round's FFN grows 256 -> 1,024 hidden units as a branch whose output weights start at ZERO, so the grown toy
 #: starts as T*'s function bit for bit at the 64-row gate (``FATAL_CONFIG`` otherwise). +394,752 parameters on the toy.
@@ -261,6 +270,7 @@ ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH, "toy_n4f
 ARM_TYPED_RECIPE: Dict[str, Tuple[Tuple[str, str, str], ...]] = {
     "x67": (("ent_coef", X67_LEVER[1], X67_LEVER[0]),),
     "ce3d_swap": (("ent_coef", "0.0", CE3D_SWAP_LEVER[0]), ("magnet_kl_coef", CE3D_SWAP_LEVER[3], CE3D_SWAP_LEVER[2])),
+    "x70": (("ent_coef", "0.0", X70_LEVER[0]),),
 }
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
 #: (``x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`` §7, c9516bac / 96c663d4). The mechanism is the flag plus
@@ -299,6 +309,9 @@ X67_SEEDS = (6701, 6702, 6703)
 #: registered sibling's, C0's 3501-3508 and the six seeds of the two dropped arms, ``batch.CE3D_RETIRED_SEEDS``,
 #: included); more is a new registration
 CE3D_SWAP_SEEDS = (7321, 7322, 7323)
+#: X70: ONE look at four NEW seeds (PREREG x70_ent0_control_2026-11-13 §3: disjoint from every registered sibling's and
+#: from ``batch.CE3D_RETIRED_SEEDS``; four, not three, is §6's power choice); more is a new registration
+X70_SEEDS = (7331, 7332, 7333, 7334)
 #: X63-C: one seed, the control replicate of X63 (review B1 fix 3); more is a new registration
 X63C_SEEDS = (6302,)
 #: X63-C's length: X63's +100M continuation from X26 @380M (X26c's own +100M).
@@ -335,6 +348,9 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     # CE-3d, the trailing-magnet screen (PREREG ce3d_magnet_screen_2026-11-11, Amendments 1 and 3), at batch.CE3D_PIN, one
     # look: the swap (C0 + --ent-coef 0 --magnet-kl-coef 0.05), read against the banked C0 finals
     Arm("ce3d_swap", "production", L_PROD, CE3D_SWAP_SEEDS, "rb_x35_ce3dswap_s{seed}", 0, "warn"),
+    # X70, the ent-0 control (PREREG x70_ent0_control_2026-11-13), at batch.CE3D_PIN, one look: the swap's argv minus
+    # the magnet (C0 + --ent-coef 0), read against the three banked swap forks
+    Arm("x70", "production", L_PROD, X70_SEEDS, "rb_x35_x70ent0_s{seed}", 0, "warn"),
     # X63-C, the X63 control replicate (review B1 fix 3): X26c's argv, seed and run changed; start X26 @380M, not P*
     Arm("x63c", "production", L_X63C, X63C_SEEDS, "rb_x63c_s{seed}", 0, "warn"),
     # X63-U, the X63 treatment (PREREG x63_2026-10-29): X26c's argv + the union team mix; start X26 @380M; own pin
@@ -496,6 +512,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(X67_LEVER)
     elif arm == "ce3d_swap":
         lever = list(CE3D_SWAP_LEVER)
+    elif arm == "x70":
+        lever = list(X70_LEVER)
     elif arm == "toy_n4ffn":
         lever = list(N4_LEVER)
     elif arm in ("sprt", "toy_sprt"):
@@ -635,7 +653,7 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
     the arm's K9(b) mode, ``checkargs`` prints the same mode, the trainer's own arch check passed, and the DECLARED
     growth line is the arm's own (:data:`ARM_GROWTH`: X47's, X48's, N4's; in BOTH tools) and absent for every other arm (the
     always-printed "(child-only: a declared growth's …)" note is not a growth line); a recipe-lever arm's knob prints
-    TYPED at its value in BOTH tools (:data:`ARM_TYPED_RECIPE`: X67's one, the CE-3d swap's two), and no arm shows
+    TYPED at its value in BOTH tools (:data:`ARM_TYPED_RECIPE`: X67's one, the CE-3d swap's two, X70's one), and no arm shows
     another arm's typed knob."""
     probs: List[str] = []
     if rc_checkargs != 0:

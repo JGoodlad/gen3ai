@@ -1,0 +1,146 @@
+{
+ "x_what": "X70 (PREREG.md beside this file): the four DRAFT arm items for the Training session's arm chain (schema arm_chain_v1, backend x35): the ONE arm x70 (C0's argv + --ent-coef 0 = the CE-3d swap's argv minus the magnet) at seeds 7331-7334, at the swap forks' TRAINING pin 9e97cad5. REGISTERED, NOT LAUNCHED: this file carries NO GO. On the orchestrator's GO, copy `items` into a NEW chain file in this order and replace `go_by` with the GO and the registration's commit. The four forks need not run back to back (PREREG \u00a73, \u00a712): a chain may hold any prefix of the remaining items, in seed order, and no B1 run is ever paused for one. No cell of any cross is played before all four forks have passed their arm-end checks. Nothing here launches; `arm_chain_plan_x70.txt` is the plan these items produced at the registration.",
+ "x_backend": {
+  "kind": "x35",
+  "launch_script": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh",
+  "stage": "designs/research_state/measurements/x35_breakers_stage_2026-10-17"
+ },
+ "x_pin": {
+  "sha": "9e97cad5709da21a1f9d4d8846096c87eb17b1d0",
+  "tag": "ce3d-pin-9e97cad5",
+  "base": "333a73ddda7829b9ccdf9e17ef04624eb40edeba",
+  "base_tag": "ce3d-pin-333a73dd",
+  "base_base": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+  "x_note": "sha = the CE-3d swap forks' training pin (main.x35.batch.CE3D_PIN; ARM_PINS['x70']). base = the first CE-3d pin, where all three X70 crosses are PLAYED (as CE-3d's were). base_base = the production side pin."
+ },
+ "items": [
+  {
+   "kind": "arm",
+   "arm": "x70",
+   "seed": 7331,
+   "pin": "9e97cad5709da21a1f9d4d8846096c87eb17b1d0",
+   "run": "rb_x35_x70ent0_s7331",
+   "go_by": "<orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)",
+   "thin": "planner",
+   "flags": [
+    "--thinning"
+   ],
+   "disk_need_gib": 15.0,
+   "banner": {
+    "expect": "ent_coef   | 0 ",
+    "void": [
+     "ent_coef   | 0.05 ",
+     "ent_coef   | 0.1 ",
+     "ent_coef   | 0.0125 ",
+     "[MAGNET] --magnet-kl-coef",
+     "[ModelVersion] FATAL"
+    ],
+    "within_min": 30
+   },
+   "throughput": {
+    "min_steps_per_s": 1000,
+    "within_min": 60,
+    "first_line_within_min": 90
+   },
+   "on_void": "stop",
+   "on_throughput_fail": "page",
+   "x_registration": "X70 PREREG \u00a78: VOID = not finished, K9(b) not PASS at the arm's end, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the hyperparameter table's row `ent_coef   | 0` within 30 min (it prints when learn() starts, after the startup's compile gate and prewarm); a row ent_coef 0.05, 0.1 or 0.0125 is VOID, and so is the magnet's attach line `[MAGNET] --magnet-kl-coef`, which the pin prints only with the coefficient above 0 (an X70 fork has NO magnet). At the arm's end the cross plan checks metadata ent_coef 0.0, model_config magnet_kl_coef PRESENT and 0.0, and no final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). The FIRST fork is the first beta = 0 learner at this pin on the card (PREREG \u00a74.3): a FATAL that is the pin's own STOPS the arm and goes to the orchestrator as a FINDING about the pin, never a class. disk_need_gib = the launcher's dry-run 14.27 rounded up (no magnet sidecar). Pin: CE3D_PIN, the swap forks' TRAINING pin 9e97cad5; the first CE-3d pin 333a73dd and the side pin are refused for a launch."
+  },
+  {
+   "kind": "arm",
+   "arm": "x70",
+   "seed": 7332,
+   "pin": "9e97cad5709da21a1f9d4d8846096c87eb17b1d0",
+   "run": "rb_x35_x70ent0_s7332",
+   "go_by": "<orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)",
+   "thin": "planner",
+   "flags": [
+    "--thinning"
+   ],
+   "disk_need_gib": 15.0,
+   "banner": {
+    "expect": "ent_coef   | 0 ",
+    "void": [
+     "ent_coef   | 0.05 ",
+     "ent_coef   | 0.1 ",
+     "ent_coef   | 0.0125 ",
+     "[MAGNET] --magnet-kl-coef",
+     "[ModelVersion] FATAL"
+    ],
+    "within_min": 30
+   },
+   "throughput": {
+    "min_steps_per_s": 1000,
+    "within_min": 60,
+    "first_line_within_min": 90
+   },
+   "on_void": "stop",
+   "on_throughput_fail": "page",
+   "x_registration": "X70 PREREG \u00a78: VOID = not finished, K9(b) not PASS at the arm's end, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the hyperparameter table's row `ent_coef   | 0` within 30 min (it prints when learn() starts, after the startup's compile gate and prewarm); a row ent_coef 0.05, 0.1 or 0.0125 is VOID, and so is the magnet's attach line `[MAGNET] --magnet-kl-coef`, which the pin prints only with the coefficient above 0 (an X70 fork has NO magnet). At the arm's end the cross plan checks metadata ent_coef 0.0, model_config magnet_kl_coef PRESENT and 0.0, and no final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). The FIRST fork is the first beta = 0 learner at this pin on the card (PREREG \u00a74.3): a FATAL that is the pin's own STOPS the arm and goes to the orchestrator as a FINDING about the pin, never a class. disk_need_gib = the launcher's dry-run 14.27 rounded up (no magnet sidecar). Pin: CE3D_PIN, the swap forks' TRAINING pin 9e97cad5; the first CE-3d pin 333a73dd and the side pin are refused for a launch."
+  },
+  {
+   "kind": "arm",
+   "arm": "x70",
+   "seed": 7333,
+   "pin": "9e97cad5709da21a1f9d4d8846096c87eb17b1d0",
+   "run": "rb_x35_x70ent0_s7333",
+   "go_by": "<orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)",
+   "thin": "planner",
+   "flags": [
+    "--thinning"
+   ],
+   "disk_need_gib": 15.0,
+   "banner": {
+    "expect": "ent_coef   | 0 ",
+    "void": [
+     "ent_coef   | 0.05 ",
+     "ent_coef   | 0.1 ",
+     "ent_coef   | 0.0125 ",
+     "[MAGNET] --magnet-kl-coef",
+     "[ModelVersion] FATAL"
+    ],
+    "within_min": 30
+   },
+   "throughput": {
+    "min_steps_per_s": 1000,
+    "within_min": 60,
+    "first_line_within_min": 90
+   },
+   "on_void": "stop",
+   "on_throughput_fail": "page",
+   "x_registration": "X70 PREREG \u00a78: VOID = not finished, K9(b) not PASS at the arm's end, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the hyperparameter table's row `ent_coef   | 0` within 30 min (it prints when learn() starts, after the startup's compile gate and prewarm); a row ent_coef 0.05, 0.1 or 0.0125 is VOID, and so is the magnet's attach line `[MAGNET] --magnet-kl-coef`, which the pin prints only with the coefficient above 0 (an X70 fork has NO magnet). At the arm's end the cross plan checks metadata ent_coef 0.0, model_config magnet_kl_coef PRESENT and 0.0, and no final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). The FIRST fork is the first beta = 0 learner at this pin on the card (PREREG \u00a74.3): a FATAL that is the pin's own STOPS the arm and goes to the orchestrator as a FINDING about the pin, never a class. disk_need_gib = the launcher's dry-run 14.27 rounded up (no magnet sidecar). Pin: CE3D_PIN, the swap forks' TRAINING pin 9e97cad5; the first CE-3d pin 333a73dd and the side pin are refused for a launch."
+  },
+  {
+   "kind": "arm",
+   "arm": "x70",
+   "seed": 7334,
+   "pin": "9e97cad5709da21a1f9d4d8846096c87eb17b1d0",
+   "run": "rb_x35_x70ent0_s7334",
+   "go_by": "<orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)",
+   "thin": "planner",
+   "flags": [
+    "--thinning"
+   ],
+   "disk_need_gib": 15.0,
+   "banner": {
+    "expect": "ent_coef   | 0 ",
+    "void": [
+     "ent_coef   | 0.05 ",
+     "ent_coef   | 0.1 ",
+     "ent_coef   | 0.0125 ",
+     "[MAGNET] --magnet-kl-coef",
+     "[ModelVersion] FATAL"
+    ],
+    "within_min": 30
+   },
+   "throughput": {
+    "min_steps_per_s": 1000,
+    "within_min": 60,
+    "first_line_within_min": 90
+   },
+   "on_void": "stop",
+   "on_throughput_fail": "page",
+   "x_registration": "X70 PREREG \u00a78: VOID = not finished, K9(b) not PASS at the arm's end, another pin than CE3D_PIN / not FORK of rb_x26_s2601, pool seed, the lever not in the record; throughput < 1,000 = PAGE (HOLD, keep training). Banner: the child's log must print the hyperparameter table's row `ent_coef   | 0` within 30 min (it prints when learn() starts, after the startup's compile gate and prewarm); a row ent_coef 0.05, 0.1 or 0.0125 is VOID, and so is the magnet's attach line `[MAGNET] --magnet-kl-coef`, which the pin prints only with the coefficient above 0 (an X70 fork has NO magnet). At the arm's end the cross plan checks metadata ent_coef 0.0, model_config magnet_kl_coef PRESENT and 0.0, and no final_model.magnet.pt. Canary family: NONE (a canary FATAL HOLDs for the orchestrator; canary_decide needs a typed --family or --bar). The FIRST fork is the first beta = 0 learner at this pin on the card (PREREG \u00a74.3): a FATAL that is the pin's own STOPS the arm and goes to the orchestrator as a FINDING about the pin, never a class. disk_need_gib = the launcher's dry-run 14.27 rounded up (no magnet sidecar). Pin: CE3D_PIN, the swap forks' TRAINING pin 9e97cad5; the first CE-3d pin 333a73dd and the side pin are refused for a launch."
+  }
+ ]
+}

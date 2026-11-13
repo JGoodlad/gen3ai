@@ -11,7 +11,11 @@ config v161 there, the two fields un-versioned; the first launch at the backport
 finals head to head: **D +3.97 pp, 90 % interval [+3.31, +4.63]**; label ENT-LOW (end entropy 0.49 nats against C0's
 1.01). Against X67's three finals (reported, deciding nothing): **+1.01 pp [−0.12, +2.13]**, read "the swap's gain
 over C0 is plausibly the lower uniform push alone". The PASS licenses REGISTERING a follow-up (`--ent-coef 0` with no
-magnet, at the same pin, on new seeds); none is registered yet. It moves no recipe, and the flags stay OFF.
+magnet, at the same pin, on new seeds). That follow-up is REGISTERED 2026-11-13 as **X70**, not launched
+([`../research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md`](../research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md)):
+four forks at `--ent-coef 0` with NO magnet (kit arm `x70`, the swap's argv minus `--magnet-kl-coef 0.05`) at the same
+pin, read head to head against the three swap forks. It is also the first β = 0 learner at this pin on the card.
+Nothing moves a recipe, and the flags stay OFF.
 
 ```
 loss += β · mean over rows of KL(π_θ(·|s) ‖ π_mag(·|s))       β = --magnet-kl-coef (unset = 0 = OFF)

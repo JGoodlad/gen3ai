@@ -1,0 +1,215 @@
+{
+ "self_check": "OK",
+ "problems": [],
+ "banked_8x8": {
+  "delta_hat_pp": 0.5960937500000014,
+  "se_pp": 0.7489845013103577,
+  "welch_df": 13.517571747511758,
+  "cross_stat_df": 14
+ },
+ "ce3d_banked": {
+  "ce3d_deciding": {
+   "delta_hat_pp": 3.967708333333327,
+   "interval90_pp": [
+    3.3060992011209027,
+    4.629317465545752
+   ],
+   "df": 7.317614617512456,
+   "row_means_var_pp2": [
+    0.14551106770833444,
+    "floor",
+    0.15625
+   ],
+   "col_means_var_pp2": [
+    0.5717150297619028,
+    "floor",
+    0.4166666666666667
+   ]
+  },
+  "ce3d_x67": {
+   "delta_hat_pp": 1.0083333333333329,
+   "interval90_pp": [
+    -0.11524857788375331,
+    2.1319152445504193
+   ],
+   "df": 4.0,
+   "row_means_var_pp2": [
+    0.12590277777777595,
+    "floor",
+    0.4166666666666667
+   ],
+   "col_means_var_pp2": [
+    0.3592361111111171,
+    "floor",
+    0.4166666666666667
+   ]
+  }
+ },
+ "cases": {
+  "ANCHOR-ADDS (+2, rows +-0.5)": [
+   "ANCHOR-ADDS",
+   [
+    1.202,
+    2.798
+   ],
+   4.54
+  ],
+  "ANCHOR-COSTS (-2, rows +-0.5)": [
+   "ANCHOR-COSTS",
+   [
+    -2.798,
+    -1.202
+   ],
+   4.54
+  ],
+  "NOT-SEPARATED (+0.5, rows +-1)": [
+   "NOT-SEPARATED",
+   [
+    -1.031,
+    2.031
+   ],
+   2.81
+  ],
+  "NOT-SEPARATED (-0.5, rows +-1)": [
+   "NOT-SEPARATED",
+   [
+    -2.031,
+    1.031
+   ],
+   2.81
+  ],
+  "NOT-SEPARATED (+2, rows +-3: a wide arm)": [
+   "NOT-SEPARATED",
+   [
+    -2.968,
+    6.968
+   ],
+   2.09
+  ],
+  "floors (a flat matrix at +0.3)": [
+   "NOT-SEPARATED",
+   [
+    -0.164,
+    0.764
+   ],
+   0.2282
+  ],
+  "rule 8 (lower end = 0)": [
+   "NOT-SEPARATED",
+   [
+    "lower end vs 0"
+   ]
+  ],
+  "rule 8 (upper end = 0)": [
+   "NOT-SEPARATED",
+   [
+    "upper end vs 0"
+   ]
+  ]
+ },
+ "reported_cases": {
+  "c0 at +4": [
+   "removing the entropy bonus alone, with no anchor, beats the C0 finals at this horizon",
+   [
+    3.216,
+    4.784
+   ],
+   9.85
+  ],
+  "c0 at -4": [
+   "removing the entropy bonus alone, with no anchor, loses to the C0 finals at this horizon",
+   [
+    -4.784,
+    -3.216
+   ],
+   9.85
+  ],
+  "c0 at +0": [
+   "the ent-0 forks are not separated from the C0 finals at this horizon",
+   [
+    -0.784,
+    0.784
+   ],
+   9.85
+  ],
+  "x67 at +4": [
+   "ent_coef 0 beats ent_coef 0.0125 at this horizon: the gain from a lower uniform push continues below 0.0125",
+   [
+    3.072,
+    4.928
+   ],
+   4.8
+  ],
+  "x67 at -4": [
+   "ent_coef 0 loses to ent_coef 0.0125 at this horizon: the gain from a lower uniform push turns over above 0",
+   [
+    -4.928,
+    -3.072
+   ],
+   4.8
+  ],
+  "x67 at +0": [
+   "ent_coef 0 is not separated from ent_coef 0.0125 at this horizon",
+   [
+    -0.928,
+    0.928
+   ],
+   4.8
+  ]
+ },
+ "label_cases": {
+  "all below": [
+   [
+    "ENT-BELOW-SWAP"
+   ],
+   []
+  ],
+  "all above": [
+   [
+    "ENT-ABOVE-SWAP"
+   ],
+   []
+  ],
+  "overlap (one inside the swap's range)": [
+   [],
+   []
+  ],
+  "overlap (straddles)": [
+   [],
+   []
+  ],
+  "below and one collapsed": [
+   [
+    "ENT-BELOW-SWAP",
+    "ENT-COLLAPSED"
+   ],
+   []
+  ],
+  "collapsed without ENT-BELOW (one fork above the swap's lowest)": [
+   [
+    "ENT-COLLAPSED"
+   ],
+   []
+  ],
+  "rule 8: the highest X70 equals the lowest swap": [
+   [],
+   [
+    "highest X70 vs lowest swap"
+   ]
+  ],
+  "rule 8: a fork exactly on the collapse bar": [
+   [
+    "ENT-BELOW-SWAP"
+   ],
+   [
+    "X70 fork 1 vs the collapse bar"
+   ]
+  ]
+ },
+ "swap_end_entropy_banked": [
+  0.4837687760591507,
+  0.49621051996946336,
+  0.49211294054985044
+ ],
+ "collapse_bar_nats": 0.24188438802957535
+}

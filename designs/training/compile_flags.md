@@ -977,9 +977,10 @@ d1wide,x52*,d3mut,n1p,x48kffn,x67ent}_s*` is a fork of P* (rb_x26_s2601 @280M) a
 takes the C0 bar (X48, per-token-kind FFN experts grown at the fork, by its PREREG's ruling:
 `designs/research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md` §7; X67, C0's graph under a smaller
 entropy coefficient, by `designs/research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md` §8; CE-3d's swap
-arm `rb_x35_ce3dswap_s*` is in NO family, by
-`designs/research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md` §8: its learner graph takes the
-magnet's column and no healthy pass was measured with it, so a canary FATAL there HOLDs for the orchestrator); the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. The 2.64 was measured on the TOY C0 and
+arm `rb_x35_ce3dswap_s*` and its ent-0 control `rb_x35_x70ent0_s*` are in NO family, by §8 of
+`designs/research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md` and of
+`designs/research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md`: no healthy pass was measured for
+either's graph at that pin, so a canary FATAL HOLDs for the orchestrator); the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. The 2.64 was measured on the TOY C0 and
 KEPT for global-M runs by the 2026-10-28 ruling on production provenance (`canary_recalibration_2026-10-28.md` §6): 3 of
 91 healthy X35 passes read above it (maximum 5.0, D3 s3504 u200), so it errs to HOLD, and 1.25 x 5.0 would resume most
 real disagreements. Any other name (`rb_x35_r0_*`) HOLDs until `--family` or a typed

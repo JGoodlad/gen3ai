@@ -31491,3 +31491,54 @@ View: `UNDERSTANDING.md` (§4.16, TL;DR item 5, §6), `STATUS.md` (§2 the CE-3d
 CE-3d bullet), `EXPERIMENT_BACKLOG.md` (the CE-3d row).
 
 Tag: **VERDICT · CE-3d trailing-magnet swap · PASS · D +3.97 pp [+3.31, +4.63] (3 × 8, row floor bound) · pessimistic [+1.35, +6.58] · banked +4.14 / top-up +3.68 · ENT-LOW (0.49 vs 1.01 nats; X67 0.68) · no LR-MOVED · vs X67's finals +1.01 pp [−0.12, +2.13] ⇒ "plausibly the lower uniform push alone" · licenses registering a follow-up (the `--ent-coef 0` no-magnet control), nothing else**
+
+### 2026-11-13 · REGISTRATION · **X70, the ent-0 control of the trailing-magnet screen, REGISTERED (full tier, blind; NOT LAUNCHED, no GO): four P\* + 20M forks at `--ent-coef 0` with NO magnet (seeds 7331–7334, the swap's training pin `9e97cad5`) against the three banked CE-3d swap forks, 3 × 4 at 4,000 pairs a cell, one look — `ANCHOR-ADDS` / `ANCHOR-COSTS` / `NOT-SEPARATED` / `INCONCLUSIVE`; sees +1.5 pp with probability 0.87–0.99 and +1 pp with 0.58–0.83; every class licenses registering a next step only; moves no recipe**
+
+**Why.** CE-3d read PASS (the entry above): the swap forks beat C0 by +3.97 pp, and its reported cross against X67's
+finals read "plausibly the lower uniform push alone". Its §10 licensed registering a follow-up and named the
+control: an `--ent-coef 0` arm with no magnet at the CE-3d pin on new seeds.
+
+**The question.** At `--ent-coef 0`, do forks trained WITH the trailing anchor (β 0.05, refreshed every 2M steps)
+beat forks trained WITHOUT it? β·KL(π‖π_mag) = −β·H(π) − β·Σπ·log π_mag, so the swap is C0's entropy term plus a pull
+toward the trailing copy, and X70 is neither. The cross isolates ONE flag, `--magnet-kl-coef 0.05`, which is the whole
+KL term: it does not separate the anchor's direction from the entropy level the term holds.
+
+**Registered** (`measurements/x70_ent0_control_2026-11-13/PREREG.md`, before any X70 training step, game or read).
+- **Arm:** kit arm `x70`, `rb_x35_x70ent0_s7331..s7334` = C0's argv token for token + `--ent-coef 0` = the swap's
+  minus `--magnet-kl-coef 0.05`; training pin `9e97cad5709da21a1f9d4d8846096c87eb17b1d0` (tag `ce3d-pin-9e97cad5`);
+  games at the play pin `333a73dd` (tag `ce3d-pin-333a73dd`); dose matched to the swap forks by `main.dose`
+  (effective batch 65,536, 10 epochs, `lr_median` 0.0001005).
+- **Deciding cross:** rows the three banked swap forks, columns the four X70 forks, 4,000 mirrored pairs a cell
+  (96,000 games), CE-3d's estimator, the 90 % interval of D = mean(h) − 50. `ANCHOR-ADDS` iff the lower end > 0,
+  `ANCHOR-COSTS` iff the upper end < 0, else `NOT-SEPARATED`; a missing or invalid input is `INCONCLUSIVE`. Rule 8
+  at 1e-9 pp. One look.
+- **Reported, deciding nothing:** the X70 forks against the eight C0 finals (4 × 8) and against X67's three finals
+  (4 × 3), 1,000 pairs a cell, each with a reading fixed in advance.
+- **Power** (`power.log`, `power_designs.log`): half-width ≈ 0.63–0.87 pp at a fork-seed SD of 0.3–0.5 pp; a +1.5 pp
+  effect is seen with probability 0.87–0.99, a +1 pp effect with 0.83 / 0.70 / 0.58 at SD 0.3 / 0.4 / 0.5. A 3 × 3
+  cross at 1,000 pairs sees +1 pp one time in four. The limit that stays is the three banked swap forks (2 df).
+  UNVERIFIED: that cell noise falls as 1/√pairs beyond 1,000 pairs.
+- **Guards and labels:** all four forks required; K9(b) at each arm's end; the lever in the record (the banner, the
+  plan's `ent_coef` / `magnet_kl_coef` / sidecar guards, the dose read). Labels `ENT-BELOW-SWAP`, `ENT-ABOVE-SWAP`
+  (end entropy against the swap's 0.4838–0.4962 nats), `ENT-COLLAPSED` (any fork below 0.2419 nats; a label, not a
+  VOID: a collapse with no regulariser is the lever's own effect), `LR-MOVED`. No canary family.
+- **The first fork** is the first β = 0 learner at this pin on the card (CE-3d §4.4 item 6); a failure there is
+  classified by the PREREG's §4.3 (a startup or compile FATAL is a launch failure, never a result).
+- **Licences:** every class licenses REGISTERING a next step and nothing else; nothing moves a recipe without the
+  owner.
+- **Cost and slot:** ≈ 16.4–17 GPU-h for the forks; the crosses ≈ 53 CPU lane-h, or ≈ 1.3 GPU-h on the card (that
+  rate UNVERIFIED). Proposed slot: after BOUNDARY-1's phase 2 and its looks (≈ 2026-11-25); no BOUNDARY-1 run is
+  paused. BOUNDARY-1's 50M look is played on the card, so there is no GPU gap at that look.
+
+**Validated, CPU only, no lease:** `checkargs --pin` exit 0 for the four seeds; the four launcher dry runs refuse
+only at the CUDA-visibility and inherited-nice preflights (the registering shell's own); kit `stage-check` ALLOWED,
+`pin-check` passes at the training pin and refuses the play pin and the side pin; `arm_chain plan` OK on the four
+draft items and REFUSED on a fifth seed; the rule's self-check reproduces CE-3d's two banked results. Not executed:
+`launch_x35.sh`, any play command, any GPU step.
+
+**Record:** `measurements/x70_ent0_control_2026-11-13/` (`PREREG.md`, `screen_rule.py`, `cross/`,
+`chain_items_x70.json`, the argv / checkargs / dry-run transcripts, `kit_checks_x70.txt`, `arm_chain_plan_x70.txt`,
+`dose_swap.txt`, `power*.log`, `selfcheck.log`, `plan_check_banked.txt`); `src/main/x35/x70_test.py`.
+View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X70, the CE-3d rows), `UNDERSTANDING.md` (§4.16, §6).
+
+Tag: **REGISTRATION · X70 ent-0 control · swap × X70, 3 × 4 @ 4,000 pairs · ANCHOR-ADDS / ANCHOR-COSTS / NOT-SEPARATED / INCONCLUSIVE · +1.5 pp seen 0.87–0.99, +1 pp 0.58–0.83 · seeds 7331–7334 at `ce3d-pin-9e97cad5` · not launched · moves no recipe**

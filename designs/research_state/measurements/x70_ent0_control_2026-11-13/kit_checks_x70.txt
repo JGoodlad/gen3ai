@@ -1,0 +1,57 @@
+# The x35 kit's read-only pre-checks for the X70 arm (x70) at the swap forks' TRAINING pin 9e97cad5, executed 2026-11-13 from the
+# registration's tree (CPU only, no lease, CUDA hidden, nice 19 on the agent cores). `launch_x35.sh` runs the same checks before
+# every launch; nothing here creates a run or writes under models/.
+
+$ python -m main.x35.kit stage-check --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --arm x70 --seed 7331
+[x35 kit] stage-check x70 s7331: ALLOWED: x70 s7331: no unmet condition (stage X70, X70 PREREG present)
+rc=0
+$ python -m main.x35.kit stage-check --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --arm x70 --seed 7332
+[x35 kit] stage-check x70 s7332: ALLOWED: x70 s7332: no unmet condition (stage X70, X70 PREREG present)
+rc=0
+$ python -m main.x35.kit stage-check --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --arm x70 --seed 7333
+[x35 kit] stage-check x70 s7333: ALLOWED: x70 s7333: no unmet condition (stage X70, X70 PREREG present)
+rc=0
+$ python -m main.x35.kit stage-check --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --arm x70 --seed 7334
+[x35 kit] stage-check x70 s7334: ALLOWED: x70 s7334: no unmet condition (stage X70, X70 PREREG present)
+rc=0
+
+# a fifth seed (four are registered; no look 2) and a swap seed under this arm
+$ python -m main.x35.kit stage-check --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --arm x70 --seed 7335
+[x35 kit] REFUSED: seed 7335 is not registered for x70 ([7331, 7332, 7333, 7334])
+rc=2
+$ python -m main.x35.kit stage-check --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --arm x70 --seed 7321
+[x35 kit] REFUSED: seed 7321 is not registered for x70 ([7331, 7332, 7333, 7334])
+rc=2
+
+# the arm's pin against the REAL models/
+$ python -m main.x35.kit pin-check --pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 --side production --arm x70 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --models-dir /home/goodlad/dev/gen3ai/models
+[x35 kit] pin-check: X70 PREREG §3: the CE-3d pin 9e97cad5709d = the first CE-3d pin 333a73ddda78 + one commit, exactly the 3 enumerated path(s) (the startup fit check's fix, Amendment 3); 333a73ddda78 = the side pin f4b25238def5 + one commit, exactly the 44 enumerated path(s)
+[x35 kit] pin-check: rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN: a STARTUP-DEAD attempt at 333a73ddda78 (CE-3d PREREG Amendment 3 (§15): it died before its first step and wrote no metadata, checkpoint or model; never trained, never read), moved aside
+[x35 kit] pin-check: rb_x35_d1wide_s3501.crashed-20261022: a PRE-FIX d1 attempt at X35_PIN_1_production f4b25238def5 (AM-D1-FIX-f: VOID, never read)
+[x35 kit] pin-check: 58 side-pinned production run(s) checked against f4b25238def5
+[x35 kit] pin-check: the other side's run(s), judged at its own launches: ['rb_x35t_c0_s3601', 'rb_x35t_c0_s3602', 'rb_x35t_c0_s3603', 'rb_x35t_c0n4_s3641', 'rb_x35t_c0n4_s3642', 'rb_x35t_c0n4_s3643', 'rb_x35t_n4ffn_s3641', 'rb_x35t_n4ffn_s3642', 'rb_x35t_n4ffn_s3642.gpufault-20261101', 'rb_x35t_n4ffn_s3643', 'rb_x35t_r0_s3631', 'rb_x35t_x47d4_s3601', 'rb_x35t_x47d4_s3602', 'rb_x35t_x47d4_s3603']
+[x35 kit] pin-check: not a side-pinned arm (batch 1 / 2 / G-E reader), not judged here: ['rb_x35_x69a_s6901', 'rb_x35_x69ab_s6903', 'rb_x35_x69b_s6902']
+rc=0
+
+# the first CE-3d pin (the PLAY pin) and the plain production side pin: each REFUSED for a launch of this arm
+$ python -m main.x35.kit pin-check --pin 333a73ddda7829b9ccdf9e17ef04624eb40edeba --side production --arm x70 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --models-dir /home/goodlad/dev/gen3ai/models
+[x35 kit] pin-check: X70 PREREG §3: x70 (an arm at the CE-3d training pin) launches only at CE3D_PIN 9e97cad5709d, not 333a73ddda78
+[x35 kit] pin-check: rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN: a STARTUP-DEAD attempt at 333a73ddda78 (CE-3d PREREG Amendment 3 (§15): it died before its first step and wrote no metadata, checkpoint or model; never trained, never read), moved aside
+[x35 kit] pin-check: rb_x35_d1wide_s3501.crashed-20261022: a PRE-FIX d1 attempt at X35_PIN_1_production f4b25238def5 (AM-D1-FIX-f: VOID, never read)
+[x35 kit] pin-check: 58 side-pinned production run(s) checked against f4b25238def5
+[x35 kit] pin-check: the other side's run(s), judged at its own launches: ['rb_x35t_c0_s3601', 'rb_x35t_c0_s3602', 'rb_x35t_c0_s3603', 'rb_x35t_c0n4_s3641', 'rb_x35t_c0n4_s3642', 'rb_x35t_c0n4_s3643', 'rb_x35t_n4ffn_s3641', 'rb_x35t_n4ffn_s3642', 'rb_x35t_n4ffn_s3642.gpufault-20261101', 'rb_x35t_n4ffn_s3643', 'rb_x35t_r0_s3631', 'rb_x35t_x47d4_s3601', 'rb_x35t_x47d4_s3602', 'rb_x35t_x47d4_s3603']
+[x35 kit] pin-check: not a side-pinned arm (batch 1 / 2 / G-E reader), not judged here: ['rb_x35_x69a_s6901', 'rb_x35_x69ab_s6903', 'rb_x35_x69b_s6902']
+rc=1
+$ python -m main.x35.kit pin-check --pin f4b25238def57900c0305bb2a3a5a8f9edaef285 --side production --arm x70 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --models-dir /home/goodlad/dev/gen3ai/models
+[x35 kit] pin-check: X70 PREREG §3: x70 (an arm at the CE-3d training pin) launches only at CE3D_PIN 9e97cad5709d, not f4b25238def5
+[x35 kit] pin-check: rb_x35_ce3dswap_s7321.FITCHECK_NO_MAGNET_COLUMN: a STARTUP-DEAD attempt at 333a73ddda78 (CE-3d PREREG Amendment 3 (§15): it died before its first step and wrote no metadata, checkpoint or model; never trained, never read), moved aside
+[x35 kit] pin-check: rb_x35_d1wide_s3501.crashed-20261022: a PRE-FIX d1 attempt at X35_PIN_1_production f4b25238def5 (AM-D1-FIX-f: VOID, never read)
+[x35 kit] pin-check: 58 side-pinned production run(s) checked against f4b25238def5
+[x35 kit] pin-check: the other side's run(s), judged at its own launches: ['rb_x35t_c0_s3601', 'rb_x35t_c0_s3602', 'rb_x35t_c0_s3603', 'rb_x35t_c0n4_s3641', 'rb_x35t_c0n4_s3642', 'rb_x35t_c0n4_s3643', 'rb_x35t_n4ffn_s3641', 'rb_x35t_n4ffn_s3642', 'rb_x35t_n4ffn_s3642.gpufault-20261101', 'rb_x35t_n4ffn_s3643', 'rb_x35t_r0_s3631', 'rb_x35t_x47d4_s3601', 'rb_x35t_x47d4_s3602', 'rb_x35t_x47d4_s3603']
+[x35 kit] pin-check: not a side-pinned arm (batch 1 / 2 / G-E reader), not judged here: ['rb_x35_x69a_s6901', 'rb_x35_x69ab_s6903', 'rb_x35_x69b_s6902']
+rc=1
+
+# the side's required commits at the pin
+$ python -m main.x35.kit required-check --pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 --side production --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17
+[x35 kit] required-check production: FP32_ALT d4af9f1e2606 is in the pin 9e97cad5709d
+rc=0

@@ -90,7 +90,8 @@ def test_the_swap_declares_both_typed_knobs_with_the_printed_spelling():
     """One arm, TWO typed recipe rows: the entropy coefficient at 0 (printed ``0.0``) and the magnet's coefficient."""
     assert K.ARM_TYPED_RECIPE == {
         "x67": (("ent_coef", "0.0125", "--ent-coef"),),
-        ARM: (("ent_coef", "0.0", "--ent-coef"), ("magnet_kl_coef", "0.05", "--magnet-kl-coef"))}
+        ARM: (("ent_coef", "0.0", "--ent-coef"), ("magnet_kl_coef", "0.05", "--magnet-kl-coef")),
+        "x70": (("ent_coef", "0.0", "--ent-coef"),)}                # X70: the swap's first row alone (x70_test.py)
     x67 = K.build_argv("x67", 6701, standin_call())
     swap = K.build_argv(ARM, 7321, standin_call())
     assert x67[x67.index("--ent-coef") + 1] == "0.0125" and swap[swap.index("--ent-coef") + 1] == "0"

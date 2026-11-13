@@ -1,0 +1,6 @@
+$ python designs/research_state/measurements/x70_ent0_control_2026-11-13/cross/plan_cross.py --banked-only
+banked runs OK: swap [7321, 7322, 7323]; c0 [3501, 3502, 3503, 3504, 3505, 3506, 3507, 3508]; x67 [6701, 6702, 6703] (14 finals pass every guard)
+rc=0
+$ python designs/research_state/measurements/x70_ent0_control_2026-11-13/cross/plan_cross.py --cross anchor --out /dev/null --shas /dev/null     # no X70 fork exists: the plan must REFUSE
+REFUSED: rb_x35_x70ent0_s7331: no final_model.zip; rb_x35_x70ent0_s7332: no final_model.zip; rb_x35_x70ent0_s7333: no final_model.zip; rb_x35_x70ent0_s7334: no final_model.zip
+rc=3

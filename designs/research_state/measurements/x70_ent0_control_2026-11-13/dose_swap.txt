@@ -1,0 +1,9 @@
+# The DOSE the X70 forks must match (PREREG §3): `python -m main.dose` on the three banked swap forks, 2026-11-13 (CPU, read-only).
+$ python -m main.dose models/rb_x35_ce3dswap_s7321 models/rb_x35_ce3dswap_s7322 models/rb_x35_ce3dswap_s7323
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                    steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+---------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_ce3dswap_s7321  300,061,272  65,536     10      0.0001005  0.0002035     2.044e-08  0.95x 
+rb_x35_ce3dswap_s7322  300,060,944  65,536     10      0.0001005  0.0002035     2.044e-08  0.95x 
+rb_x35_ce3dswap_s7323  300,061,282  65,536     10      0.0001005  0.0002035     2.044e-08  0.95x 
+rc=0

@@ -1,0 +1,34 @@
+$ python -m main.ops.arm_chain plan <scratch chain: the four draft items of chain_items_x70.json, repo = the registration's tree, models_dir = the real models/> --check-pins --describe
+# 2026-11-13, CPU only, no lease. `plan` reads no run directory and launches nothing.
+ 0. ARM x70 s7331 -> rb_x35_x70ent0_s7331 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 1. ARM x70 s7332 -> rb_x35_x70ent0_s7332 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 2. ARM x70 s7333 -> rb_x35_x70ent0_s7333 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 3. ARM x70 s7334 -> rb_x35_x70ent0_s7334 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+    arm:rb_x35_x70ent0_s7331: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7332: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7333: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7334: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+PLAN OK
+rc=0
+
+# a variant: the fourth item at seed 7335 (four seeds are registered; no look 2)
+    arm:rb_x35_x70ent0_s7331: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7332: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7333: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+REFUSED: arm:rb_x35_x70ent0_s7335: the kit refuses arm 'x70' seed 7335 (rc 2): [x35 kit] REFUSED: seed 7335 is not registered for x70 ([7331, 7332, 7333, 7334])
+PLAN REFUSED (1 problem(s))
+rc=1
+
+# a variant: the first item named as the swap arm (ce3d_swap s7331 under the X70 run name)
+    arm:rb_x35_x70ent0_s7332: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7333: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7334: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+REFUSED: arm:rb_x35_x70ent0_s7331: the kit refuses arm 'ce3d_swap' seed 7331 (rc 2): [x35 kit] REFUSED: seed 7331 is not registered for ce3d_swap ([7321, 7322, 7323])
+PLAN REFUSED (1 problem(s))
+rc=1
+
+# a variant: the first item at the plain production side pin f4b25238
+PLAN OK
+rc=0
+# ^ NOT a refusal: `--check-pins` only resolves an item's pin. Whether a pin is the ARM'S OWN is judged by the launch
+#   script's `kit pin-check` (pre-check, and again at GO), which refuses that pin for the X70 arm: kit_checks_x70.txt.

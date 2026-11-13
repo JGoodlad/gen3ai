@@ -128,6 +128,11 @@ look; a record for another arm or look is a refusal.
   (:data:`CE3D_RETIRED_SEEDS`). Held by :data:`CE3D_STAGES`; ONE look, no look 2: :func:`stage_status` gives it the
   AM-8 side gate and its PREREG. Read by the PREREG's own head-to-head cross (``screen_rule.py`` there), so no
   ``reads/`` record and no :data:`READ_LABEL`.
+* **X70, THE ENT-0 CONTROL** (``x70_ent0_control_2026-11-13/PREREG.md``, :data:`X70_PREREG`; CE-3d's follow-up):
+  ``x70`` (:data:`X70_ARMS`) is the swap's argv MINUS the magnet (C0's + ``--ent-coef 0``), seeds 7331-7334, at the
+  swap's own training pin :data:`CE3D_PIN` (:func:`ce3d_pin_check`, the same two-commit check). Its comparator is the
+  three banked swap forks at that pin. Held by :data:`X70_STAGES`; ONE look, no look 2: :func:`stage_status` gives it
+  the AM-8 side gate and its PREREG. Read by its PREREG's own cross: no ``reads/`` record, no :data:`READ_LABEL`.
 * **X63-C, THE X63 CONTROL REPLICATE** (``reviews/x63_review_2026-10-27.md`` B1 fix 3; PREREG
   ``x63c_control_replicate_2026-10-28/PREREG.md``, :data:`X63C_PREREG`): ``x63c`` (:data:`X63C_ARMS`) is X26c's
   recorded argv with only the seed (6302) and run name changed, a +100M continuation from X26 @380M (not P*), with no
@@ -271,6 +276,11 @@ CE3D_ARMS = ("ce3d_swap",)
 CE3D_RETIRED_SEEDS = (7301, 7302, 7303, 7311, 7312, 7313)
 #: CE-3d's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
 CE3D_PREREG = "designs/research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md"
+#: X70, the ent-0 control (2026-11-13; CE-3d's follow-up): ONE production arm at the CE-3d training pin
+#: (:data:`CE3D_PIN`): the swap's argv minus ``--magnet-kl-coef 0.05``.
+X70_ARMS = ("x70",)
+#: X70's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
+X70_PREREG = "designs/research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md"
 #: X60-T, H-TEAMS (AM-X60T, 2026-11-06): one production arm at its OWN pin (:data:`X60T_PIN`).
 X60T_ARMS = ("x60t",)
 #: X63-C, the X63 control replicate (2026-10-28): one production arm at the side pin (X26c's), forking X26 @380M.
@@ -288,9 +298,9 @@ N4_ARMS = ("toy_c0n4", "toy_n4ffn")
 #: N4's registration: its stage-check is PENDING until this file names N4_PIN in full (repo-relative, the kit's checkout).
 N4_PREREG = "designs/research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md"
 #: The arms whose stage-check is the side gate + their PREREG present (the orchestrator's GO): :func:`arm_prereg`.
-PREREG_GATED_ARMS = X63C_ARMS + X63U_ARMS + X67_ARMS + CE3D_ARMS
+PREREG_GATED_ARMS = X63C_ARMS + X63U_ARMS + X67_ARMS + CE3D_ARMS + X70_ARMS
 SIDE_PINNED_ARMS = (BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS + X63C_ARMS
-                    + X63U_ARMS + N4_ARMS + X60T_ARMS + X67_ARMS + CE3D_ARMS)
+                    + X63U_ARMS + N4_ARMS + X60T_ARMS + X67_ARMS + CE3D_ARMS + X70_ARMS)
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -446,11 +456,11 @@ N4_PIN_CARRIES: Dict[str, str] = {"T69 B-FFNW (--grow trunk_ffn_dim)": "c35ffab9
 #: ``ge_x60t`` (AM-X60T-2) is the one G-E reader with its own pin: X60-T's, typing ``--human-data off`` (``main.x35.ge``).
 ARM_PINS: Dict[str, Optional[str]] = {"d1": D1_PIN, "d3": D3_PIN, "n1p": N1P_PIN, "x63u": X63U_PIN,
                                       "toy_c0n4": N4_PIN, "toy_n4ffn": N4_PIN, "x60t": X60T_PIN, "ge_x60t": X60T_PIN,
-                                      "ce3d_swap": CE3D_PIN}
+                                      "ce3d_swap": CE3D_PIN, "x70": CE3D_PIN}
 #: The amendment that registered each own-pin arm (named in every line its checks print).
 ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P", "x63u": "AM-X63U", "toy_c0n4": "AM-N4-PIN",
                      "toy_n4ffn": "AM-N4-PIN", "x60t": "AM-X60T", "ge_x60t": "AM-X60T-2",
-                     "ce3d_swap": "CE-3d PREREG §4"}
+                     "ce3d_swap": "CE-3d PREREG §4", "x70": "X70 PREREG §3"}
 #: The own-pin arms whose run MAY also sit at the side's pin: D1's VOID pre-fix attempt (AM-D1-FIX-f) only.
 ARM_PIN_PREFIX_OK = ("d1",)
 #: A side-pinned run whose FIRST attempt died at startup before it wrote ``metadata.json`` (so it recorded no pin to
@@ -520,6 +530,11 @@ X67_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 #: the one arm, on the orchestrator's GO. Its control is the banked C0 finals at the side pin.
 CE3D_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("CE3D", (("ce3d_swap", 7321), ("ce3d_swap", 7322), ("ce3d_swap", 7323))),
+)
+#: X70's stage (2026-11-13, PREREG x70_ent0_control_2026-11-13 §3): one look, four NEW seeds of the one arm, on the
+#: orchestrator's GO. Its comparator is the three banked swap forks at the same pin. Never merged into STAGES.
+X70_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X70", (("x70", 7331), ("x70", 7332), ("x70", 7333), ("x70", 7334))),
 )
 #: X63-C's stage (2026-10-28, review B1 fix 3): one seed, on the orchestrator's GO once its PREREG exists. Its comparators
 #: are X26c (s2601) and X63's own continuation, not C0. Never merged into STAGES.
@@ -821,15 +836,17 @@ def _one_commit_on(repo: str, pin: str, base: str, paths: Tuple[str, ...]) -> Op
     return None
 
 
-def ce3d_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
-    """CE-3d (PREREG §4, Amendment 3): ``pin`` is :data:`CE3D_PIN`; the side's written pin is
+def ce3d_pin_check(pin: str, side_pin: str, repo: str, arm: str = "ce3d_swap") -> Tuple[bool, List[str]]:
+    """CE-3d (PREREG §4, Amendment 3), and every later arm registered AT the CE-3d training pin (``arm``: X70, whose
+    lines name its own registration): ``pin`` is :data:`CE3D_PIN`; the side's written pin is
     :data:`CE3D_MAGNET_PIN_BASE`; ``pin``'s one parent is :data:`CE3D_MAGNET_PIN` and ``pin`` changes EXACTLY
     :data:`CE3D_PIN_PATHS` relative to it (the fit check's fix and its tests); and :data:`CE3D_MAGNET_PIN`'s one
     parent is that side pin, changing EXACTLY :data:`CE3D_MAGNET_PIN_PATHS` relative to it (the magnet's backport
     and the near-tie judge, nothing else: no corpus, no Rust, no observation path)."""
-    am = ARM_PIN_AMENDMENT["ce3d_swap"]
+    am = ARM_PIN_AMENDMENT[arm]
+    who = "the CE-3d arm" if arm == "ce3d_swap" else f"{arm} (an arm at the CE-3d training pin)"
     if pin != CE3D_PIN:
-        return False, [f"{am}: the CE-3d arm launches only at CE3D_PIN {CE3D_PIN[:12]}, not {pin[:12]}"]
+        return False, [f"{am}: {who} launches only at CE3D_PIN {CE3D_PIN[:12]}, not {pin[:12]}"]
     if side_pin != CE3D_MAGNET_PIN_BASE:
         return False, [f"{am}: CE3D_PIN rests on the side pin {CE3D_MAGNET_PIN_BASE[:12]}, but the side's written pin "
                        f"is {side_pin[:12]}"]
@@ -872,7 +889,12 @@ def arm_pin_check(arm: str, pin: str, side_pin: str, repo: str) -> Tuple[bool, L
     """The own-pin check of ``arm`` (:data:`ARM_PINS`)."""
     return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check, "x63u": x63u_pin_check,
             "toy_c0n4": n4_pin_check, "toy_n4ffn": n4_pin_check, "x60t": x60t_pin_check,
-            "ge_x60t": _ge_x60t_pin_check, "ce3d_swap": ce3d_pin_check}[arm](pin, side_pin, repo)
+            "ge_x60t": _ge_x60t_pin_check, "ce3d_swap": ce3d_pin_check, "x70": _x70_pin_check}[arm](pin, side_pin, repo)
+
+
+def _x70_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """X70 trains at the swap's own pin (its PREREG §3): :func:`ce3d_pin_check`'s, each line naming X70's registration."""
+    return ce3d_pin_check(pin, side_pin, repo, arm="x70")
 
 
 def _ge_x60t_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
@@ -1243,7 +1265,8 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
     for name, forks in (STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES
-                        + X63C_STAGES + X63U_STAGES + N4_STAGES + X60T_STAGES + X67_STAGES + CE3D_STAGES):
+                        + X63C_STAGES + X63U_STAGES + N4_STAGES + X60T_STAGES + X67_STAGES + CE3D_STAGES
+                        + X70_STAGES):
         if (arm, seed) in forks:
             return name
     return None
@@ -1252,7 +1275,7 @@ def stage_of(arm: str, seed: int) -> Optional[str]:
 def arm_prereg(arm: str) -> Tuple[str, str]:
     """``(PREREG path, tag)`` of a PREREG-gated arm (:data:`PREREG_GATED_ARMS`), read from the constants now."""
     return {"x63c": (X63C_PREREG, "X63-C"), "x63u": (X63U_PREREG, "X63-U"), "x67": (X67_PREREG, "X67"),
-            "ce3d_swap": (CE3D_PREREG, "CE-3d")}[arm]
+            "ce3d_swap": (CE3D_PREREG, "CE-3d"), "x70": (X70_PREREG, "X70")}[arm]
 
 
 def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
@@ -1284,7 +1307,7 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
             return PENDING, f"{arm} s{seed}: the PREREG does not name N4_PIN {N4_PIN} in full yet (its pin NOTE)"
         return ALLOWED, (f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, N4 PREREG: one look, "
                          f"N4_PIN {N4_PIN[:12]}; the orchestrator's GO)")
-    if arm in PREREG_GATED_ARMS:             # X63-C / X63-U / X67 / CE-3d: the side gate, then its PREREG (the GO)
+    if arm in PREREG_GATED_ARMS:             # X63-C / X63-U / X67 / CE-3d / X70: the side gate, then its PREREG (the GO)
         filled, why = side_gate(stage, "production")
         if not filled:
             return PENDING, why

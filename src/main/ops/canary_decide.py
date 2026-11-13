@@ -37,7 +37,9 @@ d1wide,x52*,d3mut,n1p,x48kffn,x67ent}_s*`` are all C0 (forks of P* at production
 ruling, ``x48_kffn_production_2026-10-27/PREREG.md`` §7; X67, C0's argv and graph with a smaller entropy coefficient,
 by ``x67_entropy_screen_2026-11-09/PREREG.md`` §8; CE-3d's swap arm ``rb_x35_ce3dswap_s*`` is deliberately in NO
 family, by ``ce3d_magnet_screen_2026-11-11/PREREG.md`` §8: its learner graph takes the magnet's column and no
-healthy-PASS ratio was measured for it), X63-C's ``rb_x63c_s*`` is C0 (production C0's argv and
+healthy-PASS ratio was measured for it; neither is its ent-0 control ``rb_x35_x70ent0_s*``, by
+``x70_ent0_control_2026-11-13/PREREG.md`` §8: a magnet-off learner at the CE-3d pin had never run on the card when it
+was registered), X63-C's ``rb_x63c_s*`` is C0 (production C0's argv and
 architecture, forking X26 @380M; ``x63c_control_replicate_2026-10-28/PREREG.md``), X63-U's ``rb_x63u_s*`` is C0 (the
 same, + a team mix like N1-P's; ``x63_2026-10-29/PREREG.md``), X60-T's ``rb_x60t_s*`` is C0 (C0's argv + a human team
 mix through ``--human-data``; ``x60t_h_teams_2026-11-06/PREREG.md``), the toy ``rb_x35t_c0_s*`` is C0 and
