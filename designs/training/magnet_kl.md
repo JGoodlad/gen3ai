@@ -2,13 +2,16 @@
 
 **Owner of:** `src/agents/training/magnet.py` (the term, the magnet's state, the sidecar, the collector's side), the
 two flags, and the magnet's seams in the collector, the checkpoint commit and R1. Experiment CE-3d / X35-A4, task T56.
-**OFF by default; no run has trained with it.** Its screen is REGISTERED
-([`../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)):
+**OFF by default.** Its screen is READ, PASS
+([`../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md`](../research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md) §16):
 three forks of P\* with the magnet IN PLACE OF the entropy bonus (`--ent-coef 0 --magnet-kl-coef 0.05`, §2's swap),
-read against the banked C0 finals (and, reported only, against X67's), at a BACKPORT of this lever onto the
-production side pin (tag `ce3d-pin-9e97cad5`, `main.x35.batch.CE3D_PIN`; config v161 there, the two fields
-un-versioned). The one launch so far died at step 0 in the startup fit check (§4), at the backport's first commit
-(tag `ce3d-pin-333a73dd`, `batch.CE3D_MAGNET_PIN`); the pin now carries that check's fix.
+trained at a BACKPORT of this lever onto the production side pin (tag `ce3d-pin-9e97cad5`, `main.x35.batch.CE3D_PIN`;
+config v161 there, the two fields un-versioned; the first launch at the backport's first commit, tag
+`ce3d-pin-333a73dd` = `batch.CE3D_MAGNET_PIN`, died at step 0 in the startup fit check, §4). Against the eight banked C0
+finals head to head: **D +3.97 pp, 90 % interval [+3.31, +4.63]**; label ENT-LOW (end entropy 0.49 nats against C0's
+1.01). Against X67's three finals (reported, deciding nothing): **+1.01 pp [−0.12, +2.13]**, read "the swap's gain
+over C0 is plausibly the lower uniform push alone". The PASS licenses REGISTERING a follow-up (`--ent-coef 0` with no
+magnet, at the same pin, on new seeds); none is registered yet. It moves no recipe, and the flags stay OFF.
 
 ```
 loss += β · mean over rows of KL(π_θ(·|s) ‖ π_mag(·|s))       β = --magnet-kl-coef (unset = 0 = OFF)
@@ -73,12 +76,15 @@ memory is in the measured demand (`learner_lifecycle.md` "The fill's inputs"). I
 
 **R1 never runs a second forward.** The alternative, a frozen-copy forward per micro-batch inside the update, costs a
 whole extra forward of every epoch (ten per rollout at production's `n_epochs`); one T2 pass per rollout is the cheap
-spelling. Cost on the GPU, **UNVERIFIED (no lease at the build):** one more full-bucket slot of CUDA-graph captures
-and one more weight copy on the card, and one extra inference pass over the buffer per rollout (the task card's
-estimate is ≈ +3 % of the update). Read `magnet/forward_ms` on the first GPU run.
+spelling. Cost on the GPU: one more full-bucket slot of CUDA-graph captures and one more weight copy on the card, and
+one extra inference pass over the buffer per rollout. **Measured (CE-3d's three forks, PREREG §16.7):** `magnet/forward_ms`
+median 3,505 to 3,517 ms a rollout, ≈ 4.9 % of a ≈ 71 s iteration, against the task card's estimate of ≈ +3 %; the
+`time/fps` comparison with C0 is across pins, days and CPU load, not a controlled one. The fit check passed on the
+card three times (`update_fit.json` written, no OOM).
 
 T2 serves the fp32 function; production's R1 runs a bf16 trunk. So with the magnet equal to the current weights the
-term is a small positive floor, not 0, on a bf16 run (**UNVERIFIED size**). On an fp32 learner it is exactly 0.0
+term is a small positive floor, not 0, on a bf16 run: at most ≈ 0.010 nats, the first update's `train/magnet_kl` after
+a refresh in the CE-3d forks (PREREG §16.7; an upper bound, since it already holds that update's own drift). On an fp32 learner it is exactly 0.0
 (`magnet_learner_test.py`).
 
 **Compile.** β = 0 keeps R1's nine-argument call, so the compiled program, its cache key and the gate fixture are
@@ -122,6 +128,9 @@ protocol), so a fork from one seeds a new magnet.
 
 Both flags are recorded in `model_config.json` (config v170: `magnet_kl_coef`, `magnet_refresh_steps`) and inherited
 on a flagless resume or fork; a typed value wins.
+
+**UNVERIFIED on the card** (PREREG §16.9, CE3D-R4): a resume WITH the sidecar (no CE-3d fork restarted), a β = 0
+learner at the backport pin, and the play-pin row of PREREG §4.3.
 
 ## 7. Refusals
 

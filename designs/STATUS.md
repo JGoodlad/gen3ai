@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-11-12.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-13.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -46,16 +46,16 @@ X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side'
 The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
 [`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
-## 2. Running now (as of 2026-11-12)
+## 2. Running now (as of 2026-11-13)
 
-Read on the morning of 2026-11-12 (09:10 PST) from the orchestrator's log (`~/.claude/jobs/x35/status.txt`),
-`utils.procfs.live_training_runs()` and `scripts/ops/mem_cap.sh --status`.
+Read at 00:10 PST on 2026-11-13 from the orchestrator's log (`~/.claude/jobs/x35/status.txt`), the process table and
+`models/rb_b1c_s5101/latest.txt`.
 
 | where | job | what decision it drives |
 |---|---|---|
 | GPU 11-11 17:18 to 18:57 (ended) | **The R9 human clone train** (`hclone_r2_s5901`, seed 5901, 45-minute chunks), started by the orchestrator's R9C driver when X69's last fork ended (17:18; X69 is in the landed rows below). It CONVERGED and the clone is registered (`d79f08ec2`). This row is a pointer, and the R9 unit owns its detail. | The clone that the R9 kit's `--human-data init:` / `opp:` take (`d0e2715d8`). |
 | GPU 11-12 00:19 to 17:17 PST (ended); its two crosses on the CPU, 17:21 to 23:40 PST | **CE-3d, the trailing-magnet screen: all three forks trained and both crosses are READ (11-12 21:58 and 23:40 PST): PASS** ([PREREG §16](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)). Seeds 7321, 7322 and 7323 each ran P\* + 20M at the re-pin (tag `ce3d-pin-9e97cad5`) on the chain `x35-ce3d-nov12`, launcher exit 0, no restart, arm-end K9(b) PASS (`31b0b402c`, `4662ebb53`, `60efef08c`); 12.75 GPU-h. The crosses were played on the agent cores at the play pin (tag `ce3d-pin-333a73dd`) and hold no lane now. This row is a pointer: the result is the first landed row below. | Nothing further: the PASS licenses registering a follow-up only (§3); it moves no recipe and never held BOUNDARY-1. |
-| GPU after CE-3d | **BOUNDARY-1: run [1] `rb_b1c_s5101` launched 2026-11-12 17:18 PST and was STOPPED at 17:32 by a bug in the look kit's early check, not by anything in the run; the kit is fixed at `1d592e6cd` and the relaunch of [1] is the Training session's, on the orchestrator's GO.** Amendment 4 (2026-11-12, blind: no look, no game): the early check and every look are read from the kit at `1d592e6cd`, every run still trains and every game plays at the launch pin `15136b616`; the stopped attempt is discarded whole and spends no resume and no spare seed. Amendment 5 (2026-11-12, blind, no re-pin): at the launch pin a stop signal that lands inside a compiled update kills the child with no save (fixed on main at `207aa0ae3`, not in the pin; main's launcher reports it as an UNSAVED stop, exit 9); it is no FATAL, VOID or replacement cause, and a run stopped that way resumes on the same pin from `latest.txt`'s checkpoint. §13's GPU items 1 to 7 were GREEN at the launch pin (2026-11-12, 04:54 to 08:51 PST, ≈ 3.95 h of the lease). Measured there: the wide arm costs ρ = 1.392 times the narrow one (734.59 against 527.67 s per 1M steps, pilots to 4M), so the EQ look is at 71,000,000; the width-256 update fits with 1,398.5 MiB of headroom against the 1,024 bar; the 32 CUDA-only slow tests pass; the cross-width cell passes; both pilots read K9(b) PASS. §12 is rewritten from ρ: ≈ 309 GPU-h to the decision (≈ 281 of training, 210 to 281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch. Amendment 3 (2026-11-12, blind, before any launch): a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint on the same pin; a repeat on an empty card holds that run. Amendment 2 (2026-11-12) set the base every run types: `--ent-coef 0.0125` (the owner's yes of 2026-11-11 to X67's PASS) and `--behaviour-check warn`, with K9(b) judged by the look. The records are the PREREG's §18 (slots S1 to S7; S8 is filled at the launch). | MF-5 (§3). |
+| GPU since 2026-11-12 19:26 PST (CE-3d's forks ended 17:17) | **BOUNDARY-1 phase 1 is RUNNING: run [1] `rb_b1c_s5101` was relaunched 2026-11-12 19:26:24 PST, and its early check PASSED at 19:41:28.** The runs go one after another: twelve runs to 50M, about 6 days for phase 1 (§12: ≈ 136 GPU-h and ≈ 10 of starts), under the Training session's driver v4 (`~/gen3ai_archive/b1_phase1_driver_v4.sh`). At the read, `latest.txt` named `checkpoint_25000420_steps.zip`. The first launch (2026-11-12 17:18) was STOPPED at 17:32 by a bug in the look kit's early check, not by anything in the run; the kit is fixed at `1d592e6cd`, and the stopped attempt was discarded whole. Amendment 4 (2026-11-12, blind: no look, no game): the early check and every look are read from the kit at `1d592e6cd`, every run still trains and every game plays at the launch pin `15136b616`; that attempt spent no resume and no spare seed. Amendment 5 (`cf9258ab6`, 2026-11-12, blind, no re-pin): at the launch pin a stop signal that lands inside a compiled update kills the child with no save (fixed on main at `207aa0ae3`, not in the pin; main's launcher reports it as an UNSAVED stop, exit 9); it is no FATAL, VOID or replacement cause, and a run stopped that way resumes on the same pin from `latest.txt`'s checkpoint. §13's GPU items 1 to 7 were GREEN at the launch pin (2026-11-12, 04:54 to 08:51 PST, ≈ 3.95 h of the lease). Measured there: the wide arm costs ρ = 1.392 times the narrow one (734.59 against 527.67 s per 1M steps, pilots to 4M), so the EQ look is at 71,000,000; the width-256 update fits with 1,398.5 MiB of headroom against the 1,024 bar; the 32 CUDA-only slow tests pass; the cross-width cell passes; both pilots read K9(b) PASS. §12 is rewritten from ρ: ≈ 309 GPU-h to the decision (≈ 281 of training, 210 to 281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch. Amendment 3 (2026-11-12, blind, before any launch): a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint on the same pin; a repeat on an empty card holds that run. Amendment 2 (2026-11-12) set the base every run types: `--ent-coef 0.0125` (the owner's yes of 2026-11-11 to X67's PASS) and `--behaviour-check warn`, with K9(b) judged by the look. The records are the PREREG's §18 (slots S1 to S7; S8, the per-launch records, is still open, so the relaunch and the early-check time above are from the orchestrator's log). | MF-5 (§3). |
 | CPU: the play lanes are FREE | **X60-T look 2 READ 11-11 16:52 PST: NO-TRANSFER** (the landed row below). Its two lanes held the agent cores from 11-09 03:36 to 11-11 16:45; no registered read holds them now. | The next CPU read is the orchestrator's pick from §3 (X67's conditional Kakuna read and the searched player's cost read both waited on these lanes). |
 
 ### Landed since 2026-11-01
@@ -133,7 +133,7 @@ its GO.
 - **MF-5: BOUNDARY-1's from-scratch 2 × 2**, width (128 against 2× `D_MODEL`, `--d-model`, `0220f8408`, config
   v169) × team breadth (the pool against half procedural teams): REGISTERED 2026-11-09 at pin `507d0c119`,
   **AMENDED 2026-11-10 to three seeds a cell, twelve fresh runs to 100M** (Amendment 1, after an independent
-  pre-launch review), NOT LAUNCHED
+  pre-launch review), LAUNCHED 2026-11-12 (phase 1 running, §2)
   ([`research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md));
   the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options. **AMENDED 2026-11-12
   (Amendment 2, blind):** every run types `--ent-coef 0.0125 --behaviour-check warn` (the owner's yes to X67's
@@ -146,7 +146,7 @@ its GO.
   2026-11-12 (Amendment 3, blind):** a startup fit refusal at any start of a run is a start failure, retried from
   the same checkpoint on the same pin; a repeat on an empty card holds that run. ≈ 309 GPU-h to the decision (≈ 281
   of training, 210–281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch; the
-  launch is the orchestrator's GO, after CE-3d's forks. Width is decided on the in-house cross over all four
+  the launch was 2026-11-12, after CE-3d's forks. Width is decided on the in-house cross over all four
   panels,
   breadth on forum72 alone and kept only if home72 pays no more than forum72 gains; Kakuna clustered by team
   confirms either. Honest power: a true +4 pp reads WIN 19 times in 20 if the seed spread at 100M is the 1.76 pp
