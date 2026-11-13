@@ -1526,7 +1526,7 @@ main's commits had not run on the card when the re-pin was written (Amendment 2 
 check and item 3's compile cell were their first card runs, and both passed (slots S4 and S5 below).
 
 **Slots only the card can fill (all at the launch pin). S1 to S7 were filled on 2026-11-12, every one green; their
-records follow the table. S8 is open until the launch.**
+records follow the table. S8 is written at and after the launch.**
 
 | slot | what | from |
 |---|---|---|
@@ -1637,7 +1637,49 @@ scratch models dir; neither is a BOUNDARY-1 run and neither is read at any look.
   77.3 MiB at 256 (the pilots' files). No launch is at risk at 170 GiB free; the defect is filed in
   `designs/ops/TECH_DEBT_BACKLOG.md` (§2 (g)), and **what the twelve runs need in total is not computed by any
   gate** (UNVERIFIED).
-- **S8: OPEN**, written at and after the launch: §13 items 8 and 9; each launch's record; the warm start's cost;
-  each run's realised GPU-hours (§7; the first control run's hours to 50M check §12's central figure); every
-  start failure and its retry (Amendment 3); every unsaved stop with its lost steps and its resume, and the
-  quit-save probe's record once the Training session reports it (Amendment 5); the twelve arm-end K9(b) records.
+- **S8: written at and after the launch, and still OPEN.** It holds §13 items 8 and 9; each launch's record;
+  the warm start's cost; each run's realised GPU-hours (§7; the first control run's hours to 50M check §12's
+  central figure); every start failure and its retry (Amendment 3); every unsaved stop with its lost steps and
+  its resume, and the quit-save probe's record once the Training session reports it (Amendment 5); the twelve
+  arm-end K9(b) records. **Written so far (2026-11-13): run [1]'s two launches and the warm start's cost.**
+  Evidence: `~/.claude/jobs/x35/b1/` (the driver's records; outside the repository). Every launch is from main
+  with `--pin-commit 15136b61634b667bb9da5ccc6647ff9265238829`, on an RTX 3080 Ti that `nvidia-smi` read at
+  33 MiB used of 12,288 with no compute app, `gdm` inactive.
+  - **[1] `rb_b1c_s5101`, first launch: 2026-11-12 17:18:18 PST**, by the Training session's driver v3, main
+    at `60efef08c`, the GO marker at `63745f628`. Item 8: STATUS read at 17:18:14 (X60-T NO-TRANSFER, the
+    owner's `ent_coef` 0.0125), no REOPEN. Item 9: `core split 5+3: trainer 0-4,8-12, agents 5-7,13-15 (the
+    default: no state file)`, the trainer pinned to 0-4,8-12. Startup: the shared compile cache HIT the fresh-C
+    entry `1bdf57369a43` (written by C's pilot at 07:27), `T2 up in 142.1s`, launch to `LEARNER FREEZE` 278 s
+    (17:18:18 to 17:22:56). **Stopped by the driver at 17:32:34** (SIGTERM to launcher pid 911089, identity
+    checked): the early check from the pin's look kit exited 3 at `checkpoint_1000192_steps.zip`, a bug in the
+    kit (an open pin segment read as `last_step` 0; fixed in `1d592e6cd`), not anything in the run. **The stop
+    was an UNSAVED STOP, form (b) of Amendment 5:** `CompileSentinel FATAL` at 17:32:34, no
+    `final_model_interrupted.zip`, no crash log, and that launcher (main before `6183d2249`) printed "Quit
+    complete" with exit 0; `latest.txt` named `checkpoint_1000192_steps.zip`, the dead child's last logged step
+    was 1,086,720, so **86,528 steps were lost**, and nothing was resumed. The fixed kit's check-run on that
+    directory before the move: exit 0, no problems, K9(b) PASS through 1,000,192. **The attempt was set aside
+    whole at 19:26:00** by a same-filesystem rename (`mv -T`, nothing deleted, 42 MB) to
+    `~/.cache/gen3ai/b1_aside/rb_b1c_s5101.EARLYCHECK_KIT_1` (Amendment 4: it spent no resume and no spare
+    seed); its driver records are in `rb_b1c_s5101.attempt_EARLYCHECK_KIT_1/` with a `MOVE_RECORD.txt`.
+  - **[1] `rb_b1c_s5101`, relaunch: 2026-11-12 19:26:24 PST**, by driver v4 (the early check and every look
+    from the kit at `1d592e6cd`), main at `cf9258ab6`, the GO marker at `cf9258ab6`. Item 8: STATUS read at
+    19:26:19, the same two lines, no REOPEN. Item 9: the same split as the first launch. The argv: `--restart-interval-hours
+    6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125
+    --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5101 --device cuda
+    --log-level periodic --run-name rb_b1c_s5101`; its dry run: every preflight green, `inherited nice : ✓ 0
+    (<= 10)`, disk 163.34 GiB free against 17.74 required. Startup: the cache HIT `1bdf57369a43` again,
+    `T2 up in 155.2s`, launch to `LEARNER FREEZE` 304 s (19:26:24 to 19:31:28). **The early check PASSED at
+    19:41:28** on `checkpoint_1000192_steps.zip`: no problems; K9(b) PASS through 1,000,192 (9 rows judged,
+    maximum 4.77e-07 against 1e-3, 99th percentile 2.38e-07 against 1e-4); the canary at update 10 matched.
+  - **The warm start's cost: 251 s, about 0.070 h.** It was read off [1]'s first restart, as §12 says. The
+    six-hour mark was at 01:26:30 on 2026-11-13. The child reached a rollout boundary at 01:31:32 and was
+    restarted from `final_model_interrupted.zip`; no signal was sent. The shared cache HIT the C-arm restart entry
+    `70105b399543`, written by the quit-save probe at 17:57. `T2 up in 118.4s`, the compile reset and prewarm took
+    81.0 s, and the restart line to `LEARNER FREEZE` was 251 s (01:31:32 to 01:35:43). The child log held no
+    sentinel FATAL and no traceback. **What this does not say: what any other arm's first restart costs.**
+    At the pin the shared key of a `--model` start carries the inert `--batch-size` default (4096) where a
+    fresh start carries 2048, so a restart and a fresh start of one arm use different entries. Before the
+    launch only the C arm's restart entry had been filled, by the probe. W's first restart is expected COLD;
+    whether Br's and WB's share an entry with C's or W's is UNVERIFIED. On the probe a cold restart's service
+    came up in ≈ 1,041 s. Both of [1]'s launches above started warm because C's pilot had filled the
+    fresh-start entry.
