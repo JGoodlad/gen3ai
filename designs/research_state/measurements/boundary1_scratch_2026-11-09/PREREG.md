@@ -6,7 +6,9 @@ three runs a cell, twelve runs) and 2026-11-12 (Amendment 2, §18: every run typ
 §18: a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint), all also
 before any launch, game or read; and once more 2026-11-12 (Amendment 4, §18: the early check and every look are
 read from the kit at `1d592e6cd`, while every run still trains at the launch pin), after [1]'s first launch attempt
-and before any look or game. LAUNCHED 2026-11-12 17:18 PST** ([1] `rb_b1c_s5101`; that first attempt was stopped
+and before any look or game; and 2026-11-12 (Amendment 5, §18: a signalled stop that saved nothing is an UNSAVED
+STOP, resumed on the same pin from the checkpoint `latest.txt` names; no re-pin), also before any look or game.
+LAUNCHED 2026-11-12 17:18 PST** ([1] `rb_b1c_s5101`; that first attempt was stopped
 by a kit bug at its early check and is discarded whole, Amendment 4). **The LAUNCH pin is
 `15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
 nothing. The KIT commit is `1d592e6cd5ff2b6b9f634e67573a98e3cdaede44` (Amendment 4): it trains nothing and plays nothing.**
@@ -485,6 +487,16 @@ two-stage rule) before any of it is played.
   a repeat on an otherwise empty card HOLDs that run for the orchestrator. §18 Amendment 3 holds the rule, what
   the launcher does and the three retry forms. The list below keeps its meaning for an out-of-memory failure
   AFTER a segment's first training step: that one is "lost to its lever".
+- **An unsaved stop, in any arm (Amendment 5).** At the launch pin a SIGNAL that reaches the child during a
+  compiled learner update can kill it with a `[CompileSentinel] FATAL` (the child's exit 3) and no save. The
+  registered flow sends none (a six-hour restart and a run's end at its `--steps` target are the child's own); an
+  operator's stop, the early check's stop, a GPU-window pause and the launcher's overrun fallback do. Such an
+  UNSAVED STOP (main's launcher exits 9 and logs `🛑 UNSAVED stop`; or the sentinel FATAL follows a stop signal
+  and no `final_model_interrupted.zip` was written) is not a FATAL of the parity bullet above, not a VOID, not a
+  start failure, not "lost to its lever" and not a replacement cause; it spends neither that bullet's one resume
+  nor seed 5109. The run stands at the checkpoint `latest.txt` names. If the stop was not meant to end the run it
+  is resumed on the same pin from that checkpoint by Amendment 3's form (c); a stop that was meant to end or HOLD
+  it is recorded and nothing more. Either way the record goes into §18 (slot S8). §18 Amendment 5 holds the rule.
 - **Replacement, by a closed list.** A run is replaced by seed 5109 in ITS OWN arm, from step 0, only when it
   cannot reach a look for one of these two causes:
   - its files are lost or unreadable (a disk or filesystem fault, a corrupt checkpoint it cannot resume from);
@@ -1021,6 +1033,30 @@ readings of it and of the code):
     self-play pool" as the pool's SEED, which is what a fresh run's first promotion is; neither pilot ran on to a
     later promotion (slot S5).
 
+**Amendment 5's choices** (2026-11-12; the ruling is the orchestrator's, these are the registrar's readings of it
+and of the code):
+
+46. **No re-pin for the signal defect.** The fix (`207aa0ae3`) is trainer code, so taking it would put every run
+    on a second pin or restart the campaign; the registered flow sends a child no signal, and a hit costs at most
+    one checkpoint interval of one run (§18 Amendment 5 item 2).
+47. **An unsaved stop is recognised by EITHER of two signs, because the launcher's exit code depends on which
+    path sent the signal.** Exit 9 is the launcher's code for a QUIT (the `q` key, a SIGTERM or SIGHUP to the
+    launcher, a quit during a GPU-window HOLD). After the overrun fallback's SIGTERM, or the `r` key's, main's
+    launcher still ends "Fatal config error — will NOT restart" with exit 3 (`6183d2249`'s own commit body); that
+    stop, and any record older than `6183d2249`, is read by the second sign: the sentinel FATAL after the signal
+    and no `final_model_interrupted.zip`. Read from the code and the commit, not executed on a BOUNDARY-1 run.
+48. **"Lost steps" are the dead child's last logged step minus the step of the checkpoint `latest.txt` names.**
+    The registered checkpoint interval is 1,000,000 steps, so the figure is below about one interval.
+49. **The resume after an unsaved stop is Amendment 3's form (c), still typed by hand** and still UNVERIFIED by
+    execution on a BOUNDARY-1 run (item 43): its `--dry-run` must pass first.
+50. **An unsaved stop before a run's FIRST checkpoint is not ruled on.** `latest.txt` then names nothing form (c)
+    can resume from. The run HOLDs and goes to the orchestrator; this amendment registers no restart from step 0.
+51. **The dead segment's rows are kept, not trimmed.** `main.b1.look.k9b_read` reads every segment's rows up to
+    the look step and counts them without deduplicating by step, so rows the dead child logged past the resume
+    step are judged beside the resumed child's rows at the same steps. That can only add a fire. The sentinel's
+    FATAL line is not the non-finite FATAL line the read looks for, so it does not fire by itself (as the read of
+    [1]'s stopped attempt showed: PASS, Amendment 4 item 3).
+
 ## 18. Amendments and pre-launch records
 
 ### Amendment 1 (2026-11-10): three runs a cell, and the pre-launch review's fixes
@@ -1313,8 +1349,90 @@ its two replacement causes are as they were. The launch pin does not move.
    quit-save (no `final_model_interrupted.zip`; `latest.txt` still names `checkpoint_1000192`). The stop signal
    came first and the FATAL followed it within the same second; the run had been stopped by the early check
    already. What a FATAL of that kind means for a COUNTED run that is signalled is the orchestrator's ruling, in
-   a further amendment if it changes anything. The registered flow sends a child no signal: the 6 h restart is
+   a further amendment if it changes anything (**Amendment 5 is that ruling**). The registered flow sends a child no signal: the 6 h restart is
    the child's own, at a rollout boundary, and the 50M and 100M stops are completions.
+
+### Amendment 5 (2026-11-12): a signalled stop that saved nothing is an UNSAVED STOP; no re-pin
+
+Written after [1]'s first launch attempt and before any look, on the orchestrator's ruling (the one Amendment 4
+item 6 left to it). **Blind: no look has been planned or played, no head-to-head game and no Kakuna row exists**,
+and nothing a run wrote was read to write it beyond what Amendment 4 already records. **It moves no bar and no
+class**: the +4 pp bar, the −2 pp harm stop, the 1.76 pp floor, the 90 % level, the 0.005 pp band, the views, the
+classes and their order, the net rule, the panels, the pairs a cell, the seeds, the run names, the argvs, the
+Kakuna rule, the K9(b) ceilings and reader, §10's guards as worded and its two replacement causes are as they
+were; §5, §6, §8 and §9 are untouched. The launch pin does not move and neither does the kit commit. It classifies
+one operational failure and says what follows it.
+
+1. **The defect, at the launch pin.** A SIGNAL that reaches the child while a compiled learner update is running
+   can kill it without a save.
+   - **Which signals:** the launcher's SIGTERM to its child (sent for an operator's stop, for the early check's
+     own stop, for a GPU-window pause, and by the overrun fallback when a child runs past its restart deadline),
+     and SIGINT, SIGHUP, SIGUSR1 or SIGUSR2 delivered to the child.
+   - **What happens:** the update runs under `fail_on_recompile`. Python runs the signal's handler inside the
+     compiled call, where that stance rejects it; the handler's body never runs, the child logs
+     `[CompileSentinel] FATAL`, exits 3 and saves nothing (no `final_model_interrupted.zip`). A signal that lands
+     outside a compiled call is handled as designed: the child saves and exits INTERRUPTED.
+   - **It has happened once:** `rb_b1c_s5101`'s first attempt, at the kit-caused stop of 2026-11-12 17:32:34 PST
+     (Amendment 4 items 1 and 6). That attempt was already discarded whole, so the defect cost nothing counted.
+   - **It is fixed on main, not in the pin:** `207aa0ae3` registers the trainer's five handlers through
+     `compile_control.lock_immune`. The child's code is the pin's (`--pin-commit 15136b616…`), which does not
+     hold that commit, so every BOUNDARY-1 child still has the defect.
+   - **What main's launcher reports, from `6183d2249` on:** a quit whose child did not end INTERRUPTED is an
+     UNSAVED stop. The launcher logs `🛑 UNSAVED stop (quit) — the child exited <rc>, not INTERRUPTED (15) …`,
+     naming the checkpoint `latest.txt` points at and the saved crash log, and exits **9**. Before that commit
+     it logged "Quit complete" and exited 0 (what [1]'s first attempt's launcher did). §10 lets main's launcher
+     move during the campaign, and BOUNDARY-1 launches from main: the launcher's report is main's, the child's
+     behaviour is the pin's.
+2. **No re-pin.**
+   - **The registered flow sends a child no signal.** A six-hour restart is the child's own: its
+     graceful-restart callback stops it at a rollout end, where it saves, and the launcher starts the next
+     child. A run's end at its `--steps` target (50M, 100M) is a completion. Neither is exposed.
+   - **What is exposed** is a stop someone or something sends: an operator's, the early check's (§10: exit 3
+     stops the run), a GPU-window pause, the overrun fallback.
+   - **What a hit costs:** the steps since the last periodic checkpoint, at most one checkpoint interval
+     (1,000,000 steps). The run stands intact at the checkpoint `latest.txt` names: the dead child wrote no
+     save, so `metadata.json`, its pin history and `latest.txt` are as that child's last save left them.
+   - A re-pin would put the fix on every run's path at the price §10 names for one (a look refuses runs on
+     more than one pin). The orchestrator ruled against it.
+3. **The class: an UNSAVED STOP.** A stop is one when a signal was sent to stop or pause the child and EITHER
+   main's launcher exited 9 with the `🛑 UNSAVED stop` line, OR (a record older than `6183d2249`, or a stop
+   path the launcher does not report as 9: §17 item 47) the child's log carries the sentinel FATAL after the
+   signal and no `final_model_interrupted.zip` was written for that stop. An unsaved stop is:
+   - **not a parity-gate FATAL** under §10's Amendment-1 bullet: it spends neither that bullet's one same-pin
+     resume nor counts toward its "second FATAL holds the campaign";
+   - **not a VOID**, not "lost to its lever", **not a replacement cause** (seed 5109 is not spent), and **not a
+     start failure** (Amendment 3: the process had trained).
+   A sentinel FATAL with NO signal before it is not this class: it stays under §10's parity bullet.
+4. **What follows, by what the stop was for.**
+   - **(a) The stop was NOT meant to end the run** (a window pause, an overrun fallback, an operator's stop to
+     be undone). The run resumes on the same pin from the checkpoint `latest.txt` names, by Amendment 3's form
+     (c): the `--dry-run` first, which must pass; then `python -m main.launcher --restart-interval-hours 6
+     --pin-commit <PIN> --model models/<run>/<the path latest.txt names> --steps <the phase's: 50000000 in phase
+     1, 100000000 in phase 2> --device cuda --log-level periodic`, with no `--run-name` and no lever or recipe
+     flag. Form (c)'s warning holds: never `final_model.zip` once phase 2 has trained. Nothing is moved aside.
+   - **(b) The stop WAS meant to end or HOLD the run** (the early check's exit-3 stop is the example). Nothing
+     is resumed for the stop's sake: the unsaved-stop fact is recorded, and what becomes of the run is decided
+     by the rule that stopped it.
+   - **The record, either way, into slot S8:** the time, who or what sent the signal and why, the launcher's
+     exit code and its `🛑 UNSAVED stop` line (or the FATAL's text), the crash log's name, the checkpoint
+     `latest.txt` names and its step, the dead child's last logged step, the LOST STEPS (the difference of
+     those two), and under (a) the resume command with its dry run's result.
+   - **What the look then sees.** One pin entry from step 0 and the immutable registered `original_command`,
+     so the run counts (§10) if everything else holds; after a resume in phase 1 its last process is a typed
+     resume, as Amendment 3 item 5 says of form (c). The rows the dead child logged past the resume step stay
+     in the run's K9(b) read: `look.py` reads every segment's rows. That is the conservative direction (more
+     rows judged, none dropped), and no row is removed to change a verdict.
+5. **Not ruled on here.** An unsaved stop before a run's first checkpoint (nothing for form (c) to resume
+   from) HOLDs that run for the orchestrator. A child that ends INTERRUPTED without a save (its safe-point
+   deadline, a failed save) still reads "Quit complete" / 0 at main's launcher and is not detected by this
+   class's signs (`designs/launcher/crashes_and_exit_codes.md`, row 9).
+6. **The GPU evidence is the Training session's quit-save probe**, `rb_b1quitprobe_c_s9205` (2026-11-12; a
+   scratch run on a probe seed under `~/.cache/gen3ai/b1_pin_2026-11-12/`, not a BOUNDARY-1 run, read at no
+   look). **Its numbers are not in this amendment and none was used to write it**: they go into slot S8 when
+   the Training session reports them. Until then the defect's evidence on the card is the one occurrence of
+   item 1; the fix's and the launcher's are CPU tests on main
+   (`src/main/train/signals_under_compile_lock_test.py`, `src/main/launcher/unsaved_stop_test.py`), which do
+   not run the pin's code.
 
 ### Pre-launch and launch records
 
@@ -1322,7 +1440,7 @@ Written here, each before the launch or look it gates: the re-pin; §13's
 results; ρ, §12 rewritten from it, and the EQ step; which block launched (phased or fallback); for EVERY launch its
 date, run, `git rev-parse HEAD` of the main checkout, `python -m utils.core_split show`, and the early check's
 JSON once the run has its first checkpoint; every FATAL, resume and replacement with its cause; every K9(b) record
-(Amendment 2); every start failure and its retry (Amendment 3).
+(Amendment 2); every start failure and its retry (Amendment 3); every unsaved stop and its resume (Amendment 5).
 
 **The re-pin record (2026-11-12; §18's single re-pin, steps 1 to 6).** Written by the agent the orchestrator
 named, on CPU (no GPU lease), in the commit after the launch pin. It launches nothing and fills none of the slots
@@ -1419,7 +1537,7 @@ records follow the table. S8 is open until the launch.**
 | S5 | §13 item 4 (b) to (e)'s records, with the fit check's demand and headroom at 256 and at 128 | the pilots |
 | S6 | §13 item 5's record: the cross-width cell | one played cell |
 | S7 | §13 item 2 with the card visible, from a shell at nice ≤ 10: four dry runs, every preflight green | the leased agent |
-| S8 | §13 items 8 and 9; the per-launch records; the warm start's cost; each run's realised GPU-hours; every start failure and its retry (Amendment 3); the twelve arm-end K9(b) records | at and after launch |
+| S8 | §13 items 8 and 9; the per-launch records; the warm start's cost; each run's realised GPU-hours; every start failure and its retry (Amendment 3); every unsaved stop, its lost steps and its resume, and the quit-save probe's record (Amendment 5); the twelve arm-end K9(b) records | at and after launch |
 
 **The slot records (2026-11-12; S1 to S7 at the launch pin, on the card).** Run by the Training session under one
 GPU lease, 04:54 to 08:51 PST (≈ 3.95 h; the runbook planned ≈ 3.6), from a clean detached checkout of
@@ -1521,4 +1639,5 @@ scratch models dir; neither is a BOUNDARY-1 run and neither is read at any look.
   gate** (UNVERIFIED).
 - **S8: OPEN**, written at and after the launch: §13 items 8 and 9; each launch's record; the warm start's cost;
   each run's realised GPU-hours (§7; the first control run's hours to 50M check §12's central figure); every
-  start failure and its retry (Amendment 3); the twelve arm-end K9(b) records.
+  start failure and its retry (Amendment 3); every unsaved stop with its lost steps and its resume, and the
+  quit-save probe's record once the Training session reports it (Amendment 5); the twelve arm-end K9(b) records.
