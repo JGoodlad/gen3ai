@@ -4,9 +4,12 @@
 three runs a cell, twelve runs) and 2026-11-12 (Amendment 2, §18: every run types `--ent-coef 0.0125
 --behaviour-check warn`, the look judges K9(b), the memory fit at width 256) and again 2026-11-12 (Amendment 3,
 §18: a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint), all also
-before any launch, game or read. NOT LAUNCHED** (no `rb_b1*` run exists). **The LAUNCH pin is
+before any launch, game or read; and once more 2026-11-12 (Amendment 4, §18: the early check and every look are
+read from the kit at `1d592e6cd`, while every run still trains at the launch pin), after [1]'s first launch attempt
+and before any look or game. LAUNCHED 2026-11-12 17:18 PST** ([1] `rb_b1c_s5101`; that first attempt was stopped
+by a kit bug at its early check and is discarded whole, Amendment 4). **The LAUNCH pin is
 `15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
-nothing.**
+nothing. The KIT commit is `1d592e6cd5ff2b6b9f634e67573a98e3cdaede44` (Amendment 4): it trains nothing and plays nothing.**
 **§13's GPU items 1 to 7 are green at the launch pin (2026-11-12; §18, slots S1 to S7): ρ = 1.392, the EQ step is
 71,000,000, §12 is rewritten from ρ.** The launch is the orchestrator's GO through the Training session, after
 CE-3d's three forks finish; §13 items 8 and 9 are checked at the launch (slot S8).
@@ -94,7 +97,9 @@ the base and its lever and nothing else; the control types the base alone.
 
 - **ONE pin for everything: the LAUNCH pin, `15136b61634b667bb9da5ccc6647ff9265238829`** (set once, by §18's re-pin
   record of 2026-11-12, which lists what main gained since the registered pin). All runs train at it, every look plays
-  at it, and the Kakuna read plays at it.
+  at it, and the Kakuna read plays at it. **The look's KIT alone is read from a later commit, `1d592e6cd`** (Amendment 4,
+  §18: the early check, the arm-end check, and each look's plan, read and team bootstrap), which differs from the
+  pin under `src/` and `data/` in `src/main/b1/look.py` and its test and in nothing else.
 - **Registered: `507d0c11961da8d4243a4c8877bcc04ef220058c`** (main at registration, the commit that carried the
   kit, the cross statistic and the Kakuna rule). It is `0220f8408` plus the nine commits main gained while this was written
   (`c4a842d12` to `c8c212214`: the light-screen tier's docs, the heavy slots admitted by memory, the core split and
@@ -364,7 +369,8 @@ agree?". Whether another 72 teams would agree is reported beside every full look
   - If both factors stop, only the control continues.
 - **Where the 50M look is played.** It gates phase 2, so it is played on the card between the phases (≈ 2 GPU-h,
   §12). On the three agent cores it takes ≈ 27 h with the card idle; that is the fallback, not the plan.
-- **A look is planned and read by code** (`python -m main.b1.look`, driven by [`looks/drive_look.sh`](looks/drive_look.sh)).
+- **A look is planned and read by code** (`python -m main.b1.look`, driven by [`looks/drive_look.sh`](looks/drive_look.sh);
+  both from the kit commit, the games from the pin: Amendment 4).
   It refuses to plan unless every run passes §10's guards. It reads INCONCLUSIVE, never a class, if:
   - any cell on any panel is missing, duplicated, or not OK by the ledger's rule;
   - any cell holds a number of completed pairs other than the registered one (fewer OR more: no games are added
@@ -452,9 +458,11 @@ two-stage rule) before any of it is played.
     run's own records and re-read; it is never waived. If it cannot be recovered it is treated as VOID.
   - An early-check exit 3 on K9(b) stops that run before the next launch, like any other early-check refusal.
 - **The early check, one run at a time (Amendment 1).** As soon as a run has written its first checkpoint
-  (1,000,000 steps), from a clean checkout of the pin: `python -m main.b1.look check-run --arm <C|W|Br|WB> --seed
+  (1,000,000 steps), from a clean checkout of the KIT commit (Amendment 4; `--pin` is still the launch pin):
+  `python -m main.b1.look check-run --arm <C|W|Br|WB> --seed
   <seed> --pin <PIN>`. It applies the per-run guards above to that checkpoint (`check_run` with `expected_levers`
-  resolved by the pin's own parser) and the K9(b) read on the rows through that checkpoint, and prints a JSON
+  resolved by the pin's own parser, which the kit commit carries byte for byte) and the K9(b) read on the rows
+  through that checkpoint, and prints a JSON
   record. Exit 0 is required. Exit 3 stops the run and goes to
   the orchestrator before the next launch: a wrong argv then costs an hour, not a run (the replacement rule below
   applies). Exit 2 is a seed that is not the arm's. The JSON goes into §18 with `git rev-parse HEAD` of the main
@@ -808,26 +816,27 @@ refuses a GPU launch typed from a shell above nice 10). **`<PIN>` in every comma
   (fork)"; that wording is the launcher's for every `--model` command. The dry run's `role : RESTART`, the child's
   `[Recipe] --model launch (restart)` lines and the lineage sidecar are what say it is the same run.
 - **After every launch** (§10's early check; no lease, seconds), once the run has its first checkpoint, from a
-  clean checkout of the pin, with `git -C <main checkout> rev-parse HEAD` and `python -m utils.core_split show`
+  clean checkout of the KIT commit (Amendment 4), with `git -C <main checkout> rev-parse HEAD` and `python -m utils.core_split show`
   noted at the launch itself; all three go into §18:
 
   ```bash
   python -m main.b1.look check-run --arm W --seed 5103 --pin <PIN>     # exit 0 required; 3 = stop the run
   ```
 - **At each run's end, before the Kakuna `plan`** (Amendment 2; §10's K9(b) rule; no lease, seconds): for all
-  twelve runs, after phase 2, from a clean checkout of the pin. Each JSON goes into §18. No code orders it before
+  twelve runs, after phase 2, from a clean checkout of the KIT commit (Amendment 4). Each JSON goes into §18. No code orders it before
   `plan`: it is an operator rule.
 
   ```bash
   python -m main.b1.look check-run --arm W --seed 5103 --pin <PIN> --step 100000000 --arm-end   # exit 0 required
   ```
-- **A look** (any agent holding the GPU lease for the `cuda` form; the `cpu` form needs no lease), from a clean
-  detached checkout of the pin:
+- **A look** (any agent holding the GPU lease for the `cuda` form; the `cpu` form needs no lease), from TWO clean
+  detached checkouts (Amendment 4): the kit commit plans and reads, the pin plays every game:
 
   ```bash
   git worktree add --detach <PIN_DIR> <PIN>          # the launch pin of §18, never the registered 507d0c11…
-  <PIN_DIR>/designs/research_state/measurements/boundary1_scratch_2026-11-09/looks/drive_look.sh \
-      <PIN_DIR> <PIN> <WORK_DIR> 50M cuda
+  git worktree add --detach <KIT_DIR> <KIT>          # the kit commit of Amendment 4
+  <KIT_DIR>/designs/research_state/measurements/boundary1_scratch_2026-11-09/looks/drive_look.sh \
+      <KIT_DIR> <KIT> <PIN_DIR> <PIN> <WORK_DIR> 50M cuda
   # or 75M / 100M; EQ takes --eq-step <N>; after a replacement, --replace <the registered seed 5109 replaced>;
   # after a STOP-HARM of the other factor, --survivor width|breadth
   ```
@@ -1005,7 +1014,7 @@ readings of it and of the code):
 43. **The mid-phase retry is typed by hand.** The kit's `resume_argv` builds the phase-2 form alone and its
     resume check covers that form alone; form (c) differs in `--model` and `--steps` only and must pass
     `--dry-run` first. UNVERIFIED by execution: no run has been resumed from a periodic checkpoint with this kit.
-44. **That a run counts after a retry is read from `main.b1.look` at the pin, not executed**: the look reads the
+44. **That a run counts after a retry is read from `main.b1.look` (now the kit commit's, Amendment 4), not executed**: the look reads the
     pin history, the lineage, `original_command`, the last process's recorded arguments and the K9(b) rows; it
     does not read `crashes/`.
 45. **The seed's timing (item 7) changes nothing.** §13 item 4's stop rule read "its first promotion into the
@@ -1237,6 +1246,75 @@ not move: this amendment is a `designs/` commit after it, like the re-pin record
    pool at step 4,000,000, their SECOND evaluation (bots 0.7125 at 256, 0.725 at 128, against the 0.55
    threshold); the first, at 2M, read 0.4437 and 0.4962. That is the first reading of the seed's timing for a
    fresh run at `ent_coef` 0.0125, one run a width.
+
+### Amendment 4 (2026-11-12): the early check and every look are read from the kit at `1d592e6cd`; every run still trains at the launch pin
+
+Written after [1]'s first launch attempt and before any look, on the orchestrator's decision. **Blind: no look has
+been planned or played, no head-to-head game and no Kakuna row exists.** What has been read is what the early
+check reads by design, from that one attempt: its first checkpoint's sidecar, its `metadata.json`, and its K9(b)
+rows through step 1,000,192. **It moves no bar and no class**: the +4 pp bar, the −2 pp harm stop, the 1.76 pp
+floor, the 90 % level, the 0.005 pp band, the views, the classes and their order, the net rule, the panels, the
+pairs a cell, the seeds, the run names, the argvs, the Kakuna rule, the K9(b) ceilings, §10's guards as worded and
+its two replacement causes are as they were. The launch pin does not move.
+
+1. **What happened.** [1] `rb_b1c_s5101` (C, seed 5101) launched 2026-11-12 17:18:18 PST at the launch pin with
+   its registered argv (main at `60efef08c`, the GO at `63745f628`). At its first checkpoint
+   (`checkpoint_1000192_steps.zip`) §10's early check, run from a clean checkout of the pin, exited 3 with one
+   problem stated twice, for the run and for the checkpoint: "its pin entry ends at 0, before the checkpoint's
+   1,000,192". Every other guard passed and K9(b) read PASS (9 rows, maximum 4.8e-07). As §10 orders, the launch
+   driver stopped the run (SIGTERM to its launcher, 17:32:34; its last logged step 1,086,720) and held for the
+   orchestrator.
+2. **Why it is the kit and not the run.** A pin entry's `last_step` is the step of the run's last
+   `metadata.json` save at that commit (`agents.model.snapshot._update_pin_history`): a process's save at its
+   START, and the save that CLOSES a segment (the final save, or the quit-save of a restart or a stop). A periodic
+   checkpoint advances nothing; its sidecar copies the history as it stood. So in a healthy run `last_step` is the
+   step the open segment STARTED at: 0 throughout a first segment, and below the checkpoint's own step in the
+   sidecar of every periodic checkpoint a run ever writes. The pin's kit (`look._one_pin`) required `last_step`
+   to reach the checkpoint in both records. No look checkpoint's sidecar can satisfy that, so the pin's kit would
+   have refused all twelve runs at the early check and again at every look. Its tests passed on a fixture whose
+   sidecars carried a `last_step` no run writes. The attempt's own records were what §10 asks for: one entry, the
+   launch pin, from step 0, in the run and in the checkpoint.
+3. **The rule is §10's, unchanged; the code that reads it is fixed** (`main.b1.look.pin_problems`, commit
+   `1d592e6cd5ff2b6b9f634e67573a98e3cdaede44`). The run's `metadata.json` and the look checkpoint's sidecar must each
+   carry exactly ONE pin entry, at the launch pin, with `first_step` 0; the sidecar's own `git_hash` (the commit
+   of the process that wrote those bytes) must be the launch pin; and the run's entry must either reach the
+   checkpoint (`last_step` ≥ its step) or be the very entry the checkpoint was written under (the same
+   `last_step` as the sidecar's: the run has saved nothing since, so the checkpoint lies in its open segment).
+   Still refused: a second entry, another commit, a `first_step` other than 0, and a run whose entry was closed
+   below the checkpoint after the checkpoint was written. The regression tests carry the shapes real runs write
+   (`rb_b1c_s5101`'s first checkpoint; `rb_x26_s2601`'s checkpoints before and after a restart) and fail on the
+   pin's code. Run on the stopped attempt's records from a clean checkout of the kit commit, the check exits 0
+   with no problem and K9(b) PASS.
+4. **What is read from where, from now on.** The early check, the arm-end check (`check-run`, `--arm-end`) and
+   each look's plan, read and team bootstrap (`main.b1.look`, `main.b1.team_bootstrap`, `looks/drive_look.sh`)
+   are run from a clean detached checkout of the KIT commit `1d592e6cd`. Every run TRAINS at the launch pin
+   (`--pin-commit 15136b616…`, each argv token for token as registered), every look's games are played by
+   `main.h2h` from the pin checkout, the Kakuna read plays at the pin, and `--pin <PIN>` in every kit command is
+   still the launch pin. The kit commit differs from the pin under `src/` and `data/` in two files,
+   `src/main/b1/look.py` and `src/main/b1/look_test.py`; so the parser that resolves each arm's levers, the K9(b)
+   reader's rule (`main.x35.batch`), the ledger and everything a game runs are the pin's own bytes.
+   `drive_look.sh` now takes both checkouts and exits 5 unless the kit checkout is clean at the kit commit and
+   differs from the pin under `src/` and `data/` only inside `src/main/b1/`. The text this replaces: §3's first
+   bullet, §9's "planned and read by code", §10's early-check bullet, §14's three operator blocks, §17 item 44.
+   Executed 2026-11-12 on CPU as far as the plan: both checkouts verified, `main.b1.look` imported from the kit
+   and `main.h2h` from the pin, and the 50M plan REFUSED as it must (no run has a 50M checkpoint), with no family
+   registered and no game played. **UNVERIFIED by execution: the play and read steps of the two-checkout form.**
+5. **[1]'s first attempt is a kit-caused stop.** It is not a VOID, not a FATAL of §10, not a start failure
+   (Amendment 3) and not a replacement cause: it spends neither Amendment 1's one same-pin resume nor seed 5109.
+   The attempt is discarded whole, and no look, early check or Kakuna read reads anything it wrote. Its
+   directory is moved aside to `~/.cache/gen3ai/b1_aside/rb_b1c_s5101.EARLYCHECK_KIT_1`, and [1] is relaunched
+   from step 0 under its registered seed 5101, name `rb_b1c_s5101` and argv (the Training session's actions on
+   the orchestrator's GO, after the kit commit lands), then early-checked from the kit commit. The folder goes
+   OUTSIDE `models/` and `~/gen3ai_archive` because it still records seed 5101: under either root `python -m
+   main.b1.arms check` would list it as two collision hits (its sidecar's seed, its name), and there
+   the scan does not see it.
+6. **Recorded, classified by nothing here: the stopped child's FATAL.** On the driver's SIGTERM the child logged
+   `[CompileSentinel] FATAL at update end: dynamo RECOMPILED after the compile lock` and exited without a
+   quit-save (no `final_model_interrupted.zip`; `latest.txt` still names `checkpoint_1000192`). The stop signal
+   came first and the FATAL followed it within the same second; the run had been stopped by the early check
+   already. What a FATAL of that kind means for a COUNTED run that is signalled is the orchestrator's ruling, in
+   a further amendment if it changes anything. The registered flow sends a child no signal: the 6 h restart is
+   the child's own, at a rollout boundary, and the 50M and 100M stops are completions.
 
 ### Pre-launch and launch records
 
