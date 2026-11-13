@@ -45,9 +45,13 @@ def _k9b_from_the_fixture(monkeypatch):
 
 
 def make_run(models: Path, arm: str, seed: int, *, steps: Tuple[int, ...] = (50_000_081, 51_000_012),
-             pin: str = PIN, last_step: int = 100_050_000, target: int = 50_000_000,
+             pin: str = PIN, last_step: int = 100_050_000, opened: int = 43_210_987, target: int = 50_000_000,
              k9b: Optional[Dict[str, Any]] = None, **over: Any) -> Path:
     """A run folder as the trainer leaves it: ``metadata.json`` and ``checkpoints/checkpoint_<N>_steps.zip`` + sidecar.
+    ``last_step``: the step of the run's last ``metadata.json`` save (a process's start or a segment's close), which
+    is where its pin entry ends. ``opened``: the step at which the segment that wrote the checkpoints started; a
+    periodic checkpoint's sidecar copies the history as it stood THEN, so its entry ends there and never at the
+    checkpoint's own step (``agents.model.snapshot``; the shapes of real runs are pinned in the pin tests below).
     ``k9b``: what the stubbed K9(b) reader reports for this run (default: PASS)."""
     kit = K.KIT_ARM[arm]
     run = models / A.run_name(kit, seed)
@@ -68,8 +72,8 @@ def make_run(models: Path, arm: str, seed: int, *, steps: Tuple[int, ...] = (50_
     for n in steps:
         z = run / "checkpoints" / f"checkpoint_{n}_steps.zip"
         z.write_bytes(f"{run.name}@{n}".encode())
-        side = {"num_timesteps": n, "ent_coef": 0.0125,
-                "pin_history": [{**history[0], "last_step": n}], **side_over}
+        side = {"num_timesteps": n, "ent_coef": 0.0125, "git_hash": pin,
+                "pin_history": [{**history[0], "last_step": min(opened, n)}], **side_over}
         z.with_suffix(".json").write_text(json.dumps(side))
     return run
 
@@ -206,10 +210,83 @@ def test_a_run_that_changed_pin_or_did_not_start_at_step_zero_is_refused(tmp_pat
         {"git_hash": PIN, "first_step": 30_000_000, "last_step": 60_000_000}])
     assert "starts at 5, not step 0" in _one_bad(tmp_path / "c", pin_history=[
         {"git_hash": PIN, "first_step": 5, "last_step": 60_000_000}])
+    assert "starts at None, not step 0" in _one_bad(tmp_path / "c2", pin_history=[
+        {"git_hash": PIN, "last_step": 60_000_000}])
+    # a CLOSED entry that ends before the checkpoint: the run saved again BELOW the checkpoint after the checkpoint
+    # was written (its sidecar's entry ends at 43,210,987), so the checkpoint is not in the run's open segment
     assert "before the checkpoint's 50,000,081" in _one_bad(tmp_path / "d", pin_history=[
         {"git_hash": PIN, "first_step": 0, "last_step": 50_000_080}])
+    assert "ends at None, which is not a step" in _one_bad(tmp_path / "d2", pin_history=[
+        {"git_hash": PIN, "first_step": 0}])
     assert "checkpoint_50000081_steps.zip: pin_history" in _one_bad(tmp_path / "e", side={"pin_history": [
         {"git_hash": OTHER_PIN, "first_step": 0, "last_step": 50_000_081}]})
+    # the checkpoint's own two pins, and a checkpoint whose history is absent
+    assert "checkpoint_50000081_steps.zip: pin_history" in _one_bad(tmp_path / "e2", side={"pin_history": [
+        {"git_hash": PIN, "first_step": 0, "last_step": 30_000_000},
+        {"git_hash": OTHER_PIN, "first_step": 30_000_000, "last_step": 43_210_987}]})
+    assert "checkpoint_50000081_steps.zip: pin_history [] is not one entry" in _one_bad(
+        tmp_path / "e3", side={"pin_history": None})
+
+
+#: ``pin_history`` as real runs record it (read 2026-11-12; the commit shortened to the test's PIN). A periodic
+#: checkpoint's sidecar copies the run's history as it stood when the checkpoint was written, and an entry's
+#: ``last_step`` moves only at a ``metadata.json`` save: a process's start and a segment's close.
+#: (what, the run's entry end NOW, the sidecar's entry end, the checkpoint's step)
+REAL_PIN_SHAPES = [
+    # models/rb_b1c_s5101 at its first checkpoint, the run still in its first segment (the early check of PREREG §10)
+    ("first segment, still open", 0, 0, 1_000_192),
+    # models/rb_x26_s2601: checkpoint_10000089, read while the run was past its first restart and after its end
+    ("first segment, read after a later close", 92_330_156, 0, 10_000_089),
+    ("first segment, read after the run's end", 380_127_773, 0, 10_000_089),
+    # models/rb_x26_s2601: checkpoint_100000037, written in the segment that a restart opened at 92,330,156
+    ("a later segment, still open", 92_330_156, 92_330_156, 100_000_037),
+    ("a later segment, read after the run's end", 380_127_773, 92_330_156, 100_000_037),
+]
+
+
+@pytest.mark.parametrize("what,run_last,side_last,n", REAL_PIN_SHAPES, ids=[r[0] for r in REAL_PIN_SHAPES])
+def test_a_checkpoint_inside_an_open_segment_carries_one_pin_from_step_zero(tmp_path, what, run_last, side_last, n):
+    """The kit's first early check refused ``rb_b1c_s5101`` (2026-11-12) because it wanted the entry to END at or
+    after the checkpoint: no checkpoint's sidecar ever does, and no run's does before its segment closes."""
+    run = make_run(tmp_path, "C", 5101, steps=(n,), last_step=run_last, opened=side_last)
+    side = json.loads((run / "checkpoints" / f"checkpoint_{n}_steps.json").read_text())
+    assert side["pin_history"][0]["last_step"] == side_last < n, "the fixture writes the real shape"
+    step = n - n % A.CHECKPOINT_EVERY
+    probs, facts = K.check_run(run, "C", 5101, PIN, step, LEVERS["C"])
+    assert probs == [] and facts["steps"] == n
+
+
+def test_an_open_entry_counts_only_for_a_checkpoint_the_pin_itself_wrote(tmp_path):
+    """What tells an OPEN entry from one that closed before the checkpoint: the commit that wrote the checkpoint
+    (its sidecar's own ``git_hash``), and that the run has saved nothing since under another step."""
+    name = "checkpoint_1000192_steps.zip"
+    first = dict(steps=(1_000_192,), last_step=0, opened=0)
+
+    def problems(root: Path, **kw: Any) -> List[str]:
+        run = make_run(root, "C", 5101, **{**first, **kw})
+        return K.check_run(run, "C", 5101, PIN, A.CHECKPOINT_EVERY, LEVERS["C"])[0]
+
+    assert problems(tmp_path / "ok") == []
+    # one entry at the pin that ends at step 0, and the bytes written by ANOTHER commit: the entry had closed
+    assert problems(tmp_path / "a", side={"git_hash": OTHER_PIN}) == [
+        f"{name}: it was written by commit bbbbbbbb, not aaaaaaaa"]
+    assert problems(tmp_path / "b", side={"git_hash": None}) == [f"{name}: it was written by commit None, not aaaaaaaa"]
+    # the same holds for an entry that reaches the checkpoint: the writer is checked whatever the entry's end
+    assert problems(tmp_path / "c", last_step=4_429_200, side={"git_hash": OTHER_PIN}) == [
+        f"{name}: it was written by commit bbbbbbbb, not aaaaaaaa"]
+    # the run saved at 400,000 AFTER this checkpoint was written under the entry that ended at 0: rewound below it
+    assert problems(tmp_path / "d", last_step=400_000) == [
+        f"the run: its pin entry ends at 400,000, before the checkpoint's 1,000,192, and is not the open entry "
+        f"{name} was written under (that one ended at 0)"]
+    # ... and a run whose entry reaches the checkpoint needs no open segment
+    assert problems(tmp_path / "e", last_step=1_000_192) == []
+    assert problems(tmp_path / "f", last_step=4_429_200) == []
+    # a pin entry whose end is not a step at all is never read as open
+    for i, bad in enumerate((True, -1, "0", 1.0e6)):
+        got = problems(tmp_path / f"g{i}", pin_history=[{"git_hash": PIN, "first_step": 0, "last_step": bad}])
+        assert got == [f"the run: its pin entry ends at {bad!r}, which is not a step"]
+    assert problems(tmp_path / "h", pin_history=[{"git_hash": PIN, "first_step": False, "last_step": 0}]) == [
+        "the run: its pin entry starts at False, not step 0"]
 
 
 def test_a_fork_is_not_a_fresh_run(tmp_path):
@@ -761,7 +838,7 @@ def test_the_early_check_reads_one_run_at_its_first_checkpoint_and_exits_three_o
     models = tmp_path / "models"
     monkeypatch.setenv("GEN3AI_MODELS_DIR", str(models))
     monkeypatch.setattr(K, "expected_levers", lambda arm, seed, pin: LEVERS[arm])
-    first = dict(steps=(1_000_040,), last_step=1_000_040)
+    first = dict(steps=(1_000_040,), last_step=0, opened=0)   # the run is still in its first segment
     make_run(models, "W", 5103, **first)
     assert K.main(["check-run", "--arm", "W", "--seed", "5103", "--pin", PIN]) == 0
     got = json.loads(capsys.readouterr().out)

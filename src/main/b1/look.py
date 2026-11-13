@@ -26,8 +26,8 @@ it is overwritten by the phase-2 resume, and a look must read the same bytes whe
 
 **A run counts** (:func:`check_run`, PREREG §10) iff its record says: it was LAUNCHED by its arm's registered argv,
 token for token (``original_command``, which no restart or resume rewrites, against :func:`main.b1.arms.build_argv`
-at a registered step target); it is a FRESH run; ONE pin, the registered one, from step 0 to the checkpoint;
-``ent_coef`` 0.0125 (the base every run types, :data:`main.b1.arms.BASE`) and ten epochs; its LAST process still
+at a registered step target); it is a FRESH run; ONE pin, the registered one, from step 0 to the checkpoint
+(:func:`pin_problems`, which says how an entry that is still OPEN is read); ``ent_coef`` 0.0125 (the base every run types, :data:`main.b1.arms.BASE`) and ten epochs; its LAST process still
 resolved the arm's lever keys (:data:`CONFIG_KEYS`) as the arm's own argv resolves them, so a resume that dropped the
 width or the team mix is refused; and its K9(b) read through the look checkpoint's step is PASS (:func:`k9b_read`:
 the runs train under ``--behaviour-check warn``, so the judged read is here and not in the trainer). Across the look,
@@ -223,16 +223,56 @@ def launched_as_registered(original_command: Any, arm: str, seed: int, pin: str)
     return f"original_command is not the registered argv of arm {arm} seed {seed}: {' '.join(got)!r}"
 
 
-def _one_pin(history: Any, pin: str, upto: int) -> Optional[str]:
-    seen = [(str(p.get("git_hash"))[:8], p.get("first_step"), p.get("last_step")) for p in (history or [])]
-    if len(seen) != 1 or history[0].get("git_hash") != pin:
-        return f"pin_history {seen} is not one entry at {pin[:8]}"
-    first, last = history[0].get("first_step"), history[0].get("last_step")
-    if first != 0:
-        return f"its pin entry starts at {first!r}, not step 0"
-    if not isinstance(last, int) or last < upto:
-        return f"its pin entry ends at {last!r}, before the checkpoint's {upto:,}"
-    return None
+def _pin_entry(history: Any, pin: str) -> Tuple[Optional[int], Optional[str]]:
+    """``(last_step, None)`` for a pin history that is ONE entry, at ``pin``, from step 0; else ``(None, why)``."""
+    rows = history if isinstance(history, list) else []
+    seen = [(str(p.get("git_hash"))[:8], p.get("first_step"), p.get("last_step")) if isinstance(p, dict) else p
+            for p in rows]
+    if len(rows) != 1 or not isinstance(rows[0], dict) or rows[0].get("git_hash") != pin:
+        return None, f"pin_history {seen} is not one entry at {pin[:8]}"
+    first, last = rows[0].get("first_step"), rows[0].get("last_step")
+    if type(first) is not int or first != 0:
+        return None, f"its pin entry starts at {first!r}, not step 0"
+    if type(last) is not int or last < 0:
+        return None, f"its pin entry ends at {last!r}, which is not a step"
+    return last, None
+
+
+def pin_problems(run_history: Any, side: Mapping[str, Any], zip_name: str, pin: str, n: int) -> List[str]:
+    """PREREG §10's "the run and the checkpoint carry ONE pin entry, the registered pin, from step 0", for the look
+    checkpoint at step ``n`` (``side`` is its sidecar, ``run_history`` the ``pin_history`` of ``metadata.json``).
+
+    **What an entry's ``last_step`` is** (``agents.model.snapshot._update_pin_history``): the step of the run's last
+    ``metadata.json`` save at that commit. A process saves it at its START, before it trains a step (a second commit
+    would append its own entry there), and at a segment's CLOSE (the final save, or the quit-save of a restart or a
+    stop). A periodic checkpoint advances nothing: its sidecar copies the history as it stood. So every checkpoint
+    of a run's first segment carries ``last_step`` 0, and one written after a restart carries the restart's step
+    (measured: ``rb_x26_s2601``'s ``checkpoint_1000192`` and ``checkpoint_10000089`` read 0, its
+    ``checkpoint_100000037`` reads 92,330,156). An entry that ends before the checkpoint is therefore the normal
+    shape of an OPEN segment, and it is told from a CLOSED one by who wrote the checkpoint:
+
+    - **the checkpoint**: one entry at the pin from step 0 in the sidecar's history, AND the sidecar's own
+      ``git_hash`` (the commit of the process that wrote these bytes) is the pin. The entry was then open when the
+      checkpoint was written, whatever its ``last_step``: the writing process ran the pin and had recorded no other.
+    - **the run**: one entry at the pin from step 0, which either reaches the checkpoint (``last_step >= n``: a
+      later save covers it) or IS the entry the checkpoint was written under (the same ``last_step`` as the
+      sidecar's: the run has saved nothing since, so the checkpoint lies in its open segment). A run entry that
+      ends before the checkpoint at another step was closed BELOW the checkpoint after the checkpoint was written
+      (the run was rewound under it): refused.
+    """
+    probs: List[str] = []
+    run_last, bad = _pin_entry(run_history, pin)
+    if bad:
+        probs.append(f"the run: {bad}")
+    side_last, bad = _pin_entry(side.get("pin_history"), pin)
+    if bad:
+        probs.append(f"{zip_name}: {bad}")
+    if side.get("git_hash") != pin:
+        probs.append(f"{zip_name}: it was written by commit {str(side.get('git_hash'))[:8]}, not {pin[:8]}")
+    if run_last is not None and side_last is not None and run_last < n and run_last != side_last:
+        probs.append(f"the run: its pin entry ends at {run_last:,}, before the checkpoint's {n:,}, and is not the "
+                     f"open entry {zip_name} was written under (that one ended at {side_last:,})")
+    return probs
 
 
 def _child_log_fire(run_dir: Path, line: str) -> Tuple[bool, bool]:
@@ -313,10 +353,7 @@ def check_run(run_dir: Path, arm: str, seed: int, pin: str, step: int, levers: M
         return [f"{zip_path.name}'s sidecar cannot be read ({type(e).__name__})"], facts
     if side.get("num_timesteps") != n:
         probs.append(f"{zip_path.name}'s sidecar says num_timesteps {side.get('num_timesteps')!r}")
-    for where, hist in (("the run", md.get("pin_history")), (zip_path.name, side.get("pin_history"))):
-        bad = _one_pin(hist, pin, n)
-        if bad:
-            probs.append(f"{where}: {bad}")
+    probs.extend(pin_problems(md.get("pin_history"), side, zip_path.name, pin, n))
     lin = md.get("lineage") or {}
     if lin.get("role") != "fresh" or lin.get("fork_parent") is not None:
         probs.append(f"lineage is not a FRESH run (role {lin.get('role')!r})")
