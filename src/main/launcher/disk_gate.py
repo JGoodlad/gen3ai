@@ -56,6 +56,8 @@ def verdict_for_launch(child_args: List[str], run_dir: str, *, ns: Optional[Any]
             debug="--debug" in child_args, allow_low_disk=OPT_OUT_FLAG in child_args,
             checkpoint_every_steps=_peek_arg(child_args, "--checkpoint-every-steps", type_=int),
             eval_freq=_peek_arg(child_args, "--eval-freq", type_=int),
-            device=_peek_arg(child_args, "--device") or "auto")
+            device=_peek_arg(child_args, "--device") or "auto",
+            d_model=_peek_arg(child_args, "--d-model", type_=int),
+            trunk_ffn_dim=_peek_arg(child_args, "--trunk-ffn-dim", type_=int))
     return verdict_for_namespace(ns, run_dir, model_path=model_path, free_fn=free_fn,
                                  allow=(OPT_OUT_FLAG in child_args) if allow is None else allow)

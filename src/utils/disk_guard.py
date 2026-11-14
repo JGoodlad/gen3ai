@@ -24,8 +24,10 @@ TWO HALVES, ONE MODULE.
 
    Periodic checkpoints are NEVER pruned (`_TrackingCheckpointCallback`), so the count is the boundaries still
    to cross, not a retention window. The checkpoint size is read from the run's own newest checkpoint (a
-   resume), else the fork's source `--model`, else the newest same-architecture run in the archive, else the
-   biggest recent one (`find_checkpoint_bytes`, source named in the report). The per-unit ALLOWANCES are
+   resume), else the fork's source `--model`, else the newest same-architecture run in the archive AT THE
+   LAUNCH'S WIDTH (`d_model`, `trunk_ffn_dim`: the signature does not carry it), else a same-architecture run of
+   another width scaled by an upper bound, else the biggest recent one (`find_checkpoint_bytes`, source named in
+   the report). The per-unit ALLOWANCES are
    MEASURED from a finished run and declared in :class:`Allowances` with their provenance.
 
 2. THE IN-RUN WATCH (:class:`InRunGuard`). At each checkpoint save (one `shutil.disk_usage`), free space
@@ -197,13 +199,54 @@ def _recorded_signature(run_dir: str) -> Optional[str]:
         return None
 
 
+def _default_width() -> Tuple[int, int]:
+    """``(d_model, trunk_ffn_dim)`` of a run that types neither: the arch constants' defaults (128, 256)."""
+    try:
+        from agents.model.arch_constants import D_MODEL, TRANSFORMER_FFN_DIM
+        return int(D_MODEL), int(TRANSFORMER_FFN_DIM)
+    except Exception:                              # noqa: BLE001 — an estimate must not kill a launch
+        return 128, 256
+
+
+def launch_width(d_model: Optional[int], trunk_ffn_dim: Optional[int]) -> Tuple[int, int]:
+    """A launch's WIDTH ``(d_model, trunk_ffn_dim)`` from its flag values; None (untyped) is the default."""
+    d0, f0 = _default_width()
+    return int(d_model or d0), int(trunk_ffn_dim or f0)
+
+
+def _recorded_width(run_dir: str) -> Optional[Tuple[int, int]]:
+    """The width a run's ``model_config.json`` records. A config from before the fields existed is the default
+    width (`model_version.migrations`: ``d_model`` = ``role_token_size``, ``trunk_ffn_dim`` 256)."""
+    import json
+    try:
+        with open(os.path.join(run_dir, "model_config.json")) as f:
+            cfg = json.load(f)
+    except (OSError, ValueError):
+        return None
+    d0, f0 = _default_width()
+    return int(cfg.get("d_model") or cfg.get("role_token_size") or d0), int(cfg.get("trunk_ffn_dim") or f0)
+
+
+def width_scale(width: Tuple[int, int], ref: Tuple[int, int]) -> float:
+    """An UPPER bound on ``checkpoint(width) / checkpoint(ref)`` for one architecture: every weight is at most the
+    product of two widths that follow ``d_model`` / ``trunk_ffn_dim``, so it grows by at most the square of the
+    larger ratio; a narrower width is priced at the reference's size (never scaled down). Measured, for scale:
+    35.5 MiB at (128, 256) and 77.3 MiB at (256, 512), x2.18 where this bound says x4 (BOUNDARY-1, 2026-11-12)."""
+    r = max(1.0, width[0] / ref[0], width[1] / ref[1])
+    return r * r
+
+
 def find_checkpoint_bytes(run_dir: str, model_path: Optional[str], archive_dir: Optional[str],
-                          *, scan_limit: int = 30) -> Tuple[Optional[int], str]:
+                          *, scan_limit: int = 30,
+                          width: Optional[Tuple[int, int]] = None) -> Tuple[Optional[int], str]:
     """``(bytes of ONE checkpoint, where it came from)``; ``(None, why)`` when nothing can be read.
 
     Order: this run's own newest checkpoint (a resume) -> the fork's source ``--model`` (a zip, or a run dir
-    -> its newest zip) -> the archive: the newest run recording the CURRENT ``ARCH_SIGNATURE`` -> the BIGGEST
-    newest-zip among the ``FALLBACK_RECENT_RUNS`` newest runs that have one (a different architecture)."""
+    -> its newest zip) -> the archive: the newest run recording the CURRENT ``ARCH_SIGNATURE`` at the launch's
+    ``width`` (``(d_model, trunk_ffn_dim)``, `launch_width`; the signature does not carry the width) -> with
+    none at that width, the newest same-signature run scaled by `width_scale` (an upper bound) -> the BIGGEST
+    newest-zip among the ``FALLBACK_RECENT_RUNS`` newest runs that have one (a different architecture).
+    ``width`` None (a caller that does not know it) takes the newest same-signature run at any width."""
     z = _run_checkpoint_zip(run_dir) if os.path.isdir(run_dir) else None
     if z and _size(z):
         return _size(z), f"this run's own newest checkpoint {os.path.basename(z)}"
@@ -223,14 +266,27 @@ def find_checkpoint_bytes(run_dir: str, model_path: Optional[str], archive_dir: 
         runs = runs[:scan_limit]
         sig = _current_arch_signature()
         sized: List[Tuple[str, int]] = []
+        other_width: Optional[Tuple[str, int, Tuple[int, int], str]] = None   # the newest same-signature run
         for r in runs:
             zr = _run_checkpoint_zip(r)
             sz = _size(zr)
             if not sz:
                 continue
             if sig is not None and _recorded_signature(r) == sig:
-                return sz, f"archive run {os.path.basename(r)} (same ARCH_SIGNATURE) {os.path.basename(zr or '')}"
+                rw = _recorded_width(r)
+                if width is None or rw == width:
+                    at = "" if width is None else f", width d_model {width[0]} / ffn {width[1]}"
+                    return sz, (f"archive run {os.path.basename(r)} (same ARCH_SIGNATURE{at}) "
+                                f"{os.path.basename(zr or '')}")
+                if other_width is None and rw is not None:
+                    other_width = (r, sz, rw, os.path.basename(zr or ""))
             sized.append((r, sz))
+        if other_width is not None and width is not None:
+            r, sz, rw, zname = other_width
+            k = width_scale(width, rw)
+            return int(math.ceil(sz * k)), (
+                f"archive run {os.path.basename(r)} (same ARCH_SIGNATURE at width {rw[0]} / {rw[1]}; none at "
+                f"{width[0]} / {width[1]}) {zname} x {k:g}, an upper bound")
         if sized:
             recent = sized[:FALLBACK_RECENT_RUNS]           # newest first
             r, sz = max(recent, key=lambda t: t[1])
@@ -437,14 +493,15 @@ def shared_cache_plan(run_dir: str, compiles: bool) -> Optional[SharedCachePlan]
 def plan_from_values(*, run_dir: str, model_path: Optional[str], steps: int, resume_steps: int,
                      checkpoint_every_steps: Optional[int], eval_freq: Optional[int], fork: bool,
                      self_play: bool = True, device: str = "auto",
-                     archive_dir: Optional[str] = None) -> RunPlan:
+                     archive_dir: Optional[str] = None,
+                     width: Optional[Tuple[int, int]] = None) -> RunPlan:
     """Resolve a :class:`RunPlan` from flag VALUES (a namespace's, or an argv's), reading the cadence defaults
     from the code that applies them."""
     from agents.training.eval_schedule import EVAL_FREQ_STEPS
     from main.train.constants import checkpoint_interval_env_steps
     interval = checkpoint_interval_env_steps(checkpoint_every_steps)
     ef = EVAL_FREQ_STEPS if eval_freq is None else int(eval_freq)
-    cb, src = find_checkpoint_bytes(run_dir, model_path, archive_dir)
+    cb, src = find_checkpoint_bytes(run_dir, model_path, archive_dir, width=width)
     cc_dir = os.path.join(run_dir, "compile_cache")
     existing = _dir_bytes(cc_dir) if os.path.isdir(cc_dir) else 0
     compiles = str(device or "auto").strip().lower() != "cpu"

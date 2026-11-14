@@ -113,3 +113,32 @@ def test_the_launch_verdict_reads_the_flag_from_the_argv_even_without_a_resolved
     run = str(tmp_path / "x")
     assert verdict_for_launch(["--steps", "1"], run, ns=ns, free_fn=tiny).refused
     assert verdict_for_launch(["--steps", "1", "--allow-low-disk"], run, ns=ns, free_fn=tiny).status == dg.OPTED_OUT
+
+
+# --- the dry run prices the WIDTH it resolved (TECH_DEBT P2, closed 2026-11-14) ---------------------------------
+
+def test_a_width_256_dry_run_asks_for_more_disk_than_a_width_128_one(tmp_path, monkeypatch):
+    """The launcher's real path (`verdict_for_launch` resolving the argv through `main.checkargs`, as `--dry-run`
+    does) over an archive holding one run of each width: BOUNDARY-1's four dry runs all read one REQUIRED."""
+    import json
+
+    from main.train import disk_preflight
+    arch = tmp_path / "archive"
+    for name, size, width in (("rb_w128", 35 * 1024 * 1024, (128, 256)), ("rb_w256", 77 * 1024 * 1024, (256, 512))):
+        (arch / name).mkdir(parents=True)
+        with open(arch / name / "final_model.zip", "wb") as f:
+            f.truncate(size)                                   # sparse: the size is read, never the bytes
+        (arch / name / "model_config.json").write_text(
+            json.dumps({"arch_signature": "SIG-X", "d_model": width[0], "trunk_ffn_dim": width[1]}))
+    monkeypatch.setattr(dg, "_current_arch_signature", lambda: "SIG-X")
+    monkeypatch.setattr(disk_preflight, "_archive_dir", lambda: str(arch))
+    base = ["--steps", "20000000", "--device", "cuda", *_ARCH_OK]
+
+    def required(*extra):
+        v = verdict_for_launch([*base, *extra], str(tmp_path / "rb_new"), free_fn=lambda _p: 2000 * GiB)
+        return v.req.required, v.ckpt_source
+
+    narrow, src_n = required()
+    wide, src_w = required("--d-model", "256", "--trunk-ffn-dim", "512")
+    assert "rb_w128" in src_n and "rb_w256" in src_w, (src_n, src_w)
+    assert wide > narrow, (wide, narrow)

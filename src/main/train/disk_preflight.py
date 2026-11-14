@@ -57,6 +57,9 @@ def plan_for_namespace(ns: Any, run_dir: str, *, model_path: Optional[str] = Non
         self_play=bool(getattr(ns, "self_play", True)),
         device=str(getattr(ns, "device", "auto") or "auto"),
         archive_dir=_archive_dir(),
+        # the network width the launch RESOLVED (a fresh run's checkpoint size follows it; 2026-11-12, BOUNDARY-1:
+        # width-128 and width-256 dry runs were sized from one checkpoint)
+        width=disk_guard.launch_width(getattr(ns, "d_model", None), getattr(ns, "trunk_ffn_dim", None)),
     )
 
 

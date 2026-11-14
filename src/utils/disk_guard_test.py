@@ -132,6 +132,49 @@ def test_a_fresh_run_reads_the_same_architecture_run_in_the_archive(tmp_path, mo
     assert n == 400 and "same ARCH_SIGNATURE" in src
 
 
+def _arch_run(arch, name, size, width=None, mtime=None):
+    """An archive run of signature SIG-X: its newest checkpoint of ``size`` bytes, its recorded width (None = a
+    config from before the width fields, i.e. the default 128 / 256)."""
+    import json
+    _zip(str(arch / name / "final_model.zip"), size)
+    cfg = {"arch_signature": "SIG-X"}
+    if width is not None:
+        cfg.update(d_model=width[0], trunk_ffn_dim=width[1])
+    (arch / name / "model_config.json").write_text(json.dumps(cfg))
+    if mtime is not None:
+        os.utime(arch / name, (mtime, mtime))
+
+
+def test_a_fresh_run_is_sized_from_a_same_architecture_run_of_ITS_width(tmp_path, monkeypatch):
+    """BOUNDARY-1 (2026-11-12): width-128 and width-256 dry runs were both sized from the newest same-signature
+    run's checkpoint, because ARCH_SIGNATURE does not carry d_model (35.5 vs 77.3 MiB measured)."""
+    arch = tmp_path / "archive"
+    _arch_run(arch, "wide", 773, (256, 512), mtime=1000)
+    _arch_run(arch, "narrow", 355, None, mtime=2000)         # newest; a pre-width config = the default width
+    monkeypatch.setattr(dg, "_current_arch_signature", lambda: "SIG-X")
+    new = str(tmp_path / "new")
+    assert dg.find_checkpoint_bytes(new, None, str(arch), width=(256, 512))[0] == 773
+    assert dg.find_checkpoint_bytes(new, None, str(arch), width=(128, 256))[0] == 355
+    _n, src = dg.find_checkpoint_bytes(new, None, str(arch), width=(256, 512))
+    assert "width d_model 256 / ffn 512" in src, src
+
+
+def test_with_no_run_of_its_width_a_wider_fresh_run_is_priced_by_the_upper_bound(tmp_path, monkeypatch):
+    arch = tmp_path / "archive"
+    _arch_run(arch, "narrow", 355, (128, 256))
+    monkeypatch.setattr(dg, "_current_arch_signature", lambda: "SIG-X")
+    n, src = dg.find_checkpoint_bytes(str(tmp_path / "new"), None, str(arch), width=(256, 512))
+    assert n == 355 * 4 and "upper bound" in src, (n, src)
+    assert dg.width_scale((256, 1024), (128, 256)) == 16.0         # the larger ratio, squared
+    assert dg.width_scale((128, 256), (256, 512)) == 1.0           # narrower: never priced below the reference
+    assert 4 * 35.5 >= 77.3                                        # the bound holds on the measured pair
+
+
+def test_the_launch_width_of_untyped_flags_is_the_default():
+    assert dg.launch_width(None, None) == (128, 256)
+    assert dg.launch_width(256, 512) == (256, 512)
+
+
 def test_with_no_same_architecture_run_the_biggest_of_the_newest_few_stands_in(tmp_path, monkeypatch):
     arch = tmp_path / "archive"
     for i, n in enumerate([100, 700, 300]):
