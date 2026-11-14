@@ -1786,11 +1786,11 @@
    "detail": ""
   },
   "src/agents/model/saved_offload_test.py::test_on_the_card_the_bounded_reference_arm_matches_the_unbounded_one_and_peaks_lower": {
-   "status": "skip",
-   "commit": "ef89ca99f824c86af226e06e99f6e3b95796bb3d",
-   "at": "2026-11-12T07:50:43Z",
-   "duration_s": 0.0,
-   "contention": 1.45,
+   "status": "pass",
+   "commit": "15136b61634b667bb9da5ccc6647ff9265238829",
+   "at": "2026-11-12T12:55:17Z",
+   "duration_s": 13.13,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/speed_physics_bridge_integration_test.py::test_the_priority_bracket_is_never_contradicted_and_the_physics_is_calibrated": {
@@ -2630,11 +2630,11 @@
    "detail": ""
   },
   "src/agents/training/probe_own_graph_test.py::test_on_the_card_the_probes_own_graph_readings_match_the_retained_graphs": {
-   "status": "skip",
-   "commit": "e112cbcbfd4d4fef6bfa15144ce00e57a7f3ed23",
-   "at": "2026-11-12T06:11:51Z",
-   "duration_s": 0.0,
-   "contention": 1.46,
+   "status": "pass",
+   "commit": "15136b61634b667bb9da5ccc6647ff9265238829",
+   "at": "2026-11-12T12:55:23Z",
+   "duration_s": 3.31,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/probe_own_graph_test.py::test_the_golden_update_is_bit_identical_with_the_probes_on_their_own_graphs_and_with_them_skipped": {
@@ -5902,5 +5902,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-13T18:29:55Z"
+ "last_written": "2026-11-14T20:04:44Z"
 }
