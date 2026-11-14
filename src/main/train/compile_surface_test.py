@@ -129,3 +129,60 @@ def test_the_goldens_lookup_is_the_loaders(tmp_path, monkeypatch):
     assert CS.resolve_model_arg("g1") == "models/goldens/g1"
     assert CS.restored_compile_args("g1") == {"batch_size": 768}
     assert CS.resolve_model_arg("nowhere") == "nowhere" and CS.resolve_model_arg("x.zip") == "x.zip"
+
+
+# ── the `--compile-trainer` AUTO default judges the EFFECTIVE update shape, not the argv's ─────────────────────────
+
+def _auto(args):
+    from main.train.config import _auto_compile_trainer
+    return _auto_compile_trainer(args)
+
+
+def _cuda_resume(ckpt, **argv):
+    """A `--model` resume on an explicit cuda device (the auto default's device half is then ON without a card);
+    `n_envs` 16, no rollout target, so an update is n_steps * 16 rows. The argv's `n_steps` / `batch_size` are the
+    parser defaults unless typed: INERT on a resume."""
+    a = _args("--model", ckpt, "--device", "cuda", "--n-envs", "16",
+              *[x for k, v in argv.items() for x in (f"--{k.replace('_', '-')}", str(v))])
+    a.rollout_target_samples = 0
+    return a
+
+
+def test_auto_compile_on_a_resume_judges_the_checkpoints_shape_ON_where_the_argvs_would_refuse(tmp_path):
+    """The run trained compiled at n_steps 128 x 16 envs = 2048 rows, batch 1024 (divides). The argv typed a
+    batch of 1536 (inert on a resume): judged on the argv, the auto default turned the compile OFF."""
+    ckpt = _zip(tmp_path / "checkpoint_1000_steps.zip", batch_size=1024, n_steps=128)
+    args = _cuda_resume(ckpt, n_steps=128, batch_size=1536)
+    assert (128 * 16) % 1536 != 0                    # the argv's shape is refused ...
+    assert _auto(args) == (True, None)               # ... the learner's is not
+
+
+def test_auto_compile_on_a_resume_judges_the_checkpoints_shape_OFF_where_the_argvs_would_pass(tmp_path):
+    """The reverse: the checkpoint's batch 1536 does not divide its 2048-row update, the argv's 1024 would."""
+    ckpt = _zip(tmp_path / "checkpoint_1000_steps.zip", batch_size=1536, n_steps=128)
+    enabled, why = _auto(_cuda_resume(ckpt, n_steps=128, batch_size=1024))
+    assert enabled is False and "1536" in why, why
+
+
+def test_auto_compile_reads_the_checkpoints_n_steps_too(tmp_path):
+    ckpt = _zip(tmp_path / "checkpoint_1000_steps.zip", batch_size=1024, n_steps=64)     # 64 x 16 = 1024 rows
+    assert _auto(_cuda_resume(ckpt, n_steps=96, batch_size=1024)) == (True, None)      # argv: 1536 rows, refused
+
+
+def test_control_a_fresh_launch_still_judges_its_argv():
+    assert _auto(_cuda_resume_fresh(n_steps=128, batch_size=1024)) == (True, None)
+    assert _auto(_cuda_resume_fresh(n_steps=128, batch_size=1536))[0] is False
+
+
+def _cuda_resume_fresh(**argv):
+    a = _args("--device", "cuda", "--n-envs", "16",
+              *[x for k, v in argv.items() for x in (f"--{k.replace('_', '-')}", str(v))])
+    a.rollout_target_samples = 0
+    return a
+
+
+def test_an_unreadable_checkpoint_falls_back_to_the_argv_and_says_so(tmp_path, capsys):
+    bad = tmp_path / "checkpoint_1000_steps.zip"
+    bad.write_text("not a zip")
+    assert _auto(_cuda_resume(str(bad), n_steps=128, batch_size=1024)) == (True, None)
+    assert "could not read --model's n_steps / batch_size" in capsys.readouterr().out

@@ -238,7 +238,8 @@ the default OFF and says why** (`⚡ --compile-trainer would be ON by default he
 leaving it OFF rather than refusing to launch`) instead of refusing to launch. The rule, for any future default: **a
 default yields to the config the user typed and announces it; an explicit flag refuses.** When the default resolves ON it
 is announced (`⚡ --compile-trainer ON by default (device=cuda)`), launcher attached or not. Pinned by
-`src/main/compile_defaults_test.py`.
+`src/main/compile_defaults_test.py`. A resume judges the checkpoint's `n_steps` / `batch_size`
+(`compile_surface.effective_update_shape`), never the inert argv's.
 
 **Runtime perf knob**: never versioned, never in `check_compatible`, NOT inherited on resume. With the AUTO default a
 flagless cuda resume gets it ON, so it is `--no-compile-trainer` you re-pass each launch, not the flag.

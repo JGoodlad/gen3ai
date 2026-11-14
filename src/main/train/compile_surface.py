@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import os
 import zipfile
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from agents.model.compile_cache_shared import EFFECTIVE_COMPILE_ARG_KEYS
 
@@ -41,9 +41,10 @@ def resolve_model_arg(model: str) -> str:
     return model
 
 
-def restored_compile_args(model: str) -> Dict[str, int]:
-    """`EFFECTIVE_COMPILE_ARG_KEYS` (argparse dests == the SB3 `data` member's keys) exactly as the checkpoint `--model` names will restore them. Raises
-    (`OSError` / `KeyError` / `ValueError` / `zipfile.BadZipFile`) when the zip or a value cannot be read."""
+def restored_compile_args(model: str, keys: Tuple[str, ...] = EFFECTIVE_COMPILE_ARG_KEYS) -> Dict[str, int]:
+    """``keys`` (argparse dests == the SB3 `data` member's keys; default `EFFECTIVE_COMPILE_ARG_KEYS`) exactly as the
+    checkpoint `--model` names will restore them. Raises (`OSError` / `KeyError` / `ValueError` /
+    `zipfile.BadZipFile`) when the zip or a value cannot be read."""
     path = resolve_model_arg(model)
     # the loader's candidates (`agents.model.snapshot._resolve_paths`), FILES only: a zip is what gets restored
     zip_path = next((c for c in (path, path + ".zip", os.path.join(path, "final_model.zip"),
@@ -53,7 +54,7 @@ def restored_compile_args(model: str) -> Dict[str, int]:
     with zipfile.ZipFile(zip_path) as z:
         data = json.loads(z.read("data"))
     out: Dict[str, int] = {}
-    for k in EFFECTIVE_COMPILE_ARG_KEYS:
+    for k in keys:
         v = data.get(k)
         if isinstance(v, bool) or not isinstance(v, int) or v <= 0:
             raise ValueError(f"{zip_path}: the checkpoint's `data` holds no usable {k!r} (got {v!r})")
@@ -74,3 +75,19 @@ def effective_compile_args(args: Any) -> Dict[str, int]:
         return restored_compile_args(model)
     n_envs = 1 if getattr(args, "debug", False) else args.n_envs      # `train_rl_agent.main`'s own rule
     return {"batch_size": fresh_batch_size(batch_size=args.batch_size, n_steps=args.n_steps, n_envs=n_envs)}
+
+
+#: The update SHAPE the `--compile-trainer` AUTO default judges (`compile_flags.resolve_compile_trainer_auto`): both
+#: are in `recipe_surface.INERT_ON_RESUME`, so on a `--model` launch the argv's are not what the learner holds.
+UPDATE_SHAPE_KEYS: Tuple[str, ...] = ("n_steps", "batch_size")
+
+
+def effective_update_shape(args: Any) -> Dict[str, int]:
+    """`UPDATE_SHAPE_KEYS` at the value this launch's learner will hold: on a `--model` launch the checkpoint's own
+    (`restored_compile_args`, which RAISES when the zip cannot be read), on a fresh launch the argv's. Read by
+    `config.resolve_config` for the compile AUTO default, which used to judge the argv's inert values on a resume
+    and could resolve the compile OFF for a run that trained compiled, or ON for one whose real shape it refuses."""
+    model = getattr(args, "model", None)
+    if model:
+        return restored_compile_args(model, UPDATE_SHAPE_KEYS)
+    return {"n_steps": int(args.n_steps), "batch_size": int(args.batch_size)}

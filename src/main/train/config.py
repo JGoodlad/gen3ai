@@ -16,6 +16,7 @@ Three jobs, in order, and the order is load-bearing:
 """
 import dataclasses
 import sys
+import zipfile
 
 from agents.model.damage_tables import _MIN_PRIOR_FLOOR, _PRIOR_FLOOR
 from agents.training.watchdog import start_orphan_watchdog
@@ -423,6 +424,26 @@ def resolve_eval_sentinel_regime(args, saved_ver, *, announce: bool = True) -> N
              f"source={args.eval_sentinel_greedy_source}); "
              f"promote_threshold={args.promote_threshold:g} "
              f"(source={args.promote_threshold_source})")
+
+
+def _auto_compile_trainer(args):
+    """`--compile-trainer`'s AUTO decision `(enabled, downgrade_reason)` at the update shape the learner will HOLD
+    (`compile_surface.effective_update_shape`): on a `--model` launch `n_steps` / `batch_size` are the checkpoint's,
+    the argv's being inert there (`recipe_surface.INERT_ON_RESUME`), so judging the argv could resolve a resume's
+    compile OFF while its run trained compiled, or the reverse. `n_envs` / `--rollout-target-samples` are the
+    launch's own (a resume inherits them above). An unreadable checkpoint falls back to the argv, announced: the
+    model load names that checkpoint's real defect, and an explicit compile is still judged on the loaded model
+    (`lifecycle._maybe_compile_trainer`)."""
+    from main.train.compile_surface import effective_update_shape
+    try:
+        shape = effective_update_shape(args)
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile) as exc:
+        shape = {"n_steps": args.n_steps, "batch_size": args.batch_size}
+        emit(f"⚠ --compile-trainer AUTO: could not read --model's n_steps / batch_size ({exc}); judging the argv's "
+             f"(n_steps {args.n_steps}, batch_size {args.batch_size}), which a resume does not hold")
+    return resolve_compile_trainer_auto(
+        device=args.device, debug=args.debug, n_steps=shape["n_steps"], n_envs=args.n_envs,
+        batch_size=shape["batch_size"], rollout_target_samples=getattr(args, "rollout_target_samples", 0))
 
 
 def resolve_config(args, parser) -> ResolvedRunConfig:
@@ -956,9 +977,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # to the config the user actually typed and says why; an EXPLICIT --compile-trainer still hits
     # the refusal, loudly, because there the user asked for something impossible.
     if args.compile_trainer is None:
-        args.compile_trainer, _ct_why = resolve_compile_trainer_auto(
-            device=args.device, debug=args.debug, n_steps=args.n_steps, n_envs=args.n_envs,
-            batch_size=args.batch_size, rollout_target_samples=getattr(args, "rollout_target_samples", 0))
+        args.compile_trainer, _ct_why = _auto_compile_trainer(args)
         if _ct_why:
             emit("⚡ --compile-trainer would be ON by default here, but this config cannot take "
                  f"it — leaving it OFF rather than refusing to launch. Reason: {_ct_why} "
