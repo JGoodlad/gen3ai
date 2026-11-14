@@ -1716,7 +1716,9 @@ def recorded_model_version(model: Any, mappings: Optional[Dict[str, Any]] = None
 def _resolve_paths(model_path: str) -> tuple[str, str]:
     """Return (zip_path, config_dir) for the given model_path.
 
-    Tries: exact path, path+'.zip', path/final_model.zip, path/best_model.zip.
+    Tries: exact path, path+'.zip', path/final_model.zip, path/best_model.zip — FILES only. A run DIRECTORY passed
+    as ``model_path`` used to match the first candidate (``os.path.exists``) and come back as the "zip", with the
+    run's PARENT as its config dir; it now resolves to the run's ``final_model.zip`` / ``best_model.zip``, or raises.
     """
     candidates = [
         model_path,
@@ -1725,7 +1727,7 @@ def _resolve_paths(model_path: str) -> tuple[str, str]:
         os.path.join(model_path, "best_model.zip"),
     ]
     for candidate in candidates:
-        if os.path.exists(candidate):
+        if os.path.isfile(candidate):
             return candidate, os.path.dirname(os.path.abspath(candidate))
 
     raise FileNotFoundError(

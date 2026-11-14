@@ -1793,3 +1793,43 @@ def test_check_belief_grad_mode_allow_change_permits_migration(version, capsys):
     assert "MIGRATION" in out and "'detached' -> 'shaping'" in out
     with pytest.raises(ModelVersionError):
         saved.check_belief_grad_mode("shaping")  # default stays FATAL
+
+
+# ---------------------------------------------------------------------------
+# _resolve_paths: a run DIRECTORY resolves to its zip, never to itself
+# ---------------------------------------------------------------------------
+
+def test_resolve_paths_resolves_a_run_dir_to_its_final_model_zip_never_the_dir(tmp_path):
+    """The shape that broke it: `--model models/<run>` (a run DIRECTORY). It matched the first candidate (the path
+    itself, by `os.path.exists`), so the "zip" was the directory and the config dir the run's PARENT (`models/`)."""
+    from agents.model.snapshot import _resolve_paths
+    run = tmp_path / "rb_dir_s1"
+    run.mkdir()
+    (run / "final_model.zip").write_bytes(b"z")
+    (run / "best_model.zip").write_bytes(b"z")
+    assert _resolve_paths(str(run)) == (str(run / "final_model.zip"), str(run))
+    (run / "final_model.zip").unlink()
+    assert _resolve_paths(str(run)) == (str(run / "best_model.zip"), str(run))
+
+
+def test_resolve_paths_refuses_a_dir_with_no_zip_and_a_dir_named_like_a_zip(tmp_path):
+    from agents.model.snapshot import _resolve_paths
+    run = tmp_path / "rb_empty_s1"
+    (run / "checkpoints").mkdir(parents=True)
+    with pytest.raises(FileNotFoundError, match="Cannot find model zip"):
+        _resolve_paths(str(run))
+    odd = tmp_path / "weird.zip"                     # a DIRECTORY named like a zip is not a checkpoint
+    odd.mkdir()
+    with pytest.raises(FileNotFoundError):
+        _resolve_paths(str(odd))
+    with pytest.raises(FileNotFoundError):
+        _resolve_paths(str(tmp_path / "weird"))      # `weird` + ".zip" is that directory
+
+
+def test_control_resolve_paths_keeps_a_zip_and_a_suffixless_name(tmp_path):
+    from agents.model.snapshot import _resolve_paths
+    ckpt = tmp_path / "checkpoints" / "checkpoint_1000_steps.zip"
+    ckpt.parent.mkdir()
+    ckpt.write_bytes(b"z")
+    assert _resolve_paths(str(ckpt)) == (str(ckpt), str(ckpt.parent))
+    assert _resolve_paths(str(ckpt)[:-4]) == (str(ckpt), str(ckpt.parent))
