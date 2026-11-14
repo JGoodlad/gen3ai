@@ -85,7 +85,7 @@ KILL_GRACE_SECONDS = 150.0
 # FATAL_CONFIG exit code is the primary signal; matching one of these ALSO surfaces the
 # specific reason line(s) in the Events panel (vs the generic exit-code-only fallback).
 _FATAL_CONFIG_SIGNATURES = ("[ModelVersion] FATAL", "[StableOpponent] FATAL", "[CompileTrainer] FATAL",
-                            "[CompileSentinel] FATAL")
+                            "[CompileSentinel] FATAL", "[RunDir] FATAL")
 
 
 def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":

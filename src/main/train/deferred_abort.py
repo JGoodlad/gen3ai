@@ -66,7 +66,7 @@ import threading
 import time
 from typing import Callable, Optional
 
-from main.exit_codes import TrainExitCode
+from main.exit_codes import TrainExitCode, fatal_exit_code_for
 
 #: How long after a stop signal the watchdog waits for a safe point before exiting WITHOUT a save
 #: (module docstring "The deadline": ~2x the worst measured no-safe-point stretch, ~58.5 s).
@@ -194,16 +194,24 @@ class DeferredAbort:
 
     def abort(self, reason: str) -> None:
         """THE canonical abort: dump + save, then exit 15. Main thread, at a safe point only (the
-        graceful restart's rollout end, or `safe_point`). Does not return."""
+        graceful restart's rollout end, or `safe_point`). Does not return.
+
+        A body that raises an error with a dedicated FATAL code (`exit_codes.fatal_exit_code_for`: the run dir
+        gone, `run_io.RunDirGoneError` -> FATAL_CONFIG) exits with THAT code, so the launcher never reads a
+        refused save as the saved stop 15 claims."""
         if not self._claim("safe point"):
             self._park()
+        code = int(TrainExitCode.INTERRUPTED)
         try:
             self._commit(reason)
+        except BaseException as exc:
+            code = fatal_exit_code_for(exc) or code
+            raise
         finally:
             # The claim is taken and the fallback has stood down, so nothing else will ever end this process: a body
             # that RAISES (a `print` into a stdout pipe whose launcher died is enough: BrokenPipeError) must not leave
             # it alive, parked, ignoring every later SIGTERM. The exit is the abort's whatever the save did.
-            self._exit(int(TrainExitCode.INTERRUPTED))
+            self._exit(code)
 
     def disk_stop(self, reason: str) -> None:
         """THE DISK GUARD's stop (`utils.disk_guard`): main thread, at the checkpoint callback's step (a

@@ -16,6 +16,7 @@ from agents.model.snapshot import record_checkpoint
 from agents.training import magnet as _magnet
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
+from main.exit_codes import FatalConfigError
 from main.train.constants import checkpoint_due
 from utils import disk_guard
 from utils.atomic_io import atomic_save_model, atomic_write_text
@@ -276,6 +277,25 @@ def _write_latest_txt(model_dir: str, name: str) -> None:
     atomic_write_text(os.path.join(model_dir, "latest.txt"), name + "\n")
 
 
+class RunDirGoneError(FatalConfigError):
+    """A save found its run dir GONE (deleted, or moved aside, while the run was live). The save REFUSES rather
+    than re-create it: every writer under the save (`utils.atomic_io.atomic_write`'s ``makedirs``) would
+    otherwise ``mkdir -p`` the run dir back, and pointed at ``models/`` that resurrects a deleted run as a
+    half-run of one checkpoint. A ``FatalConfigError``, so the child exits ``FATAL_CONFIG`` (3) and the launcher
+    does not restart into a run dir that is not there; the interrupted save (`lifecycle._commit_abort`) exits
+    with that code too, never INTERRUPTED (15), which would claim a save."""
+
+
+def require_run_dir(model_dir: str) -> None:
+    """Raise :class:`RunDirGoneError` unless ``model_dir`` exists as a directory. A run's dir is created once, at
+    its startup (`train_rl_agent.main`, before the first save), so a save that does not find it never creates it."""
+    if not os.path.isdir(model_dir):
+        raise RunDirGoneError(
+            f"the run dir {os.path.abspath(model_dir)} no longer exists — a save will not re-create it (a deleted "
+            "or moved-aside run must not be resurrected under its old name). Nothing was written; the run's "
+            "checkpoints are wherever its dir now is.")
+
+
 def commit_checkpoint(model, model_dir: str, zip_path: str, *,
                       sidecars: "Optional[Callable[[str], None]]" = None,
                       pointer: "Optional[Callable[[str, str], None]]" = None) -> str:
@@ -289,9 +309,14 @@ def commit_checkpoint(model, model_dir: str, zip_path: str, *,
        `save_model_snapshot`'s ``model_config.json`` / ``metadata.json``), each itself atomic;
     3. ``latest.txt`` LAST, run-relative to ``model_dir``.
 
+    Step 0: the run dir ``model_dir`` must already exist (:func:`require_run_dir`): a save never re-creates a run
+    dir that was deleted under a live run. A fresh run's first save finds it (the trainer creates it at startup);
+    a subdirectory of it (``checkpoints/``) is still created on demand.
+
     An exception anywhere stops the sequence before the pointer moves. ``pointer`` is the test seam (and lets a
     caller keep its own module-level `_write_latest_txt` patchable). Returns the final zip path.
     """
+    require_run_dir(model_dir)
     final = atomic_save_model(model, zip_path)
     _magnet.save_sidecar(model, final)     # CE-3d: `<checkpoint>.magnet.pt`, atomic; no file when the run has no magnet
     if sidecars is not None:
@@ -431,6 +456,9 @@ class _TrackingCheckpointCallback(BaseCallback):
                 # path (checkpoints/checkpoint_<N>_steps.zip) and the per-checkpoint sidecar lands next to the
                 # .zip; metadata.json (snapshot_history) stays at the run root (self._run_dir).
                 commit_checkpoint(self.model, self._run_dir, ckpt_path, sidecars=self._record_sidecars)
+            except RunDirGoneError as e:
+                print(f"\n[RunDir] FATAL: {e}", flush=True)
+                raise
             except OSError as e:
                 # A write that dies on a full disk left no fragment at the final name (the temp is removed by the
                 # save itself) and `latest.txt` still names the previous checkpoint: stop cleanly instead of

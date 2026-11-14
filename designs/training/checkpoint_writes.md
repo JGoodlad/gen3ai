@@ -44,6 +44,13 @@ Every path that saves a resumable zip runs the same steps; an exception anywhere
    `model_config.json` and `metadata.json`), each atomic;
 4. `latest.txt`, run-relative, LAST.
 
+Before step 1 the run dir must exist (`run_io.require_run_dir`): `atomic_write`'s `makedirs` would otherwise re-create a
+run dir deleted or moved aside under a live run, resurrecting it at its old name (2026-11-14). The save raises
+`RunDirGoneError` (a `FatalConfigError`) and writes nothing; the periodic and forced saves end the run with it, and the
+interrupted save exits `FATAL_CONFIG` (3), never 15 (`DeferredAbort.abort` exits with a body's mapped FATAL code). Each
+prints `[RunDir] FATAL`, a launcher FATAL signature. A fresh run's first save finds the dir the trainer made at startup;
+`checkpoints/` under it is still created on demand. Pinned by `main/train/run_dir_gone_test.py`.
+
 A failure after step 1 leaves a complete but unreferenced zip and the pointer on the previous target. For the
 interrupted save that makes the GPU window HOLD on "no checkpoint saved by the pause" (it reads the pointer's target and
 its mtime), which is the loud outcome; before, a torn file passed.

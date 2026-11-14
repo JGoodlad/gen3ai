@@ -17,7 +17,7 @@ from agents.training.eval_callback import request_forced_eval
 from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event
 from main.train.deferred_abort import DeferredAbort
-from main.train.run_io import _model_hparams, _write_latest_txt, commit_checkpoint
+from main.train.run_io import RunDirGoneError, _model_hparams, _write_latest_txt, commit_checkpoint
 
 
 def _apply_grad_checkpointing(model, enabled: bool) -> None:
@@ -285,6 +285,11 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             # check then refuses) instead of a torn zip that `latest.txt` may still name.
             commit_checkpoint(model, model_dir, path, sidecars=_sidecars, pointer=_write_latest_txt)
             print(f"[ABORT] Checkpoint saved → {path}.zip")
+        except RunDirGoneError as e:
+            # The run dir was deleted under the live run: NO save, and not exit 15 (which claims one).
+            # `DeferredAbort.abort` exits with the error's mapped code, FATAL_CONFIG (3).
+            print(f"[ABORT] [RunDir] FATAL: {e}", flush=True)
+            raise
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
         sys.stdout.flush()
@@ -312,13 +317,16 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         ckpt_dir = os.path.join(model_dir, "checkpoints")
         ckpt = os.path.join(ckpt_dir, name)
         try:
-            os.makedirs(ckpt_dir, exist_ok=True)
             commit_checkpoint(
                 model, model_dir, ckpt + ".zip",
                 sidecars=lambda zip_path: record_checkpoint(
                     model_dir, zip_path, current_lr_fn(), current_epochs_fn(),
                     hparams=_model_hparams(model), handoff_lr=_handoff()),
                 pointer=_write_latest_txt)
+        except RunDirGoneError as e:
+            # Not an operator's failed key press: the run dir is gone, and every later save would refuse too.
+            print(f"\n[RunDir] FATAL: {e}", flush=True)
+            raise
         except Exception as e:
             print(f"\n💾 [CHECKPOINT] Forced save FAILED ({type(e).__name__}: {e}) — training continues",
                   flush=True)
