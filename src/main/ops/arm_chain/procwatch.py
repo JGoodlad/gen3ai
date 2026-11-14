@@ -5,7 +5,7 @@
 * **A pid alone is not an identity.** A :class:`ProcRef` is ``(pid, start ticks)``: a pid file that outlived its
   process and a pid the kernel re-used both read as GONE, never as the old process alive.
 * **Every wait is bounded** (root rule 2); the caller says how long and what a timeout means.
-* **Every signal is identity-gated** (SOP §3 rule 7, ``kill_if.sh``): the start ticks AND the cmdline must match.
+* **Every signal is identity-gated** (`TRAINING_RUN_SOP.md` §3 rule 7): the start ticks AND the cmdline must match.
 """
 from __future__ import annotations
 

@@ -108,7 +108,7 @@ The field rules:
 | `canary --out-dir D --status-file F [--archive-root R]` | the canary logger loop. It is bounded, writes a heartbeat file and an `EXPIRING` line, alerts on EVERY non-PASS record, and archives each canary weight dump to `R/<run>_canary_u<u>/` (default `~/gen3ai_archive`) |
 | `cpu-gate` | one GO CPU-gate sample |
 | `wait-pid PID --timeout-s N` | a `/proc` wait on `(pid, start ticks)` |
-| `signal-if PID ERE [--signal S]` | the identity-gated signal (`kill_if.sh`'s replacement) |
+| `signal-if PID ERE [--signal S]` | the identity-gated signal: sent only if the pid's start ticks and `/proc/<pid>/cmdline` (against ERE) match; exit 0 sent, 2 not |
 
 **What the supervisor writes:**
 - **State:** `<job_dir>/arm_chain/<name>.state.json`, rewritten atomically.
