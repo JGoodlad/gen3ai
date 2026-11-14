@@ -114,7 +114,7 @@ def family(panel: str) -> str:
 
 def request(look: str, panel: str, *, eq_step: Optional[int] = None, survivor: Optional[str] = None) -> str:
     """The request id of one look on one panel (also the rows' label): unique across the whole ledger. The EQ
-    look's id carries its step (``b1_eq61m_<panel>``), so a plan at another step can never resume into its games;
+    look's id carries its step (``b1_eq<step in M>m_<panel>``, ``b1_eq71m_<panel>`` at 71M), so a plan at another step can never resume into its games;
     a survivor look's carries the surviving factor (``b1_100m_breadthonly_<panel>``)."""
     if look not in X.LOOKS:
         raise LookError(f"look {look!r} is not one of {X.LOOKS}")
