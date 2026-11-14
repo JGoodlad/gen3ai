@@ -53,7 +53,8 @@ the run. A TTY keeps the full interactive TUI. Detail: `src/main/launcher/CLAUDE
 **Internals — how the UI reconciles the restart loop with Textual's event loop, the
 quit/ctrl-c/SIGHUP teardown, crash reporting + auto-restart, exit codes
 (`COMPLETE`/`INTERRUPTED`/`CRASH`/`FATAL_CONFIG` — the last gives up without restarting on an
-arch/config mismatch instead of looping), the full flag table (`--restart-interval-hours`,
+arch/config mismatch instead of looping — and the launcher's own 9, an UNSAVED stop: a quit whose child saved
+nothing for it, or a restart the launcher started whose child FATALed), the full flag table (`--restart-interval-hours`,
 `--restart-grace-minutes`, `--max-crash-restarts`, `--nice`, `--no-pin`, `--sync-to-main`) and the
 resume contract — are in `designs/launcher/` (`flags.md`, `crashes_and_exit_codes.md`, `restarts_and_resume.md`); the rules for changing the launcher are `src/main/launcher/CLAUDE.md`.** (The launcher has no Showdown port: `--showdown-port` is deleted, `designs/deleted_flags.md`.)
 

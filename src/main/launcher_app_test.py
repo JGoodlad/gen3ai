@@ -744,7 +744,17 @@ class TestSuperviseConfirmQuit:
         q = queue.Queue()
         q.put("__quit__")  # what LauncherApp.action_confirm_yes sends
         state = LauncherState(interval_hours=0)
-        with _supervise_patches([proc]), patch("main.launcher.run.os.kill") as kill:
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+
+        def _child_saves(pid, sig):
+            # the child's deferred-abort save on the SIGTERM: a "Quit complete" needs a checkpoint newer than the
+            # SIGTERM (`run._unsaved_reason`; unsaved_stop_test pins the unsaved side)
+            if sig == signal.SIGTERM:
+                (run_dir / "final_model_interrupted.zip").write_text("saved")
+                (run_dir / "latest.txt").write_text("final_model_interrupted.zip")
+
+        with _supervise_patches([proc]), patch("main.launcher.run.os.kill", side_effect=_child_saves) as kill:
             code = _supervise(
                 state, q, _ctx(tmp_path),
                 interval_hours=0, grace_minutes=20.0, max_crash_restarts=3,

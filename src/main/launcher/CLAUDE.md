@@ -53,6 +53,11 @@ evidence and tables are in `designs/launcher/` (`README.md` indexes them and hol
   each verdict (`designs/launcher/launch_guards.md`).
 - **A new non-recoverable error class goes through `exit_codes.exit_code_for`**, never a bare
   `sys.exit`.
+- **A stop the launcher started is "saved" only by one predicate** (`run._unsaved_reason`): the child
+  ended `INTERRUPTED`, logged no FATAL and left a checkpoint newer than the SIGTERM
+  (`checkpoint.saved_by_stop`, the GPU window's rule). Else a quit, or a restart whose child FATALs in
+  the config class, is the UNSAVED stop, exit 9 (`designs/launcher/crashes_and_exit_codes.md` row 9);
+  every SIGTERM sender records it through `_PollFlags.mark_sigterm`.
 - **A GPU window pauses through the SAME stop and restart paths** (`--gpu-window`, `gpu_window/`): the
   launcher stays alive so the lease stays with its holder, and every step that cannot finish cleanly HOLDS
   rather than auto-resumes (`designs/launcher/gpu_window.md`).

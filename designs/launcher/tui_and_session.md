@@ -35,7 +35,8 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
   `"__quit__"` → the supervisor SIGTERMs the child (which checkpoints on SIGTERM) and waits, then
   the app exits. The on-screen "waiting for child to save…" event covers the wait; `_reap`
   (`run()`'s `finally`) narrates it on stderr if the screen is already down. The quit is "Quit
-  complete" (exit 0) only when the child ended `INTERRUPTED`; anything else is an UNSAVED stop, exit 9
+  complete" (exit 0) only when the child ended `INTERRUPTED` with a checkpoint newer than the SIGTERM;
+  anything else is an UNSAVED stop, exit 9
   ([`crashes_and_exit_codes.md`](crashes_and_exit_codes.md), row 9).
 - **SIGHUP / SIGTERM (closed terminal / external kill):** the child stays in the launcher's
   session (`child._launch_child`, no `start_new_session`), so a closed tmux/SSH terminal SIGHUPs

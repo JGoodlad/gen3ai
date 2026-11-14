@@ -24,7 +24,16 @@ class _PollFlags:
     # code (a hung child ignores SIGTERM and gets SIGKILL'd, so rc won't be INTERRUPTED).
     forced_restart: bool = False
     sigterm_at: float = 0.0   # monotonic time SIGTERM was sent (for SIGKILL escalation)
+    # WALL-clock time of that SIGTERM: a checkpoint's mtime is compared against it to tell the stop's own save
+    # from an older one (`checkpoint.saved_by_stop`).
+    sigterm_epoch: float = 0.0
     sigkill_sent: bool = False
+
+    def mark_sigterm(self) -> None:
+        """Record that the launcher has just SIGTERMed the child (every sender calls this, once)."""
+        self.sigterm_sent = True
+        self.sigterm_at = time.monotonic()
+        self.sigterm_epoch = time.time()
 
 
 def _dispatch_command(
@@ -44,8 +53,7 @@ def _dispatch_command(
                 os.kill(proc.pid, signal.SIGTERM)
             except ProcessLookupError:
                 pass
-            flags.sigterm_sent = True
-            flags.sigterm_at = time.monotonic()  # arms the SIGKILL escalation
+            flags.mark_sigterm()                 # arms the SIGKILL escalation
 
     elif ch == "c":
         try:

@@ -21,6 +21,9 @@ import time
 from typing import Callable, List, Optional
 
 from main.exit_codes import TrainExitCode
+# A checkpoint at most this much OLDER than the pause's SIGTERM still counts as the pause's save: the one rule the
+# launcher's quit also reads.
+from main.launcher.checkpoint import STOP_SAVE_SLACK_S as CHECKPOINT_SLACK_S
 from main.launcher.gpu_window import protocol as P
 
 #: How often the launcher re-reads ``request.json`` while the child runs, and polls while it waits.
@@ -28,9 +31,6 @@ REQUEST_POLL_S = 2.0
 WAIT_POLL_S = 1.0
 #: How long the child's processes may take to leave the GPU after it exits; past it the window HOLDS.
 GPU_RELEASE_TIMEOUT_S = 600.0
-#: A checkpoint at most this much OLDER than the pause's SIGTERM still counts as the pause's save (the
-#: trainer writes its interrupted save after the SIGTERM; the slack covers filesystem mtime rounding).
-CHECKPOINT_SLACK_S = 2.0
 
 
 def _no_lease_held() -> bool:

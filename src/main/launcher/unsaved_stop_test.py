@@ -48,6 +48,15 @@ def test_the_code_is_the_launchers_own_distinct_and_documented():
     assert "LAUNCHER_UNSAVED_STOP" in row and "UNSAVED stop" in row and "latest.txt" in row, row
 
 
+def test_only_INTERRUPTED_without_a_FATAL_line_and_with_a_fresh_save_is_a_saved_stop(tmp_path):
+    run_dir = _run_dir(tmp_path)
+    assert _stop_was_unsaved(15, [], str(run_dir), time.time()) is True               # only the old checkpoint
+    (run_dir / "final_model_interrupted.zip").write_text("saved")
+    (run_dir / "latest.txt").write_text("final_model_interrupted.zip")
+    assert _stop_was_unsaved(15, [], str(run_dir), time.time()) is False
+    assert _stop_was_unsaved(15, [], None, time.time()) is True                       # nothing to have saved into
+
+
 def test_only_INTERRUPTED_without_a_FATAL_line_is_a_saved_stop():
     assert _stop_was_unsaved(int(TrainExitCode.INTERRUPTED), ["[ABORT] Checkpoint saved → x.zip"]) is False
     assert _stop_was_unsaved(int(TrainExitCode.INTERRUPTED), None) is False
@@ -68,44 +77,68 @@ def _proc(rc: int) -> MagicMock:
     return p
 
 
+#: The periodic checkpoint's mtime: far older than any SIGTERM a test sends (so never inside the stop-save slack).
+OLD_MTIME = 1_000_000_000
+
+
 def _run_dir(tmp_path):
     run_dir = tmp_path / "models" / "rb_unsaved_toy"
     (run_dir / "checkpoints").mkdir(parents=True)
     (run_dir / "checkpoints" / "checkpoint_1000_steps.zip").write_text("x")
+    os.utime(run_dir / "checkpoints" / "checkpoint_1000_steps.zip", (OLD_MTIME, OLD_MTIME))
     (run_dir / "latest.txt").write_text("checkpoints/checkpoint_1000_steps.zip")
     return run_dir
 
 
-def _drive(tmp_path, rc: int, *, log=(), via: str = "key", window=None):
-    """`_supervise` over ONE mocked child that exits `rc` after the launcher's SIGTERM, in a real run dir
-    (the real `latest.txt` read, the real crash log). Returns (code, events, signals sent, run_dir)."""
+def _save_on_sigterm(run_dir):
+    """The child's deferred-abort save, done when the launcher's SIGTERM is sent (the zip, then `latest.txt`)."""
+    def kill(pid, sig):
+        if sig == signal.SIGTERM:
+            (run_dir / "final_model_interrupted.zip").write_text("saved")
+            (run_dir / "latest.txt").write_text("final_model_interrupted.zip")
+    return kill
+
+
+def _drive(tmp_path, rc: int, *, log=(), via: str = "key", window=None, saves: bool = False, rcs=None):
+    """`_supervise` over mocked children (ONE that exits `rc` after the launcher's SIGTERM; `rcs` for more), in a
+    real run dir (the real `latest.txt` read, the real crash log). ``saves``: the child writes the stop's
+    checkpoint on the SIGTERM. ``via``: "key" (a quit), "teardown", "window", "overrun" (the interval's fallback
+    SIGTERM), "r" (the restart key). Returns (code, events, signals sent, run_dir)."""
     run_dir = _run_dir(tmp_path)
+    restart = via in ("overrun", "r")
     ctx = _SessionCtx(child_args=["--run-dir", str(run_dir)], child_env={}, train_script="train.py",
                       src_dir="/src", run_dir=str(run_dir), run_dir_box=[str(run_dir)],
-                      session_start=time.time(), interval_seconds=0, grace_seconds=1200.0, pin=False)
+                      session_start=time.time(), interval_seconds=0,
+                      grace_seconds=0.0 if via == "overrun" else 1200.0, pin=False)
     q: queue.Queue = queue.Queue()
     shutdown = threading.Event()
-    if via == "key":
-        q.put("__quit__")                       # `q` → `y`, or a SIGTERM / SIGHUP to the launcher (app.py)
-    state = LauncherState(interval_hours=0)
+    if via in ("key", "r"):
+        q.put("__quit__" if via == "key" else "r")   # `q` → `y` (or a SIGTERM / SIGHUP to the launcher), or `r`
+    interval_hours = 1.0 if via == "overrun" else 0
+    state = LauncherState(interval_hours=interval_hours)
     for line in log:
         state.add_log(line)
     if window is not None:
         state.child_has_reported = lambda: True     # the window pauses only a child that has reported
     with ExitStack() as st:
-        popen = st.enter_context(patch("main.launcher.child.subprocess.Popen", side_effect=[_proc(rc)]))
+        popen = st.enter_context(patch("main.launcher.child.subprocess.Popen",
+                                       side_effect=[_proc(r) for r in (rcs or [rc])]))
         st.enter_context(patch("main.launcher.child.threading.Thread"))
         st.enter_context(patch("main.launcher.child.os.pipe", return_value=(3, 4)))
         st.enter_context(patch("main.launcher.child.os.close"))
         st.enter_context(patch("main.launcher.run._git_hash", return_value="abc1234"))
         st.enter_context(patch("main.launcher.run.time.sleep"))
         st.enter_context(patch("main.launcher.run.atexit.register"))
-        kill = st.enter_context(patch("main.launcher.run.os.kill"))
+        kill = st.enter_context(patch("main.launcher.run.os.kill",
+                                      side_effect=_save_on_sigterm(run_dir) if saves else None))
+        st.enter_context(patch("main.launcher.input.os.kill", new=kill))
+        if restart:
+            st.enter_context(patch("main.launcher.run.resume_child_args", side_effect=lambda a, c, r: (a, [])))
         if via == "teardown":
             # the app goes down (`run()`'s finally sets `shutdown`) while the child is running: set at the
             # launch, since the loop's top check returns before launching once it is set
             popen.side_effect = lambda *a, **k: (shutdown.set(), _proc(rc))[1]
-        code = _supervise(state, q, ctx, interval_hours=0, grace_minutes=20.0, max_crash_restarts=3,
+        code = _supervise(state, q, ctx, interval_hours=interval_hours, grace_minutes=20.0, max_crash_restarts=3,
                           shutdown=shutdown, window=window)
     return code, state.snapshot().events, [c.args[1] for c in kill.call_args_list], run_dir
 
@@ -134,11 +167,69 @@ def test_a_FATAL_line_makes_even_an_INTERRUPTED_exit_an_unsaved_stop(tmp_path):
 
 
 def test_control_a_quit_whose_child_ends_INTERRUPTED_is_still_quit_complete_and_zero(tmp_path):
-    code, events, sent, run_dir = _drive(tmp_path, int(TrainExitCode.INTERRUPTED),
+    code, events, sent, run_dir = _drive(tmp_path, int(TrainExitCode.INTERRUPTED), saves=True,
                                          log=["[ABORT] Checkpoint saved → final_model_interrupted.zip"])
     assert code == 0 and sent == [signal.SIGTERM]
     assert any("Quit complete." in e for e in events) and not any("UNSAVED" in e for e in events), events
     assert not (run_dir / "crashes").exists()
+
+
+def test_a_quit_whose_child_ends_INTERRUPTED_but_saved_nothing_is_an_unsaved_stop(tmp_path):
+    """Row 9's old gap: past the 120 s safe-point deadline (`[ABORT] no safe point within 120s`), or after a failed
+    save, the child exits 15 with no checkpoint newer than the SIGTERM. The launcher read that as "Quit complete"."""
+    code, events, sent, _ = _drive(tmp_path, int(TrainExitCode.INTERRUPTED),
+                                   log=["[ABORT] no safe point within 120s of 'SIGTERM received' — exiting WITHOUT a "
+                                        "save"])
+    assert sent == [signal.SIGTERM] and code == LAUNCHER_UNSAVED_STOP, (code, events)
+    assert not any("Quit complete" in e for e in events), events
+    line = next(e for e in events if "UNSAVED stop (quit)" in e)
+    assert "the child exited INTERRUPTED (15) but wrote no checkpoint after the SIGTERM" in line, line
+    assert "the newest is checkpoint_1000_steps.zip" in line, line
+    assert "latest.txt → checkpoints/checkpoint_1000_steps.zip" in line, line
+
+
+def test_a_quit_during_a_window_whose_pause_saved_nothing_is_an_unsaved_stop(tmp_path):
+    window = _HeldWindow()
+    code, events, _sent, _ = _drive(tmp_path, int(TrainExitCode.INTERRUPTED), via="window", window=window)
+    assert window.rcs == [15] and code == LAUNCHER_UNSAVED_STOP, (code, events)
+    assert any("UNSAVED stop (quit during a GPU window)" in e and "wrote no checkpoint" in e for e in events), events
+
+
+def test_the_stop_save_rule_is_the_gpu_windows_one():
+    from main.launcher.checkpoint import STOP_SAVE_SLACK_S
+    from main.launcher.gpu_window import controller
+    assert controller.CHECKPOINT_SLACK_S is STOP_SAVE_SLACK_S
+
+
+# ── a stop the launcher started to RESTART the child ─────────────────────────────────────────────────
+
+@pytest.mark.parametrize("via,how", [("overrun", "overrun restart"), ("r", "restart")])
+@pytest.mark.parametrize("rc,log", [(3, [_SENTINEL_FATAL]), (3, []), (15, [_SENTINEL_FATAL]), (1, [_SENTINEL_FATAL])])
+def test_a_restart_stop_whose_child_FATALs_is_an_unsaved_stop_not_a_config_error(tmp_path, via, how, rc, log):
+    """rb_b1c_s5101's shape under the interval's fallback SIGTERM or the `r` key: the child died FATAL on the
+    launcher's own stop. It used to end "Fatal config error — will NOT restart" with the child's code (3, or even
+    15 / 1 beside a FATAL line): a config defect a restart would replay, which the launcher cannot know."""
+    code, events, sent, _run = _drive(tmp_path, rc, log=log, via=via)
+    assert sent == [signal.SIGTERM], sent
+    assert code == LAUNCHER_UNSAVED_STOP, (code, events)
+    assert not any("Fatal config error" in e for e in events), events
+    line = next(e for e in events if f"UNSAVED stop ({how})" in e)
+    assert "latest.txt → checkpoints/checkpoint_1000_steps.zip" in line, line
+    assert not any("Restarting from" in e for e in events), "a FATAL child was restarted"
+    # the launcher gave up: the watchers' give-up phrase (`scripts/ops/watch_run.sh` GIVEUP_RE) is on screen
+    assert any("will NOT restart" in e for e in events), events
+
+
+@pytest.mark.parametrize("rc", [4, 5, 7, 8])
+def test_control_a_restart_stop_keeps_a_FATAL_code_that_names_its_own_defect(tmp_path, rc):
+    code, events, _sent, _ = _drive(tmp_path, rc, via="overrun")
+    assert code == rc and not any("UNSAVED" in e for e in events), (code, events)
+
+
+def test_control_a_restart_stop_whose_child_crashes_still_restarts(tmp_path):
+    code, events, _sent, _ = _drive(tmp_path, -9, via="overrun", rcs=[-9, int(TrainExitCode.COMPLETE)])
+    assert code == 0 and any("Restarting from" in e for e in events), (code, events)
+    assert not any("UNSAVED" in e for e in events), events
 
 
 def test_the_apps_teardown_quit_is_judged_the_same_way(tmp_path):
@@ -178,7 +269,8 @@ def test_a_quit_during_a_window_held_by_an_unclean_pause_is_an_unsaved_stop(tmp_
 
 def test_control_a_quit_during_a_window_after_a_clean_pause_is_still_zero(tmp_path):
     window = _HeldWindow()
-    code, events, _sent, _ = _drive(tmp_path, int(TrainExitCode.INTERRUPTED), via="window", window=window)
+    code, events, _sent, _ = _drive(tmp_path, int(TrainExitCode.INTERRUPTED), via="window", window=window,
+                                    saves=True)
     assert window.rcs == [15] and code == 0
     assert any("Quit complete (during a GPU window)." in e for e in events), events
 

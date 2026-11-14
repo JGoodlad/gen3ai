@@ -24,6 +24,7 @@ from dataclasses import dataclass
 
 from main.exit_codes import CUDA_LEAK_RESTART_CAP, LAUNCHER_UNSAVED_STOP, TrainExitCode
 from main.launcher.checkpoint import (
+    saved_by_stop,
     find_latest_checkpoint,
     run_dir_for_checkpoint,
     archive_anchored_args,
@@ -88,6 +89,12 @@ _FATAL_CONFIG_SIGNATURES = ("[ModelVersion] FATAL", "[StableOpponent] FATAL", "[
                             "[CompileSentinel] FATAL", "[RunDir] FATAL")
 
 
+#: The FATAL exit codes that name a defect of their own (non-finite, supply, live parse, disk): a stop the launcher
+#: started keeps the child's code for them. Anything else `_fatal_config_reason` stops on is the FATAL_CONFIG class.
+_OWN_FATAL_CODES = frozenset(int(c) for c in (TrainExitCode.FATAL_NONFINITE, TrainExitCode.FATAL_SUPPLY,
+                                              TrainExitCode.FATAL_LIVE_PARSE, TrainExitCode.FATAL_DISK))
+
+
 def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
     """If this exit is a non-recoverable config/architecture error, return a short list of
     human-readable reason lines (so the launcher gives up instead of auto-restarting into
@@ -139,14 +146,31 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
     return None
 
 
-def _stop_was_unsaved(rc: int, log_lines: "list | None") -> bool:
-    """True when a child the launcher stopped for a QUIT did not make the stop's save. The one saved stop
-    is `INTERRUPTED` (15: the deferred abort's checkpoint, then exit); any other exit code (a FATAL, a
-    crash, a death by signal) confirms no save, and so does a FATAL signature in the child's output
-    whatever the code. Called only after `COMPLETE` (0) has been handled."""
-    if rc != int(TrainExitCode.INTERRUPTED):
-        return True
-    return any(sig in line for line in (log_lines or []) for sig in _FATAL_CONFIG_SIGNATURES)
+def _unsaved_reason(rc: int, log_lines: "list | None", run_dir: "str | None" = None,
+                    sigterm_epoch: float = 0.0) -> "str | None":
+    """Why a child the launcher STOPPED (a quit, or a restart it SIGTERMed for) did not make the stop's save, or
+    None when it did. The one saved stop is `INTERRUPTED` (15: the deferred abort's checkpoint, then exit) with
+    no FATAL signature in the child's output AND, when the SIGTERM's wall time is known, a checkpoint no older
+    than it (`checkpoint.saved_by_stop`, the GPU window's rule): a child past its 120 s safe-point deadline, or
+    whose save failed, also exits 15 and saved nothing. Called only after `COMPLETE` (0) has been handled."""
+    interrupted = int(TrainExitCode.INTERRUPTED)
+    if rc != interrupted:
+        return f"the child exited {rc}, not INTERRUPTED ({interrupted})"
+    if any(sig in line for line in (log_lines or []) for sig in _FATAL_CONFIG_SIGNATURES):
+        return f"the child exited INTERRUPTED ({interrupted}) but logged a FATAL"
+    if sigterm_epoch:
+        saved, ckpt = saved_by_stop(run_dir, sigterm_epoch)
+        if not saved:
+            newest = os.path.basename(ckpt) if ckpt else "none"
+            return (f"the child exited INTERRUPTED ({interrupted}) but wrote no checkpoint after the SIGTERM "
+                    f"(the newest is {newest}: the safe-point deadline passed, or the save failed)")
+    return None
+
+
+def _stop_was_unsaved(rc: int, log_lines: "list | None", run_dir: "str | None" = None,
+                      sigterm_epoch: float = 0.0) -> bool:
+    """True when a child the launcher stopped did not make the stop's save (`_unsaved_reason`)."""
+    return _unsaved_reason(rc, log_lines, run_dir, sigterm_epoch) is not None
 
 
 def _resume_point(run_dir: "str | None") -> str:
@@ -167,7 +191,7 @@ def _resume_point(run_dir: "str | None") -> str:
     return "NO checkpoint in the run dir"
 
 
-def _unsaved_stop(run_dir: "str | None", state: LauncherState, rc: int, how: str) -> int:
+def _unsaved_stop(run_dir: "str | None", state: LauncherState, rc: int, how: str, why: "str | None" = None) -> int:
     """Report a quit whose child did not stop cleanly as what it is, and return the launcher's exit code
     for it (`LAUNCHER_UNSAVED_STOP`), never "Quit complete" / 0 (rb_b1c_s5101, 2026-11-12: the child died
     FATAL on the launcher's SIGTERM with no save and the launcher exited 0). The event names the child's
@@ -176,8 +200,8 @@ def _unsaved_stop(run_dir: "str | None", state: LauncherState, rc: int, how: str
     lines = state.snapshot().log_lines
     err_path = _save_crash_log(run_dir, state, rc)
     saved = f" — saved {os.path.join('crashes', os.path.basename(err_path))}" if err_path else ""
-    state.add_event(f"🛑 UNSAVED stop ({how}) — the child exited {rc}, not INTERRUPTED "
-                    f"({int(TrainExitCode.INTERRUPTED)}): no save is confirmed for this stop. The run stands "
+    why = why or _unsaved_reason(rc, lines) or f"the child exited {rc}"
+    state.add_event(f"🛑 UNSAVED stop ({how}) — {why}: no save is confirmed for this stop. The run stands "
                     f"at {_resume_point(run_dir)}{saved} — launcher exit {LAUNCHER_UNSAVED_STOP}")
     for line in (_fatal_config_reason(rc, lines) or [])[:4]:
         state.add_event(f"   {line[:300]}")
@@ -679,8 +703,7 @@ def _supervise(
                         os.kill(proc.pid, signal.SIGTERM)
                     except ProcessLookupError:
                         pass
-                    flags.sigterm_sent = True
-                    flags.sigterm_at = now
+                    flags.mark_sigterm()
 
             # The child stops itself at the next rollout boundary once the interval
             # elapses; the launcher only hard-kills as a fallback after a grace overrun.
@@ -698,9 +721,8 @@ def _supervise(
                     os.kill(proc.pid, signal.SIGTERM)
                 except ProcessLookupError:
                     pass
-                flags.sigterm_sent = True
+                flags.mark_sigterm()
                 flags.forced_restart = True
-                flags.sigterm_at = now
 
             if (flags.sigterm_sent and not flags.sigkill_sent
                     and now - flags.sigterm_at >= KILL_GRACE_SECONDS):
@@ -725,9 +747,8 @@ def _supervise(
                         os.kill(proc.pid, signal.SIGTERM)
                     except ProcessLookupError:
                         pass
-                    flags.sigterm_sent = True
-                    flags.sigterm_at = now
-                    window_sigterm_epoch = time.time()
+                    flags.mark_sigterm()
+                    window_sigterm_epoch = flags.sigterm_epoch
 
             poll_timeout = 0.5
             try:
@@ -750,8 +771,7 @@ def _supervise(
                             os.kill(proc.pid, signal.SIGTERM)
                         except ProcessLookupError:
                             pass
-                        flags.sigterm_sent = True
-                        flags.sigterm_at = time.monotonic()
+                        flags.mark_sigterm()
                 else:
                     _dispatch_command(ch, proc, state, flags, deadline, interval_hours)
 
@@ -774,8 +794,9 @@ def _supervise(
         if flags.quit_requested:
             # A quit is "complete" only when the child made the stop's save (INTERRUPTED); anything else is
             # an UNSAVED stop with its own exit code, never 0.
-            if _stop_was_unsaved(rc, state.snapshot().log_lines):
-                code = _unsaved_stop(run_dir, state, rc, "quit")
+            why = _unsaved_reason(rc, state.snapshot().log_lines, run_dir, flags.sigterm_epoch)
+            if why:
+                code = _unsaved_stop(run_dir, state, rc, "quit", why)
             else:
                 state.add_event("👋 Quit complete.")
                 code = 0
@@ -793,8 +814,9 @@ def _supervise(
             if outcome == "quit":
                 # A window that HELD because the paused child did not stop cleanly ends, on a quit, as the
                 # unsaved stop it was.
-                if _stop_was_unsaved(rc, state.snapshot().log_lines):
-                    code = _unsaved_stop(run_dir, state, rc, "quit during a GPU window")
+                why = _unsaved_reason(rc, state.snapshot().log_lines, run_dir, flags.sigterm_epoch)
+                if why:
+                    code = _unsaved_stop(run_dir, state, rc, "quit during a GPU window", why)
                 else:
                     state.add_event("👋 Quit complete (during a GPU window).")
                     code = 0
@@ -837,6 +859,24 @@ def _supervise(
         # error, so give up immediately with the reason on-screen rather than burning the
         # crash circuit-breaker and forcing the user to open the logs to find out why.
         fatal_reason = None if leak_restart else _fatal_config_reason(rc, state.snapshot().log_lines)
+        # A stop the LAUNCHER started to restart the child (an overrun's fallback SIGTERM, the `r` key) whose child
+        # then ended in the FATAL_CONFIG class (exit 3, or a FATAL signature at any code) is an UNSAVED stop (9),
+        # as a quit's is (6183d2249): the launcher cannot tell a real config defect from a FATAL its own SIGTERM
+        # caused (rb_b1c_s5101, 207aa0ae3), so it does not restart either way, and does not report the run as a
+        # config error a restart would replay: the run stands at `latest.txt`. The other FATAL codes (4, 5, 7, 8)
+        # name a defect of their own and keep their code.
+        restart_stop = flags.forced_restart or flags.restart_requested
+        if (fatal_reason and restart_stop and rc not in _OWN_FATAL_CODES):
+            how = "overrun restart" if flags.forced_restart else "restart"
+            state.crash_count += 1
+            code = _unsaved_stop(run_dir, state, rc, how, _unsaved_reason(rc, state.snapshot().log_lines))
+            # the give-up phrase the watchers key on (`scripts/ops/watch_run.sh` GIVEUP_RE): a quit is the
+            # operator's stop and carries none, this one is the launcher giving up
+            state.add_event("   will NOT restart: a FATAL after the launcher's own SIGTERM may be a config defect "
+                            "or the stop's doing; resume from the checkpoint above by hand once read")
+            _tick()
+            time.sleep(2)
+            return code
         if fatal_reason:
             state.crash_count += 1
             err_path = _save_crash_log(run_dir, state, rc)

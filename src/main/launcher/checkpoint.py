@@ -53,6 +53,25 @@ def run_dir_for_checkpoint(checkpoint_path: str) -> str:
     return d
 
 
+#: A checkpoint at most this much OLDER than a stop's SIGTERM still counts as that stop's save (the trainer writes
+#: its interrupted save after the SIGTERM; the slack covers filesystem mtime rounding). ONE rule for the GPU window's
+#: pause (`gpu_window.controller`) and the launcher's quit (`run._unsaved_reason`).
+STOP_SAVE_SLACK_S = 2.0
+
+
+def saved_by_stop(run_dir: "str | None", sigterm_epoch: float) -> "tuple[bool, str | None]":
+    """``(saved, checkpoint)``: did the child save a resumable checkpoint for the stop the launcher SIGTERMed it
+    for at wall time ``sigterm_epoch``? ``checkpoint`` is what `find_latest_checkpoint` resolves for the run (or
+    None); it is the stop's save iff its mtime is no older than the SIGTERM less `STOP_SAVE_SLACK_S`."""
+    ckpt = find_latest_checkpoint(run_dir=run_dir) if run_dir else None
+    if ckpt is None:
+        return False, None
+    try:
+        return os.path.getmtime(ckpt) >= sigterm_epoch - STOP_SAVE_SLACK_S, ckpt
+    except OSError:
+        return False, ckpt
+
+
 def find_latest_checkpoint(
     models_root: "str | None" = None,
     run_dir: "str | None" = None,
