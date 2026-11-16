@@ -1,7 +1,10 @@
 """The GPU LEASE — one agent or session owns the GPU for its whole lifetime; nobody ever waits.
 
 USAGE
-    scripts/ops/gpu_lease.sh acquire --owner "X5 U1" [--note "..."] [--max-hours 12] [--watch-pid N] [--token-file F]
+    scripts/ops/gpu_lease.sh acquire --owner "X5 U1" [--note "..."] [--max-hours H] [--watch-pid N] [--token-file F]
+        # --max-hours: a FRESH acquire defaults to 12; 0 = no expiry. A holder's RENEWAL (its token in the env) that
+        # does not pass --max-hours KEEPS the lease's expiry as it is; --max-hours H on a renewal re-sets it to H hours
+        # from now (0 = none)
         # --watch-pid N must be ALIVE after a ~1 s settle (the long-lived launcher, NOT a `nohup setsid ... &` wrapper): else exit 2
         # stdout:  export GEN3AI_GPU_LEASE_TOKEN=<token>      (stderr carries the human line)
         # held by someone else or by a one-off job: exits 6 / 5 AT ONCE naming the holder
@@ -24,13 +27,15 @@ MECHANISM. ``acquire`` starts a small DETACHED holder process that takes the SAM
 ``utils.gpu_lock`` (``$GEN3AI_GPU_LOCK``, default ``~/.claude/jobs/gpu.lock``) NON-BLOCKING and keeps it
 for the lease's lifetime, then writes ``<lock>.lease.json`` (owner, holder pid + start time, SHA-256 of
 the token — never the token — start, expiry). The holder ends when the record is removed or no longer
-names it (``release``), on SIGTERM, at ``--max-hours`` (default 12; 0 = none), or when ``--watch-pid``
-dies. A lease is VALID only if its holder pid (with its recorded start time) HOLDS the lock, read from the
-holder's own ``/proc/<pid>/fdinfo`` (``procfs.holds_lock``; never the ``/proc/locks`` listing, which can skip a
+names it (``release``), on SIGTERM, at ``--max-hours`` (a fresh acquire's default is 12; 0 = none), or when
+``--watch-pid`` dies. A lease is VALID only if its holder pid (with its recorded start time) HOLDS the lock,
+read from the holder's own ``/proc/<pid>/fdinfo`` (``procfs.holds_lock``; never the ``/proc/locks`` listing, which can skip a
 live holder) — a record whose holder is dead, or whose pid was reused, is STALE: ``status`` and
 ``acquire`` clear it (under a microsecond-scale mutex, never racing a new holder), deterministically.
-Re-running ``acquire`` with the matching token is a no-op that renews the expiry (and sets ``--watch-pid``
-when given — a training agent attaches the launcher's pid after the launch).
+Re-running ``acquire`` with the matching token is a RENEWAL: it sets ``--watch-pid`` when given (a training agent
+attaches the launcher's pid after the launch) and leaves the expiry exactly as it was (a no-expiry campaign lease stays
+one) unless ``--max-hours`` is passed, which re-sets it from now (``0`` = none). Only a FRESH acquire takes the
+12 h default.
 
 The record is the lease; the flock is what makes it exclusive. A caller whose token hash matches a valid
 lease is the owner (``utils.gpu_lock`` passes it straight through, re-entrant, no flock). Linux only.
@@ -382,11 +387,13 @@ def _check_watch_pid(watch_pid: int) -> None:
         time.sleep(min(0.1, max(0.0, deadline - time.monotonic())))
 
 
-def acquire(lock: object, owner: str, note: str = "", max_hours: float = DEFAULT_MAX_HOURS,
+def acquire(lock: object, owner: str, note: str = "", max_hours: Optional[float] = None,
             watch_pid: int = 0, token_file: Optional[object] = None,
             env: Optional[Mapping[str, str]] = None) -> Acquired:
     """Take the lease NOW or raise :class:`GpuLeased` / :class:`GpuBusy` AT ONCE — never wait.
-    Idempotent for the owner: the caller's token matching the valid lease renews its expiry."""
+    Idempotent for the owner: the caller's token matching the valid lease is a RENEWAL, which sets ``watch_pid`` when
+    given and re-sets the expiry ONLY for an explicit ``max_hours`` (0 = none); ``None`` keeps the lease's expiry as it
+    is. A fresh acquire resolves ``None`` to :data:`DEFAULT_MAX_HOURS`."""
     if not owner.strip():
         raise ValueError("a lease needs an --owner name")
     _check_watch_pid(int(watch_pid))
@@ -396,8 +403,10 @@ def acquire(lock: object, owner: str, note: str = "", max_hours: float = DEFAULT
         with _mu(lock):
             cur = _read_record(lock)
             if cur is not None and cur.pid == mine.pid:
-                mine = Lease(**{**asdict(cur), "expires_epoch": time.time() + max_hours * 3600 if max_hours else 0.0,
-                                "watch_pid": int(watch_pid) or cur.watch_pid})
+                renewed = {"watch_pid": int(watch_pid) or cur.watch_pid}
+                if max_hours is not None:
+                    renewed["expires_epoch"] = time.time() + max_hours * 3600 if max_hours else 0.0
+                mine = Lease(**{**asdict(cur), **renewed})
                 _write_record(lock, mine)       # the holder re-reads the record each poll
         return Acquired(mine, None, True)
     other = read_lease(lock)
@@ -405,7 +414,8 @@ def acquire(lock: object, owner: str, note: str = "", max_hours: float = DEFAULT
         raise GpuLeased(other, lock)
     token = secrets.token_urlsafe(24)
     blob = json.dumps({"lock": str(lock), "owner": owner, "note": note, "token_sha256": token_hash(token),
-                       "max_hours": float(max_hours), "watch_pid": int(watch_pid),
+                       "max_hours": float(DEFAULT_MAX_HOURS if max_hours is None else max_hours),
+                       "watch_pid": int(watch_pid),
                        "acquirer_cmd": (procfs.cmdline(os.getppid()) or " ".join(sys.argv))[:300]})
     src = str(Path(__file__).resolve().parent.parent)
     proc = subprocess.Popen([sys.executable, "-c", _HOLDER_CODE, src, blob], stdin=subprocess.DEVNULL,
@@ -508,7 +518,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(release(lock, force=force), file=sys.stderr)
             return 0
         if cmd == "acquire":
-            kw: dict = {"owner": "", "note": "", "max_hours": DEFAULT_MAX_HOURS, "watch_pid": 0, "token_file": None}
+            kw: dict = {"owner": "", "note": "", "max_hours": None, "watch_pid": 0, "token_file": None}
             while args:
                 flag = args.pop(0)
                 if flag in ("--owner", "--note", "--max-hours", "--watch-pid", "--token-file") and args:
@@ -522,7 +532,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return 2
             got = acquire(lock, **kw)
             if got.already_held:
-                print(f"[gpu_lease] already yours (expiry renewed): {got.lease.describe()}", file=sys.stderr)
+                what = "expiry re-set" if kw["max_hours"] is not None else "expiry kept"
+                print(f"[gpu_lease] already yours (renewed, {what}): {got.lease.describe()}", file=sys.stderr)
             else:
                 print(f"[gpu_lease] ACQUIRED: {got.lease.describe()}", file=sys.stderr)
                 print(f"export {TOKEN_ENV}={got.token}")

@@ -211,12 +211,105 @@ def test_a_busy_acquire_and_status_name_the_one_off_holder_the_listing_skips(loc
         _reap(h)
 
 
-def test_a_renewing_acquire_with_the_token_is_a_noop_that_extends_expiry(lock):
+def test_a_renewing_acquire_with_the_token_and_an_explicit_max_hours_extends_expiry(lock):
     got = _acquire(lock, "agent-A", max_hours=1)
     again = L.acquire(lock, "agent-A", max_hours=5, watch_pid=os.getpid(), env={L.TOKEN_ENV: got.token})
     assert again.already_held and again.token is None and again.lease.watch_pid == os.getpid()
     assert again.lease.pid == got.lease.pid and again.lease.expires_epoch > got.lease.expires_epoch + 3 * 3600
     assert _held_only_by(lock, got.lease.pid), "still ONE holder"
+
+
+def test_a_renewal_without_max_hours_keeps_a_no_expiry_lease_no_expiry(lock):
+    """THE FINDING (2026-11-16): the training session re-runs ``acquire`` with its token to attach ``--watch-pid`` to
+    a ``--max-hours 0`` campaign lease; the renewal used to reset the expiry from the 12 h DEFAULT, so the lease would
+    have lapsed mid-campaign. Fails on a revert: ``expires_epoch`` becomes now + 12 h. (A ``Lease`` stores the expiry,
+    not ``max_hours``: ``expires_epoch == 0`` IS "max_hours 0".)"""
+    got = _acquire(lock, "agent-A", max_hours=0)
+    assert got.lease.expires_epoch == 0.0
+    again = L.acquire(lock, "agent-A", watch_pid=os.getpid(), env={L.TOKEN_ENV: got.token})
+    assert again.already_held and again.lease.watch_pid == os.getpid()
+    assert again.lease.expires_epoch == 0.0, "a renewal that only attached --watch-pid gave a no-expiry lease an expiry"
+    on_disk = L.read_lease(lock)
+    assert on_disk is not None and on_disk.expires_epoch == 0.0 and on_disk.watch_pid == os.getpid()
+    assert on_disk.pid == got.lease.pid and _held_only_by(lock, got.lease.pid), "still ONE holder"
+
+
+def test_a_renewal_without_max_hours_keeps_the_leases_original_expiry(lock):
+    """A 1 h lease renewed without ``--max-hours`` keeps its own expiry (it is neither reset to the 12 h default nor
+    pushed out): the exact ``expires_epoch`` survives, while ``watch_pid`` is still set. Fails on a revert."""
+    got = _acquire(lock, "agent-A", max_hours=1)
+    assert got.lease.expires_epoch == pytest.approx(got.lease.started_epoch + 3600, abs=1e-3)
+    again = L.acquire(lock, "agent-A", watch_pid=os.getpid(), env={L.TOKEN_ENV: got.token})
+    assert again.already_held and again.lease.watch_pid == os.getpid()
+    assert again.lease.expires_epoch == got.lease.expires_epoch
+    on_disk = L.read_lease(lock)
+    assert on_disk is not None and on_disk.expires_epoch == got.lease.expires_epoch
+    assert on_disk.started_epoch == got.lease.started_epoch and _held_only_by(lock, got.lease.pid)
+
+
+def test_a_renewal_with_an_explicit_max_hours_resets_the_expiry_and_zero_means_none(lock):
+    """The explicit value still wins on a renewal: ``max_hours=5`` re-sets the expiry to 5 h from NOW (bounded by the
+    clock readings around the call: no tolerance), and ``max_hours=0`` removes it."""
+    got = _acquire(lock, "agent-A", max_hours=1)
+    env = {L.TOKEN_ENV: got.token}
+    before = time.time()
+    five = L.acquire(lock, "agent-A", max_hours=5, env=env)
+    after = time.time()
+    assert five.already_held and before + 5 * 3600 <= five.lease.expires_epoch <= after + 5 * 3600
+    assert L.read_lease(lock).expires_epoch == five.lease.expires_epoch
+    none = L.acquire(lock, "agent-A", max_hours=0, env=env)
+    assert none.already_held and none.lease.expires_epoch == 0.0 and L.read_lease(lock).expires_epoch == 0.0
+    assert _held_only_by(lock, got.lease.pid)
+
+
+def test_a_fresh_acquire_without_max_hours_takes_the_12_hour_default(lock):
+    """Only a FRESH acquire resolves "not given" to the default. Pins the other side of the renewal fix: a
+    ``None`` that became "no expiry" (or any value but 12 h) for a new holder fails here."""
+    assert L.DEFAULT_MAX_HOURS == 12.0
+    got = _acquire(lock, "agent-A")
+    assert not got.already_held
+    assert got.lease.expires_epoch == pytest.approx(got.lease.started_epoch + 12 * 3600, abs=1e-3)
+    assert L.read_lease(lock).expires_epoch == got.lease.expires_epoch
+
+
+def test_the_cli_renewal_without_max_hours_keeps_the_expiry(lock):
+    """The same rules through the argv parser (``python -m utils.gpu_lease acquire``): a fresh acquire without
+    ``--max-hours`` is 12 h; a token renewal that passes only ``--watch-pid`` keeps the expiry (the reported hazard);
+    ``--max-hours 0`` removes it and a later bare renewal keeps it removed; ``--max-hours 2`` re-sets it."""
+    tok = lock.parent / "tok"
+    sleeper = subprocess.Popen(["sleep", "120"])
+    try:
+        r = _cli("utils.gpu_lease", lock, "acquire", "--owner", "agent-A", "--token-file", str(tok))
+        assert r.returncode == 0, r.stderr
+        fresh = L.read_lease(lock)
+        assert fresh is not None and fresh.expires_epoch == pytest.approx(fresh.started_epoch + 12 * 3600, abs=1e-3)
+        renew_env = {L.TOKEN_FILE_ENV: str(tok)}
+        renew = ["acquire", "--owner", "agent-A", "--watch-pid", str(sleeper.pid)]
+
+        r = _cli("utils.gpu_lease", lock, *renew, extra_env=renew_env)
+        assert r.returncode == 0, r.stderr
+        kept = L.read_lease(lock)
+        assert kept is not None and kept.pid == fresh.pid and kept.watch_pid == sleeper.pid
+        assert kept.expires_epoch == fresh.expires_epoch, "a bare CLI renewal changed the expiry"
+        assert "already yours" in r.stderr and "expiry kept" in r.stderr, r.stderr
+
+        r = _cli("utils.gpu_lease", lock, *renew, "--max-hours", "0", extra_env=renew_env)
+        assert r.returncode == 0, r.stderr
+        assert L.read_lease(lock).expires_epoch == 0.0 and "expiry re-set" in r.stderr, r.stderr
+        r = _cli("utils.gpu_lease", lock, *renew, extra_env=renew_env)       # THE reported case
+        assert r.returncode == 0, r.stderr
+        assert L.read_lease(lock).expires_epoch == 0.0, "a watch-pid renewal turned a no-expiry lease into a timed one"
+        assert "expiry kept" in r.stderr, r.stderr
+
+        before = time.time()
+        r = _cli("utils.gpu_lease", lock, *renew, "--max-hours", "2", extra_env=renew_env)
+        after = time.time()
+        assert r.returncode == 0, r.stderr
+        assert before + 2 * 3600 <= L.read_lease(lock).expires_epoch <= after + 2 * 3600
+        assert _held_only_by(lock, fresh.pid), "still ONE holder"
+    finally:
+        sleeper.kill()
+        sleeper.wait(timeout=30)
 
 
 def test_a_lease_stays_valid_when_the_lock_listing_skips_its_holder(lock, monkeypatch):

@@ -80,8 +80,10 @@ LEASE for the run's lifetime, taken BEFORE the launch, exactly as any GPU-using 
 (it fails AT ONCE, naming the holder, if the GPU is leased or a one-off job holds it — the orchestrator
 resolves that, the training agent never polls). After the launch, attach the launcher: re-run `acquire`
 with `GEN3AI_GPU_LEASE_TOKEN_FILE=<that file>` and `--watch-pid <launcher pid>` (a renewal that makes the
-lease end when the launcher dies). **Renew on every 55-minute cron wake** (`acquire` with the token is a
-no-op that resets the expiry; a lapsed lease silently frees the GPU to others) and `release` when the run
+lease end when the launcher dies). **Renew on every 55-minute cron wake** (`acquire` with the token and
+`--max-hours H` re-sets the expiry to H hours from now, `0` = none; **without `--max-hours` a renewal keeps the
+lease's expiry as it is**, so attaching `--watch-pid` never turns a no-expiry lease into a 12 h one; a lapsed lease
+silently frees the GPU to others) and `release` when the run
 ends (§4's relaunch re-acquires first). The launcher and trainer are NOT lease-aware and are not wrapped:
 the lease is what keeps every other agent (whose `gpu_lock.sh` is refused AT ONCE with exit 6) off the card.
 An offline GPU meter the training session itself runs goes through `scripts/ops/gpu_lock.sh`, which passes
