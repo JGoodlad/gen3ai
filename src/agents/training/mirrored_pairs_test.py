@@ -87,6 +87,7 @@ def test_a_mirrored_split_keeps_every_pair_inside_one_unit():
 
 def test_the_plan_carries_the_regime_and_an_unmirrored_plan_is_byte_identical(tmp_path):
     items = [EvalItem("random", BOT, 4)]
+    (tmp_path / "a").mkdir(), (tmp_path / "b").mkdir()   # a cycle dir is made by its launcher (`pool.write_plan`)
     ShardedEvalPool(items, 2, step=1).write_plan(str(tmp_path / "a"))
     plain = json.loads((tmp_path / "a" / "plan.json").read_text())
     assert "mirrored" not in plain

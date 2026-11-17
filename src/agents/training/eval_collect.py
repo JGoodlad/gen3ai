@@ -21,6 +21,7 @@ from agents.training.weights_link import link_or_copy, sha256_file as _sha256_fi
 from main.launcher.ipc import send_metrics
 from utils.atomic_io import atomic_write_json
 from utils.contention import describe_contention
+from utils.run_dir import ensure_subdir
 
 
 def merge_eval_results(run_dir: str, names: list[str]) -> tuple[dict, list]:
@@ -152,7 +153,7 @@ def record_eval_selection(model_dir: str | None, step: int, merged: dict,
         m["selection_schema"] = SELECTION_SCHEMA
         m["selection_rule"] = _rule_for(q)
         m["selection"] = block
-        atomic_write_json(mpath, m, indent=2)
+        atomic_write_json(mpath, m, root=model_dir, indent=2)
     except (OSError, ValueError) as e:
         print(f"⚠️ [EVAL] could not record trace selection for step {step:,}: {e}")
         return None
@@ -172,7 +173,8 @@ def checkpoint_at_step(model_dir: "str | None", step: int) -> Optional[str]:
     return path if os.path.isfile(path) else None
 
 
-def store_eval_snapshot(snapshot_path: str, dst: str, checkpoint_path: Optional[str]) -> Tuple[str, str, str]:
+def store_eval_snapshot(snapshot_path: str, dst: str, checkpoint_path: Optional[str], *,
+                        root: Optional[str] = None) -> Tuple[str, str, str]:
     """Put the cycle's weight snapshot at ``dst``; returns ``(mode, sha256, note)``.
 
     ``mode`` is ``"hardlink"`` when ``checkpoint_path`` (the periodic checkpoint saved at the same step) exists on
@@ -184,9 +186,10 @@ def store_eval_snapshot(snapshot_path: str, dst: str, checkpoint_path: Optional[
 
     🚨 ``dst`` is replaced ATOMICALLY (build ``dst.tmp``, then ``os.replace``) and never opened for writing: an
     existing ``dst`` may already be a hard link to a checkpoint (a restart re-persisting the same step), and a plain
-    ``shutil.copy2`` onto it would truncate the CHECKPOINT through the shared inode.
+    ``shutil.copy2`` onto it would truncate the CHECKPOINT through the shared inode. ``root``: the run dir (a gone
+    one refuses, ``utils.run_dir``).
     """
-    return link_or_copy(snapshot_path, dst, checkpoint_path)
+    return link_or_copy(snapshot_path, dst, checkpoint_path, root=root)
 
 
 def store_best_model(model_dir: "str | None", step: int, snapshot_path: str, dst: str) -> str:
@@ -197,7 +200,7 @@ def store_best_model(model_dir: "str | None", step: int, snapshot_path: str, dst
     a plain copy. A copy made although a checkpoint exists at the step prints why, like
     :func:`persist_eval_snapshot`."""
     ckpt = checkpoint_at_step(model_dir, step)
-    mode, _digest, note = link_or_copy(snapshot_path, dst, ckpt)
+    mode, _digest, note = link_or_copy(snapshot_path, dst, ckpt, root=model_dir)
     if mode == "hardlink":
         return f" [{note}; sha256 verified, the weights are stored once]"
     if ckpt is not None:
@@ -216,11 +219,11 @@ def persist_eval_snapshot(model_dir: str | None, step: int, snapshot_path: str, 
     """
     if keep_n <= 0 or not model_dir:
         return
-    dst_dir = os.path.join(model_dir, "eval_traces", f"step_{step}")
-    os.makedirs(dst_dir, exist_ok=True)
+    dst_dir = ensure_subdir(model_dir, os.path.join("eval_traces", f"step_{step}"))
     ckpt = checkpoint_at_step(model_dir, step)
     try:
-        mode, digest, note = store_eval_snapshot(snapshot_path, os.path.join(dst_dir, EVAL_SNAPSHOT_NAME), ckpt)
+        mode, digest, note = store_eval_snapshot(snapshot_path, os.path.join(dst_dir, EVAL_SNAPSHOT_NAME), ckpt,
+                                                 root=model_dir)
     except OSError as e:
         print(f"⚠️ [EVAL] could not persist snapshot for step {step:,}: {e}")
         return
@@ -236,7 +239,7 @@ def persist_eval_snapshot(model_dir: str | None, step: int, snapshot_path: str, 
         m["snapshot_storage"] = {"mode": mode, "note": note, "sha256": digest or None,
                                  "checkpoint": (os.path.join("checkpoints", os.path.basename(ckpt))
                                                 if mode == "hardlink" and ckpt else None)}
-        atomic_write_json(mpath, m, indent=2)
+        atomic_write_json(mpath, m, root=model_dir, indent=2)
     except (OSError, ValueError):
         pass
     prune_eval_snapshots(model_dir, keep_n)
@@ -253,7 +256,7 @@ def copy_run_config_to_best_model(model_dir: "str | None", best_model_dir: "str 
     if not os.path.exists(src):
         return
     try:
-        os.makedirs(best_model_dir, exist_ok=True)
+        ensure_subdir(model_dir, best_model_dir)
         shutil.copy2(src, os.path.join(best_model_dir, "model_config.json"))
     except OSError as e:
         print(f"⚠️ [EVAL] could not copy model_config.json into best_model/: {e}")

@@ -14,7 +14,9 @@ this module imports nothing from ``main``): the launcher does not restart into a
 """
 from __future__ import annotations
 
+import contextlib
 import os
+from typing import Iterator
 
 
 class RunDirGoneError(RuntimeError):
@@ -35,11 +37,14 @@ def require_run_dir(run_dir: "str | os.PathLike[str]") -> None:
 def ensure_subdir(run_dir: "str | os.PathLike[str]", name: "str | os.PathLike[str]") -> str:
     """``<run_dir>/<name>``, created if missing, one level at a time below the EXISTING ``run_dir``; returns it.
 
-    ``name`` is relative (it may have several components) and must stay inside ``run_dir``. Raises
+    ``name`` is a path inside ``run_dir``: relative to it (it may have several components), or absolute. Raises
     :class:`RunDirGoneError` when ``run_dir`` is gone, including when it vanishes between levels (``os.mkdir``
     of a level whose parent is gone raises, where ``makedirs`` would have re-created the parent)."""
     root = os.fspath(run_dir)
-    rel = os.path.normpath(os.fspath(name))
+    rel = os.fspath(name)
+    if os.path.isabs(rel):
+        rel = os.path.relpath(rel, os.path.abspath(root))
+    rel = os.path.normpath(rel)
     if os.path.isabs(rel) or rel == os.pardir or rel.startswith(os.pardir + os.sep):
         raise ValueError(f"ensure_subdir: {name!r} is not a relative path inside the run dir {root}")
     require_run_dir(root)
@@ -55,3 +60,15 @@ def ensure_subdir(run_dir: "str | os.PathLike[str]", name: "str | os.PathLike[st
             require_run_dir(root)        # the root went away under us: the typed refusal
             raise RunDirGoneError(f"a level above {path} vanished while it was being created") from e
     return path
+
+
+@contextlib.contextmanager
+def fatal_if_gone(where: str) -> Iterator[None]:
+    """Run a run-dir writer's body; a :class:`RunDirGoneError` inside it prints ``[RunDir] FATAL`` (a launcher FATAL
+    signature, so the reason surfaces) and is re-raised, ending the run FATAL_CONFIG (3) through the trainer's
+    fail-fast handler, the way a periodic checkpoint into a gone run dir does."""
+    try:
+        yield
+    except RunDirGoneError as e:
+        print(f"\n[RunDir] FATAL ({where}): {e}", flush=True)
+        raise

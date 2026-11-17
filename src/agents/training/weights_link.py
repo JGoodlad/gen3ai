@@ -49,13 +49,15 @@ def sha256_file(path: str, chunk: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
-def link_or_copy(src: str, dst: str, twin: Optional[str], *, no_twin_note: str = NO_TWIN_NOTE) -> Tuple[str, str, str]:
+def link_or_copy(src: str, dst: str, twin: Optional[str], *, no_twin_note: str = NO_TWIN_NOTE,
+                 root: Optional[str] = None) -> Tuple[str, str, str]:
     """Put ``src``'s bytes at ``dst``; returns ``(mode, sha256, note)``.
 
     ``mode`` is ``"hardlink"`` when ``twin`` is a byte-identical file on the same filesystem (``dst`` is then a
     second name for ``twin``'s inode, not a duplicate of it), else ``"copy"`` and ``note`` says why a link was not
     made. ``sha256`` is the digest of ``src`` when it was computed (a link attempt got that far), else ``""``.
-    ``dst`` is replaced atomically and never opened for writing (see the module docstring)."""
+    ``dst`` is replaced atomically and never opened for writing (see the module docstring). ``root`` names the run
+    dir ``dst`` lives under: a gone one refuses (``utils.atomic_io.atomic_write(root=)``), never re-created."""
     mode, note = "copy", no_twin_note
     digest = ""
     if twin is not None:
@@ -69,9 +71,9 @@ def link_or_copy(src: str, dst: str, twin: Optional[str], *, no_twin_note: str =
                 if sha256_file(twin) != digest:
                     note = "the checkpoint at this step is not byte-identical to the snapshot"
                 else:
-                    atomic_write(dst, lambda tmp: os.link(twin, tmp))
+                    atomic_write(dst, lambda tmp: os.link(twin, tmp), root=root)
                     return "hardlink", digest, "hard link to " + os.path.join("checkpoints", os.path.basename(twin))
         except OSError as e:
             note = f"linking failed ({e})"
-    atomic_write(dst, lambda tmp: shutil.copy2(src, tmp))
+    atomic_write(dst, lambda tmp: shutil.copy2(src, tmp), root=root)
     return mode, digest, note

@@ -121,6 +121,7 @@ def _ledger(tmp_path, **writer_kw) -> CL.CycleLedger:
 def _bot_cb(tmp_path, ev, led, *, mirrored=False):
     from agents.training.eval_callback import PerOpponentEvalCallback
 
+    (tmp_path / "run").mkdir(exist_ok=True)           # the trainer makes the run dir at startup (`utils.run_dir`)
     cb = PerOpponentEvalCallback(model_dir=str(tmp_path / "run"), eval_games=4, eval_mirrored_pairs=mirrored,
                                  cycle_ledger=led)
     cb.model = _model(ev)
@@ -164,6 +165,7 @@ def _selfplay_cb(tmp_path, ev, led, *, mirrored=False, sprt=False):
     pool.sentinel_entries.return_value = list(reversed(entries))
     pool.entry_weight.return_value = 1.0
     pool.load_summary.return_value = {}
+    (tmp_path / "run").mkdir(exist_ok=True)           # the trainer makes the run dir at startup (`utils.run_dir`)
     cb = SelfPlayCallback(pool=pool, model_dir=str(tmp_path / "run"), eval_games=4, n_sentinels=2,
                           eval_sentinel_greedy=True, eval_mirrored_pairs=mirrored, promotion_sprt=sprt,
                           snapshot_ladder_games=0, cycle_ledger=led)

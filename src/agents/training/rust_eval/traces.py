@@ -29,6 +29,8 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 
+from utils.run_dir import ensure_subdir
+
 SCHEMA = "gen3_core_trace_v1"
 EVENT_SCHEMA = "gen3_core_event_v1"
 #: The stored logit of an illegal action (finite, so an unmasked softmax reads it as 0).
@@ -38,11 +40,17 @@ ILLEGAL_LOGIT = -1.0e9
 def write_core_trace(prefix: str, *, trace: Dict[str, Any], step: int, battle_id: str, result: str,
                      draw_kind: Optional[str], turns: int, trainee_username: str, obs: np.ndarray,
                      logp: np.ndarray, values: np.ndarray, actions: np.ndarray, masks: np.ndarray,
-                     cycle: Optional[Dict[str, Any]] = None, turn_limit: Optional[int] = None) -> Dict[str, str]:
-    """Write one captured game (module docs). ``trace`` is ``ffi.trace``'s dict. Returns the file map."""
+                     cycle: Optional[Dict[str, Any]] = None, turn_limit: Optional[int] = None,
+                     root: Optional[str] = None) -> Dict[str, str]:
+    """Write one captured game (module docs). ``trace`` is ``ffi.trace``'s dict. Returns the file map. ``root`` (the
+    cycle's forensic root, ``<run>/eval_traces/step_<N>``, made by the cycle's manifest write) must exist: only the
+    levels below it are created (``utils.run_dir.ensure_subdir``); without it the trace's dir is made as before."""
     from agents.training.trace_result import DRAW, DRAW_KIND_KEY, RESULT_VOCABULARY, VOCABULARY_KEY
 
-    os.makedirs(os.path.dirname(prefix), exist_ok=True)
+    if root is not None:
+        ensure_subdir(root, os.path.dirname(prefix))
+    else:
+        os.makedirs(os.path.dirname(prefix), exist_ok=True)
     base = os.path.basename(prefix)
     files = {"p1": f"{base}.p1.jsonl.gz", "p2": f"{base}.p2.jsonl.gz",
              "reconstruction": f"{base}_reconstruction.json", "states": f"{base}_states.npz"}

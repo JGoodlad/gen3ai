@@ -41,6 +41,7 @@ from agents.training.loop_callbacks import BaseCallback
 from agents.model.snapshot import record_eval_results
 from agents.training.logger_scope import isolated_dump
 from utils.atomic_io import atomic_save_model
+from utils.run_dir import RunDirGoneError, ensure_subdir, fatal_if_gone
 from agents.training.eval_callback import (
     record_cycle_wall,
     _ForcedEvalMixin,
@@ -298,11 +299,11 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
 
     def _init_callback(self) -> None:
-        if self.best_model_save_path:
-            os.makedirs(self.best_model_save_path, exist_ok=True)
-        if self._model_dir is not None:
-            self._eval_root = os.path.join(self._model_dir, ".eval_runs")
-            os.makedirs(self._eval_root, exist_ok=True)
+        with fatal_if_gone("self-play eval init"):
+            if self.best_model_save_path:
+                ensure_subdir(self._model_dir or os.path.dirname(self.best_model_save_path), self.best_model_save_path)
+            if self._model_dir is not None:
+                self._eval_root = ensure_subdir(self._model_dir, ".eval_runs")
         # NOTE: seeding is gated on competence (win rate ≥ SELF_PLAY_START) — it is NOT done
         # here. train_rl_agent's _maybe_seed_pool seeds at startup if already competent, and
         # _collect_pending seeds the moment the model first crosses the threshold mid-run. So a
@@ -373,11 +374,14 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
     def _on_step(self) -> bool:
         if self.num_timesteps == 0:
             return True
-        self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2)
-        freq, _ = self._schedule()
-        if (self.num_timesteps // freq) > (self._last_eval_step // freq):
-            self._last_eval_step = self.num_timesteps
-            self._launch_eval()
+        # A run dir deleted under the live run: every eval write below refuses (`utils.run_dir`) and the run ends
+        # FATAL_CONFIG (3) with "[RunDir] FATAL", the way the periodic checkpoint does.
+        with fatal_if_gone("self-play eval"):
+            self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2)
+            freq, _ = self._schedule()
+            if (self.num_timesteps // freq) > (self._last_eval_step // freq):
+                self._last_eval_step = self.num_timesteps
+                self._launch_eval()
         return True
 
     # ── Launch ───────────────────────────────────────────────────────────────
@@ -392,10 +396,10 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # Clear any crash-leftover from a prior run at this step (re-evals on resume) so no stale
         # plan/shard/lock files from an aborted cycle are mistaken for this one's.
         shutil.rmtree(run_dir, ignore_errors=True)
-        os.makedirs(run_dir, exist_ok=True)
+        ensure_subdir(self._model_dir, run_dir)
 
         snapshot_base = os.path.join(run_dir, "snapshot")
-        atomic_save_model(self.model, snapshot_base)  # freeze live weights; SB3 appends .zip
+        atomic_save_model(self.model, snapshot_base, root=self._model_dir)  # freeze live weights; SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
         bot_names = eval_opponent_names()
@@ -830,7 +834,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         if not self._model_dir or self._ladder_games <= 0:
             return
         try:
-            os.makedirs(os.path.join(self._model_dir, "snapshot_ladder"), exist_ok=True)
+            ensure_subdir(self._model_dir, "snapshot_ladder")
             logf = open(os.path.join(self._model_dir, "snapshot_ladder", "updater.log"), "a")
             subprocess.Popen(
                 # P2 (2026-10-06): the ladder plays on the Rust eval engine (`snapshot_ladder_play`, CPU),
@@ -844,6 +848,8 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
                 # 1.3 GiB, measured 2026-10-01 at a promotion per rollout). It never sees the GPU.
                 env={**os.environ, "CUDA_VISIBLE_DEVICES": ""})
             print(f"🪜 [LADDER] spawned round-robin update for promoted snapshot @{step}", flush=True)
+        except RunDirGoneError:
+            raise                   # not telemetry's failure: the run dir is gone (`fatal_if_gone` reports it)
         except Exception as e:  # noqa: BLE001 — telemetry, never break training
             print(f"⚠️ [LADDER] spawn failed at step {step}: {e}", flush=True)
 
@@ -1032,7 +1038,8 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             # The frozen snapshot IS the evaluated model — store it rather than re-saving the
             # (now-advanced) live model: a hard link to the same-step checkpoint when byte-identical,
             # else a copy (never written through a link).
-            dst = os.path.join(self.best_model_save_path, "best_model.zip")
+            dst = os.path.join(ensure_subdir(self._model_dir or os.path.dirname(self.best_model_save_path),
+                                             self.best_model_save_path), "best_model.zip")
             how = store_best_model(self._model_dir, step, pending["snapshot"], dst)
             copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)  # model_config.json
             write_best_model_sidecar(self._model_dir, dst, self.model)                 # best_model.json (+ELO)

@@ -16,6 +16,7 @@ from agents.training.eval_quota import ForensicQuota, _rule_for
 from agents.training.trace_selection import SELECTION_SCHEMA
 from main.launcher.ipc import send_event
 from utils.atomic_io import atomic_write_json
+from utils.run_dir import ensure_subdir
 from utils.git import get_git_hash
 
 EVAL_MANIFEST_NAME = "eval_manifest.json"
@@ -105,8 +106,7 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
         if isinstance(t, (list, tuple)):
             return [hashlib.sha1(x.encode()).hexdigest()[:10] for x in t if x]
         return hashlib.sha1(t.encode()).hexdigest()[:10]
-    d = os.path.join(model_dir, "eval_traces", f"step_{step}")
-    os.makedirs(d, exist_ok=True)
+    d = ensure_subdir(model_dir, os.path.join("eval_traces", f"step_{step}"))
     manifest = {
         "step": step,
         "num_timesteps": step,
@@ -131,7 +131,7 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
         # (each team pairing from both sides, one battle seed)? Always written — False is a fact too.
         "mirrored_pairs": bool(mirrored_pairs),
     }
-    atomic_write_json(os.path.join(d, EVAL_MANIFEST_NAME), manifest, indent=2)
+    atomic_write_json(os.path.join(d, EVAL_MANIFEST_NAME), manifest, root=model_dir, indent=2)
     return manifest
 
 

@@ -116,9 +116,10 @@ def _shard_path(result_dir: str, unit_id: str) -> str:
 
 
 def write_shard_result(result_dir: str, res: ShardResult) -> None:
-    """Atomically persist one shard result (tmp + rename) so a reader never sees a half file."""
+    """Atomically persist one shard result (tmp + rename) so a reader never sees a half file. ``result_dir`` (the
+    cycle dir) must exist: it is never created here (``utils.run_dir``)."""
     out = _shard_path(result_dir, res.unit_id)
-    atomic_write_json(out, asdict(res))
+    atomic_write_json(out, asdict(res), root=result_dir)
 
 
 def read_shard_result(result_dir: str, unit_id: str) -> ShardResult | None:

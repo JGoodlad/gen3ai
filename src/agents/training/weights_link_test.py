@@ -120,7 +120,7 @@ def test_a_relink_over_the_same_inode_strands_no_tmp(tmp_path):
 
 def test_store_best_model_links_to_the_same_step_checkpoint(tmp_path, capsys):
     run, transient, ckpt = _run(tmp_path)
-    dst = tmp_path / "best" / "best_model.zip"
+    dst = run / "best_model" / "best_model.zip"          # inside its run dir, as a run writes it (`utils.run_dir`)
     dst.parent.mkdir()
     how = store_best_model(str(run), STEP, str(transient), str(dst))
     assert os.path.samefile(dst, ckpt) and "hard link to checkpoints/" in how and "stored once" in how
@@ -130,7 +130,7 @@ def test_store_best_model_links_to_the_same_step_checkpoint(tmp_path, capsys):
 
 def test_store_best_model_copies_without_a_warning_when_cadences_do_not_coincide(tmp_path, capsys):
     run, transient, _ckpt = _run(tmp_path, checkpoint=None)
-    dst = tmp_path / "best" / "best_model.zip"
+    dst = run / "best_model" / "best_model.zip"          # inside its run dir, as a run writes it (`utils.run_dir`)
     dst.parent.mkdir()
     assert store_best_model(str(run), STEP, str(transient), str(dst)) == ""
     assert dst.read_bytes() == WEIGHTS and os.stat(dst).st_nlink == 1
@@ -139,7 +139,7 @@ def test_store_best_model_copies_without_a_warning_when_cadences_do_not_coincide
 
 def test_store_best_model_warns_about_a_copy_made_although_a_checkpoint_exists(tmp_path, capsys):
     run, transient, ckpt = _run(tmp_path, checkpoint=OTHER)
-    dst = tmp_path / "best" / "best_model.zip"
+    dst = run / "best_model" / "best_model.zip"          # inside its run dir, as a run writes it (`utils.run_dir`)
     dst.parent.mkdir()
     assert store_best_model(str(run), STEP, str(transient), str(dst)) == ""
     assert dst.read_bytes() == WEIGHTS and ckpt.read_bytes() == OTHER
@@ -149,7 +149,7 @@ def test_store_best_model_warns_about_a_copy_made_although_a_checkpoint_exists(t
 
 def test_the_per_opponent_eval_callback_links_its_best_model(tmp_path, capsys):
     run, transient, ckpt = _run(tmp_path)
-    best = tmp_path / "best"
+    best = run / "best_model"                            # inside its run dir, as a run writes it
     best.mkdir()
     cb = PerOpponentEvalCallback(model_dir=str(run), best_model_save_path=str(best))
     cb.model = MagicMock()
@@ -164,7 +164,7 @@ def test_the_per_opponent_eval_callback_links_its_best_model(tmp_path, capsys):
 
 def test_the_selfplay_callback_links_its_best_model(tmp_path):
     run, transient, ckpt = _run(tmp_path)
-    best = tmp_path / "best"
+    best = run / "best_model"                            # inside its run dir, as a run writes it
     best.mkdir()
     cb = SelfPlayCallback(pool=MagicMock(), model_dir=str(run), best_model_save_path=str(best))
     cb.model = MagicMock()
@@ -177,7 +177,7 @@ def test_a_later_best_never_writes_through_the_earlier_link_into_the_checkpoint(
     """Two bests in one run: the first at step A (linked to checkpoint A), the second at step B. The second
     export must replace `best_model.zip` atomically - checkpoint A keeps its bytes."""
     run, transient_a, ckpt_a = _run(tmp_path, step=STEP)
-    best = tmp_path / "best"
+    best = run / "best_model"                            # inside its run dir, as a run writes it
     best.mkdir()
     cb = PerOpponentEvalCallback(model_dir=str(run), best_model_save_path=str(best))
     cb.model = MagicMock()

@@ -55,8 +55,9 @@ class ShardedEvalPool:
     # ------------------------------------------------------------------ plan manifest
 
     def write_plan(self, run_dir: str) -> str:
-        """Parent: serialize the plan to ``<run_dir>/plan.json`` (atomic) before spawning workers."""
-        os.makedirs(run_dir, exist_ok=True)
+        """Parent: serialize the plan to ``<run_dir>/plan.json`` (atomic) before spawning workers. ``run_dir`` (the
+        cycle dir) was made by the cycle's launcher and is never created here: a cycle dir gone under a live run
+        (its run dir deleted) refuses typed (``utils.run_dir.RunDirGoneError``) instead of coming back."""
         path = os.path.join(run_dir, PLAN_NAME)
         payload = {
             "version": _PLAN_VERSION,
@@ -66,7 +67,7 @@ class ShardedEvalPool:
         }
         if self.mirrored:            # absent = unmirrored, so a default plan stays byte-identical
             payload["mirrored"] = True
-        atomic_write_json(path, payload, indent=2)
+        atomic_write_json(path, payload, root=run_dir, indent=2)
         return path
 
     @classmethod

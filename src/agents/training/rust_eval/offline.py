@@ -250,6 +250,7 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
             sent = load_sentinels(pool, model)
             glog: Optional[List[Dict[str, Any]]] = [] if keep_games else None
             root = forensic_root if forensic_root is not None else model_dir / "eval_traces" / f"step_{step}"
+            Path(root).mkdir(parents=True, exist_ok=True)   # the forensic root the trace writer requires (traces.py)
             st = ev.run_cycle(pool, str(run_dir), step=step, trainee_policy=model.policy, sentinel_policies=sent,
                               forensic_root=str(root), quota=ForensicQuota(**quota), gamma=float(model.gamma),
                               sentinel_greedy=bool(sentinel_greedy), self_play_temp=float(self_play_temp),

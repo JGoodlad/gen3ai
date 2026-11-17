@@ -29,6 +29,7 @@ from agents.training.loop_callbacks import BaseCallback
 from agents.model.snapshot import record_eval_results
 from agents.training.logger_scope import isolated_dump
 from utils.atomic_io import atomic_save_model
+from utils.run_dir import ensure_subdir, fatal_if_gone
 from agents.training.fixed_opponent_pool import is_external
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
@@ -287,11 +288,11 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         return self._eval_freq, self._eval_games
 
     def _init_callback(self) -> None:
-        if self.best_model_save_path is not None:
-            os.makedirs(self.best_model_save_path, exist_ok=True)
-        if self._model_dir is not None:
-            self._eval_root = os.path.join(self._model_dir, ".eval_runs")
-            os.makedirs(self._eval_root, exist_ok=True)
+        with fatal_if_gone("eval init"):
+            if self.best_model_save_path is not None:
+                ensure_subdir(self._model_dir or os.path.dirname(self.best_model_save_path), self.best_model_save_path)
+            if self._model_dir is not None:
+                self._eval_root = ensure_subdir(self._model_dir, ".eval_runs")
         # Resumed run: re-publish the last eval so the TUI panel isn't blank until
         # the next cycle (which can be millions of steps away).
         self._replay_last_eval_to_tui()
@@ -303,11 +304,14 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
     def _on_step(self) -> bool:
         if self.num_timesteps == 0:
             return True
-        self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2)
-        freq, _ = self._schedule()
-        if (self.num_timesteps // freq) > (self._last_eval_step // freq):
-            self._last_eval_step = self.num_timesteps
-            self._launch_eval()
+        # A run dir deleted under the live run: every eval write below refuses (`utils.run_dir`) and the run ends
+        # FATAL_CONFIG (3) with "[RunDir] FATAL", the way the periodic checkpoint does.
+        with fatal_if_gone("eval"):
+            self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2)
+            freq, _ = self._schedule()
+            if (self.num_timesteps // freq) > (self._last_eval_step // freq):
+                self._last_eval_step = self.num_timesteps
+                self._launch_eval()
         return True
 
     # ------------------------------------------------------------------ launch
@@ -322,10 +326,10 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # Clear any crash-leftover from a prior run at this step (the same step re-evals on resume),
         # so no stale plan/shard/lock files from an aborted cycle are mistaken for this one's.
         shutil.rmtree(run_dir, ignore_errors=True)
-        os.makedirs(run_dir, exist_ok=True)
+        ensure_subdir(self._model_dir, run_dir)
 
         snapshot_base = os.path.join(run_dir, "snapshot")
-        atomic_save_model(self.model, snapshot_base)  # SB3 appends .zip
+        atomic_save_model(self.model, snapshot_base, root=self._model_dir)  # SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
         # Full work-steal universe = the bot roster + any stable cross-run opponents (ext_<label>),
@@ -509,7 +513,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         if self.best_model_save_path is not None:
             # The frozen snapshot IS the best model — store it rather than re-saving: a hard link to the
             # same-step checkpoint when byte-identical, else a copy (never written through a link).
-            dst = os.path.join(self.best_model_save_path, "best_model.zip")
+            dst = os.path.join(ensure_subdir(self._model_dir or os.path.dirname(self.best_model_save_path),
+                                             self.best_model_save_path), "best_model.zip")
             how = store_best_model(self._model_dir, step, pending["snapshot"], dst)
             copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)  # model_config.json
             write_best_model_sidecar(self._model_dir, dst, self.model)                 # best_model.json (+ELO)

@@ -61,10 +61,15 @@ at a time, so a root that vanishes mid-call raises) or `atomic_write(..., root=r
 
 - **The choke points:** `commit_checkpoint` (step 0, and `root=` on the zip and `latest.txt`), the checkpointer's
   `checkpoints/`, `save_model_snapshot`, `record_eval_results`, `record_team_win_rates`, `record_snapshot_in_history`.
-- **How a run ends on it:** the periodic and forced saves and the team win-rate instrument print `[RunDir] FATAL` (a
-  launcher FATAL signature) and raise; the interrupted save exits 3, never 15 (`DeferredAbort.abort` exits with a body's
-  mapped FATAL code).
-- Pinned by `utils/run_dir_test.py` and `main/train/run_dir_gone_test.py`, each failing on a revert.
+- **The eval writers:** both eval callbacks' `best_model/`, `.eval_runs/` and cycle dir, the cycle manifest and the
+  persisted snapshot (`eval_traces/step_<N>`), the best model (`link_or_copy(root=)`), the SPRT dirs and
+  `snapshot_ladder/`. A cycle dir is made once, by its launcher: `write_plan`, `write_shard_result` and
+  `write_core_trace(root=)` create nothing above it.
+- **How a run ends on it:** the periodic and forced saves, the team win-rate instrument and the eval callbacks
+  (`fatal_if_gone`) print `[RunDir] FATAL` (a launcher FATAL signature) and raise; the interrupted save exits 3, never
+  15 (`DeferredAbort.abort` exits with a body's mapped FATAL code).
+- Pinned by `utils/run_dir_test.py`, `main/train/run_dir_gone_test.py` and `agents/training/eval_run_dir_gone_test.py`,
+  each failing on a revert.
 
 ## Audit: every write, before and after (2026-10-20, `dccb920e`)
 

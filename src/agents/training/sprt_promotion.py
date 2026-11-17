@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional
 
 from agents.training import sprt as S
 from agents.training.mirrored_pairs import pooled
+from utils.run_dir import ensure_subdir
 
 LOG_NAME = "sprt_promotion.jsonl"
 
@@ -198,8 +199,7 @@ class SprtPromotionMixin:
             print(f"⚖️  [SPRT] candidate @{step:,} already has a test on record ({prior.get('event')}) — "
                   "never re-run (T6 rule 3)", flush=True)
             return
-        snap_dir = os.path.join(self._eval_root, f"sprt_{step}")
-        os.makedirs(snap_dir, exist_ok=True)
+        snap_dir = ensure_subdir(self._model_dir, os.path.join(self._eval_root, f"sprt_{step}"))
         snap = os.path.join(snap_dir, "candidate.zip")
         shutil.copy2(pending["snapshot"], snap)
         job = SprtJob(step=step, snapshot=snap, sentinels=sentinels, cfg=self._sprt_cfg,
@@ -234,7 +234,7 @@ class SprtPromotionMixin:
         items = job.plan_items(job.state.next_batch_pairs())
         run_dir = os.path.join(self._eval_root, f"sprt_{job.step}", f"b{job.batch}")
         shutil.rmtree(run_dir, ignore_errors=True)
-        os.makedirs(os.path.join(run_dir, "claims"), exist_ok=True)
+        ensure_subdir(self._model_dir, os.path.join(run_dir, "claims"))
         pool = ShardedEvalPool(items, self._eval_shard_games, step=job.step, mirrored=True)
         pool.write_plan(run_dir)
         return pool, items, run_dir

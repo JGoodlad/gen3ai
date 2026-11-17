@@ -527,7 +527,7 @@ class RustEvalCore:
                                  actions=np.asarray([r[4] for r in gm.rows]), masks=np.stack([r[1] for r in gm.rows]),
                                  cycle={"key": list(gm.key), "game": gm.g, "seed_rule": SD.SCHEMA,
                                         **({"mirrored_pair": MP.SCHEMA, "swapped": gm.swapped} if mirrored else {})},
-                                 turn_limit=self.turn_limit)
+                                 turn_limit=self.turn_limit, root=forensic_root)
                 u.kept[result] += 1
                 st.traces += 1
                 kept_path = prefix
