@@ -83,6 +83,10 @@ with its reasons (N1-P FINDING 7).
 * ``b1_kakuna`` -- BOUNDARY-1's Kakuna meter (:mod:`main.b1.kakuna_rule`): registered contrasts of arm means on
   Kakuna panels, each with an analytic two-way (seeds x teams) interval on the clustering addendum's estimators
   (``our_team`` and ``dyadic`` clusters, the wider decides); POSITIVE / NEGATIVE / SPANS-ZERO per contrast.
+* ``b1_fresh_cell`` -- one fresh cell against one banked BOUNDARY-1 cell (``fresh_cell_frame_2026-11-17/FRAME.md``;
+  :mod:`main.b1.fresh_rule`): B1's simple effect on N with B1's classes at 100M and the frame's continuation rule at
+  50M. A head-to-head cross: the B1 kit (``python -m main.b1.fresh``) plans, plays and decides it, and a
+  ``main.reads`` spec naming it is refused (this package has no head-to-head lane).
 """
 from __future__ import annotations
 
@@ -1519,6 +1523,11 @@ RULES["x60"] = Rule("x60", _X60.RULE_DOCS["x60"], _X60.check, _X60.inputs, _X60.
 from main.b1 import kakuna_rule as _B1K  # noqa: E402  (it imports this module lazily: no cycle at import)
 
 RULES["b1_kakuna"] = Rule("b1_kakuna", _B1K.RULE_DOCS["b1_kakuna"], _B1K.check, _B1K.inputs, _B1K.decide, False)
+
+from main.b1 import fresh_rule as _B1F  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["b1_fresh_cell"] = Rule("b1_fresh_cell", _B1F.RULE_DOCS["b1_fresh_cell"], _B1F.check, _B1F.inputs, _B1F.decide,
+                              False)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
