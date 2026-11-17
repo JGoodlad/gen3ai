@@ -321,7 +321,7 @@ def _attach_run_tb_logger(model, model_dir: str) -> str:
     from agents.training.train_logger import configure
     tb_dir = os.path.join(model_dir, "tb")
     fmts = ["stdout", "tensorboard"] if model.verbose >= 1 else ["tensorboard"]
-    model.set_logger(configure(tb_dir, fmts))
+    model.set_logger(configure(tb_dir, fmts, root=model_dir))
     return tb_dir
 
 

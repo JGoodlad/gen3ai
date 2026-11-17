@@ -63,12 +63,22 @@ def ensure_subdir(run_dir: "str | os.PathLike[str]", name: "str | os.PathLike[st
 
 
 @contextlib.contextmanager
-def fatal_if_gone(where: str) -> Iterator[None]:
+def fatal_if_gone(where: str, run_dir: "str | os.PathLike[str] | None" = None) -> Iterator[None]:
     """Run a run-dir writer's body; a :class:`RunDirGoneError` inside it prints ``[RunDir] FATAL`` (a launcher FATAL
     signature, so the reason surfaces) and is re-raised, ending the run FATAL_CONFIG (3) through the trainer's
-    fail-fast handler, the way a periodic checkpoint into a gone run dir does."""
+    fail-fast handler, the way a periodic checkpoint into a gone run dir does.
+
+    With ``run_dir``, a ``FileNotFoundError`` raised while that dir is gone (a writer that holds its file open, or
+    appends by name, never re-creates the dir: it fails untyped, a CRASH the launcher would restart) is raised as
+    :class:`RunDirGoneError` instead."""
     try:
-        yield
+        try:
+            yield
+        except FileNotFoundError as e:
+            if run_dir is None or os.path.isdir(run_dir):
+                raise
+            raise RunDirGoneError(f"the run dir {os.path.abspath(run_dir)} no longer exists — a write into it "
+                                  f"failed ({e}); nothing re-creates it") from e
     except RunDirGoneError as e:
         print(f"\n[RunDir] FATAL ({where}): {e}", flush=True)
         raise

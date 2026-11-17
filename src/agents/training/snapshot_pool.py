@@ -20,6 +20,7 @@ from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.training.weights_link import link_or_copy
 from main.launcher.ipc import emit
 from utils.atomic_io import atomic_save_model, atomic_write_text
+from utils.run_dir import ensure_subdir
 
 
 _POOL_SEED_ENV = "GEN3AI_POOL_SEED"
@@ -244,7 +245,9 @@ class SnapshotPool:
         # REPLACED since (:meth:`_observe`, :meth:`model_id`).
         self._ident: dict[str, tuple] = {}
         self._revisions: dict[int, int] = {}
-        self.pool_dir.mkdir(parents=True, exist_ok=True)
+        # Made once, one level under its EXISTING parent (the run dir, `pool_seed.pool_dir_for`); every later write
+        # roots at it, so a pool dir gone under a live run (its run deleted) refuses instead of coming back.
+        ensure_subdir(self.pool_dir.parent, self.pool_dir.name)
         self._scan()
 
     # ── Pool population ────────────────────────────────────────────────────
@@ -296,7 +299,8 @@ class SnapshotPool:
         self._record_arch()      # BEFORE the store: a refused add leaves nothing on disk
         how = ""
         if src.resolve() != dst.resolve():
-            mode, _digest, note = link_or_copy(str(src), str(dst), str(twin) if twin is not None else None)
+            mode, _digest, note = link_or_copy(str(src), str(dst), str(twin) if twin is not None else None,
+                                               root=str(self.pool_dir))
             if mode == "hardlink":
                 how = f" [{note}; sha256 verified, the weights are stored once]"
             elif twin is not None:
@@ -422,10 +426,11 @@ class SnapshotPool:
         import json
         data = self.load_summary()
         data.update(fields)
-        atomic_write_text(self.pool_dir / self._SUMMARY_FILE, json.dumps(data, indent=2))
+        atomic_write_text(self.pool_dir / self._SUMMARY_FILE, json.dumps(data, indent=2), root=self.pool_dir)
         if "win_rate_vs_bots" in fields:
             try:
-                atomic_write_text(self.pool_dir / self._WIN_RATE_FILE, f"{float(fields['win_rate_vs_bots']):.6f}\n")
+                atomic_write_text(self.pool_dir / self._WIN_RATE_FILE, f"{float(fields['win_rate_vs_bots']):.6f}\n",
+                                  root=self.pool_dir)
             except (ValueError, TypeError):
                 pass
 
@@ -537,7 +542,7 @@ class SnapshotPool:
             if self._entries:
                 emit(f"⚠️  [SELFPLAY] Pool {self.pool_dir} holds {len(self._entries)} snapshot(s) but no "
                      f"model_config.json: recording THIS run's architecture for them, UNVERIFIED")
-            atomic_write_text(cfg, live)
+            atomic_write_text(cfg, live, root=self.pool_dir)
             return
         if cfg.read_text() == live:
             return                                      # byte-identical: compatible by construction
@@ -555,7 +560,7 @@ class SnapshotPool:
         self._record_arch()      # BEFORE the save: a refused add leaves nothing on disk
         # Atomic (temp file + replace): a worker re-scanning the dir never sees a half-written snapshot, and the
         # name gets a fresh inode, so the save cannot write through a checkpoint this entry is hard-linked to.
-        atomic_save_model(model, str(path))
+        atomic_save_model(model, str(path), root=self.pool_dir)
         entry = SnapshotEntry(path=path, step=step, pinned=pinned)
         self._observe(entry)
         # Replace any existing entry at this step (idempotent re-seed)

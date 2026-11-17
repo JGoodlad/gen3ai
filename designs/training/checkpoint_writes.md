@@ -65,11 +65,16 @@ at a time, so a root that vanishes mid-call raises) or `atomic_write(..., root=r
   persisted snapshot (`eval_traces/step_<N>`), the best model (`link_or_copy(root=)`), the SPRT dirs and
   `snapshot_ladder/`. A cycle dir is made once, by its launcher: `write_plan`, `write_shard_result` and
   `write_core_trace(root=)` create nothing above it.
-- **How a run ends on it:** the periodic and forced saves, the team win-rate instrument and the eval callbacks
-  (`fatal_if_gone`) print `[RunDir] FATAL` (a launcher FATAL signature) and raise; the interrupted save exits 3, never
-  15 (`DeferredAbort.abort` exits with a body's mapped FATAL code).
-- Pinned by `utils/run_dir_test.py`, `main/train/run_dir_gone_test.py` and `agents/training/eval_run_dir_gone_test.py`,
-  each failing on a revert.
+- **The pool, TensorBoard, the value sidecar:** `SnapshotPool` makes its dir once, one level under the run dir, and
+  roots every write there; `configure(root=)` and the sidecar header make their dirs with `ensure_subdir`. An OPEN
+  `SummaryWriter` never re-creates its dir (measured: its flush raises `FileNotFoundError`), nor does the sidecar's
+  append; `fatal_if_gone(where, run_dir)` types that failure as `RunDirGoneError`, so the run ends 3, not a restarted
+  CRASH (1).
+- **How a run ends on it:** the periodic and forced saves, the team win-rate instrument, the eval callbacks, the TB
+  flush and the sidecar (`fatal_if_gone`) print `[RunDir] FATAL` (a launcher FATAL signature) and raise; the
+  interrupted save exits 3, never 15 (`DeferredAbort.abort` exits with a body's mapped FATAL code).
+- Pinned by `utils/run_dir_test.py`, `main/train/run_dir_gone_test.py`, `agents/training/eval_run_dir_gone_test.py` and
+  `agents/training/pool_tb_run_dir_gone_test.py`, each failing on a revert.
 
 ## Audit: every write, before and after (2026-10-20, `dccb920e`)
 

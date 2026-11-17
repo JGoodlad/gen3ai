@@ -50,6 +50,8 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, TextIO, Tuple,
 import numpy as np
 import torch as th
 
+from utils.run_dir import ensure_subdir, fatal_if_gone
+
 DEBUG, INFO, WARN, ERROR, DISABLED = 10, 20, 30, 40, 50
 
 #: The output formats `configure` builds (sb3 also had log / json / csv — never used here).
@@ -278,14 +280,23 @@ class TensorBoardOutputFormat:
     """``<folder>``'s event file: a scalar per numeric value, text per string, a histogram per tensor /
     array, at the dump's step; flushed every dump (sb3's, call for call)."""
 
-    def __init__(self, folder: str):
+    _root: Optional[str] = None       # the run dir a flush failure is judged against (`configure(root=)`)
+
+    def __init__(self, folder: str, root: Optional[str] = None):
         from torch.utils.tensorboard import SummaryWriter
 
         self.writer = SummaryWriter(log_dir=folder)
         self._is_closed = False
+        self._root = root
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Excluded], step: int = 0) -> None:
         assert not self._is_closed, "The SummaryWriter was closed, please re-create one."
+        # An OPEN SummaryWriter never re-creates its dir: with the run dir gone its flush raises FileNotFoundError
+        # (measured, tensorboard 2.20). Typed here, so the run ends FATAL_CONFIG (3), not a CRASH the launcher restarts.
+        with fatal_if_gone("tensorboard", self._root):
+            self._write(key_values, key_excluded, step)
+
+    def _write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Excluded], step: int) -> None:
         for key, value, excluded in paired(key_values, key_excluded):
             if excluded is not None and "tensorboard" in excluded:
                 continue
@@ -429,7 +440,8 @@ class Logger:
             fmt.close()
 
 
-def configure(folder: Optional[str] = None, format_strings: Sequence[str] = ()) -> Logger:
+def configure(folder: Optional[str] = None, format_strings: Sequence[str] = (), *,
+              root: Optional[str] = None) -> Logger:
     """A logger writing ``format_strings`` (a subset of `FORMATS`): ``stdout`` the table on ``sys.stdout``,
     ``tensorboard`` an event file in ``folder``. ``configure(None, [])`` is the NULL logger (records,
     reads and dumps; writes nothing, creates nothing — the K9 golden's and the startup dry update's)."""
@@ -444,8 +456,11 @@ def configure(folder: Optional[str] = None, format_strings: Sequence[str] = ()) 
         else:
             if folder is None:
                 raise ValueError("a tensorboard logger needs a folder")
-            os.makedirs(folder, exist_ok=True)
-            outs.append(TensorBoardOutputFormat(folder))
+            if root is not None:                 # a run's TB dir: under its EXISTING run dir, never re-creating it
+                ensure_subdir(root, folder)
+            else:
+                os.makedirs(folder, exist_ok=True)
+            outs.append(TensorBoardOutputFormat(folder, root=root))
     logger = Logger(folder=folder, output_formats=outs)
     if formats and formats != ["stdout"]:
         logger.log(f"Logging to {folder}")

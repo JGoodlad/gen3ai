@@ -124,6 +124,7 @@ import numpy as np
 from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.critic_mode import CRITIC_UNRECORDED, is_winprob
+from utils.run_dir import ensure_subdir, fatal_if_gone
 from agents.observation.constants import (
     CLOCK_OFFSET_IN_GLOBAL, MAX_TURNS, OFFSET_GLOBAL,
 )
@@ -266,7 +267,7 @@ class ValueSidecarCallback(BaseCallback):
             return
         path = sidecar_path(self._run_dir)
         resumed = os.path.exists(path) and os.path.getsize(path) > 0
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        ensure_subdir(self._run_dir, SIDECAR_DIRNAME)      # under the EXISTING run dir; never re-creates it
         header = {
             "kind": "header",
             "schema": SIDECAR_SCHEMA,
@@ -338,7 +339,8 @@ class ValueSidecarCallback(BaseCallback):
         if rows[0].size == 0:
             return
 
-        self._ensure_header()
+        with fatal_if_gone("value sidecar", self._run_dir):
+            self._ensure_header()
         winprob = is_winprob(self._critic_mode)
         ts, es = rows
         v_sel = values[ts, es].astype(np.float64)
@@ -377,8 +379,9 @@ class ValueSidecarCallback(BaseCallback):
             }
             out.append(json.dumps(row, separators=(",", ":")))
 
-        # ONE write per rollout, off the hot path — never a write per row.
-        with open(sidecar_path(self._run_dir), "a") as f:
+        # ONE write per rollout, off the hot path — never a write per row. An append into a gone run dir fails (it
+        # never re-creates it); typed, so the run ends FATAL_CONFIG (3) rather than a restarted CRASH.
+        with fatal_if_gone("value sidecar", self._run_dir), open(sidecar_path(self._run_dir), "a") as f:
             f.write("\n".join(out) + "\n")
         self.rows_written += len(out)
 

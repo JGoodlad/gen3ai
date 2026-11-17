@@ -128,6 +128,7 @@ def test_the_win_logit_is_the_EXACT_inverse_link_under_winprob_and_NULL_under_sh
         assert r["win_logit"] == pytest.approx(np.log(0.75 / 0.25), abs=1e-5)
 
     shaped = tmp_path / "shaped"
+    shaped.mkdir()                              # a run dir exists before its writers run (`utils.run_dir`)
     cb2 = ValueSidecarCallback(str(shaped), fraction=1.0, critic_mode="shaped")
     _run(cb2, _model(4, 2, values=vals))
     header, rows = read_sidecar(str(shaped))
@@ -150,6 +151,7 @@ def test_a_saturated_value_stays_valid_JSON(tmp_path):
 def test_the_sampling_fraction_is_honoured_and_the_seed_is_DETERMINISTIC(tmp_path):
     a, b, c = tmp_path / "a", tmp_path / "b", tmp_path / "c"
     for d, seed in ((a, 3), (b, 3), (c, 4)):
+        d.mkdir()                               # a run dir exists before its writers run (`utils.run_dir`)
         cb = ValueSidecarCallback(str(d), fraction=0.25, seed=seed, critic_mode="winprob")
         _run(cb, _model(16, 8))                # 128 cells → 32 rows
     ra, rb, rc = _rows(a), _rows(b), _rows(c)
@@ -165,6 +167,7 @@ def test_the_sample_for_a_rollout_does_not_depend_on_HOW_MANY_ran_before_it(tmp_
     A stream-seeded sampler would silently score different states after every launcher restart,
     and a three-hour restart interval means that is most of a run.
     """
+    (tmp_path / "fresh").mkdir(), (tmp_path / "cont").mkdir()   # run dirs exist before their writers run
     fresh = ValueSidecarCallback(str(tmp_path / "fresh"), fraction=0.5, critic_mode="winprob")
     fresh._rollout_index = 2                    # as if resuming at rollout 2
     _run(fresh, _model(8, 4))
