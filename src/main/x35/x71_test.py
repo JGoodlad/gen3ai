@@ -20,11 +20,23 @@ from utils.paths import repo_path
 
 DIR = repo_path("designs/research_state/measurements/x71_exploitability_probe_2026-11-16")
 PIN = "9e97cad5709da21a1f9d4d8846096c87eb17b1d0"
-MODELS = "/home/goodlad/dev/gen3ai/models"
 #: tag -> (the target run, its final step): the three targets that existed at registration
 EXISTING = {"c0": ("rb_x35_c0_s3501", 300_061_940), "x67": ("rb_x35_x67ent_s6701", 300_021_355),
             "swap": ("rb_x35_ce3dswap_s7321", 300_061_272)}
 SEEDS = (7111, 7112)
+
+
+def _banked_models_root() -> str:
+    """The models directory the registration's argvs were written against, READ from the banked record (the first
+    committed argv's ``--model``) and never typed here: an absolute home path as a value is correct on one machine
+    only (``utils/paths_test.py``). Every other banked argv and transcript is then checked against this one root."""
+    argv = (DIR / "argv_x71_c0_s7111.txt").read_text().split()
+    root, run, name = argv[argv.index("--model") + 1].rsplit("/", 2)
+    assert (run, name) == ("rb_x35_c0_s3501", "final_model.zip") and root.startswith("/") and root.endswith("/models")
+    return root
+
+
+MODELS = _banked_models_root()
 
 
 def _load(name: str):

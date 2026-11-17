@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-31,750-line file. **The ledger itself is append-only and is never edited by this**;
+31,808-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1014 headings · 959 dated · 2026-08-01 → 2026-11-16 · ledger 31,750 lines.**
+**1015 headings · 960 dated · 2026-08-01 → 2026-11-16 · ledger 31,808 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1034,3 +1034,4 @@ rename.
   - `L31597` · `2026-11-16` · REGISTRATION · **The Kakuna read of the banked entropy finals REGISTERED (full tier, blind, before any game): X67's three finals and CE-3d's three against the eight C0 finals, each against Kakuna on `forum72` and `heldout72_hpfix`, 1,200 games a final a panel (33,600 games) at one pin; rule `b1_kakuna`; it CONFIRMS or CONTRADICTS the two in-house PASS verdicts and decides neither**
   - `L31646` · `2026-11-16` · AMENDMENT · **X70 PREREG Amendment 1 (blind: before any X70 fork, game or read): the GO conditions are written down, and the three crosses move to the GPU card under a one-venue-a-cross rule that the driver and the reader enforce; the statistic, rule, pairs and power are unchanged; the on-card rate and engine start stay UNVERIFIED (the ≤ 10 GPU-min check is a written command, NOT run)**
   - `L31698` · `2026-11-16` · REGISTRATION · **X71, the exploitability probe of the entropy arms (full tier; blind: before any X71 training step or game): two fresh 5M best responders against one final each of C0, X67, the CE-3d swap and later X70; the class compares the gap the responders LEARNED against an arm's final with C0's; NOT LAUNCHED**
+  - `L31751` · `2026-11-16` · REGISTRATION · **X35-A3 (LG-1 / CE-3c), the league's first arm with main exploiters folded back in (full tier; blind: before any A3 training step, game or read): three 5M exploiters of P\*, then P\* + 20M with them as 40 % of its opponents, hardest first; DECIDED by the change in a fresh responder's gap against C0; NOT LAUNCHED**

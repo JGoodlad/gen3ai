@@ -143,10 +143,10 @@ def test_a_batch1_run_without_a_recorded_pin_holds_and_other_batches_are_not_jud
     stage, models = tmp_path / "stage", tmp_path / "models"
     stage.mkdir()
     _run(models, "rb_x35_c0_s3502")                                       # no metadata.json
-    _run(models, "rb_x35_a3mx_s3501", OTHER)                              # a later batch's run (its own pin)
+    _run(models, "rb_x35_a6lx_s3501", OTHER)                              # an unregistered kit's run (its own pin)
     ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)
     assert not ok and any("no recorded pin" in x for x in lines)
-    assert any("not a side-pinned arm" in x and "rb_x35_a3mx_s3501" in x for x in lines)
+    assert any("not a side-pinned arm" in x and "rb_x35_a6lx_s3501" in x for x in lines)
     (models / "rb_x35_c0_s3502").rename(models / "rb_x35_c0_s3502.POOLSEED_FAIL")   # moved aside: still batch 1
     ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)
     assert not ok and any("POOLSEED_FAIL" in x for x in lines)

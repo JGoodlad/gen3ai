@@ -146,6 +146,21 @@ its GO.
   at 3 pp it sees +10 pp with 0.55. **Cost** ≈ 8.4 GPU-h (eight responders) and 64,000 CPU games (≈ 10.5 lane-h at
   an UNVERIFIED rate). The six argvs whose target exists pass `checkargs` at the pin; the launcher's dry run stops
   only at this session's hidden card and nice 19. No kit arm or chain items exist for the responders (owed).
+- **X35-A3, the league's first arm with main exploiters folded back in: REGISTERED 2026-11-16, NOT LAUNCHED**
+  ([`research_state/measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md`](research_state/measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md), full tier; the post-B1 queue's Q4; CE-3c / LG-1).
+  Two phases at the production side pin `f4b25238`, which C0 shares. Phase 1: three main exploiters of P\* (kit arm
+  `a3_mx`, seeds 3511–3513, +5M, P\* the only opponent). Phase 2: three forks of P\* (kit arm `a3`, seeds 3501–3503,
+  +20M) that meet those exploiters in 40 % of their self-play episodes, weighted toward the ones they lose to. A
+  coded gate between the phases holds phase 2 unless the exploiters measurably beat P\*. **DECIDES:** E, the change
+  in exploitability: one fresh 5M reader per final, three A3 finals against three C0 finals, 4,000 greedy games a
+  reader, Welch at 90 %; the head-to-head cross against the eight C0 finals and the population score are guards
+  that can withhold a class. Classes `ROBUSTNESS-GAIN` / `TRADE` / `NO-FALL` / `INCONCLUSIVE`. **Power:** a fall of
+  4 pp is seen with probability 0.90 and of 3 pp with 0.70 if reader units differ by 1 pp (UNVERIFIED; no pair of
+  readers has run); a fall of 1–2 pp is not visible. **Cost** ≈ 22 GPU-h (3.15 + 12.7 + 6.3 for the readers; the
+  queue proposal's 15–18 did not count the readers) and ≈ 34–41 CPU lane-h. Phase 1 is launch-ready (stage check,
+  `checkargs` at the pin, the kit's dry run with the card hidden, the arm chain's plan); phase 2 waits for the
+  record only phase 1 can produce. OWED before the read: six reader kit arms and the read's driver. Every class
+  licenses at most a proposal to the owner.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

@@ -133,6 +133,14 @@ look; a record for another arm or look is a refusal.
   swap's own training pin :data:`CE3D_PIN` (:func:`ce3d_pin_check`, the same two-commit check). Its comparator is the
   three banked swap forks at that pin. Held by :data:`X70_STAGES`; ONE look, no look 2: :func:`stage_status` gives it
   the AM-8 side gate and its PREREG. Read by its PREREG's own cross: no ``reads/`` record, no :data:`READ_LABEL`.
+* **X35-A3, THE MAIN EXPLOITERS FOLDED BACK IN** (``x35_a3_main_exploiters_2026-11-16/PREREG.md``,
+  :data:`A3_PREREG`; LG-1 / CE-3c): the kit's two-phase pair ``a3_mx`` (three 5M main exploiters of P*, seeds
+  3511-3513) and ``a3`` (P* +20M with those three as stable opponents, seeds 3501-3503), both at the SIDE'S pin
+  (:data:`SIDE_PINNED_ARMS`). Held by :data:`A3_STAGES`, never merged into :data:`STAGES`; ONE look, no look 2:
+  :func:`_a3_status` REFUSES every other kit seed (``a3`` 3504 / 3505), is PENDING on the AM-8 side gate and until
+  the PREREG is in the checkout, and holds a phase-2 fork PENDING until the write-once phase-1 record
+  ``<stage>/phase1_a3.json`` exists (the operator writes it after the three exploiters END and pass the PREREG's
+  phase-boundary rule), REFUSED if it names any run but the three registered exploiters.
 * **X63-C, THE X63 CONTROL REPLICATE** (``reviews/x63_review_2026-10-27.md`` B1 fix 3; PREREG
   ``x63c_control_replicate_2026-10-28/PREREG.md``, :data:`X63C_PREREG`): ``x63c`` (:data:`X63C_ARMS`) is X26c's
   recorded argv with only the seed (6302) and run name changed, a +100M continuation from X26 @380M (not P*), with no
@@ -169,7 +177,7 @@ look; a record for another arm or look is a refusal.
 DECLARED HERE (choices the rulings leave open; each a FINDING of this build):
 * AM-1's "every existing ``rb_x35*`` run" is read as every SIDE-PINNED run OF THE LAUNCH'S SIDE
   (:func:`side_pinned_run_names`: batch 1, batch 2 and the G-E readers, a moved-aside ``<run>.<SUFFIX>`` included).
-  Any other ``rb_x35*`` run (the unregistered A3 / A6 kits) is listed as not judged here.
+  Any other ``rb_x35*`` run (the unregistered A6 kit) is listed as not judged here.
 * The pin file is ``key: value`` text with a ``side:`` line; its T62 token must be one of the side's
   :data:`T62_BY_SIDE` (the battery DECIDED FP32_ALT, 2026-10-20: production no longer launches under ``PENDING`` /
   ``ADOPT``, C1 (a) is superseded; the toy's ``NA_TOY`` says the toy makes no tau-solve call).
@@ -536,6 +544,24 @@ CE3D_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 X70_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X70", (("x70", 7331), ("x70", 7332), ("x70", 7333), ("x70", 7334))),
 )
+# ---- X35-A3 (2026-11-16): its own block; nothing above is rewritten ---------------------------------------------
+#: X35-A3 = LG-1 = CE-3c (PREREG x35_a3_main_exploiters_2026-11-16 §3): the kit's two-phase pair. ``a3_mx`` = three
+#: 5M main exploiters of P* (phase 1); ``a3`` = P* +20M with those three as 40 % of its self-play (phase 2). Both
+#: are production arms at the SIDE'S pin, read against the banked C0 forks.
+A3_ARMS = ("a3_mx", "a3")
+#: A3's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
+A3_PREREG = "designs/research_state/measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md"
+#: The phase-1 record a phase-2 fork waits for, in the stage folder (``launch_x35.sh``'s default ``--phase1``).
+A3_PHASE1_FILE = "phase1_a3.json"
+#: A3's stages: ONE look each, on the orchestrator's GO. Phase 1's three seeds are NEW; phase 2 deliberately takes
+#: C0's first three seeds (the batch-1 convention: arm k's seed s is read beside C0's seed s). The kit's other
+#: ``a3`` seeds (3504, 3505) are NOT registered. Never merged into STAGES.
+A3_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("A3_MX", (("a3_mx", 3511), ("a3_mx", 3512), ("a3_mx", 3513))),
+    ("A3", (("a3", 3501), ("a3", 3502), ("a3", 3503))),
+)
+SIDE_PINNED_ARMS = SIDE_PINNED_ARMS + A3_ARMS       # judged by pin-check with the side's other runs
+# ---- end of the X35-A3 block ------------------------------------------------------------------------------------
 #: X63-C's stage (2026-10-28, review B1 fix 3): one seed, on the orchestrator's GO once its PREREG exists. Its comparators
 #: are X26c (s2601) and X63's own continuation, not C0. Never merged into STAGES.
 X63C_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
@@ -1278,6 +1304,46 @@ def arm_prereg(arm: str) -> Tuple[str, str]:
             "ce3d_swap": (CE3D_PREREG, "CE-3d"), "x70": (X70_PREREG, "X70")}[arm]
 
 
+def _a3_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
+    """X35-A3's stage-check (PREREG x35_a3_main_exploiters_2026-11-16 §3): only the registered ``(arm, seed)`` pairs
+    of :data:`A3_STAGES` (any other kit seed is REFUSED: one look, no look 2); then the AM-8 side gate; then the
+    PREREG in this checkout (the orchestrator's GO); and a phase-2 fork (``a3``) is PENDING until the phase-1 record
+    ``<stage>/phase1_a3.json`` exists and REFUSED if that record names anything but the three registered exploiter
+    runs (a stand-in built for a dry run never launches phase 2). The finals' sha256 and steps are the kit's to judge
+    (``phase1-record`` writes them once, ``verify-phase1`` re-reads them, ``build_argv`` refuses without a record)."""
+    name = next((n for n, forks in A3_STAGES if (arm, seed) in forks), None)
+    if name is None:
+        registered = sorted(s for _, forks in A3_STAGES for a, s in forks if a == arm)
+        return REFUSED, (f"{arm} s{seed} is not registered by the A3 PREREG (its seeds for {arm}: {registered}): "
+                         "one look, no look 2")
+    filled, why = side_gate(stage, "production")
+    if not filled:
+        return PENDING, why
+    from utils.paths import repo_path
+
+    if not repo_path(A3_PREREG).is_file():
+        return PENDING, f"{arm} s{seed}: its PREREG {A3_PREREG} is not in this checkout yet"
+    if arm == "a3":
+        record = os.path.join(stage, A3_PHASE1_FILE)
+        if not os.path.isfile(record):
+            return PENDING, (f"{arm} s{seed}: phase 2 waits for the phase-1 record {A3_PHASE1_FILE} in the stage folder "
+                             "(kit phase1-record, after the three a3_mx exploiters END and pass the PREREG's "
+                             "phase-boundary rule)")
+        from main.x35.kit import run_name
+
+        want = [run_name("a3_mx", s) for a, s in dict(A3_STAGES)["A3_MX"]]
+        try:
+            with open(record, encoding="utf-8") as fh:
+                doc = json.load(fh)
+            got = [e.get("run") for e in doc["exploiters"]]
+        except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+            return REFUSED, f"{arm} s{seed}: the phase-1 record {A3_PHASE1_FILE} is unreadable ({exc})"
+        if doc.get("arm") != "a3_mx" or got != want:
+            return REFUSED, (f"{arm} s{seed}: the phase-1 record {A3_PHASE1_FILE} names {got} (arm {doc.get('arm')!r}), "
+                             f"not the three registered exploiters {want}: a stand-in record never launches phase 2")
+    return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {name}, A3 PREREG present)"
+
+
 def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
     """ALLOWED / PENDING / REFUSED for ``arm`` × ``seed`` now (module docs), with the reason. Production forks are
     PENDING until the side's FP32_ALT commit is named (AM-8); the toy side has no such condition."""
@@ -1307,6 +1373,8 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
             return PENDING, f"{arm} s{seed}: the PREREG does not name N4_PIN {N4_PIN} in full yet (its pin NOTE)"
         return ALLOWED, (f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, N4 PREREG: one look, "
                          f"N4_PIN {N4_PIN[:12]}; the orchestrator's GO)")
+    if arm in A3_ARMS:                       # X35-A3: its own registered seeds, PREREG and phase order
+        return _a3_status(stage, arm, seed)
     if arm in PREREG_GATED_ARMS:             # X63-C / X63-U / X67 / CE-3d / X70: the side gate, then its PREREG (the GO)
         filled, why = side_gate(stage, "production")
         if not filled:

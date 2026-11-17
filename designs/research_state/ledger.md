@@ -31747,3 +31747,61 @@ arm chain launches kit arms only); until then the validated path is the direct l
 View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X71).
 
 Tag: **REGISTRATION · X71 exploitability probe · 4 targets × 2 responders @ 5M · MORE-EXPLOITABLE / LESS-EXPLOITABLE / NOT-MORE-BY-BAR / UNRESOLVED / INCONCLUSIVE · +7.5 pp seen 0.92 at a 1 pp responder spread (spread UNVERIFIED) · seeds 7111–7112 at `ce3d-pin-9e97cad5` · ≈ 8.4 GPU-h · not launched · moves no recipe**
+
+### 2026-11-16 · REGISTRATION · **X35-A3 (LG-1 / CE-3c), the league's first arm with main exploiters folded back in (full tier; blind: before any A3 training step, game or read): three 5M exploiters of P\*, then P\* + 20M with them as 40 % of its opponents, hardest first; DECIDED by the change in a fresh responder's gap against C0; NOT LAUNCHED**
+
+**Why.** A fresh best responder beats P\* by +11.1 pp [+8.3, +13.8] (R0, 2026-10-22), while every plain population
+lever tried at this plateau read NULL. The league path's first arm with exploiters (LG-1) asks whether training
+against exploiters built to beat P\* closes that hole; it is also the gate of the toy league continuation X57. The
+post-B1 queue places it (its Q4) after X70 and X71 on the card.
+
+**What is registered** (`measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md`).
+
+- **Two phases at the production side pin `f4b25238`** (C0's pin, on main). Phase 1: three main exploiters of P\*
+  (kit arm `a3_mx`, `rb_x35_mx_s3511`–`s3513`, +5M, P\* the only opponent). Phase 2: three forks of P\* (kit arm
+  `a3`, `rb_x35_a3mx_s3501`–`s3503`, +20M) that meet those exploiters in 40 % of their self-play episodes, weighted
+  toward the ones they lose to.
+- **The phase-boundary gate (coded):** each exploiter final × P\*, 1,000 mirrored pairs; phase 2 launches only if
+  the 90 % interval of the exploiters' mean edge has its lower end above 0. Otherwise phase 2 does not launch under
+  this registration.
+- **DECIDES: E, the change in exploitability.** One fresh 5M reader per final (the G-E reader's argv), three A3
+  finals against C0's s3501–s3503, 4,000 fresh greedy games a reader in R0's reader's regime; Welch at 90 %. "The
+  gap FALLS" iff the upper end < 0. This amends the FORM of the registered R2 (one against one, Newcombe) for A3
+  only (PREREG §6); the phase-boundary gate is an addition to the staged design.
+- **Guards (withhold a class, never grant one):** the head-to-head cross against the eight C0 finals (FAIL iff the
+  95 % upper end < −2.0 pp) and the population score R1 (LOSS iff the upper end < −2.0 pp).
+- **Classes:** `ROBUSTNESS-GAIN`, `TRADE`, `NO-FALL` (label `MORE-EXPLOITABLE`), `INCONCLUSIVE`. Every class licenses
+  at most a proposal to the owner; the licence at stake is X57's.
+
+**Power** (`power.log`, `power_gate.log`, `power_guards.log`). The spread between reader units is **UNVERIFIED**
+(no pair of readers has run) and is a parameter: at 1 pp the read sees a 4 pp fall with probability 0.90 and a
+3 pp fall with 0.70; at 2 pp it needs 6 pp for 0.82; a fall of 1–2 pp is not visible under any assumption. The
+false-alarm rate is ≤ 4.2 %. The gate passes a true +3 pp edge 0.89 / 0.71 / 0.44 at an exploiter spread of 0 / 1 /
+2 pp, and exploiters with no edge ≤ 3.7 %.
+
+**What was executed** (CPU only, no lease). Phase 1: the kit's stage check, `checkargs` at the pin, the kit's dry
+run with the card hidden, and `arm_chain plan --check-pins --describe` on a scratch chain (PLAN OK; re-run at main
+`9970d4286`, whose plan judges each arm's own pin and its pinned parser: PLAN OK, no `off_main_pins` needed,
+`arm_chain_plan_a3_main_9970d4286.txt`). Phase
+2: the same checks on a committed STAND-IN record (banked exploiters in place of the three that do not exist). The
+rule's self-check reproduces three banked results. **Not executed / UNVERIFIED:** any exploiter, fork, reader or
+game; the dry runs with the card visible; an unpinned 5M exploiter's edge and rate; the reader on an A3 final.
+
+**Built with it.** `src/main/x35/batch.py` gates both arms (registered seeds only; PENDING without the PREREG;
+phase 2 PENDING without the phase-1 record, REFUSED on a record that does not name the three registered exploiter
+runs). Before, `stage-check` allowed either arm at any kit seed and `pin-check` judged neither.
+
+**Owed before the read** (PREREG §11): six reader kit arms, the read's driver, the cells files of the gate, G-F and
+R1. Two kit gaps are reported, not fixed: the arm chain's `plan --describe` refuses every phase-2 item (its offline
+describe passes no phase-1 record), and `kit verify-phase1` alone accepts any three files that hash.
+
+**Cost.** ≈ 22 GPU-h of training (3.15 + 12.7 + 6.3 for the six readers; the queue proposal's 15–18 did not count
+the readers) and ≈ 34–41 CPU lane-h.
+
+**Record:** `measurements/x35_a3_main_exploiters_2026-11-16/` (`PREREG.md`, `a3_rule.py`, `selfcheck.log`, the
+`power*.log` files, the argv / checkargs / dry-run transcripts, `kit_checks_a3.txt`, `arm_chain_plan_a3.txt`,
+`chain_items_a3.json`, `dose_c0.txt`); `src/main/x35/batch.py`, `src/main/x35/a3_test.py`.
+View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X35-A3, the CE-3c and MF-7 rows),
+`design_alphastar_league_path.md` (the status line, §6 row 2, §8).
+
+Tag: **REGISTRATION · X35-A3 main exploiters folded in · 3 exploiters @ 5M → 3 forks @ 20M at share 0.4, PFSP · gate EXPLOITS · E = change in a fresh reader's gap vs C0 · ROBUSTNESS-GAIN / TRADE / NO-FALL / INCONCLUSIVE · 4 pp fall seen 0.90 at a 1 pp unit spread (UNVERIFIED) · pin `f4b25238` · ≈ 22 GPU-h · not launched · moves no recipe**
