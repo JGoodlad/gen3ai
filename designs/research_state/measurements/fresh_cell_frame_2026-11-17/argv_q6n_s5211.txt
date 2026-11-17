@@ -1,0 +1,1 @@
+--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5211 --device cuda --log-level periodic --run-name rb_q6n_s5211

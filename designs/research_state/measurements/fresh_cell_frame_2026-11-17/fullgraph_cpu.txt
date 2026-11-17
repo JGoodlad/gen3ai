@@ -1,0 +1,45 @@
+# main.compile_inventory's fullgraph_check.run(batch=16, backend='eager') with main.fresh_checkpoint._production_policy_kwargs bound to each argv's resolved config (scratch harness, no tool change); clean detached checkout of the pin 15136b61634b667bb9da5ccc6647ff9265238829, CPU, torch 2.8.0+cu126, 2026-11-17
+argv_C.txt: d_model 128, policy_readout tower
+   extractor.forward | train_grad -> OK
+   extractor.forward | train_nograd -> OK
+   extractor.forward | eval_nograd -> OK
+   extractor via Module.__call__ | train_grad -> OK
+   extractor via Module.__call__ | train_nograd -> OK
+   extractor via Module.__call__ | eval_nograd -> OK
+   policy.extract_features | train_grad -> OK
+   policy.extract_features | train_nograd -> OK
+   policy.extract_features | eval_nograd -> OK
+   policy(obs, action_masks) [rollout] | eval_nograd -> OK
+argv_W.txt: d_model 256, policy_readout tower
+   extractor.forward | train_grad -> OK
+   extractor.forward | train_nograd -> OK
+   extractor.forward | eval_nograd -> OK
+   extractor via Module.__call__ | train_grad -> OK
+   extractor via Module.__call__ | train_nograd -> OK
+   extractor via Module.__call__ | eval_nograd -> OK
+   policy.extract_features | train_grad -> OK
+   policy.extract_features | train_nograd -> OK
+   policy.extract_features | eval_nograd -> OK
+   policy(obs, action_masks) [rollout] | eval_nograd -> OK
+argv_Q6N.txt: d_model 128, policy_readout trunk
+   extractor.forward | train_grad -> OK
+   extractor.forward | train_nograd -> OK
+   extractor.forward | eval_nograd -> OK
+   extractor via Module.__call__ | train_grad -> OK
+   extractor via Module.__call__ | train_nograd -> OK
+   extractor via Module.__call__ | eval_nograd -> OK
+   policy.extract_features | train_grad -> OK
+   policy.extract_features | train_nograd -> OK
+   policy.extract_features | eval_nograd -> OK
+   policy(obs, action_masks) [rollout] | eval_nograd -> OK
+argv_Q6W.txt: d_model 256, policy_readout trunk
+   extractor.forward | train_grad -> OK
+   extractor.forward | train_nograd -> OK
+   extractor.forward | eval_nograd -> OK
+   extractor via Module.__call__ | train_grad -> OK
+   extractor via Module.__call__ | train_nograd -> OK
+   extractor via Module.__call__ | eval_nograd -> OK
+   policy.extract_features | train_grad -> OK
+   policy.extract_features | train_nograd -> OK
+   policy.extract_features | eval_nograd -> OK
+   policy(obs, action_masks) [rollout] | eval_nograd -> OK

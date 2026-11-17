@@ -1,0 +1,37 @@
+# learner parameter census of FRESH builds at the pin 15136b61634b667bb9da5ccc6647ff9265238829, CPU, 2026-11-17: main.fresh_checkpoint.build_fresh_model(0, args=<the argv's main.b1.arms.resolved_namespace>); the eight largest top-two-level groups
+argv_C.txt (B1 C): total 2,609,183 (d_model 128, policy_readout tower)
+    features_extractor.projection               590,336
+    mlp_extractor.policy_net                    525,312
+    features_extractor.team_transformer         401,536
+    features_extractor.hidden_opp_belief        199,808
+    features_extractor.cls_pool                 199,296
+    features_extractor.pokemon_encoder          131,424
+    features_extractor.belief_head              103,456
+    features_extractor.hypothesis_builder        87,152
+argv_W.txt: total 6,258,079 (d_model 256, policy_readout tower)
+    features_extractor.team_transformer       1,589,504
+    features_extractor.projection             1,180,160
+    features_extractor.hidden_opp_belief        792,832
+    features_extractor.cls_pool                 791,808
+    mlp_extractor.policy_net                    525,312
+    features_extractor.pokemon_encoder          338,144
+    features_extractor.belief_head              206,112
+    features_extractor.item_belief_head         154,712
+argv_Q6N.txt: total 1,547,039 (d_model 128, policy_readout trunk)
+    features_extractor.team_transformer         401,536
+    features_extractor.hidden_opp_belief        199,808
+    features_extractor.cls_pool                 199,296
+    features_extractor.pokemon_encoder          131,424
+    features_extractor.belief_head              103,456
+    features_extractor.hypothesis_builder        87,152
+    features_extractor.item_belief_head          77,656
+    features_extractor.move_belief               54,032
+argv_Q6W.txt: total 4,894,879 (d_model 256, policy_readout trunk)
+    features_extractor.team_transformer       1,589,504
+    features_extractor.hidden_opp_belief        792,832
+    features_extractor.cls_pool                 791,808
+    features_extractor.pokemon_encoder          338,144
+    features_extractor.belief_head              206,112
+    features_extractor.policy_query             198,144
+    features_extractor.item_belief_head         154,712
+    features_extractor.hypothesis_builder       135,408

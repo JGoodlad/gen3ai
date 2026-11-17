@@ -1,0 +1,9 @@
+# FRAME.md § 2 item 2: resolved-config diff of the arm against B1 arm 'w' (seed 5103's argv), in a clean detached checkout of the pin 15136b61634b667bb9da5ccc6647ff9265238829 [CUDA_VISIBLE_DEVICES=""], 2026-11-17
+@50000000: argv: --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --policy-readout trunk --checkpoint-every-steps 1000000 --steps 50000000 --seed 5214 --device cuda --log-level periodic --run-name rb_q6w_s5214
+   policy_readout: control='tower' arm='trunk'
+   run_name: control='rb_b1w_s5103' arm='rb_q6w_s5214'
+   seed: control=5103 arm=5214
+@100000000: argv: --restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --policy-readout trunk --checkpoint-every-steps 1000000 --steps 100000000 --seed 5214 --device cuda --log-level periodic --run-name rb_q6w_s5214
+   policy_readout: control='tower' arm='trunk'
+   run_name: control='rb_b1w_s5103' arm='rb_q6w_s5214'
+   seed: control=5103 arm=5214
