@@ -410,7 +410,7 @@ def test_a_holder_past_the_long_hold_bar_is_flagged_in_status_and_warned_once(sl
         st = HS.collect(now=time.time() + 2000.0)
         row = st["slots"][0]
         assert row["long_hold"] is True
-        assert HS.LONG_HOLD_TAG in HS.format_human(st) and "LONG HOLD (policy: <= 45 min per chunk)" in HS.format_human(st)
+        assert HS.LONG_HOLD_TAG in HS.format_human(st) and "LONG HOLD (policy: <= 45 min per chunk" in HS.format_human(st)
     assert timer.cancelled, "the long-hold timer outlived the slot"
     timer.fire()
     assert len([ln for ln in lines if HS.LONG_HOLD_TAG in ln]) == 1, "a released slot's timer warned again"

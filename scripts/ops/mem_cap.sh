@@ -37,7 +37,9 @@ only a job that took a slot of its own: not one that needed none, bypassed (BLOC
 inside a holder. A declaration above 600 s, or --term-grace above 60 s, is refused (exit 2).
 
 RUN-TIME BOUND: --max-run-s S (S > 0, any lane) stops the job S seconds after ITS COMMAND STARTS: the wait
-for a heavy slot (or the gate lock) is never counted. SIGTERM, then SIGKILL of the whole scope after
+for a heavy slot (or the gate lock) is never counted. It is also how an INDIVISIBLE job holds a slot past the 45-minute
+chunk: the slot records S, --status shows BOUND<=S (what is left), and S <= 2 h is within policy (a hold past 60 min
+that nobody bounded, or a bound above 2 h, is flagged LONG HOLD: chunk it). SIGTERM, then SIGKILL of the whole scope after
 --term-grace; prints "RUN-TIME BOUND ..." and exits 89. NEVER put `timeout N` OUTSIDE a job that may
 queue: it counts the queue wait, fires while the job is still waiting and loses its place. Use this.
 

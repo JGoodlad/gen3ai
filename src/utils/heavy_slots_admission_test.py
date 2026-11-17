@@ -428,6 +428,15 @@ def test_the_caps_a_command_line_declares():
         assert M.declared_cap_gb(not_capped) is None, not_capped
 
 
+def test_the_run_bound_a_command_line_declares():
+    sh = str(repo_path("scripts", "ops", "mem_cap.sh"))
+    assert M.declared_run_bound_s([sh, "--max-run-s", "5400", "16", "python", "-m", "pytest"]) == 5400.0
+    assert M.declared_run_bound_s([sh, "--name", "x", "--max-run-s", "90", "--slot", "1.5", "true"]) == 90.0
+    for none in ([], [sh, "16", "true"], ["python", "--max-run-s", "5400", "16", "true"], [sh, "--max-run-s", "0", "16", "true"],
+                 [sh, "--max-run-s", "soon", "16", "true"], [sh, "--max-run-s", "5400", "true"], [sh, "--new-flag", "16", "x"]):
+        assert M.declared_run_bound_s(none) is None, none
+
+
 @pytest.mark.parametrize("max_run_s", [None, 5400.0])
 def test_the_ship_gates_argv_declares_the_gates_cap(max_run_s):
     argv = SG.build_argv(SG.Shape({"/m/rb_x": 1}, [5, 6, 7], 19, 3), sys.executable, max_run_s=max_run_s)
@@ -445,6 +454,7 @@ def test_the_gate_is_admitted_by_its_own_cap(box, tmp_path, monkeypatch):
         assert held is not None and held[1] == 1, "the gate queued behind two play units although 48 of 62 GiB fit"
         rec = json.loads((HS.lock_dir() / "slot1.json").read_text())
         assert rec["cap_gb"] == 24.0
+        assert rec["run_bound_s"] == 5400.0, "the gate's own --max-run-s rides in its heavy slot (the --status ETA)"
         assert _try_outside(12) == 0, "60 of 62 GiB: one more 12 GiB unit still fits beside the gate"
         assert "does not fit" in _try_outside(24)
     said: list = []

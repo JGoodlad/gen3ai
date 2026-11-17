@@ -85,7 +85,9 @@ STARTS. The clock is the supervisor's, started when the command is spawned, so t
 stopped exactly like a stop signal (SIGTERM forwarded, ``--term-grace`` later SIGKILL of everything left in the scope, a
 ``setsid`` worker included - which a ``timeout`` INSIDE the wrapper never reaches), labelled ``[mem_cap] RUN-TIME BOUND:
 ...`` and exits ``EXIT_RUN_TIMEOUT`` (89). Unlike the short lane's deadline it binds whether or not the job took a slot of
-its own (it is a bound on the run, not the price of a lane). With ``--max-s`` too, the earlier of the two deadlines stops
+its own (it is a bound on the run, not the price of a lane). It is also how an INDIVISIBLE job holds a slot past the 45-minute
+chunk (``utils.heavy_slots``, "HOLD A SLOT PER BOUNDED CHUNK"): the slot records the bound, ``--status`` shows what is left of
+it, and a bound up to 2 h is within policy (an unbounded hold past 60 min is the one that is flagged). With ``--max-s`` too, the earlier of the two deadlines stops
 the job and names itself (88 or 89). It is the replacement for a ``timeout`` OUTSIDE the wrapper, which counts the queue
 wait and, firing there, loses the job's place in the queue.
 
@@ -124,7 +126,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from utils import heavy_admission as HA
 from utils import heavy_slots as HS
@@ -286,16 +288,18 @@ def fmt_gb(n: Optional[int]) -> str:
     return "?" if n is None else f"{n / GiB:.2f} GB"
 
 
-def declared_cap_gb(cmd: Sequence[str]) -> Optional[float]:
-    """The cap a command line declares when it IS a capped job (``…/mem_cap.sh [options] <GB> <cmd…>``), else ``None``.
-    ``utils.gate_lock`` takes the routine gate's heavy slot before its ``mem_cap.sh`` child exists; this is how that slot
-    is admitted by the gate's own cap (``utils.heavy_admission``) and not by the fixed count."""
+def _declared(cmd: Sequence[str]) -> Optional[Tuple[Dict[str, str], float]]:
+    """``({flag: value}, cap in GB)`` of a command line that IS a capped job (``…/mem_cap.sh [options] <GB> <cmd…>``), else
+    ``None`` (not mem_cap, an unknown option, no or a malformed cap): the one scan the two ``declared_*`` readers share."""
     args = list(cmd)
     if not args or os.path.basename(args[0]) != "mem_cap.sh":
         return None
+    flags: Dict[str, str] = {}
     i = 1
     while i < len(args) and args[i].startswith("--") and args[i] != "--":
         if args[i] in VALUE_FLAGS:
+            if i + 1 < len(args):
+                flags[args[i]] = args[i + 1]
             i += 2
         elif args[i] in BARE_FLAGS:
             i += 1
@@ -306,7 +310,27 @@ def declared_cap_gb(cmd: Sequence[str]) -> Optional[float]:
         gb_to_bytes(gb)
     except (IndexError, ValueError):
         return None
-    return gb if gb < float("inf") else None
+    return (flags, gb) if gb < float("inf") else None
+
+
+def declared_cap_gb(cmd: Sequence[str]) -> Optional[float]:
+    """The cap a command line declares when it IS a capped job (``…/mem_cap.sh [options] <GB> <cmd…>``), else ``None``.
+    ``utils.gate_lock`` takes the routine gate's heavy slot before its ``mem_cap.sh`` child exists; this is how that slot
+    is admitted by the gate's own cap (``utils.heavy_admission``) and not by the fixed count."""
+    d = _declared(cmd)
+    return None if d is None else d[1]
+
+
+def declared_run_bound_s(cmd: Sequence[str]) -> Optional[float]:
+    """The ``--max-run-s`` a capped command line declares (``ship_gate.sh run --max-run-s S`` builds one), else ``None``:
+    the gate's own heavy slot records it, so ``--status`` shows the gate's end and a bounded hold is not flagged."""
+    d = _declared(cmd)
+    if d is None or "--max-run-s" not in d[0]:
+        return None
+    try:
+        return parse_max_run_s(d[0]["--max-run-s"])
+    except ValueError:
+        return None
 
 
 def term_grace_s() -> float:
@@ -637,7 +661,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
               f"${TERM_GRACE_ENV}, or drop the declaration and queue as a LONG job", file=sys.stderr)
         return 2
     try:
-        with HS.heavy_slot(args, force=force_slot, wait=wait, max_s=max_s, cap_gb=gb) as slot:
+        with HS.heavy_slot(args, force=force_slot, wait=wait, max_s=max_s, cap_gb=gb, run_bound_s=max_run_s) as slot:
             res = run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace, slot_fd=HS.slot_fd(slot),
                              deadline_s=HS.short_deadline_s(slot, max_s), declared_s=max_s, max_run_s=max_run_s)
             if slice_name() == DEFAULT_SLICE:

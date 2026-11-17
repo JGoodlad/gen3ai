@@ -72,10 +72,20 @@ supervisor stops the job when its wrapper dies, but a job that defers SIGTERM ru
 frees when the last process of that tree exits. A NORMAL end still unlocks at once (``LOCK_UN``): a daemon the
 finished job leaked does not hold it.
 
-HOLD A SLOT PER BOUNDED CHUNK (<= 45 min), NEVER PER RUN: a multi-hour job holding a slot froze every other agent for hours
-(2026-10-19); split it into resumable chunks, one slot each. `--status` flags a holder past 60 min as
-`LONG HOLD (policy: <= 45 min per chunk)` and the holder gets one stderr warning; nothing is killed (a SHORT-lane
-holder past its worst case is flagged `SHORT-LANE OVERDUE`).
+HOLD A SLOT PER BOUNDED CHUNK, NEVER PER RUN (policy: orchestrator 2026-10-20; made true 2026-11-17). A multi-hour job holding
+a slot froze every other agent for hours (2026-10-19), so a hold is BOUNDED: <= :data:`CHUNK_MIN` (45) minutes by
+chunking the job into resumable pieces, one slot each, OR - an indivisible job (a slow-test file whose module fixture
+is the cost, one cross cell) - a DECLARED, ENFORCED bound: ``mem_cap.sh --max-run-s S`` with ``S`` up to
+:data:`HOLD_BOUND_MAX_S` (2 h). The bound is the supervisor's own (``utils.mem_cap``: SIGTERM at S, SIGKILL after the
+grace, exit 89), so a declared budget is true by construction, never a promise. It rides in the holder record
+(``run_bound_s``) and the ``slot`` event (``bound_s``); ``--status`` shows ``BOUND <S> (<left> left)``, the ETA the jobs
+queued behind it read. What is flagged is the hold that is NOT bounded: past :data:`LONG_HOLD_S` (60 min = the chunk plus
+15 min for its stop and re-queue) with no bound, or with one above the ceiling, ``--status`` says
+`LONG HOLD (policy: <= 45 min per chunk, or a declared --max-run-s <= 2 h)` and the holder gets ONE stderr warning; a
+BOUNDED holder that outlives its bound by :data:`BOUND_OVERDUE_S` is flagged `BOUND OVERDUE` (the enforcement failed).
+MEASURED (``events.jsonl``, 939 long-lane holds 2026-11-05..17): 4.8 % held > 45 min (26.6 % of the long lane's
+slot-seconds), 1.9 % > 60 min, 0.6 % > 2 h (six jobs, the longest a 7.7 h cross): the ceiling covers 99.4 % of holds, and
+what is left is exactly what must be chunked. Nothing is killed by the flag.
 
 NEVER TWO SLOTS FOR ONE JOB. Holding a slot exports ``GEN3AI_HEAVY_SLOT_HELD=<pid>:<slot>``; a taker
 that sees it takes NO slot after VERIFYING that the pid is itself or an ancestor and that it holds that slot by its
@@ -135,8 +145,14 @@ ADMIT_BUSY = "another job's admission is in progress (admit.lock is held)"
 #: holder past LONG_HOLD_S and the holder is warned once; nothing is killed.
 CHUNK_MIN = 45
 LONG_HOLD_S = 3600.0
-LONG_HOLD_TAG = f"LONG HOLD (policy: <= {CHUNK_MIN} min per chunk)"
+#: the longest hold a job may DECLARE (``mem_cap.sh --max-run-s S``, enforced by the supervisor); above it, or with no
+#: bound, a hold past :data:`LONG_HOLD_S` is flagged. Measured: 99.4 % of the long lane's holds are shorter (module docs).
+HOLD_BOUND_MAX_S = 7200.0
+#: a bounded holder is flagged OVERDUE this long past its bound (the supervisor's stop grace and scope set-up are inside it)
+BOUND_OVERDUE_S = 300.0
+LONG_HOLD_TAG = f"LONG HOLD (policy: <= {CHUNK_MIN} min per chunk, or a declared --max-run-s <= {HOLD_BOUND_MAX_S / 3600:g} h)"
 OVERDUE_TAG = "SHORT-LANE OVERDUE (its hard timeout should have stopped it)"
+BOUND_OVERDUE_TAG = "BOUND OVERDUE (its --max-run-s should have stopped it)"
 REPORT_EVERY_S = 60.0
 EXIT_SLOTS_FULL = 87
 RECORD_SCHEMA = "gen3_heavy_slot_record_v1"
@@ -334,12 +350,33 @@ class Record:
     #: field (that code knows no caps). The code from before the field cannot parse a record that has it: its --status
     #: shows such a holder as "(no record)" - the flock, not the record, is the lock.
     cap_gb: float = -1.0
+    #: the job's declared ENFORCED run-time bound in seconds (``mem_cap.sh --max-run-s``; added 2026-11-17): 0 = none.
+    #: The same caveat as ``cap_gb``: code from before the field reads a record that has it as "(no record)".
+    run_bound_s: float = 0.0
 
     @classmethod
     def mine(cls, kind: str, cmd: Sequence[str], note: str = "", slot: int = -1, *,
-             lane: str = LANE_LONG, max_s: float = 0.0, cap_gb: Optional[float] = None) -> "Record":
+             lane: str = LANE_LONG, max_s: float = 0.0, cap_gb: Optional[float] = None,
+             run_bound_s: Optional[float] = None) -> "Record":
         return cls(pid=os.getpid(), kind=kind, since=time.time(), cwd=os.getcwd(), cmd=list(cmd)[:48],
-                   note=note, slot=slot, lane=lane, max_s=max_s, cap_gb=float(cap_gb or 0.0))
+                   note=note, slot=slot, lane=lane, max_s=max_s, cap_gb=float(cap_gb or 0.0),
+                   run_bound_s=float(run_bound_s or 0.0))
+
+
+def bound_within_policy(run_bound_s: Optional[float]) -> bool:
+    """Is a hold of this declared bound inside the policy however long it runs? A declared, enforced ``--max-run-s`` up to
+    :data:`HOLD_BOUND_MAX_S` is; none, or one above the ceiling, is not (a hold past :data:`LONG_HOLD_S` is then flagged)."""
+    return bool(run_bound_s) and 0.0 < float(run_bound_s) <= HOLD_BOUND_MAX_S
+
+
+def hold_flags(held_s: float, *, lane: str, max_s: float, run_bound_s: float) -> Tuple[bool, bool]:
+    """``(long_hold, overdue)`` for a holder that has held a slot ``held_s`` seconds (pure: ``--status`` and the tests).
+    ``long_hold``: past :data:`LONG_HOLD_S` and NOT a bounded hold (:func:`bound_within_policy`). ``overdue``: the
+    enforcement failed - a short job well past its hard timeout, or a bounded job :data:`BOUND_OVERDUE_S` past its bound."""
+    long_hold = held_s > LONG_HOLD_S and not bound_within_policy(run_bound_s)
+    overdue = (lane == LANE_SHORT and held_s > max_s + SHORT_MARGIN_S + SHORT_GRACE_MAX_S + 30.0) or (
+        run_bound_s > 0 and held_s > run_bound_s + BOUND_OVERDUE_S)
+    return long_hold, overdue
 
 
 def _rec_path(d: Path, rec_kind: str, key: int) -> Path:
@@ -667,7 +704,8 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
                timeout_s: Optional[float] = None, poll_s: float = POLL_S,
                report_every_s: float = REPORT_EVERY_S, log: Callable[[str], None] = _stderr,
                runs: Optional[dict] = None, keep_ticket: bool = False,
-               max_s: Optional[float] = None, cap_gb: Optional[float] = None) -> Iterator[Optional[int]]:
+               max_s: Optional[float] = None, cap_gb: Optional[float] = None,
+               run_bound_s: Optional[float] = None) -> Iterator[Optional[int]]:
     """Hold one heavy slot for the ``with`` body when the policy wants one; yields the slot index, or
     ``None`` when no slot was taken (bypass / not wanted). Raises :class:`SlotsFull` (``wait=False``)
     or ``TimeoutError`` (``timeout_s``) without running the body. FIFO per lane: a slot is taken only when this job is
@@ -676,6 +714,10 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
 
     ``cap_gb``: the memory cap this job runs under (``utils.mem_cap`` passes its ``<GB>``), which is what admits it by
     memory; without one it is admitted by the fixed count of :data:`HEAVY_SLOTS`.
+
+    ``run_bound_s``: the ENFORCED run-time bound this job runs under (``utils.mem_cap`` passes its ``--max-run-s``): recorded
+    for ``--status`` and the ``slot`` event, and a bound within :data:`HOLD_BOUND_MAX_S` makes a hold past :data:`LONG_HOLD_S`
+    legitimate (module docs). It enforces nothing here: the caller's supervisor does.
 
     ``max_s``: this job DECLARES itself short (0 < S <= :data:`SHORT_MAX_S`, else :class:`ShortLaneError`) and queues in the
     short lane. The declaration is a promise this function cannot keep: the caller must stop the body at
@@ -729,7 +771,8 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
         if lane == LANE_SHORT:
             note_short_grant(d)                       # passed over the polling long head once more (the starvation bound)
         drop_ticket(d)
-        return _write(d, Record.mine("holder", cmd, note=why, slot=taken, lane=lane, max_s=max_s or 0.0, cap_gb=cap_gb))
+        return _write(d, Record.mine("holder", cmd, note=why, slot=taken, lane=lane, max_s=max_s or 0.0, cap_gb=cap_gb,
+                                     run_bound_s=run_bound_s))
 
     try:
         t0 = time.monotonic()
@@ -785,11 +828,17 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
         os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
         _HELD_FDS[slot] = fds[slot]
         t_acq = time.monotonic()
+        bounded = bound_within_policy(run_bound_s)
         warn = threading.Timer(LONG_HOLD_S, lambda: log(
             f"[heavy_slots] {LONG_HOLD_TAG}: slot {slot} held for {LONG_HOLD_S / 60:.0f} min by pid {os.getpid()} "
-            f"({shlex.join(list(cmd)[:6])}) - release it and re-take one per bounded chunk"))
+            f"({shlex.join(list(cmd)[:6])}) - " + (
+                f"its bound of {run_bound_s / 3600:.1f} h is above the {HOLD_BOUND_MAX_S / 3600:g} h ceiling: split it into "
+                f"resumable chunks, one slot each" if run_bound_s else
+                f"release it and re-take one per bounded chunk (<= {CHUNK_MIN} min), or, an INDIVISIBLE job, re-queue it "
+                f"under `mem_cap.sh --max-run-s S` (S <= {HOLD_BOUND_MAX_S:g}), which declares and enforces the hold")))
         warn.daemon = True
-        warn.start()
+        if not bounded:                    # a bounded hold is inside the policy: nothing to warn about
+            warn.start()
         try:
             yield slot
         finally:
@@ -804,7 +853,7 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
             held_s = time.monotonic() - t_acq
             log(f"[heavy_slots] released heavy slot {slot} after {held_s:.0f} s")
             log_event(d, "slot", lane=lane, max_s=max_s or 0.0, slot=slot, waited_s=round(waited, 1),
-                      held_s=round(held_s, 1), cap_gb=float(cap_gb or 0.0), rule=rule, why=why,
+                      held_s=round(held_s, 1), cap_gb=float(cap_gb or 0.0), bound_s=float(run_bound_s or 0.0), rule=rule, why=why,
                       cmd=shlex.join(list(cmd))[:300], cwd=os.getcwd())
     finally:
         if not kept:
@@ -932,15 +981,15 @@ def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[
         rec = _read(_rec_path(d, "holder", i))
         pids = table.holders(key, [rec.pid] if rec is not None else []) if key else []
         row: dict = {"slot": i, "pids": pids, "held_s": None, "cmd": "", "cwd": "", "why": "", "lane": LANE_LONG,
-                     "max_s": 0.0, "cap_gb": -1.0}
+                     "max_s": 0.0, "cap_gb": -1.0, "run_bound_s": 0.0}
         if pids:
             if rec is not None and rec.pid in pids:
                 row.update(held_s=now - rec.since, cmd=shlex.join(rec.cmd), cwd=rec.cwd, why=rec.note,
-                           lane=rec.lane, max_s=rec.max_s, cap_gb=rec.cap_gb)
-                row["long_hold"] = (now - rec.since) > LONG_HOLD_S
-                # a short job is stopped at declared + margin + its grace: well past that, the enforcement failed
-                row["overdue"] = (rec.lane == LANE_SHORT
-                                  and (now - rec.since) > rec.max_s + SHORT_MARGIN_S + SHORT_GRACE_MAX_S + 30.0)
+                           lane=rec.lane, max_s=rec.max_s, cap_gb=rec.cap_gb, run_bound_s=rec.run_bound_s)
+                # a short job is stopped at declared + margin + its grace, a bounded one at its bound + grace: well past
+                # that, the enforcement failed (``hold_flags``)
+                row["long_hold"], row["overdue"] = hold_flags(now - rec.since, lane=rec.lane, max_s=rec.max_s,
+                                                              run_bound_s=rec.run_bound_s)
             else:
                 row.update(cmd=procfs.cmdline(pids[0]), why="(no record)")
             if not _alive(pids[0]):
@@ -997,6 +1046,15 @@ def _cap_tag(r: dict) -> str:
     return f"cap {r['cap_gb']:g}G " if r.get("cap_gb", 0) > 0 else ""
 
 
+def _bound_tag(r: dict) -> str:
+    """``BOUND<=75m00s (12m00s left) `` for a holder under a declared --max-run-s: the ETA the queue behind it reads."""
+    b = r.get("run_bound_s") or 0.0
+    if b <= 0 or r.get("held_s") is None:
+        return ""
+    left = b - r["held_s"]
+    return f"BOUND<={_dur(b)} ({_dur(left)} left) " if left >= 0 else f"BOUND<={_dur(b)} (PAST IT by {_dur(-left)}) "
+
+
 def _admission_line(a: dict) -> str:
     if a.get("fixed_slots") is not None:
         return f"  admission: the fixed count of {a['fixed_slots']} ({a['source']}; no memory check)"
@@ -1031,9 +1089,9 @@ def format_human(state: dict) -> str:
             out.append(f"  slot {r['slot']}: free")
         else:
             flag = f"  <-- {LONG_HOLD_TAG}" if r.get("long_hold") else ""
-            flag += f"  <-- {OVERDUE_TAG}" if r.get("overdue") else ""
+            flag += f"  <-- {BOUND_OVERDUE_TAG if r.get('run_bound_s') else OVERDUE_TAG}" if r.get("overdue") else ""
             out.append(f"  slot {r['slot']}: pid {','.join(map(str, r['pids']))} held {_dur(r['held_s'])} "
-                       f"{_lane_tag(r)}{_cap_tag(r)}[{r['why']}] {r['cmd'][:140]}  (cwd {r['cwd'] or '?'}){flag}")
+                       f"{_lane_tag(r)}{_cap_tag(r)}{_bound_tag(r)}[{r['why']}] {r['cmd'][:140]}  (cwd {r['cwd'] or '?'}){flag}")
     out.append(f"  queue ({len(state['waiting'])}, grant order: the head gets the next free slot; a SHORT job may jump a "
                f"queued long one up to {short_jumps()} times):")
     out += [f"    pid {w['pid']} waiting {_dur(w['for_s'])} {_lane_tag(w)}{_cap_tag(w)}: {w['cmd'][:140]}"

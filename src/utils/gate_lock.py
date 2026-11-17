@@ -35,7 +35,7 @@ stderr. A taker all of whose slots are held by its own ancestors (a bare ``flock
 :class:`GateLockSelfDeadlock` at once.
 
 Every take LOGS its wait and when it acquired; every release logs how long it held; a gate appends a ``gate`` line to the heavy
-slots' ``events.jsonl`` (``waited_gate_s``, ``waited_heavy_s``, ``cycles``, ``cap_gb``): the measurement of its two queues. TIMEOUTS, as for
+slots' ``events.jsonl`` (``waited_gate_s``, ``waited_heavy_s``, ``cycles``, ``cap_gb``, ``bound_s``): the measurement of its two queues. TIMEOUTS, as for
 the GPU lock: ``--timeout-s`` bounds the WAIT for a slot (exit 4); a WALL timeout on the gate goes
 INSIDE — ``gate_lock.sh timeout 3000 <cmd>`` — never around it (``timeout 3000 gate_lock.sh <cmd>``
 counts queue time and kills a gate that never ran).
@@ -253,6 +253,7 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
     fds = [os.open(str(p), os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o666) for p in paths]
     what = f" ({what})" if what else ""
     cap = mem_cap.declared_cap_gb(cmd)         # the gate's own cap (`mem_cap.sh 16 …`) admits its heavy slot by memory
+    bound = mem_cap.declared_run_bound_s(cmd)  # its `--max-run-s`, recorded in the heavy slot (`--status` shows its end)
     gate_wait_s = heavy_wait_s = 0.0           # what this gate waited, per queue: `events.jsonl` kind "gate" (the measurement)
     cycles = 0
     try:
@@ -270,7 +271,8 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                 try:
                     # rule 5b: the gate holds one heavy slot itself - taken NON-BLOCKING: a gate must never wait
                     # for a heavy slot while holding the gate lock (the CONVOY of 2026-10-19/20)
-                    heavy.enter_context(HS.heavy_slot(cmd, log=log, wait=False, keep_ticket=True, cap_gb=cap))
+                    heavy.enter_context(HS.heavy_slot(cmd, log=log, wait=False, keep_ticket=True, cap_gb=cap,
+                                                      run_bound_s=bound))
                 except HS.SlotsFull:
                     fcntl.flock(fds[slot], fcntl.LOCK_UN)
                     log(f"[gate_lock] no heavy slot is free: released gate slot {slot} of {n}{what}, waiting for a "
@@ -289,7 +291,8 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                     f"{time.monotonic() - t_start:.1f} s")
                 if cmd:                            # the next tuning of the queue reads this, not stderr that happened to be saved
                     HS.log_event(HS.lock_dir(), "gate", slot=slot, waited_gate_s=round(gate_wait_s, 1),
-                                 waited_heavy_s=round(heavy_wait_s, 1), cycles=cycles, cap_gb=float(cap or 0.0))
+                                 waited_heavy_s=round(heavy_wait_s, 1), cycles=cycles, cap_gb=float(cap or 0.0),
+                                 bound_s=float(bound or 0.0))
                 rec = GS.SlotRecord.mine(slot, cmd)
                 try:
                     GS.write_record(d, rec)
