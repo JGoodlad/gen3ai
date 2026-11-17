@@ -1,0 +1,13 @@
+c0    n=8 mean=1.0095 sd=0.0043 min=1.0041 max=1.0176
+x67   n=3 mean=0.6762 sd=0.0148 min=0.6593 max=0.6866
+swap  n=3 mean=0.4907 sd=0.0063 min=0.4838 max=0.4962
+target T = mean(swap) = 0.49070; KEEP band +-0.03
+hypothetical X70 mean H0 -> p, c* (power law), c (p = 1), c (p = 0.5)
+  H0 0.100: p 0.329  c* 0.00384  linear 0.00848  sqrt 0.00575
+  H0 0.200: p 0.383  c* 0.00344  linear 0.00763  sqrt 0.00466
+  H0 0.300: p 0.458  c* 0.00283  linear 0.00634  sqrt 0.00321
+  H0 0.342: p 0.499  c* 0.00247  linear 0.00556  sqrt 0.00248
+  H0 0.400: p 0.571  c* 0.00178  linear 0.00411  sqrt 0.00135
+  H0 0.450: p 0.653  c* 0.00091  linear 0.00225  sqrt 0.00040
+  H0 0.480: p 0.716  c* 0.00022  linear 0.00068  sqrt 0.00004
+banked-only extrapolation to c = 0: linear 0.565 nats; sqrt 0.343 nats

@@ -1,0 +1,39 @@
+# python coef_rule.py pick 0.33 0.34 0.35 0.36   (HYPOTHETICAL X70 values: a demonstration of the form, not a prediction)
+{
+ "H0": 0.345,
+ "H_x67": 0.6761609047651291,
+ "H_c0": 1.0095305066555738,
+ "target": 0.4906974121928215,
+ "p": 0.5024015327808763,
+ "a": 2.9933285430886416,
+ "c_star": 0.00244,
+ "c_linear_p1": 0.0055,
+ "c_sqrt_p05": 0.00242
+}
+# exit 0
+# python coef_rule.py check 0.00244 0.55 0.33 0.34 0.35 0.36   (HYPOTHETICAL first-fork end entropy 0.55)
+{
+ "target": 0.4906974121928215,
+ "h1": 0.55,
+ "verdict": "REPICK",
+ "c": 0.00173,
+ "between": [
+  0.0,
+  0.00244
+ ]
+}
+# exit 0
+# python coef_rule.py check 0.00244 0.50 0.33 0.34 0.35 0.36
+{
+ "target": 0.4906974121928215,
+ "h1": 0.5,
+ "verdict": "KEEP",
+ "c": 0.00244
+}
+# exit 0
+# python coef_rule.py pick 0.50 0.34 0.35 0.36   (not ENT-BELOW-SWAP: refused)
+REFUSED: X70 is not ENT-BELOW-SWAP (highest 0.5000 vs the swap's lowest 0.4838): class (i) does not apply and no coefficient is picked
+# exit 3
+# python coef_rule.py pick 0.46 0.47 0.47 0.48   (ENT-BELOW-SWAP but within the band: refused)
+REFUSED: X70-IS-MATCHED: X70's mean 0.4700 is within the KEEP band (0.03) of the target 0.4907, so X70's own cross already compared the anchor at a matched entropy; no arm
+# exit 3

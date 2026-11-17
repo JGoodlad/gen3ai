@@ -1,0 +1,1 @@
+--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0 --magnet-kl-coef 0.05 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5121 --device cuda --log-level periodic --run-name rb_b1mag_s5121
