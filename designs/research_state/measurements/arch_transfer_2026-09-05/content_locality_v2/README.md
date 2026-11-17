@@ -410,7 +410,7 @@ beginning."* The bonus is real (the CI excludes 1) and it is small.
 
 The KL function and its bit-identity gate are **not duplicated here** — they are
 [`../content_locality/era_kl.py`](../content_locality/era_kl.py) and
-[`../content_locality/kl_unit_test.py`](../content_locality/kl_unit_test.py), imported and re-run.
+[`../content_locality/kl_unit_gate.py`](../content_locality/kl_unit_gate.py), imported and re-run.
 
 ### Reproduce
 

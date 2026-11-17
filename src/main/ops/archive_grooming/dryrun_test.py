@@ -3,13 +3,10 @@
 Nothing here touches the real ``models/`` archive — every fixture is built from
 scratch in a temp dir, which is also the only place ``--apply`` is ever exercised.
 
-Unmarked and fast (no torch, no battles, no model load) — but ``pytest.ini`` sets
-``testpaths = src tools``, so a test under ``designs/`` is NOT collected by the
-routine gate and is run directly, the same way
-``arch_transfer_2026-09-05/content_locality/kl_unit_test.py`` is:
+Unmarked and fast (no torch, no battles, no model load).
 
 Run:
-    python -m pytest designs/research_state/measurements/archive_grooming_dryrun_test.py -q
+    python -m pytest src/main/ops/archive_grooming/dryrun_test.py -q
 
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
@@ -18,14 +15,11 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 import time
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import archive_grooming_dryrun as ag  # noqa: E402
+from main.ops.archive_grooming import dryrun as ag
 
 
 # --------------------------------------------------------------- fixtures ----

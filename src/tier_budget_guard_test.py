@@ -112,7 +112,7 @@ _STATIC_GATES = (
     "src/utils/home_path_literal_gate_test.py", "src/utils/run_dir_writer_gate_test.py",
     "src/main/syntax_test.py", "src/env_files_test.py", "src/agents/gen3_data/hidden_power_single_impl_test.py",
     "src/agents/training/python_env_core_import_gate_test.py", "src/main/launcher/interpreter_literal_gate_test.py",
-    "src/main/ops/ops_scripts_home_literal_gate_test.py",
+    "src/main/ops/ops_scripts_home_literal_gate_test.py", "src/uncollected_tests_gate_test.py",
 )
 
 

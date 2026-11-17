@@ -38,7 +38,7 @@ Forward **`KL(teacher ‖ parent)`** over legal actions, per decision state.
 * Gen era: `masked_kl_rows` **imported** from `agents.training.instrumented_ppo.distill_anchor` —
   never reimplemented. It is the same formula the live `--distill-anchor-monitor` logs.
 * v8 era: commit `b13b30b2` predates that module, so [`era_kl.py`](era_kl.py) carries a verbatim
-  copy. [`kl_unit_test.py`](kl_unit_test.py) runs in the gen tree, where both are importable, and
+  copy. [`kl_unit_gate.py`](kl_unit_gate.py) runs in the gen tree, where both are importable, and
   **gates the two bit-identical** on 7 synthetic cases (random logits, identical policies, an
   illegal action with a dominant logit, a single-legal-action row). Executed:
 
@@ -261,7 +261,7 @@ maturity all at once — but it does remove locality-as-cause from the gen side 
 | [`PREREGISTRATION.md`](PREREGISTRATION.md) | frozen before any measurement |
 | [`gen_era_locality.py`](gen_era_locality.py) | the gen-era measurement |
 | [`v8_era_locality.py`](v8_era_locality.py) | the v8-era measurement (run from the era tree) |
-| [`era_kl.py`](era_kl.py) + [`kl_unit_test.py`](kl_unit_test.py) | the era's KL copy and the bit-identity gate |
+| [`era_kl.py`](era_kl.py) + [`kl_unit_gate.py`](kl_unit_gate.py) | the era's KL copy and the bit-identity gate |
 | [`combine.py`](combine.py) | the cross-era readout; recomputes every ratio from the per-team vectors |
 | `gen_era_n3.json` · `gen_era_n9.json` | gen artifacts (+ `.log` = executed output) |
 | `v8_era_n3.json` · `v8_era_n9.json` | v8 artifacts (+ `.log`) |
@@ -277,7 +277,7 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
   nice -n 10 python designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py out_gen.json 9
 
 # the KL gate (gen tree)
-python designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/kl_unit_test.py
+python designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/kl_unit_gate.py
 
 # v8 era (from the era-pinned checkout; the script itself may live anywhere)
 cd /tmp/v8rep_era

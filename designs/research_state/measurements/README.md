@@ -92,8 +92,8 @@ post-fix number. **`dv_mean` is unaffected** (the critic delta never touches the
 `models/` by construction, so the tool excludes its own reports (and `fh_lineage*` /
 `sidecar_audit*` / `folding_history_*`) when deciding whether a run is still referenced — reading
 them as evidence put all 118 non-tier-0 runs in tier 1 on the first tiered pass and graded nothing.
-Producer: `archive_grooming_dryrun.py` + `archive_grooming_tiers.py`, both committed here with
-86 tests across `archive_grooming_dryrun_test.py` (34) and `archive_grooming_tiered_test.py` (52).
+Producer: `python -m main.ops.archive_grooming.dryrun` (+ `tiers.py`), moved to `src/main/ops/archive_grooming/`
+with its tests so the routine gate runs them; the reports above stay here as the frozen census.
 Policy of record: [`../models_retention_policy.md`](../models_retention_policy.md).
 
 ⚠️ **The index above is PARTIAL** — it was built when this directory held ~16 records and the

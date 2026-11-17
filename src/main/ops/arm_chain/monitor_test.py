@@ -25,7 +25,7 @@ from main.ops.arm_chain.armend import THIN_PLANNER
 from main.ops.arm_chain.chain_test import FakeShipper, deps, runner_for, world_then_wait
 from main.ops.arm_chain.live import LiveRun
 from main.ops.arm_chain.testing_fakes import World
-from utils.paths import repo_path, src_path
+from utils.paths import src_path
 
 #: a run name no other test's fake launch carries: the planner refuses a run any live launcher on the box names
 ARM, SEED = "cb47mon", 4701
@@ -127,7 +127,7 @@ def test_the_10_27_incident_a_running_monitor_never_blocks_the_arm_ends_thin(w):
         with open(status, "a") as f:                                        # a pass that began after ENDED was saved
             f.write("[t9] ARMCHAIN[t]: HOLD: sync marker\n")
         out.wait("HOLD: sync marker")
-        dry = subprocess.run([sys.executable, repo_path(THIN_PLANNER), "--thin-run", RUN, "--models-dir", w.models],
+        dry = subprocess.run([sys.executable, "-m", THIN_PLANNER, "--thin-run", RUN, "--models-dir", w.models],
                              cwd=w.root, env=env, capture_output=True, text=True, timeout=300)
         assert dry.returncode == 0 and "NOTHING WAS DELETED" in dry.stdout, dry.stdout + dry.stderr
         assert _fds_into(mon.pid, rd) == [], got

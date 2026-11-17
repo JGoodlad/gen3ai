@@ -1,6 +1,6 @@
 """The TIERED retention policy, pinned on a SYNTHETIC tree under ``tmp_path``.
 
-Sibling of ``archive_grooming_dryrun_test.py`` (which pins the STANDING policy and
+Sibling of ``dryrun_test.py`` (which pins the STANDING policy and
 must keep passing unchanged — that is the whole point of shipping the tiered policy
 beside the standing one rather than replacing it).
 
@@ -8,7 +8,7 @@ Nothing here touches the real ``models/`` archive: every fixture is built from
 scratch in a temp dir, which is also the only place ``--apply`` is ever exercised.
 
 Run:
-    python -m pytest designs/research_state/measurements/archive_grooming_tiered_test.py -q
+    python -m pytest src/main/ops/archive_grooming/tiered_test.py -q
 
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
@@ -17,16 +17,13 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 import time
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import archive_grooming_dryrun as ag        # noqa: E402
-import archive_grooming_tiers as tiers      # noqa: E402
-from archive_grooming_dryrun_test import make_run   # noqa: E402
+from main.ops.archive_grooming import dryrun as ag
+from main.ops.archive_grooming import tiers
+from main.ops.archive_grooming.dryrun_test import make_run
 
 
 # --------------------------------------------------------------- fixtures ----

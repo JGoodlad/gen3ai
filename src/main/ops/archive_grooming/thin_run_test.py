@@ -1,9 +1,8 @@
-"""``archive_grooming_dryrun.py --thin-run``: the per-run F22 thinning, on a SYNTHETIC tree.
+"""``python -m main.ops.archive_grooming.dryrun --thin-run``: the per-run F22 thinning, on a SYNTHETIC tree.
 
-Nothing here touches the real ``models/`` archive.  Like its sibling test file this lives
-under ``designs/`` (``pytest.ini`` collects only ``src`` and ``tools``), so it is run directly:
+Nothing here touches the real ``models/`` archive.
 
-    python -m pytest designs/research_state/measurements/archive_grooming_thin_run_test.py -q
+    python -m pytest src/main/ops/archive_grooming/thin_run_test.py -q
 
 (in a linked worktree, first: export PYTHONPATH=$PWD/src)
 """
@@ -15,13 +14,10 @@ import json
 import os
 import signal
 import subprocess
-import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import archive_grooming_dryrun as ag  # noqa: E402
+from main.ops.archive_grooming import dryrun as ag
 
 FORK = 380_000_195
 RUN = "rb_x35_test_s3501"

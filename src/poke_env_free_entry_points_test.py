@@ -128,7 +128,9 @@ def _env() -> dict:
 
 
 def _run(code: str, *, cwd, timeout: float) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, "-c", textwrap.dedent(code)], cwd=str(cwd), env=_env(),
+    # the program goes in on STDIN: the whole-surface program embeds every module name and passed 128 KiB, the
+    # kernel's limit on one argv string (`OSError: [Errno 7] Argument list too long`) when the surface grew.
+    return subprocess.run([sys.executable, "-"], input=textwrap.dedent(code), cwd=str(cwd), env=_env(),
                           capture_output=True, text=True, timeout=scale_timeout(timeout))
 
 

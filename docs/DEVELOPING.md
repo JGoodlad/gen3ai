@@ -144,7 +144,7 @@ golden test rode `main` red three separate times.
 
 ### The static gates
 
-**Twenty-nine static gates run inside the suite** (there is no CI on this box, so a check outside the
+**Thirty static gates run inside the suite** (there is no CI on this box, so a check outside the
 suite is a check that rots). All declare the `static` tier, so they run in every tier, and all are
 ~free warm. A missing linter **fails** rather than skips: a linter that silently opts out reads
 exactly like one that found nothing.
@@ -180,6 +180,7 @@ exactly like one that found nothing.
 | `src/agents/training/python_env_core_import_gate_test.py` | no module imports the deleted Python env core (`gen3_env`, `wrappers`, `async_vec_env`, `env_factory`, `bridge_session`; an AST scan, split from `trainee_spaces_test.py`, which pins that the modules do not exist) | none (static) |
 | `src/main/launcher/interpreter_literal_gate_test.py` | no launcher module names a machine-specific interpreter or home path (the child's interpreter is `$GEN3AI_PYTHON`, else `sys.executable`; split from `interpreter_test.py`) | `interpreter_test.py`, whose docstring quotes the deleted literal |
 | `src/main/ops/ops_scripts_home_literal_gate_test.py` | no `scripts/ops/*.sh` holds a `/home/…` literal outside a comment (the shell twin of the module scan; split from `ops_scripts_test.py`, whose `bash -n` and `--help` checks run the scripts) | `_common.sh`'s interpreter fall-back |
+| `src/uncollected_tests_gate_test.py` | every tracked `test_*.py` / `*_test.py` / `*_tests.py` lies under a `pytest.ini` `testpaths` root and matches a `python_files` pattern, and the ship gate collects exactly those roots (`utils.ship_gate.collected_roots`): a test the gate never runs is not a protection. The allowlist is empty | none (static, ~free) |
 
 One more test guards the import path itself and is not a static-tier gate:
 `src/packaging_gate_test.py` (`PYTHONPATH` still outranks the editable install). The count above is

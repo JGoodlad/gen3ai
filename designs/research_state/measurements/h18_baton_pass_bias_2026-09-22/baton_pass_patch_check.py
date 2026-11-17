@@ -6,8 +6,8 @@ it must FAIL the carry-over assertions; run it with the patched shadow copy firs
 `PYTHONPATH` and it must pass all of them. A patch that patched nothing is indistinguishable
 from a working one unless the unpatched half is shown to fail.
 
-    <metamon python> baton_pass_patch_test.py            # expects UNPATCHED behaviour
-    PYTHONPATH=<shadow> <metamon python> baton_pass_patch_test.py --expect-patched
+    <metamon python> baton_pass_patch_check.py            # expects UNPATCHED behaviour
+    PYTHONPATH=<shadow> <metamon python> baton_pass_patch_check.py --expect-patched
 """
 import sys
 

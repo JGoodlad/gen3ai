@@ -3,7 +3,7 @@
 The v8-era checkout (`b13b30b2`) predates `agents.training.instrumented_ppo.distill_anchor`, so the
 era arm cannot import `masked_kl_rows`. This file is the era's copy. It is DELIBERATELY a verbatim
 transcription of the gen-era function rather than an independent derivation, and
-`kl_unit_test.py` -- which runs in the GEN tree, where BOTH are importable -- fails if the two ever
+`kl_unit_gate.py` -- which runs in the GEN tree, where BOTH are importable -- fails if the two ever
 disagree on a synthetic batch.
 
 Do not use this in the gen era. There, import the real one.

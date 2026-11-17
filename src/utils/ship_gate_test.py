@@ -86,13 +86,15 @@ def test_a_trainer_pinned_to_every_cpu_is_refused_not_overlapped() -> None:
 
 @pytest.mark.parametrize("live", [False, True])
 def test_it_runs_the_WHOLE_routine_set_never_a_selection(live: bool) -> None:
-    """The owner's rule (2026-09-30): the gate runs everything. The argv names all of src/ and the
-    routine gate's marker expression verbatim, under the gate lock and the memory cap."""
+    """The owner's rule (2026-09-30): the gate runs everything. The argv names every collected root
+    (pytest.ini's testpaths) and the routine gate's marker expression verbatim, under the gate lock and the memory cap."""
     shape = (SG.resolve_shape({"/m/r": 1}, online=_ONLINE, trainer_cpus=_TRAINER) if live
              else SG.resolve_shape({}, online=_ONLINE))
     argv = SG.build_argv(shape, "py", ["--durations=20"])
     i = argv.index("pytest")
-    assert argv[i + 1:i + 4] == ["src/", "-m", "not slow and not e2e"]
+    roots = SG.collected_roots()
+    assert "src/" in roots and "tools/" in roots
+    assert argv[i + 1:i + 3 + len(roots)] == [*roots, "-m", "not slow and not e2e"]
     assert SG.MARKERS == "not slow and not e2e"
     assert argv[-1] == "--durations=20"
     lock, cap = argv.index(next(a for a in argv if a.endswith("gate_lock.sh"))), argv.index(str(SG.MEM_CAP_GB))

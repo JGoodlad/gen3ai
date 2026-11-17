@@ -17,6 +17,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import t1_common as T  # noqa: E402
 
+# ship gate (2026-11-17): the module fixture builds the whole world bank, 63.5 s beside a live run
+pytestmark = pytest.mark.slow
+
 DID = "rb_es_end2_s2001/step_10000009/aggressive/win_s3_002#p1#13"
 
 

@@ -1,8 +1,8 @@
 """THE SHIP GATE — the routine gate, in the shape the box can afford right now, as ONE command.
 
 ``scripts/ops/ship_gate.sh`` (this module) is what an agent runs before ``/gen3ai-ship``. It RUNS
-EVERYTHING the routine gate runs (``-m "not slow and not e2e"`` over all of ``src/``, the static gates
-included) — no test is chosen by the change (owner, 2026-09-30: no change-aware selection framework).
+EVERYTHING the routine gate runs (``-m "not slow and not e2e"`` over every collected root, ``pytest.ini``'s ``testpaths``:
+``src/``, ``tools/`` and the measurement records' own tests; the static gates included) — no test is chosen by the change (owner, 2026-09-30: no change-aware selection framework).
 What it decides is only the SHAPE, from the box:
 
 * a training run is LIVE (``utils.procfs.live_training_runs``) ⇒ rule 5b: ``nice -n 19``, pinned to
@@ -48,6 +48,7 @@ Exit status: the gate's own; 89 = ``--max-run-s`` stopped it; 2 = usage; 4 = not
 """
 from __future__ import annotations
 
+import configparser
 import os
 import shlex
 import subprocess
@@ -126,6 +127,15 @@ def resolve_shape(runs: Optional[Dict[str, int]] = None, *, online: Optional[Seq
     return Shape(dict(runs), agent, 19, max(1, int(len(agent) * LIVE_WORKERS_PER_CPU)), agent_runs=aside)
 
 
+def collected_roots() -> List[str]:
+    """The roots the gate collects: ``pytest.ini``'s ``testpaths``, the ONE list (``src/uncollected_tests_gate_test.py``
+    fails on a test file outside it, so a root added there is gated here without an edit)."""
+    cp = configparser.ConfigParser(interpolation=None)
+    cp.read(repo_path("pytest.ini"))
+    roots = cp.get("pytest", "testpaths", fallback="src").split()   # a checkout with no pytest.ini: src/ alone
+    return [r.rstrip("/") + "/" for r in roots]
+
+
 def build_argv(shape: Shape, python: str, extra: Sequence[str] = (), *, max_run_s: Optional[float] = None) -> List[str]:
     """``max_run_s``: mem_cap's run-time bound, on the INNERMOST wrapper so that neither queue (gate lock, heavy slot) counts."""
     bound = [] if max_run_s is None else ["--max-run-s", f"{max_run_s:g}"]
@@ -136,7 +146,7 @@ def build_argv(shape: Shape, python: str, extra: Sequence[str] = (), *, max_run_
         pre += ["taskset", "-c", cpu_list(shape.cpus)]
     return pre + [str(repo_path("scripts", "ops", "gate_lock.sh")),
                   str(repo_path("scripts", "ops", "mem_cap.sh")), *bound, str(MEM_CAP_GB),
-                  python, "-m", "pytest", "src/", "-m", MARKERS, "-q", "-n", str(shape.workers), *extra]
+                  python, "-m", "pytest", *collected_roots(), "-m", MARKERS, "-q", "-n", str(shape.workers), *extra]
 
 
 #: pytest's UsageError code, which the same refusal returns when pytest itself starts (``conftest.py``).

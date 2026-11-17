@@ -258,7 +258,7 @@ def main(out_path, per_team=3):
             "gen arm's REF-A and REF-B coincide — one column",
             "BOOTSTRAP: every CI resamples over the clusters of its own array (boot.py)"],
         "statistic": "forward KL(teacher||parent) over legal actions; era_kl.masked_kl_rows_era, "
-                     "gated bit-identical to the gen-era import by kl_unit_test.py",
+                     "gated bit-identical to the gen-era import by kl_unit_gate.py",
         "also_reported": "KL(parent||teacher)",
         "state_source": f"PARENT pilots each of {len(TEAMS)} teams vs the fixed reference "
                         f"ai_v8_03_zarch_control final, {per_team} battles/team, GREEDY both "

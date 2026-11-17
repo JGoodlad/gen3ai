@@ -3,7 +3,7 @@
 Runs in the GEN tree (both functions importable there). A cross-era comparison of a statistic that
 is not provably the SAME statistic is worthless, so this is a gate, not a nicety.
 
-Run: python kl_unit_test.py     (exit 0 = identical on every case)
+Run: python kl_unit_gate.py     (exit 0 = identical on every case)
 """
 import os
 import sys

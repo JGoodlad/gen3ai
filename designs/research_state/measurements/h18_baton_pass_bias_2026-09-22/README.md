@@ -69,7 +69,7 @@ Three independent things say it fired.
 
 ### (i) The positive-control pair, before the campaign
 
-[`baton_pass_patch_test.py`](baton_pass_patch_test.py) is the fork's carry-over test
+[`baton_pass_patch_check.py`](baton_pass_patch_check.py) is the fork's carry-over test
 (`src/poke_env/battle/baton_pass_carryover_test.py`) ported to the upstream API, run under both
 interpreters:
 
@@ -337,7 +337,7 @@ teams; the faithfulness pass's "8 of 21" counted the set's `index.csv` as a team
 |---|---|
 | [`PREDICTION.md`](PREDICTION.md) | the pre-registration, committed `6cc2f304` before the first measured game, including the disclosure of the two pilots |
 | [`metamon_poke_env_baton_pass.diff`](metamon_poke_env_baton_pass.diff) | **the patch** — 5 files, +105/−8, our fork's fix ported to the upstream API |
-| [`baton_pass_patch_test.py`](baton_pass_patch_test.py) | the positive-control pair: arm U must FAIL the carry-overs, arm P must PASS, both must hold both invariants |
+| [`baton_pass_patch_check.py`](baton_pass_patch_check.py) | the positive-control pair: arm U must FAIL the carry-overs, arm P must PASS, both must hold both invariants |
 | [`bp_exposure.py`](bp_exposure.py) | the exposure scan over the captured protocol — Baton Pass events, and which carried a stat stage, a copyable volatile, or either |
 | [`analyse.py`](analyse.py) | the 2×2, the Newcombe contrasts, the exposure-restricted read and the paired/McNemar read |
 | [`run_cell.sh`](run_cell.sh) | one cell, exactly as run |

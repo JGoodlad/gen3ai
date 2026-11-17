@@ -1,7 +1,15 @@
+"""EVERY team in the pool parses and packs through ``Gen3Teambuilder`` (719 teams, ~1.2 s each: ~15 min).
+
+Lived as ``tests/test_teams_validity.py``, a path no collection root named and a filename ``python_files`` does not match,
+so it never ran; ``src/uncollected_tests_gate_test.py`` found it. It is ``slow`` by its measured cost: run it when the
+team pool changes (``pytest src/utils/team_pool_validity_integration_test.py -m slow -q``).
+"""
 import pytest
-import os
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
+
+pytestmark = [pytest.mark.slow, pytest.mark.integration]
+
 
 def test_all_teams_validity():
     """

@@ -76,7 +76,7 @@ and excluded from the sibling control) + probe P's first 8 untaught. Code: `/tmp
 commit `b13b30b2`, READ-ONLY, `PYTHONDONTWRITEBYTECODE=1`.
 
 KL: `era_kl.masked_kl_rows_era` — content_locality's verbatim copy, already gated bit-identical
-against the gen-era `masked_kl_rows` import by its `kl_unit_test.py`.
+against the gen-era `masked_kl_rows` import by its `kl_unit_gate.py`.
 
 **Cluster = TEAM.** Cluster bootstrap over teams, 20 000 resamples, seed `20260905`.
 

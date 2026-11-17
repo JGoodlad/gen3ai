@@ -39,7 +39,7 @@ the ledger line to append; it never edits the ledger (append-only, and the WHY i
 
 **Validation is a routine-suite test** (`src/main/baselines_test.py`): every named file exists, every sha matches,
 `config_version` / `arch_signature` are re-read from the run's own `model_config.json`, and the `production` entry's
-declared CONSTRUCTION matches `designs/production_config.json`. `designs/research_state/measurements/archive_grooming_tiers.py`
+declared CONSTRUCTION matches `designs/production_config.json`. `src/main/ops/archive_grooming/tiers.py`
 reads `protected_files()` so a registry-named checkpoint survives every retention tier.
 
 ### A name either LOADS or fails LOUD — `baselines.load` and `BaselineLoadError`

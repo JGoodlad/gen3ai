@@ -107,7 +107,7 @@ NUMERICAL dumps that DO carry weights, on their true weights and on their own br
   ACTIVATION arithmetic (§3), which a weight dither barely moves. So the class test is extended, not failed:
   - the dither rank still identifies the earlier mechanisms;
   - the fp32-error rank and the root band (§3) identify this one.
-- **A flip of the violator's NEAREST declared selection element does not reproduce the gap** (`flip_test.py`, the
+- **A flip of the violator's NEAREST declared selection element does not reproduce the gap** (`flip_probe.py`, the
   probe's own `TieFlip`):
   - u32180's nearest pair moves the row by only 3–5e-6;
   - u32320's moves it by 7e-3 – 1.3e-2, in a different direction (cos −0.87, −0.71, −0.02).
@@ -297,7 +297,7 @@ resume from `checkpoint_316000231`, the last checkpoint before the first over-ce
 - **Scripts:**
   - `replay_neighbours.py`: the neighbour replay, the weight-path sweep and the tie margins;
   - `control_neighbours.py`: the calibration control;
-  - `flip_test.py`: the nearest-element flip;
+  - `flip_probe.py`: the nearest-element flip;
   - `locate.py`, `locate_bias.py`, `locate_tau.py`: the error's origin and the root conditioning;
   - `tau_programs.py`: the reorder emulation, the sensitivity and the direction;
   - `surprise.py`: the event against the pre-event fitted tail.

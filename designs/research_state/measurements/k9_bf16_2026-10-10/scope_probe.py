@@ -16,7 +16,7 @@ Checks, on the probe's own forward (train mode, grad on, nothing saved) over a s
    INSIDE the scope — does dynamo's guard catch the swapped class / the flag (a recompile: loud under the
    K6 lock) or reuse the stale bf16 graph (silent)?
 
-    python scope_test.py --out scope_result.json [--backend eager|aot_eager|inductor]
+    python scope_probe.py --out scope_result.json [--backend eager|aot_eager|inductor]
 """
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# ship_gate.sh — THE SHIP GATE: the routine gate (`-m "not slow and not e2e"`, every test under src/,
+# ship_gate.sh — THE SHIP GATE: the routine gate (`-m "not slow and not e2e"`, every collected root (pytest.ini testpaths),
 # the static gates included) in the shape the box can afford right now, through gate_lock.sh +
 # mem_cap.sh with CUDA_VISIBLE_DEVICES="". A live training run ⇒ rule 5b (nice 19, the agent cores,
 # the measured -n); none ⇒ the quiet -n 6. It never selects tests by the change.

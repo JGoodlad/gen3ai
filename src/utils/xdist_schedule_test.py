@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import textwrap
@@ -83,7 +84,7 @@ def _child_session(tmp_path, *, schedule_on: bool = True, table_state: str = "go
     d = tmp_path / tag
     d.mkdir()
     (d / "conftest.py").write_text(repo_path("conftest.py").read_text())
-    ini = repo_path("pytest.ini").read_text().replace("testpaths = src tools", "testpaths = .")
+    ini = re.sub(r"(?m)^testpaths = .*$", "testpaths = .", repo_path("pytest.ini").read_text())
     (d / "pytest.ini").write_text(ini)
     for name, body in _PLANTED.items():
         (d / name).write_text(textwrap.dedent(body))
@@ -177,8 +178,8 @@ def test_a_test_that_kills_its_worker_is_reported_once_and_never_rerun(tmp_path)
     d = tmp_path / "crash"
     d.mkdir()
     (d / "conftest.py").write_text(repo_path("conftest.py").read_text())
-    (d / "pytest.ini").write_text(repo_path("pytest.ini").read_text().replace("testpaths = src tools",
-                                                                             "testpaths = ."))
+    (d / "pytest.ini").write_text(re.sub(
+        r"(?m)^testpaths = .*$", "testpaths = .", repo_path("pytest.ini").read_text()))
     (d / "crash_test.py").write_text(textwrap.dedent(_CRASHER))
     stamps = d / "stamps.txt"
     env = dict(os.environ, STAMPS=str(stamps), GEN3AI_TEST_COSTS=str(tmp_path / "costs.json"))

@@ -126,7 +126,7 @@ reason to read a log. Metamon's post-game `RecursionError` happens after the las
 
 ### The patch is proved to be a patch — a POSITIVE-CONTROL PAIR
 
-`baton_pass_patch_test.py` is our fork's carry-over test ported to the upstream API. It is run
+`baton_pass_patch_check.py` is our fork's carry-over test ported to the upstream API. It is run
 under **both** interpreters before the campaign, and both directions must hold:
 
 * **arm U must FAIL** all four carry-over assertions (boosts, Substitute, the opponent's pass,

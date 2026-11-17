@@ -21,6 +21,7 @@ import subprocess
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
+from main.ops.arm_chain.armend import THIN_PLANNER
 from main.ops.arm_chain.procwatch import ProcRef
 from main.ops.arm_chain.runner import SubprocessRunner
 from main.ops.arm_chain.spec import ChainSpec, parse
@@ -218,7 +219,7 @@ def planner_handler(models: str, refuse_open_times: int = 0, keep_extra: Sequenc
     state = {"open": refuse_open_times}
 
     def pred(argv: Sequence[str]) -> bool:
-        return any(a.endswith("archive_grooming_dryrun.py") for a in argv)
+        return THIN_PLANNER in argv
 
     def fn(argv: Sequence[str], out: str) -> int:
         run = _arg(argv, "--thin-run")

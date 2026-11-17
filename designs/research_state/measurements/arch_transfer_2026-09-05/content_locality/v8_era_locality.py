@@ -5,7 +5,7 @@ config_version 45 / obs 2992 and current code REFUSES them.
 
 Statistic: forward KL(teacher || parent) over LEGAL actions. The era predates
 `instrumented_ppo.distill_anchor`, so the function comes from `era_kl.masked_kl_rows_era` -- a
-verbatim copy whose bit-identity with the gen-era import is gated by `kl_unit_test.py`.
+verbatim copy whose bit-identity with the gen-era import is gated by `kl_unit_gate.py`.
 
 State batch: the FOLD PARENT (ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip) pilots
 each team against the fixed reference opponent (ai_v8_03_zarch_control_0718, an ancestor of both
@@ -244,7 +244,7 @@ def main(out_path, per_team=3):
     res = {"_meta": {
         "era": "v8 (b13b30b289c5eaba136a930a4ab63451e209fbe5)",
         "statistic": "forward KL(teacher||parent) over legal actions; era_kl.masked_kl_rows_era, "
-                     "gated bit-identical to the gen-era import by kl_unit_test.py",
+                     "gated bit-identical to the gen-era import by kl_unit_gate.py",
         "also_reported": "KL(parent||teacher)",
         "state_source": f"PARENT pilots each of {len(TEAMS)} teams vs the fixed reference "
                         f"ai_v8_03_zarch_control final, {per_team} battles/team, GREEDY both "

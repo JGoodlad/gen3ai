@@ -42,19 +42,19 @@ and is unchanged. ``--policy tiered`` grades each run by ERA and by whether anyt
 still reaches for it, and adds a rule for ``snapshots/`` — the archive's second
 largest consumer, which the standing policy leaves entirely alone. The tiers, the
 reference graph they are built on, and the owner's reason for the aggressive pre-v8
-tier live in the sibling module ``archive_grooming_tiers.py``.
+tier live in the sibling module ``tiers.py``.
 
 Run:
-    python designs/research_state/measurements/archive_grooming_dryrun.py
-    python designs/research_state/measurements/archive_grooming_dryrun.py --policy tiered
+    python -m main.ops.archive_grooming.dryrun
+    python -m main.ops.archive_grooming.dryrun --policy tiered
 
     # what the owner would run to actually delete (NOT this pass):
-    python designs/research_state/measurements/archive_grooming_dryrun.py --apply
-    python designs/research_state/measurements/archive_grooming_dryrun.py \
+    python -m main.ops.archive_grooming.dryrun --apply
+    python -m main.ops.archive_grooming.dryrun \
         --policy tiered --apply
 
     # ONE finished run, the X35 F22 rule (10M nodes + final); see models_retention_policy.md §0
-    python designs/research_state/measurements/archive_grooming_dryrun.py --thin-run <run> [--apply]
+    python -m main.ops.archive_grooming.dryrun --thin-run <run> [--apply]
 
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
@@ -73,19 +73,14 @@ import sys
 import time
 from typing import Any, Iterable
 
-# --- bootstrap: put src/ on the path so main.prober.groom imports.  This cannot
-# go through utils.paths, which is itself only importable once src/ is there.
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_REPO = os.path.abspath(os.path.join(_HERE, "..", "..", ".."))
-_SRC = os.path.join(_REPO, "src")
-if os.path.isdir(_SRC) and _SRC not in sys.path:
-    sys.path.insert(0, _SRC)
+from main.ops.archive_grooming import tiers
+from main.prober.groom import groom_run
+from utils.paths import repo_path
 
-if _HERE not in sys.path:                    # so the sibling tiers module imports
-    sys.path.insert(0, _HERE)
-
-import archive_grooming_tiers as tiers  # noqa: E402  (after the sys.path bootstrap)
-from main.prober.groom import groom_run  # noqa: E402  (after the sys.path bootstrap)
+_REPO = str(repo_path())
+#: where the committed census reports (``archive_grooming_{dryrun,tiered}_<date>.{json,md}``) live: a frozen
+#: record, so the tool WRITES there by default but is not itself part of it.
+REPORT_DIR = str(repo_path("designs", "research_state", "measurements"))
 
 # ---------------------------------------------------------------- policy ----
 
@@ -184,7 +179,7 @@ def plan_checkpoints(
     ``.zip``** (found 2026-10-19: this planner used to drop a sidecar with its zip,
     "by STEP", so the standing policy would have deleted the per-checkpoint record
     that ``main.dose`` reads a run's LR from and that tier 4 keeps on purpose — see
-    ``archive_grooming_tiers.plan_tier4``).  The sidecar is kilobytes; the weights
+    ``tiers.plan_tier4``).  The sidecar is kilobytes; the weights
     are the cost.  So the stride, the ends and the pins are all computed over the
     ZIPS: a sidecar left behind by an earlier thinning must not become the "first"
     step of a re-plan and make a real first zip look deletable.
@@ -999,25 +994,18 @@ def build_census_tiered(models_dir: str, repo_root: str,
 
 # --------------------------------------------------------------- rendering ----
 
-APPLY_CMD = (
-    "export PYTHONPATH=$PYTHONPATH:src && \\\n"
-    "/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \\\n"
-    "  designs/research_state/measurements/archive_grooming_dryrun.py --apply"
-)
+_PY_REF = '"${GEN3AI_PYTHON:-python3}"'      # the interpreter is the caller's (root CLAUDE.md), never a path typed here
 
 
 def apply_cmd(policy: str = "standing") -> str:
     """The exact command that would EXECUTE this policy.  Run it from the MAIN
     checkout — ``models/`` exists only there."""
-    if policy == "tiered":
-        return (
-            "cd /home/goodlad/dev/gen3ai && \\\n"
-            "export PYTHONPATH=$PYTHONPATH:src && \\\n"
-            "/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \\\n"
-            "  designs/research_state/measurements/archive_grooming_dryrun.py \\\n"
-            "  --policy tiered --apply"
-        )
-    return APPLY_CMD
+    main = '"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"'   # the MAIN checkout, from any worktree
+    flags = "--policy tiered --apply" if policy == "tiered" else "--apply"
+    return (f"cd {main} && \\\n"
+            "export PYTHONPATH=$PWD/src && \\\n"
+            f"{_PY_REF} \\\n"
+            f"  -m main.ops.archive_grooming.dryrun {flags}")
 
 
 def render_markdown(c: dict) -> str:
@@ -1643,7 +1631,7 @@ def thin_main(args: "argparse.Namespace", models_dir: str) -> int:
 
 def main(argv: "list[str] | None" = None) -> int:
     p = argparse.ArgumentParser(
-        prog="archive_grooming_dryrun.py",
+        prog="python -m main.ops.archive_grooming.dryrun",
         description="Census (and, with --apply, execution) of the models/ retention policy.",
     )
     p.add_argument("--models-dir", default=None,
@@ -1656,7 +1644,7 @@ def main(argv: "list[str] | None" = None) -> int:
     p.add_argument("--policy", choices=("standing", "tiered"), default="standing",
                    help="standing (the DEFAULT, unchanged): one rule for every CLOSED "
                         "run. tiered: grade by era + who still reaches for the run, "
-                        "and add a snapshots rule (see archive_grooming_tiers.py)")
+                        "and add a snapshots rule (see tiers.py)")
     p.add_argument("--recent-days", type=int, default=RECENT_DAYS,
                    help="a run touched this recently counts as REFERENCED (0 disables)")
     p.add_argument("--ledger-tail-lines", type=int, default=None,
@@ -1704,7 +1692,7 @@ def main(argv: "list[str] | None" = None) -> int:
     out_prefix = args.out_prefix
     if out_prefix is None:
         out_prefix = os.path.join(
-            _HERE, "archive_grooming_dryrun_2026-09-06" if args.policy == "standing"
+            REPORT_DIR, "archive_grooming_dryrun_2026-09-06" if args.policy == "standing"
             else "archive_grooming_tiered_2026-09-06")
 
     tail = args.ledger_tail_lines

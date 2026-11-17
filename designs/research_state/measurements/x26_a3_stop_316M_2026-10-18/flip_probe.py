@@ -17,7 +17,7 @@ resolution of that element. A flip far larger than delta, or orthogonal to it, s
 not that element's flip. CPU only, pinned code:
 
     PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=<pin_9c033489>/src CUDA_VISIBLE_DEVICES= \
-        python3 flip_test.py --in <copies> --ctrl <control copies> --out flip_test.json
+        python3 flip_probe.py --in <copies> --ctrl <control copies> --out flip_test.json
 """
 from __future__ import annotations
 

@@ -594,7 +594,8 @@ knob. Tests: `src/utils/heavy_slots_lane_test.py` (ordering, the bound, real wai
 **One command before every `/gen3ai-ship`: `scripts/ops/ship_gate.sh run`** (`src/utils/ship_gate.py`;
 `--dry-run` prints the resolved command, `--max-run-s S` bounds the run from pytest's start and is the ONLY bound to put
 on it (never an outer `timeout`: § "A queued job: three rules"), extra pytest options go after `--`, no argument refuses). It RUNS
-EVERYTHING the routine gate runs — `-m "not slow and not e2e"` over all of `src/`, the static gates included
+EVERYTHING the routine gate runs — `-m "not slow and not e2e"` over every root `pytest.ini` names in `testpaths` (`src/`, `tools/`,
+the measurement records' own tests; `src/uncollected_tests_gate_test.py` fails on a test file outside them), the static gates included
 (they deselect nothing) — and chooses only the SHAPE from the box: a live training run
 (`utils.procfs.live_training_runs`) ⇒ rule 5b, `nice -n 19`, pinned to every cpu in neither the trainer's affinity
 nor the active trainer list (`utils.core_split`, the ONE owner of both lists: [`core_split.md`](core_split.md)),

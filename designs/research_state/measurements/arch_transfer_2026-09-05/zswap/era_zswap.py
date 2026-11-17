@@ -525,7 +525,7 @@ def main(out_path, per_team=3, min_states=400):
         "swap_mechanism": "_ZShim replaces fe.zarch_encoder and returns a pinned [B,32]; gated by "
                           "acid_shim (disarmed and armed-with-own-z both bit-identical to unpatched)",
         "statistic": "forward KL over legal actions, era_kl.masked_kl_rows_era (gated bit-identical "
-                     "to the gen-era import by content_locality/kl_unit_test.py)",
+                     "to the gen-era import by content_locality/kl_unit_gate.py)",
         "conditions": {"a": "KL(T[z_T]||P[z_P])", "b": "KL(T[z_P]||P[z_P])",
                        "c1": "KL(P[z_T]||P[z_P])", "c2": "KL(T[z_T]||P[z_T])",
                        "d0": "KL(T[0]||P[0])", "dmu": "KL(T[zbar_T]||P[zbar_P])",

@@ -119,7 +119,7 @@ as-is), plus the learner vs every bf16 T2-like variant.
 
 - **Pooled endstate.** Max \|Δ\| 0.063 is 0.45 of the clip edge, log(1.15) = 0.140. The clip fraction from numerics
   alone is 0.
-- **The fp32 K9(b) gate is untouched** (`scope_test.py` → `scope_result_eager.json`). Both mechanisms make the probe
+- **The fp32 K9(b) gate is untouched** (`scope_probe.py` → `scope_result_eager.json`). Both mechanisms make the probe
   forward **bit-identical** to a pure fp32 policy in log π, the full masked log-probs and the tie margins, and the
   bf16 forward afterwards is bit-identical to before:
   - **A**, a class-swap scope: `set_trunk_precision(policy, "fp32")` around the probe, then back to `"bf16"`;
@@ -218,6 +218,6 @@ The essential cells are perturb05 and trained, at both behaviours:
 | `run_cells.sh` | runs cells (CPU: `nice -n 19`, `mem_cap 24`, 4 threads; CUDA: under the lease) |
 | `derive.py` | the declared rules → `result.json` |
 | `real_probe.py` | the real probe, end to end, at a candidate bar |
-| `scope_test.py` | design (b)'s fp32-probe mechanisms, and their dynamo interaction |
+| `scope_probe.py` | design (b)'s fp32-probe mechanisms, and their dynamo interaction |
 | `diag_grad_mode.py` | where the grad-on vs no-grad bf16 difference does NOT come from (a round at a fixed input) |
 | `result.json`, `cells/*.json`, `real_probe_*.json`, `scope_result_eager.json`, `diag_grad_mode_cpu.json`, `train_state_log.json` | the outputs |

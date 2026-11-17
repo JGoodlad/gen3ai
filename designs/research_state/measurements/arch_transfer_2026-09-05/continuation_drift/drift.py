@@ -18,7 +18,7 @@ rules already cover BOTH eras by ROLE (v8's `action_net` and the gen `pointer_he
 The forward KL is IMPORTED too: the gen era gets the real
 `agents.training.instrumented_ppo.distill_anchor.masked_kl_rows`; the v8 era, whose pin predates
 that module, gets `../content_locality/era_kl.masked_kl_rows_era` — the sanctioned era copy that
-`../content_locality/kl_unit_test.py` pins against the real one.
+`../content_locality/kl_unit_gate.py` pins against the real one.
 
 Buffers (PopArt statistics, the constant data tables) are NEVER inside a group; every buffer whose
 value differs from the parent's is reported separately.

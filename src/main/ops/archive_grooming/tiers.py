@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The TIERED retention policy — ``archive_grooming_dryrun.py --policy tiered``.
+"""The TIERED retention policy — ``python -m main.ops.archive_grooming.dryrun --policy tiered``.
 
 The standing policy (``--policy standing``, still the default) asks one question of
 every run — *is it CLOSED?* — and applies one rule.  That is the right shape while
@@ -85,10 +85,12 @@ _SNAP_RE = re.compile(r"^snapshot_(\d+)\.zip$")
 _CKPT_SIDECAR_RE = re.compile(r"^checkpoint_\d+_steps\.json$")
 
 #: argv flags whose value is a model/pool reference, for the snapshots rule.
-_POOL_FLAGS = ("--stable-opponents", "--exploiter", "--exploiter-ladder",
-               "--warmstart-consensus")
-_MODEL_FLAGS = ("--model", "--distill-anchor-parent")
-_TEACHER_FLAGS = ("--distill-teacher", "--win-prob-pbrs-source")
+#: Built from bare names, not `"--x"` literals: several of these flags are DELETED (`designs/deleted_flags.md`) yet still
+#: appear in an old run's recorded ``original_command``, and a `"--x"` constant under `src/` reads to the freshness
+#: gate as a flag the live CLI accepts (the way `agents.training.lineage` spells its own).
+_POOL_FLAGS = tuple("--" + n for n in ("stable-opponents", "exploiter", "exploiter-ladder", "warmstart-consensus"))
+_MODEL_FLAGS = tuple("--" + n for n in ("model", "distill-anchor-parent"))
+_TEACHER_FLAGS = tuple("--" + n for n in ("distill-teacher", "win-prob-pbrs-source"))
 
 #: committed files under this prefix count as a MEASUREMENT ARTIFACT — naming a run
 #: there protects it (tier 1), unlike ordinary prose.
@@ -110,10 +112,16 @@ BOOKKEEPING_ARTIFACT_PREFIXES = (
 )
 
 
+#: this tool's own SOURCE and tests (they name runs as fixtures and protected prefixes, not as references to them).
+#: Moved here from ``designs/research_state/measurements/archive_grooming_*`` (which the basename prefix covered), so
+#: the directory is named too, or the tool's own code would count as a script that reaches for those runs.
+BOOKKEEPING_DIR_PREFIXES = ("src/main/ops/archive_grooming/",)
+
+
 def is_bookkeeping(rel: str) -> bool:
     """True for a committed file that names runs because it ENUMERATES the archive."""
     base = os.path.basename(rel)
-    return any(base.startswith(p) for p in BOOKKEEPING_ARTIFACT_PREFIXES)
+    return rel.startswith(BOOKKEEPING_DIR_PREFIXES) or any(base.startswith(p) for p in BOOKKEEPING_ARTIFACT_PREFIXES)
 
 
 # ------------------------------------------------------ the BASELINE REGISTRY ----
@@ -171,7 +179,7 @@ def baseline_protected() -> "dict[str, list[str]]":
 #: claim rests on; grooming "only" its ``eval_traces`` while that is unresolved is
 #: the same bet with a smaller stake.  A hold is released by BANKING the artifact,
 #: not by re-reading the ledger.
-#: THE RETENTION RULE for BOUNDARY-1's banked cells (`models_retention_policy.md` § B1): these run-name prefixes
+#: THE RETENTION RULE for BOUNDARY-1's banked cells (`models_retention_policy.md`, its first section): these run-name prefixes
 #: (C, W, Br, WB: `rb_b1c_`, `rb_b1w_`, `rb_b1br_`, `rb_b1wb_`; the trailing `_` keeps `rb_b1w_` from matching
 #: `rb_b1wb_`) are never planned for any deletion, by the standing policy, the tiered policy or `--thin-run`, until
 #: a WRITTEN owner decision releases them (then this tuple is edited in that commit).  The one source; the thinner

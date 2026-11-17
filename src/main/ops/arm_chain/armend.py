@@ -38,7 +38,7 @@ from main.ops.arm_chain.statuslog import StatusLog, Trigger, launch_tag, line_pa
 #: One rollout (256 envs x 384 steps): a finished run's newest periodic checkpoint is within this of ``--steps``.
 ONE_ROLLOUT = 98_304
 _CKPT = re.compile(r"checkpoint_(\d+)_steps\.zip")
-THIN_PLANNER = "designs/research_state/measurements/archive_grooming_dryrun.py"
+THIN_PLANNER = "main.ops.archive_grooming.dryrun"
 
 
 def wait_end(log: StatusLog, end: Trigger, wrapper: ProcRef, launcher_pidfile: str, timeout_s: float,
@@ -194,7 +194,7 @@ def thin(spec: ChainSpec, it: ArmItem, runner: Runner, base_env: Mapping[str, st
     if newest < target_steps - 1_000_000:
         raise Hold(f"the newest checkpoint is {newest or 'none'} (< --steps {target_steps} - 1M) — NOT thinned")
     env = cpu_env(base_env, spec.repo, blocking=f"arm_chain thin ({it.run})", models_dir=spec.models_dir)
-    planner = [*agent_prefix(spec.agent_cores, 0), spec.python, os.path.join(spec.repo, THIN_PLANNER),
+    planner = [*agent_prefix(spec.agent_cores, 0), spec.python, "-m", THIN_PLANNER,
                "--thin-run", it.run, "--models-dir", spec.models_dir]
     dry = os.path.join(spec.work_dir, f"{it.run}.thin_dry.txt")
     rc = 1

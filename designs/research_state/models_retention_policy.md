@@ -9,7 +9,7 @@ and their reports are committed beside them; the `--apply` commands are in §7.*
 
 **Why:** they are the CONTROLS of every later fresh-cell arm (a fresh cell is read against a banked cell: its cost is one cell instead of two). B1 §4 forbids thinning only "before §9's reading is closed", so without this rule nothing keeps them past B1's close while the fresh cells' 100M looks come weeks later (FRAME finding F2). The weights are irreversible: a thinned control cannot be regenerated.
 
-**Who enforces it:** `archive_grooming_tiers.BANKED_B1_PREFIXES` (`rb_b1c_`, `rb_b1w_`, `rb_b1br_`, `rb_b1wb_`), the one list, read by `--thin-run` (refused, `ThinRefused`), the standing policy (the run is REFERENCED, never CLOSED) and the tiered policy (a REVIEW HOLD: no plan at all). Tests that fail on revert: `archive_grooming_thin_run_test.py::test_boundary1_banked_cells_are_refused`, `archive_grooming_tiered_test.py::test_boundary1_banked_cells_get_no_plan_and_a_neighbour_does`, `archive_grooming_dryrun_test.py::test_boundary1_banked_cells_are_never_closed_by_the_standing_policy`.
+**Who enforces it:** `tiers.BANKED_B1_PREFIXES` (`src/main/ops/archive_grooming/tiers.py`) (`rb_b1c_`, `rb_b1w_`, `rb_b1br_`, `rb_b1wb_`), the one list, read by `--thin-run` (refused, `ThinRefused`), the standing policy (the run is REFERENCED, never CLOSED) and the tiered policy (a REVIEW HOLD: no plan at all). Tests that fail on revert: `archive_grooming_thin_run_test.py::test_boundary1_banked_cells_are_refused`, `archive_grooming_tiered_test.py::test_boundary1_banked_cells_get_no_plan_and_a_neighbour_does`, `archive_grooming_dryrun_test.py::test_boundary1_banked_cells_are_never_closed_by_the_standing_policy`.
 
 **Release:** only a written owner decision, naming the runs, edited into this section and the tuple in the same commit. This rule deletes nothing and asks nothing of the owner; deleting run data is the owner's alone. No agent thins, moves or rewrites these runs by any other route either (a hand `rm`, `mv` or a re-save is the same act).
 
@@ -29,7 +29,7 @@ and their reports are committed beside them; the `--apply` commands are in §7.*
 
 NOT applied, by ruling: the STANDING policy's thinning (31.5 GiB in 42 CLOSED `rb_` runs, because weights are irreversible and the caches sufficed), a manual trim of `compile_shared` (its LRU pruner keeps it at its 20 GB cap), and the finished studies' pin worktrees under `~/.cache/gen3ai/`. The per-path allowlists, delete logs and the standing dry run are in `~/gen3ai_archive/disk_reclaim_2026-10-19/`.
 
-**FIXED 2026-10-19 (was TECH DEBT): the STANDING plan used to delete `checkpoints/*.json` SIDECARS together with their zips.** `archive_grooming_dryrun.plan_checkpoints` (shared by the standing policy and tiers 1-3) now keeps EVERY `checkpoint_N_steps.json` (reason "checkpoint sidecar — the record, not the weights") and computes the ends, stride and pins over the ZIPS only, so a re-plan after a thinning is not thrown by orphan sidecars. Tier 4 keeps them by its own rule (§4). `main.dose` reads a run's LR from them. Tests that fail on revert: `archive_grooming_dryrun_test.py::test_every_checkpoint_sidecar_is_kept_even_when_its_zip_is_thinned` and `::test_a_sidecar_left_by_an_earlier_thinning_does_not_move_the_ends_of_a_replan`. Checked read-only against `models/` (`--policy standing`, output to /tmp): 240 zips planned for deletion, 0 sidecars. The standing policy is still NOT applied (see above).
+**FIXED 2026-10-19 (was TECH DEBT): the STANDING plan used to delete `checkpoints/*.json` SIDECARS together with their zips.** `dryrun.plan_checkpoints` (`src/main/ops/archive_grooming/dryrun.py`) (shared by the standing policy and tiers 1-3) now keeps EVERY `checkpoint_N_steps.json` (reason "checkpoint sidecar — the record, not the weights") and computes the ends, stride and pins over the ZIPS only, so a re-plan after a thinning is not thrown by orphan sidecars. Tier 4 keeps them by its own rule (§4). `main.dose` reads a run's LR from them. Tests that fail on revert: `archive_grooming_dryrun_test.py::test_every_checkpoint_sidecar_is_kept_even_when_its_zip_is_thinned` and `::test_a_sidecar_left_by_an_earlier_thinning_does_not_move_the_ends_of_a_replan`. Checked read-only against `models/` (`--policy standing`, output to /tmp): 240 zips planned for deletion, 0 sidecars. The standing policy is still NOT applied (see above).
 
 ### Per-run F22 thinning (`--thin-run`, added 2026-10-20)
 
@@ -37,13 +37,13 @@ X35 batch 1 thins each FINISHED arm to its 10M nodes + final as it ends (the lau
 
 ```bash
 cd /home/goodlad/dev/gen3ai && export PYTHONPATH=$PWD/src && CUDA_VISIBLE_DEVICES="" \
-  python designs/research_state/measurements/archive_grooming_dryrun.py --thin-run <run> [--apply]
+  python -m main.ops.archive_grooming.dryrun --thin-run <run> [--apply]
 ```
 
 - **Kept:** every `checkpoint_N_steps.zip` that is the first checkpoint at or past a multiple of 10M (`--node-step`; `--nodes-from absolute` is the default, `fork` counts from the fork step's 1M bucket; the fork start is the parent's node, never the run's), the newest checkpoint zip (the final), the `latest.txt` pin, and every file a `reference_population_*.json` or `x35_pool_*.json` names; EVERY `checkpoint_*.json` sidecar, `final_model*.zip`, TensorBoard, jsonl, eval traces, snapshots and readout artifacts (only `checkpoints/*.zip` is ever a candidate). A node with no checkpoint within half a median spacing of it is printed as a FINDING, never guessed.
 - **Refused (exit 3, nothing read further):** a run a launcher / trainer process names, a live pid in `~/.claude/jobs/*/<run>.pid` (or `--pid-file`), a process whose cwd or open fd is inside the run dir, `rb_x26_*` / `rb_x34*` / `rb_toy_ent_*`, any run `designs/baselines.json` mentions, a run with no `final_model*.zip` (`--allow-no-final`), and an unreadable registry or reference file (fail closed).
 - **Dry run by default.** `--apply` re-checks each path with `_assert_safe` (no symlinks, zips only), sha256-hashes every kept file and `final_model*.zip` before and after, exits 4 on any mismatch, and writes the log to `--log-dir` (default `~/gen3ai_archive/retention_thin/`).
-- Tests (they fail on revert): `archive_grooming_thin_run_test.py` (each refusal, the sidecars, the node selection, the protected references, the apply).
+- Tests (they fail on revert): `thin_run_test.py` (each refusal, the sidecars, the node selection, the protected references, the apply).
 
 The run archive is the one thing in this project that is never reproducible. A checkpoint is a
 weight file that no amount of compute re-derives, because the run that produced it consumed dice,
@@ -51,7 +51,7 @@ a pool, an opponent distribution and a commit that no longer all coexist. So the
 built to **REFUSE rather than to reclaim**: every rule below says what is KEPT and why, the
 deletion set is what falls out, and a run the rules cannot classify gets *no plan at all*.
 
-Two policies live in one script, `designs/research_state/measurements/archive_grooming_dryrun.py`:
+Two policies live in one module, `src/main/ops/archive_grooming/dryrun.py` (`python -m main.ops.archive_grooming.dryrun`; its census reports still land in `designs/research_state/measurements/`):
 
 | policy | what it asks | frees |
 |---|---|---|
@@ -138,6 +138,7 @@ its own previous report as evidence can never close a run.
 So `is_bookkeeping()` excludes a committed file by BASENAME prefix — `archive_grooming_`,
 `fh_lineage`, `folding_history_`, `sidecar_audit`, `run_inventory` — from BOTH the artifact and the
 script protection paths. Matching the basename means a future dated copy is covered without an edit.
+The tool's own source and tests (`src/main/ops/archive_grooming/`, `tiers.BOOKKEEPING_DIR_PREFIXES`) are excluded the same way: they name runs as fixtures and protected prefixes, and would otherwise read as scripts that reach for them.
 
 ---
 
@@ -146,7 +147,7 @@ script protection paths. Matching the basename means a future dated copy is cove
 **`designs/baselines.json` (`gen3_baselines_registry_v1`) is a third reference source, and the
 FILE-level half of it is the load-bearing one.** A baseline is the thing a result is read against;
 a NAME is only worth having if it still resolves a year from now, which is exactly what a retention
-pass can quietly end. So `archive_grooming_tiers.baseline_protected()` reads the registry and the
+pass can quietly end. So `tiers.baseline_protected()` reads the registry and the
 policy uses it twice:
 
 * **RUN level** — a registry-named run is **tier 1 REFERENCED**, with the reason naming the file.
@@ -172,7 +173,7 @@ SCRIPT (by extension) or a MEASUREMENT ARTIFACT (by the `measurements/` prefix),
 **A broken registry degrades to NO protection rather than a crash** — a dry run must not be what an
 unreadable registry takes down, and `python -m main.baselines check` is what reports it. That
 degradation is safe only in the wrong direction (it makes a plan *more* aggressive), so the count is
-reported rather than silent. Gates: `archive_grooming_tiered_test.py` → *the BASELINE REGISTRY* (5
+reported rather than silent. Gates: `tiered_test.py` → *the BASELINE REGISTRY* (5
 tests, including the refusal and the tier-4 keep-list entry).
 
 ---
@@ -253,7 +254,7 @@ Each was read against `ledger.md` and the committed tree. Three are HELD, two ar
 we are not certain which of its files its banked claim rests on, and grooming "only" its
 `eval_traces` while that is unresolved is the same bet with a smaller stake. **A hold is released by
 BANKING the artifact, not by re-reading the ledger.** The holds live in
-`archive_grooming_tiers.REVIEW_HOLDS`, each with its finding, so "we looked at it" is a fact in the
+`tiers.REVIEW_HOLDS`, each with its finding, so "we looked at it" is a fact in the
 code rather than a claim in a report.
 
 | run | tier | verdict | why |
@@ -296,19 +297,19 @@ standing policy structurally cannot see.
 cd /home/goodlad/dev/gen3ai && \
 export PYTHONPATH=$PYTHONPATH:src && \
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
-  designs/research_state/measurements/archive_grooming_dryrun.py --policy tiered
+  -m main.ops.archive_grooming.dryrun --policy tiered
 
 # APPLY the tiered policy — 87.9 GB
 cd /home/goodlad/dev/gen3ai && \
 export PYTHONPATH=$PYTHONPATH:src && \
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
-  designs/research_state/measurements/archive_grooming_dryrun.py --policy tiered --apply
+  -m main.ops.archive_grooming.dryrun --policy tiered --apply
 
 # APPLY the gentler STANDING policy instead — 18.8 GB, checkpoints/ + eval_traces/ only
 cd /home/goodlad/dev/gen3ai && \
 export PYTHONPATH=$PYTHONPATH:src && \
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
-  designs/research_state/measurements/archive_grooming_dryrun.py --apply
+  -m main.ops.archive_grooming.dryrun --apply
 ```
 
 **Run it from the MAIN checkout** — `models/` exists only there. The default `--out-prefix` is
@@ -331,18 +332,13 @@ targets are still the ones you mean.
   exact path a plan would delete drops that run from the deletion set entirely.
 - **Symlinked run dirs are held out by default** in both policies; a deletion "in `models/`" would
   otherwise land physically under `.claude/worktrees/`.
-- **Tests**: `archive_grooming_dryrun_test.py` (34, the standing policy) and
-  `archive_grooming_tiered_test.py` (47), plus `archive_grooming_thin_run_test.py` for `--thin-run` (§0) — synthetic trees under `tmp_path`, which is also the only
+- **Tests** (all in `src/main/ops/archive_grooming/`, so the routine gate runs them): `dryrun_test.py` (the standing policy) and
+  `tiered_test.py`, plus `thin_run_test.py` for `--thin-run` (§0) — synthetic trees under `tmp_path`, which is also the only
   place `--apply` is ever exercised. Run them with:
 
 ```bash
-python -m pytest designs/research_state/measurements/archive_grooming_dryrun_test.py \
-                 designs/research_state/measurements/archive_grooming_tiered_test.py \
-                 designs/research_state/measurements/archive_grooming_thin_run_test.py -q
+python -m pytest src/main/ops/archive_grooming -q
 ```
-
-(`pytest.ini` sets `testpaths = src tools`, so a test under `designs/` is not collected by the
-routine gate and is run directly.)
 
 ---
 

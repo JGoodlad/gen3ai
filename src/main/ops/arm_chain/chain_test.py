@@ -17,6 +17,7 @@ from typing import Any, Dict, Iterator, List, Mapping
 import pytest
 
 from main.ops.arm_chain import chain as C
+from main.ops.arm_chain.armend import THIN_PLANNER
 from main.ops.arm_chain.cpugate import GateResult
 from main.ops.arm_chain.launch import X35Launcher
 from main.ops.arm_chain.procwatch import ProcRef, wait_gone
@@ -128,7 +129,7 @@ def test_a_stopped_run_is_never_k9b_read_thinned_or_chained(w):
     assert ch.run() == C.EXIT_HOLD
     assert ch.state["items"]["arm:rb_a1_s1"]["phase"] == "ENDED"
     assert "stopped, not finished" in ch.state["items"]["arm:rb_a1_s1"]["hold"]["reason"]
-    assert not any("k9b" in c[0] or any(a.endswith("archive_grooming_dryrun.py") for a in c[0]) for c in runner.calls)
+    assert not any("k9b" in c[0] or THIN_PLANNER in c[0] for c in runner.calls)
     assert [c for c in w.calls() if c.startswith("GO a2")] == []
 
 
