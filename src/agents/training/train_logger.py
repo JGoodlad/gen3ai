@@ -443,7 +443,8 @@ class Logger:
 def configure(folder: Optional[str] = None, format_strings: Sequence[str] = (), *,
               root: Optional[str] = None) -> Logger:
     """A logger writing ``format_strings`` (a subset of `FORMATS`): ``stdout`` the table on ``sys.stdout``,
-    ``tensorboard`` an event file in ``folder``. ``configure(None, [])`` is the NULL logger (records,
+    ``tensorboard`` an event file in ``folder``, made under the EXISTING run dir ``root`` (required for it: a TB
+    logger never creates its run dir, ``utils.run_dir``). ``configure(None, [])`` is the NULL logger (records,
     reads and dumps; writes nothing, creates nothing — the K9 golden's and the startup dry update's)."""
     formats = [f for f in format_strings if f]
     unknown = [f for f in formats if f not in FORMATS]
@@ -454,12 +455,9 @@ def configure(folder: Optional[str] = None, format_strings: Sequence[str] = (), 
         if f == "stdout":
             outs.append(HumanOutputFormat(sys.stdout))
         else:
-            if folder is None:
-                raise ValueError("a tensorboard logger needs a folder")
-            if root is not None:                 # a run's TB dir: under its EXISTING run dir, never re-creating it
-                ensure_subdir(root, folder)
-            else:
-                os.makedirs(folder, exist_ok=True)
+            if folder is None or root is None:
+                raise ValueError("a tensorboard logger needs a folder and its run dir (root=)")
+            ensure_subdir(root, folder)          # a run's TB dir: under its EXISTING run dir, never re-creating it
             outs.append(TensorBoardOutputFormat(folder, root=root))
     logger = Logger(folder=folder, output_formats=outs)
     if formats and formats != ["stdout"]:

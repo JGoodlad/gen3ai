@@ -199,7 +199,7 @@ def test_the_launch_path_calls_the_guard_BEFORE_it_creates_the_run_dir():
     """🚨 A refusal must leave NOTHING behind — the same property the [Untaught] guard has.
 
     Read out of `train_rl_agent.main`'s own AST rather than asserted in prose: the guard call must
-    appear before the `os.makedirs(model_dir, ...)` that creates the directory. A later edit that
+    appear before the `_create_run_root(args, model_dir)` that creates the directory. A later edit that
     reorders them fails here instead of leaving orphan run dirs on every refused launch.
     """
     from utils.paths import src_path
@@ -214,14 +214,14 @@ def test_the_launch_path_calls_the_guard_BEFORE_it_creates_the_run_dir():
         name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
         if name == "enforce_inherited_fork_lr" and guard_line is None:
             guard_line = node.lineno
-        if (name == "makedirs" and node.args
-                and getattr(node.args[0], "id", None) == "model_dir"
+        if (name == "_create_run_root" and len(node.args) == 2
+                and getattr(node.args[1], "id", None) == "model_dir"
                 and makedirs_line is None):
             makedirs_line = node.lineno
     assert guard_line is not None, "train_rl_agent.main no longer calls enforce_inherited_fork_lr"
-    assert makedirs_line is not None, "the os.makedirs(model_dir) this test keys off is gone"
+    assert makedirs_line is not None, "the _create_run_root(args, model_dir) this test keys off is gone"
     assert guard_line < makedirs_line, (
-        f"the fork-lr guard runs at line {guard_line}, AFTER os.makedirs(model_dir) at "
+        f"the fork-lr guard runs at line {guard_line}, AFTER _create_run_root(args, model_dir) at "
         f"{makedirs_line} — a refusal would leave an orphan run directory behind")
 
 

@@ -193,11 +193,11 @@ def test_model_build_wires_the_stop_at_both_construction_sites():
 
 def test_the_trainer_refuses_fatal_config_before_it_creates_the_run_dir():
     """Static, on the entry point: the verdict is read and a refusal exits FATAL_CONFIG BEFORE
-    `os.makedirs(model_dir` (a refusal leaves nothing behind), and the verdict is recorded."""
+    `_create_run_root(args, model_dir)` makes the run dir (a refusal leaves nothing behind), and the verdict is recorded."""
     text = src_path("main", "train_rl_agent.py").read_text()
     at_verdict = text.index("_disk_verdict(args, model_dir)")
     at_refusal = text.index("if _disk.refused:\n        sys.exit(int(TrainExitCode.FATAL_CONFIG))")
-    at_makedirs = text.index("os.makedirs(model_dir, exist_ok=True)")
+    at_makedirs = text.index("_create_run_root(args, model_dir)")
     assert at_verdict < at_refusal < at_makedirs
     assert 'cli_args["_disk_guard"] = _disk.to_record()' in text
 

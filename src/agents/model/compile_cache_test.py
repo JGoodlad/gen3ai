@@ -355,12 +355,12 @@ def test_every_production_compile_site_declares_the_hermetic_cache():
 
 
 def test_the_trainer_declares_the_cache_before_anything_compiles_or_spawns():
-    """In `train_rl_agent.main`, `_declare_compile_cache(` follows `os.makedirs(model_dir` and precedes
+    """In `train_rl_agent.main`, `_declare_compile_cache(` follows `_create_run_root(args, model_dir)` and precedes
     every compile / spawn site that would otherwise inherit or create a cache first."""
     src = _module_source("main/train_rl_agent.py")
     body = src[src.index("async def main():"):]
     at = body.index("_declare_compile_cache(args, model_dir)")
-    assert body.index("os.makedirs(model_dir, exist_ok=True)") < at
+    assert body.index("_create_run_root(args, model_dir)") < at
     for later in ("build_rust_vec_env(", "build_and_train("):
         if later in body:
             assert at < body.index(later), f"{later} runs before the run's compile cache is declared"

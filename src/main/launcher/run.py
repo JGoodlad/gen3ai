@@ -22,7 +22,7 @@ import threading
 import time
 from dataclasses import dataclass
 
-from main.exit_codes import CUDA_LEAK_RESTART_CAP, LAUNCHER_UNSAVED_STOP, TrainExitCode
+from main.exit_codes import CUDA_LEAK_RESTART_CAP, LAUNCHER_UNSAVED_STOP, TrainExitCode, exit_code_for
 from main.launcher.checkpoint import (
     saved_by_stop,
     find_latest_checkpoint,
@@ -54,7 +54,8 @@ from main.launcher.pinned_argv import (
     report_lines,
 )
 from main.launcher.state import LauncherState
-from utils.run_dir import RunDirGoneError, ensure_subdir
+from main.train.fork_lr import is_same_run_checkpoint
+from utils.run_dir import RunDirGoneError, create_run_root, ensure_subdir
 from main.train import arch_surface
 from main.launcher.worktree import (
     _git_hash,
@@ -573,7 +574,12 @@ def _prepare_session(
         train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
         state.initial_git_hash = _git_hash()
         _arch_surface_gate()           # the --no-pin path's own last stop, before the makedirs
-    os.makedirs(run_dir, exist_ok=True)
+    # The run root's one creation (`utils.run_dir.create_run_root`); a same-run resume requires it instead.
+    try:
+        create_run_root(run_dir, resume=is_same_run_checkpoint(_find_model_arg(child_args) or "", run_dir))
+    except RunDirGoneError as e:
+        print(f"[launcher] ERROR: [RunDir] {e}", file=sys.stderr)
+        sys.exit(exit_code_for(e))            # FATAL_CONFIG (3), mapped by name
     child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 
     state.run_dir = run_dir

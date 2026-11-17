@@ -22,6 +22,12 @@ from agents.training import pool_seed
 STEPS = (1_000_000, 2_000_000, 3_000_000, 4_000_000)
 
 
+def _fork_pool(tmp_path, name: str = "fork") -> str:
+    """The fork's pool dir, under a run dir that EXISTS (the trainer makes it at startup, before seeding)."""
+    (tmp_path / name).mkdir(exist_ok=True)
+    return str(tmp_path / name / "snapshots")
+
+
 def _args(**kw):
     ns = types.SimpleNamespace(model=None, self_play=True, fork_pool_seed=True,
                                allow_empty_pool=False)
@@ -115,7 +121,7 @@ def test_a_fork_of_a_LIVE_parent_never_seeds_its_FUTURE_selves(tmp_path):
 ])
 def test_the_boundary_is_step_LE_fork_step(tmp_path, fork_step, kept):
     parent = _make_parent(tmp_path)
-    pool = str(tmp_path / "fork" / "snapshots")
+    pool = _fork_pool(tmp_path)
     rec = pool_seed.seed_pool(parent, pool, fork_step=fork_step)
     assert _steps_on_disk(pool) == kept
     assert rec["dropped_steps"] == [s for s in STEPS if s not in kept]
@@ -130,7 +136,7 @@ def test_pfsp_win_rates_are_pruned_to_the_kept_steps_and_nothing_else_changes(tm
     src_summary = json.load(open(os.path.join(parent, "snapshots", "summary.json")))
     src_summary["pfsp_win_rates"]["not_a_step"] = 0.5      # the callback's reader skips it; so do we
     open(os.path.join(parent, "snapshots", "summary.json"), "w").write(json.dumps(src_summary))
-    pool = str(tmp_path / "fork" / "snapshots")
+    pool = _fork_pool(tmp_path)
     rec = pool_seed.seed_pool(parent, pool, fork_step=2_000_000)
     got = json.load(open(os.path.join(pool, "summary.json")))
     assert got["pfsp_win_rates"] == {"1000000": 0.4, "2000000": 0.41, "not_a_step": 0.5}
@@ -149,7 +155,7 @@ def test_the_pruned_map_is_what_the_callback_reads_back(tmp_path):
     still be the pool's own summary."""
     from agents.training.snapshot_pool import SnapshotPool
     parent = _make_parent(tmp_path)
-    pool = str(tmp_path / "fork" / "snapshots")
+    pool = _fork_pool(tmp_path)
     pool_seed.seed_pool(parent, pool, fork_step=3_000_000)
     summary = SnapshotPool(pool_dir=pool, current_version=object()).load_summary()
     assert sorted(int(k) for k in summary["pfsp_win_rates"]) == [1_000_000, 2_000_000, 3_000_000]
@@ -159,7 +165,7 @@ def test_the_pruned_map_is_what_the_callback_reads_back(tmp_path):
 def test_a_summary_with_no_later_pfsp_key_is_copied_byte_for_byte(tmp_path):
     """A dropped zip whose PFSP entry was already pruned upstream: no rewrite, a plain copy."""
     parent = _make_parent(tmp_path, pfsp=False)
-    pool = str(tmp_path / "fork" / "snapshots")
+    pool = _fork_pool(tmp_path)
     rec = pool_seed.seed_pool(parent, pool, fork_step=2_000_000)
     assert rec["dropped_steps"] == [3_000_000, 4_000_000]
     assert rec["pruned_summary_keys"] == []
@@ -179,7 +185,7 @@ def test_a_fork_of_a_FINISHED_parent_is_byte_identical_to_the_unfiltered_copy(tm
     # Every file the pool's loader reads == the parent's, byte for byte ...
     assert _fingerprint(pool) == _fingerprint(os.path.join(parent, "snapshots"))
     # ... and == what the unfiltered copy (fork_step unknown, i.e. pre-T54) writes.
-    legacy = str(tmp_path / "legacy" / "snapshots")
+    legacy = _fork_pool(tmp_path, "legacy")
     pool_seed.seed_pool(parent, legacy, fork_step=None)
     assert _fingerprint(pool) == _fingerprint(legacy)
     assert "step filter <= 4000123: none later" in lines[0]

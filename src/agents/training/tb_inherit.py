@@ -68,6 +68,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple
 
+from utils.run_dir import ensure_subdir
+
 #: Bumped when the provenance file's SHAPE changes.
 INHERIT_SCHEMA = 1
 
@@ -297,7 +299,7 @@ def inherit_tb(fork_run_dir: str, *, parent_run_dir: str, fork_step: int,
     if dry_run:
         return partial
 
-    os.makedirs(fork_tb, exist_ok=True)
+    ensure_subdir(fork_run_dir, fork_tb)          # under the EXISTING fork run dir, never re-creating it
     _write_event_file(out_path, events)
     sha = _sha256_file(out_path)
     result = dataclasses.replace(partial, sha256=sha)
@@ -357,7 +359,7 @@ def _write_provenance(fork_run_dir: str, parent_run_dir: str, result: InheritRes
                  "by this one. Delete this file and the events file it names to undo."),
     }
     path = provenance_path(fork_run_dir)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    ensure_subdir(fork_run_dir, os.path.dirname(path))
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(block, f, indent=2)

@@ -84,6 +84,7 @@ import sys
 from typing import Any, Dict, List, Optional
 
 from utils.atomic_io import atomic_write, atomic_write_json, atomic_write_text
+from utils.run_dir import ensure_subdir
 
 #: The pool's metadata files, in the order they are copied. See the table in the module docstring.
 POOL_METADATA_FILES = ("summary.json", "win_rate_vs_bots.txt", "model_config.json")
@@ -280,7 +281,7 @@ def seed_pool(parent_run_dir: str, pool_dir: str, *, fork_step: Optional[int] = 
     has some — though the step filter may leave none (``n_snapshots == 0``; the caller refuses).
     """
     src = os.path.join(parent_run_dir, "snapshots")
-    os.makedirs(pool_dir, exist_ok=True)
+    ensure_subdir(os.path.dirname(pool_dir), os.path.basename(pool_dir))   # under the EXISTING run dir, never re-made
     copied: List[str] = []
     dropped: List[int] = []
     zips = snapshot_zips(src)

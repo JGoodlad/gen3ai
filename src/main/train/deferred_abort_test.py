@@ -240,7 +240,7 @@ def _learner(tmp_path):
     env = ToyVecEnv([(lambda: _CounterDictEnv()) for _ in range(N_ENVS)])
     model = attach_vec_collector(InstrumentedMaskablePPO(
         "MultiInputPolicy", env, n_steps=N_STEPS, batch_size=4, n_epochs=1, device="cpu", seed=0))
-    model.set_logger(configure(str(tmp_path / "tb"), ["tensorboard"]))
+    model.set_logger(configure(str(tmp_path / "tb"), ["tensorboard"], root=str(tmp_path)))
     return model
 
 

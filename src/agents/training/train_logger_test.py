@@ -130,8 +130,11 @@ def test_configure_serves_stdout_and_tensorboard_only(tmp_path, capsys):
     with pytest.raises(ValueError, match="not served"):
         TL.configure(str(tmp_path), ["csv"])
     with pytest.raises(ValueError, match="folder"):
-        TL.configure(None, ["tensorboard"])
-    tb = TL.configure(str(tmp_path / "tb"), ["stdout", "tensorboard"])
+        TL.configure(None, ["tensorboard"], root=str(tmp_path))
+    with pytest.raises(ValueError, match=r"root="):        # a TB logger without its run dir: no makedirs fallback
+        TL.configure(str(tmp_path / "tb"), ["tensorboard"])
+    assert not (tmp_path / "tb").exists()
+    tb = TL.configure(str(tmp_path / "tb"), ["stdout", "tensorboard"], root=str(tmp_path))
     assert f"Logging to {tmp_path / 'tb'}" in capsys.readouterr().out
     tb.record("train/loss", 0.5)
     tb.dump(10)

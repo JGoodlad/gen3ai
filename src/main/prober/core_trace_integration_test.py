@@ -117,14 +117,16 @@ def _play_core_games(lib, run_dir: str, n: int, *, turn_limit: int, seed: int, t
             t = ffi.trace(lib, f["script"], commit="test", label=f"{tag}{k}")
             res, kind = classify_result(won=f["winner"] == 1, lost=f["winner"] == 2, finished=True,
                                         turn=f["end_turn"], turn_cap=250)
-            pre = os.path.join(run_dir, "eval_traces", f"step_{STEP}", "heuristic",
-                               f"{outcome_prefix(res)}_{tag}_{k + 1:03d}")
+            root = os.path.join(run_dir, "eval_traces", f"step_{STEP}")
+            os.makedirs(root, exist_ok=True)
+            pre = os.path.join(root, "heuristic", f"{outcome_prefix(res)}_{tag}_{k + 1:03d}")
             write_core_trace(pre, trace=t, step=STEP, battle_id=f"core-{STEP}-heuristic-{tag}{k}",
                              result=res, draw_kind=kind, turns=f["end_turn"],
                              trainee_username=NAMES[0], obs=np.stack([r[0] for r in rows]),
                              logp=np.stack([r[2] for r in rows]),
                              values=np.array([r[3] for r in rows], dtype=np.float32),
-                             actions=np.array([r[4] for r in rows]), masks=np.stack([r[1] for r in rows]))
+                             actions=np.array([r[4] for r in rows]), masks=np.stack([r[1] for r in rows]),
+                             root=root)
             if turn_limit != 250:
                 # The writer does not record the core's `turn_limit`; the expansion reads it from
                 # `trace_source.turn_limit` when present (else the production threshold).

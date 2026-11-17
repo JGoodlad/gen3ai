@@ -52,7 +52,8 @@ its mtime), which is the loud outcome; before, a torn file passed.
 
 ## A run dir is never re-created: `src/utils/run_dir.py`
 
-A run dir is created ONCE, at its run's startup; a writer that `mkdir -p`s its target would resurrect a run dir deleted
+A run dir is created ONCE, at its run's startup, by `create_run_root` (the launcher's session setup and the
+trainer's directory setup); a writer that `mkdir -p`s its target would resurrect a run dir deleted
 or moved aside under a live run at its old name, as a half-run (2026-11-14). So a run-dir writer goes through
 `require_run_dir` (the root must exist), `ensure_subdir(run_dir, name)` (levels below an existing root, one `os.mkdir`
 at a time, so a root that vanishes mid-call raises) or `atomic_write(..., root=run_dir)` (both, built in; without
@@ -70,11 +71,17 @@ at a time, so a root that vanishes mid-call raises) or `atomic_write(..., root=r
   `SummaryWriter` never re-creates its dir (measured: its flush raises `FileNotFoundError`), nor does the sidecar's
   append; `fatal_if_gone(where, run_dir)` types that failure as `RunDirGoneError`, so the run ends 3, not a restarted
   CRASH (1).
+- **Startup:** the trainer's setup runs on every child start, a restart included: `create_run_root(resume=True)` (the
+  `--model` is a checkpoint inside the run dir, `fork_lr.is_same_run_checkpoint`) REQUIRES the dir, so a child exits 3
+  itself on a dir deleted between two children, beside the launcher's restart refusal. A fork's pool seed and its
+  TensorBoard inheritance create only below the run dir (`ensure_subdir`); `write_core_trace` and a TB `configure`
+  require their `root`.
 - **How a run ends on it:** the periodic and forced saves, the team win-rate instrument, the eval callbacks, the TB
   flush and the sidecar (`fatal_if_gone`) print `[RunDir] FATAL` (a launcher FATAL signature) and raise; the
   interrupted save exits 3, never 15 (`DeferredAbort.abort` exits with a body's mapped FATAL code).
 - Pinned by `utils/run_dir_test.py`, `main/train/run_dir_gone_test.py`, `agents/training/eval_run_dir_gone_test.py` and
-  `agents/training/pool_tb_run_dir_gone_test.py`, each failing on a revert.
+  `agents/training/pool_tb_run_dir_gone_test.py` and `main/train/run_root_test.py`, each failing on a revert. The
+  static gate `utils/run_dir_writer_gate_test.py` fails any `makedirs` / `mkdir` in a run-dir writer module.
 
 ## Audit: every write, before and after (2026-10-20, `dccb920e`)
 

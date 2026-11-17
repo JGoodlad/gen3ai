@@ -19,7 +19,7 @@ from agents.training.lineage import build_lineage
 from main.train.constants import checkpoint_due
 from utils import disk_guard
 from utils.atomic_io import atomic_save_model, atomic_write_text
-from utils.run_dir import RunDirGoneError, ensure_subdir, require_run_dir
+from utils.run_dir import RunDirGoneError, create_run_root, ensure_subdir, fatal_if_gone, require_run_dir
 from utils.torch_state_guard import INIT_NUM_THREADS_ATTR
 
 
@@ -87,6 +87,16 @@ def _resolve_model_dir(run_dir, run_name, exploiter_label, model_arg):
     except RunArchiveError as exc:
         print(f"\n[RunArchive] FATAL: {exc}", file=sys.stderr)
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
+
+def _create_run_root(args, model_dir: str) -> str:
+    """The trainer's creation of its run root, on EVERY child start. A same-run RESUME (``--model`` a checkpoint
+    inside ``model_dir``: ``fork_lr.is_same_run_checkpoint``, the launcher's own test) requires the dir rather than
+    re-creating it, so a run dir deleted between two children stays gone: ``[RunDir] FATAL (startup)`` and
+    :class:`RunDirGoneError` (FATAL_CONFIG, 3) through the fail-fast handler. A fresh run or a fork creates it."""
+    from main.train.fork_lr import is_same_run_checkpoint
+    with fatal_if_gone("startup"):
+        return create_run_root(model_dir, resume=is_same_run_checkpoint(getattr(args, "model", None) or "", model_dir))
 
 
 def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None":

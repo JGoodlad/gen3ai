@@ -33,6 +33,12 @@ def _args(**kw):
     return ns
 
 
+def _fork_pool(tmp_path, name: str = "fork") -> str:
+    """The fork's pool dir, under a run dir that EXISTS (the trainer makes it at startup, before seeding)."""
+    (tmp_path / name).mkdir(exist_ok=True)
+    return str(tmp_path / name / "snapshots")
+
+
 def _make_parent(root, *, n_snapshots=3, win_rate=0.901250, metadata=True) -> str:
     """A parent run dir shaped exactly like a real one: a checkpoint to fork from, a run-level
     ``metadata.json``/``model_config.json``, and a ``snapshots/`` pool with its metadata files."""
@@ -168,7 +174,7 @@ class TestTheRule:
 class TestTheCopy:
     def test_every_zip_and_every_metadata_file_lands(self, tmp_path):
         parent = _make_parent(tmp_path, n_snapshots=3)
-        pool = str(tmp_path / "fork" / "snapshots")
+        pool = _fork_pool(tmp_path)
         rec = pool_seed.seed_pool(parent, pool)
         assert rec["n_snapshots"] == 3
         assert sorted(rec["files"]) == sorted(pool_seed.POOL_METADATA_FILES)
@@ -178,7 +184,7 @@ class TestTheCopy:
 
     def test_the_copies_are_byte_identical(self, tmp_path):
         parent = _make_parent(tmp_path, n_snapshots=2)
-        pool = str(tmp_path / "fork" / "snapshots")
+        pool = _fork_pool(tmp_path)
         pool_seed.seed_pool(parent, pool)
         src = _fingerprint(os.path.join(parent, "snapshots"))
         dst = _fingerprint(pool)
@@ -188,7 +194,7 @@ class TestTheCopy:
     def test_a_parent_with_zips_but_NO_metadata_seeds_and_says_the_win_rate_is_unknown(self, tmp_path):
         """The half-fix, made visible rather than silent: this is the pool that reads 0%."""
         parent = _make_parent(tmp_path, n_snapshots=2, win_rate=None)
-        rec = pool_seed.seed_pool(parent, str(tmp_path / "fork" / "snapshots"))
+        rec = pool_seed.seed_pool(parent, _fork_pool(tmp_path))
         assert rec["n_snapshots"] == 2
         assert rec["files"] == []
         assert rec["win_rate_vs_bots"] is None
@@ -197,7 +203,7 @@ class TestTheCopy:
         """🚨 The claim the whole feature is for. The zips carry the pool SIZE; the METADATA
         carries the starting `self_play_fraction`, and the 2026-09-02 manual fix needed both."""
         parent = _make_parent(tmp_path, n_snapshots=14, win_rate=0.901250)
-        pool_dir = str(tmp_path / "fork" / "snapshots")
+        pool_dir = _fork_pool(tmp_path)
         pool_seed.seed_pool(parent, pool_dir)
 
         def line(d):
@@ -215,7 +221,7 @@ class TestTheCopy:
         """The negative control for the test above — this is exactly what the first attempt at
         the manual fix produced, and it read `self_play_fraction=0%` with 14 snapshots."""
         parent = _make_parent(tmp_path, n_snapshots=14, win_rate=0.901250)
-        pool_dir = str(tmp_path / "fork" / "snapshots")
+        pool_dir = _fork_pool(tmp_path)
         os.makedirs(pool_dir)
         for z in pool_seed.snapshot_zips(os.path.join(parent, "snapshots")):
             open(os.path.join(pool_dir, os.path.basename(z)), "wb").write(open(z, "rb").read())
@@ -226,7 +232,7 @@ class TestTheCopy:
 
     def test_the_record_is_written_into_the_pool_and_reads_back(self, tmp_path):
         parent = _make_parent(tmp_path, n_snapshots=2)
-        pool = str(tmp_path / "fork" / "snapshots")
+        pool = _fork_pool(tmp_path)
         rec = pool_seed.seed_pool(parent, pool)
         assert pool_seed.read_seed_record(pool) == rec
         assert rec["parent_run_name"] == "parent_run"

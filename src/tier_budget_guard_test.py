@@ -109,7 +109,7 @@ _STATIC_GATES = (
     "src/global_rng_seed_gate_test.py", "src/poke_env_import_gate_test.py", "src/poke_env_absent_gate_test.py",
     "src/strict_checkpoint_load_gate_test.py", "src/eval_ledger_reader_gate_test.py",
     "src/human_data_doc_gate_test.py", "src/core_split_literal_gate_test.py", "src/lock_listing_gate_test.py",
-    "src/utils/home_path_literal_gate_test.py",
+    "src/utils/home_path_literal_gate_test.py", "src/utils/run_dir_writer_gate_test.py",
 )
 
 

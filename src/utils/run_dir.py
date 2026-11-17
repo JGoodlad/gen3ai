@@ -4,6 +4,8 @@ A run dir deleted or moved aside under a live run must stay gone: a writer that 
 checkpoint, ``metadata.json``, an eval result) pointed at ``models/`` would otherwise resurrect it at its old name as a
 half-run (2026-11-14). So every run-dir writer goes through these:
 
+* :func:`create_run_root` -- the ONE creation of a run root, at its run's startup (the launcher's session setup, the
+  trainer's directory setup); a same-run RESUME requires the root instead of creating it;
 * :func:`require_run_dir` -- the run root must exist, else :class:`RunDirGoneError`;
 * :func:`ensure_subdir` -- a subdirectory UNDER an existing run root, created one level at a time with ``os.mkdir``
   (never ``makedirs``), so a root that vanishes mid-call raises instead of coming back;
@@ -32,6 +34,18 @@ def require_run_dir(run_dir: "str | os.PathLike[str]") -> None:
             f"the run dir {os.path.abspath(run_dir)} no longer exists — a write will not re-create it (a deleted "
             "or moved-aside run must not be resurrected under its old name). Nothing was written; the run's "
             "files are wherever its dir now is.")
+
+
+def create_run_root(run_dir: "str | os.PathLike[str]", *, resume: bool) -> str:
+    """Create the run root at its run's STARTUP and return it: a fresh run or a fork makes it (``makedirs``: the
+    archive above it may be new). A same-run ``resume`` (the ``--model`` is a checkpoint inside ``run_dir``: every
+    launcher restart, a hand resume) REQUIRES it: a run dir deleted or moved aside between two children is not
+    re-created by the next one, which raises :class:`RunDirGoneError` (FATAL_CONFIG, 3) instead."""
+    if resume:
+        require_run_dir(run_dir)
+    else:
+        os.makedirs(run_dir, exist_ok=True)
+    return os.fspath(run_dir)
 
 
 def ensure_subdir(run_dir: "str | os.PathLike[str]", name: "str | os.PathLike[str]") -> str:

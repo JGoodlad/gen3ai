@@ -28,14 +28,16 @@ N_ROWS = 5
 def _write_core(run_dir: str, name: str, result: str = "LOSS", turns: int = 40) -> str:
     from agents.training.rust_eval.traces import write_core_trace
 
-    pre = os.path.join(run_dir, "eval_traces", f"step_{STEP}", "heuristic", name)
+    root = os.path.join(run_dir, "eval_traces", f"step_{STEP}")
+    os.makedirs(root, exist_ok=True)
+    pre = os.path.join(root, "heuristic", name)
     masks = np.ones((N_ROWS, 11), dtype=bool)
     write_core_trace(pre, trace={"records": {"p1": "", "p2": ""}, "recon": {}}, step=STEP,
                      battle_id=f"core-{STEP}-heuristic-{name}", result=result, draw_kind=None, turns=turns,
                      trainee_username="lepone", obs=np.zeros((N_ROWS, 4), dtype=np.float32),
                      logp=np.full((N_ROWS, 11), -np.log(11.0), dtype=np.float32),
                      values=np.linspace(0.2, 0.8, N_ROWS).astype(np.float32),
-                     actions=np.arange(N_ROWS), masks=masks)
+                     actions=np.arange(N_ROWS), masks=masks, root=root)
     return pre + "_summary.json"
 
 

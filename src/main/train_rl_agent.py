@@ -90,7 +90,7 @@ from main.train.checkpoint_state import (   # noqa: F401 — re-export hub
     _shape_only_reset_optimizer_state, _validate_or_reset_optimizer_state,
 )
 from main.train.run_io import (   # noqa: F401 — re-export hub
-    _HparamLogCallback, _TrackingCheckpointCallback, _attach_run_tb_logger, _model_hparams,
+    _HparamLogCallback, _TrackingCheckpointCallback, _attach_run_tb_logger, _create_run_root, _model_hparams,
     _resolve_fresh_model_dir, _resolve_model_dir, _run_arch_toggles, _write_latest_txt,
 )
 from main.train.lifecycle import (   # noqa: F401 — re-export hub
@@ -230,7 +230,9 @@ async def main():
         print(f"[DiskGuard] {_l}", file=sys.stderr if _disk.refused else sys.stdout, flush=True)
     if _disk.refused:
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
-    os.makedirs(model_dir, exist_ok=True)
+    # The run root's one creation; a same-run resume (every launcher restart) REQUIRES it, so a run dir deleted
+    # between two children is never re-created by the next one (RunDirGoneError, FATAL_CONFIG 3).
+    _create_run_root(args, model_dir)
     # K3: the run's OWN compile cache, declared before anything compiles or spawns (lifecycle.py).
     _declare_compile_cache(args, model_dir)
     # Full CLI namespace (JSON-safe) → persisted into metadata.json for run provenance.
