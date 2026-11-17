@@ -982,13 +982,29 @@ So the tier that RUNS the slow tests writes its verdict, and the gate that runs 
 reads it:
 
 * **Writer** — the root `conftest.py`. Every phase report of every `slow` test that actually RAN is
-  folded into one verdict per test id, and merged into the artifact at session finish. It **merges,
-  never replaces**: running one slow test does not erase the other rows, and two `xdist` workers
-  finishing together cannot lose each other's results (an exclusive `flock` plus an atomic rename).
-  A run in which no slow test executed writes **nothing** — the routine gate never touches the file.
+  folded into one verdict per test id and, **only when the session is told to bank** (below), merged into the
+  artifact. It **merges, never replaces**: running one slow test does not erase the other rows, and two `xdist`
+  workers finishing together cannot lose each other's results (an exclusive `flock` plus an atomic rename).
   Each verdict is **banked at that test's teardown**, not only at session finish: the slow tier is
   ~2 hours beside a live run, and a session interrupted at test 79 of 80 must not throw away 79
   verdicts. An artifact you only get by not pressing Ctrl-C is an artifact nobody will have.
+  🚨 **THE UPDATE RULE: banking is a deliberate act, and an ordinary session NEVER writes the committed file**
+  (`slow_tier_status.recording_target`, the one place that decides; 2026-11-16). The writer used to run in
+  every session that executed a `slow` test, so a full `pytest src/` or a targeted re-run of a touched module's slow
+  tests left `designs/ops/slow_tier_status.json` modified, dirtied every worktree it ran in, and rode into unrelated
+  commits. Now:
+
+  | the session has | its slow verdicts go to |
+  |---|---|
+  | `GEN3AI_SLOW_STATUS_FILE=<path>` | `<path>`, never the committed file (a GPU window's scratch file; `main.ops.gpu_fill_window merge-rows` folds it in) |
+  | `GEN3AI_SLOW_STATUS_BANK=1` | the committed file: **the bank step**, for the commit that means to carry the rows |
+  | neither (an ordinary session) | nowhere; the terminal summary says "N slow verdict(s) measured and NOT banked" |
+
+  `record_results` takes no default path, so no caller can write the tracked file by omission. Bank a run
+  from a worktree whose HEAD is the tip you will ship (a row stamps the worktree's HEAD, and the ship's rebase
+  rewrites a commit the tip has moved past: that row is "not an ancestor", STALE until re-measured).
+  `src/slow_tier_status_bank_test.py` pins each row of the table with a real child session in a fake checkout; it
+  fails on a revert of the conftest.
   🚨 **A PASS needs a CALL phase** (`slow_tier_status.settle`): a setup that succeeds classifies
   `pass`, so a test interrupted mid-call once banked as PASS at 0.0 s through the session-finish
   sweep (2026-09-24, a MILESTONE run stopped with SIGTERM). A test with no call report now banks
@@ -1004,6 +1020,9 @@ reads it:
   A row is keyed by test id and the writer only merges, so a deleted, renamed or un-marked test leaves its row behind:
   `python -m utils.slow_tier_prune` lists them (exit 1) and `--write` removes them (`slow_tier_status.prune_rows`, same lock
   and atomic rename; a failed collection refuses and touches nothing). Run it after tiering or renaming slow tests.
+  It drops only rows of tests no longer collected: a row of a STILL-collected test whose commit is not an ancestor of
+  HEAD is a measurement that went stale, and only a re-measure (`GEN3AI_SLOW_STATUS_BANK=1 pytest <that test>`) replaces
+  it. Deleting it would hide a red.
 * **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~0.03 s plus one
   `git rev-list` per distinct recorded commit.
 
@@ -1028,7 +1047,7 @@ recorded run still reads `pass` here.** Nothing short of running the tier closes
 report is what says how much a green is worth, and the full refresh is one command:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && "${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}" -m pytest src/ -m slow -q -n 2
+export PYTHONPATH=$PYTHONPATH:src && GEN3AI_SLOW_STATUS_BANK=1 "${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}" -m pytest src/ -m slow -q -n 2
 ```
 
 🚨 **A red slow test is FIXED or DECLARED — never left behind a stale PASS to keep the static tier green for others**
@@ -1036,7 +1055,7 @@ export PYTHONPATH=$PYTHONPATH:src && "${GEN3AI_PYTHON:-/home/goodlad/miniconda3/
 did not record the red, because a recorded `fail` fails the static tier for every agent; the 2026-10-09 PASS then stayed
 in the file for six days over a graph that no longer compiled — the "gate reads GREEN while a test is red" failure this
 section exists to remove, chosen to spare other agents. The rule: (1) a verdict is recorded as MEASURED; the finder of a red
-either **fixes it and lets the fix commit's PASS replace the row** (a unit of its own, dispatched at once — the red is
+either **fixes it and banks the fix commit's PASS over the row** (`GEN3AI_SLOW_STATUS_BANK=1`; a unit of its own, dispatched at once — the red is
 BLOCKING work, not a note), or **declares the configuration unsupported** — a typed refusal in the code path plus the test
 id leaving the file or being parametrised away. (2) **A skip never replaces a banked `pass`** (`merge_row`, above), so
 "declared not applicable" by a `skipif` alone does NOT clear a stale PASS; only a removed test id or a new measurement does.
@@ -1062,8 +1081,9 @@ restore command and `GEN3AI_SKIP_SLOW_STATUS_GATE=1`, so it can never strand any
 *present but empty* fails the same way, with **NO SLOW-TIER STATUS RECORDED**: a gate reading zero
 rows is reading nothing at all.
 
-The recording side can be turned off on its own with `GEN3AI_SKIP_SLOW_STATUS_RECORD=1` (a run whose
-verdict should not be banked — a deliberate experiment, a starved box). Thirteen meta-tests in the gate
+The recording side can be turned off on its own with `GEN3AI_SKIP_SLOW_STATUS_RECORD=1`, which beats a bank request
+(a run whose verdict should not be banked even where `GEN3AI_SLOW_STATUS_BANK=1` is set: a deliberate experiment, a
+starved box). Thirteen meta-tests in the gate
 file plant each condition — a red, an inconclusive, an unrecorded, a stale row, an unknown commit,
 a merge that must not truncate, a setup-only pass that must not bank green, a skip that must not
 replace a banked verdict — so the gate's
@@ -1082,8 +1102,8 @@ The CUDA-only `slow` tests skip in every CPU run, so their rows are banked only 
 - **It never HOLDs what follows it.** The window is `on_fail: continue`, with its own preempt marker
   (`NO_GO_SLOWGPU`), and sits last in its chain file. A failed preflight, a failed node or a budget overrun ends it
   DONE_FAILED and the chain hands off. Its budget is computed from the banked durations (`window_budget_min`).
-- **Where the rows go.** `GEN3AI_SLOW_STATUS_FILE` points at a scratch file outside every checkout. The window's
-  worktree is a clean scratch worktree, never main.
+- **Where the rows go.** `GEN3AI_SLOW_STATUS_FILE` points at a scratch file outside every checkout (an explicit target,
+  so the window banks there without `GEN3AI_SLOW_STATUS_BANK`). The window's worktree is a clean scratch worktree, never main.
 - **How they ship.** Afterwards, `python -m main.ops.gpu_fill_window merge-rows --rows <file> --into
   <worktree>/designs/ops/slow_tier_status.json` folds the rows in with the writer's own merge, so a skip never
   replaces a measurement. It refuses main's file. The worktree then ships through `/gen3ai-ship`.

@@ -227,8 +227,11 @@ _within_scaled: "list[tuple]" = []
 # is committed rather than gitignored, and why a MISSING file fails — is in
 # `src/utils/slow_tier_status.py`'s module docstring.
 #
-# It records nothing at all on a run in which no slow test executed, so the routine gate never
-# touches the artifact. Escape hatch: GEN3AI_SKIP_SLOW_STATUS_RECORD=1.
+# It banks NOTHING unless the session is told to (`utils.slow_tier_status.recording_target`:
+# GEN3AI_SLOW_STATUS_BANK=1 for the committed file, GEN3AI_SLOW_STATUS_FILE=<path> for a scratch one), so
+# an ordinary session - a full `pytest src/`, a targeted re-run of a touched module's slow tests - leaves the
+# tracked artifact byte-identical instead of dirtying every worktree (2026-11-16). A session that measured
+# slow verdicts and banked none says so in its terminal summary. Escape hatch: GEN3AI_SKIP_SLOW_STATUS_RECORD=1.
 _slow_results: "dict[str, dict]" = {}
 _slow_collected: "set[str]" = set()
 _slow_write_note = []
@@ -450,12 +453,22 @@ def _record_slow_result(report):
 
 
 def _write_slow_results(nodeids=None):
-    """Merge slow results (all of them, or just ``nodeids``) into the committed status artifact."""
+    """Merge slow results (all of them, or just ``nodeids``) into the status file this session was told to bank into
+    (`recording_target`). With no target (an ordinary session) nothing is written; the sweep at session finish says so."""
     if not _slow_results or os.environ.get("GEN3AI_SKIP_SLOW_STATUS_RECORD"):
         return
     try:
         from utils.git import get_git_hash
-        from utils.slow_tier_status import INTERRUPTED_DETAIL, make_row, record_results, settle
+        from utils.slow_tier_status import (
+            BANK_ENV, INTERRUPTED_DETAIL, make_row, recording_target, record_results, settle)
+        target = recording_target()
+        if target is None:
+            if nodeids is None:             # the session-finish sweep: ONE line, never per test
+                _slow_write_note.append(
+                    f"slow-tier status: {len(_slow_results)} slow verdict(s) measured and NOT banked - an ordinary "
+                    f"session never writes the committed designs/ops/slow_tier_status.json; set {BANK_ENV}=1 to "
+                    "bank a run (docs: designs/ops/testing.md 'The SLOW-TIER LAST-KNOWN-STATUS gate').")
+            return
         commit = get_git_hash()
         factor = _contention_factor()
         wanted = _slow_results if nodeids is None else {
@@ -471,7 +484,7 @@ def _write_slow_results(nodeids=None):
                                     contention=factor if own is None else own, detail=detail)
         if not rows:
             return
-        path = record_results(rows)
+        path = record_results(rows, target)
         if nodeids is None:
             _slow_write_note.append(f"slow-tier status: {len(_slow_results)} row(s) recorded "
                                     f"into {path}")

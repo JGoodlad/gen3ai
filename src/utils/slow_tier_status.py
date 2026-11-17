@@ -12,12 +12,17 @@ GREEN while a test is red is the GIGO class itself.
 in the routine suite READS it — so a red `slow` test costs one JSON read to surface instead of a
 31-minute run.
 
-* **Writer** — the root `conftest.py` records every `slow` test that actually RAN and merges each
-  verdict in **at that test's teardown** (plus a sweep at session finish). It only ever merges: a
-  run of one slow test never truncates the other 79 rows, and a routine run (no slow test ran)
-  writes nothing at all. Banking per test rather than per session is deliberate — the tier is ~2
-  hours beside a live run, and a session interrupted at test 79 of 80 must not throw away 79
-  verdicts.
+* **Writer** — the root `conftest.py` records every `slow` test that actually RAN and, **only when the session is
+  told to BANK** (`recording_target`), merges each verdict in **at that test's teardown** (plus a sweep at session
+  finish). It only ever merges: a run of one slow test never truncates the other 79 rows. Banking per test rather than
+  per session is deliberate — the tier is ~2 hours beside a live run, and a session interrupted at test 79 of 80 must
+  not throw away 79 verdicts.
+* **An ordinary session NEVER writes the committed file** (2026-11-16). The writer once ran on every session that
+  executed a `slow` test (a full `pytest src/`, a targeted re-run of the tests of code you touched), so the tracked
+  `designs/ops/slow_tier_status.json` came out of unrelated sessions modified, dirtied every worktree, and rode into
+  unrelated commits. Banking is now a DELIBERATE act with two spellings: `GEN3AI_SLOW_STATUS_BANK=1` (the committed
+  file) or `GEN3AI_SLOW_STATUS_FILE=<path>` (any file: a scratch one for a GPU window, which `main.ops.gpu_fill_window
+  merge-rows` then folds in). A session that measured slow verdicts and banked none says so in its terminal summary.
 * **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~free.
 
 **A SKIP IS NOT A MEASUREMENT, so it never replaces one.** A slow test that skipped (a GPU test run
@@ -65,10 +70,10 @@ file is COMMITTED, "missing" cannot mean "fresh checkout"; it means the tree is 
 rebase, a deleted file), which is worth stopping for. The failure message names the command that
 produces one and the `GEN3AI_SKIP_SLOW_STATUS_GATE=1` escape hatch, so it can never strand anyone.
 
-Refresh the whole file with the slow tier itself:
+Refresh the whole file with the slow tier itself, told to bank:
 
     export PYTHONPATH=$PYTHONPATH:src
-    python3 -m pytest src/ -m slow -q -n 2
+    GEN3AI_SLOW_STATUS_BANK=1 python3 -m pytest src/ -m slow -q -n 2
 """
 from __future__ import annotations
 
@@ -80,14 +85,17 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 SCHEMA = "gen3_slow_tier_status_v1"
 
-#: Where the committed artifact lives. `$GEN3AI_SLOW_STATUS_FILE` overrides it — used by this
-#: module's own meta-tests to plant a red without touching the real file, and by anyone who wants
-#: to record a tier run somewhere disposable.
+#: Where the READER looks and where a deliberate bank lands. `$GEN3AI_SLOW_STATUS_FILE` overrides it: this
+#: module's own meta-tests plant a red without touching the real file, a GPU window writes a disposable file, and
+#: a session given it records there (see `recording_target`).
 _ENV_PATH = "GEN3AI_SLOW_STATUS_FILE"
+#: `1` makes a session bank its slow verdicts into the COMMITTED file. Unset (or `0`), an ordinary session writes
+#: nothing to it: the tracked file changes only when someone meant it to.
+BANK_ENV = "GEN3AI_SLOW_STATUS_BANK"
 _REL_PATH = ("designs", "ops", "slow_tier_status.json")
 
 #: How far behind HEAD a row may be before it is REPORTED as stale. Sized off the observed cadence:
@@ -117,13 +125,36 @@ _TIMEOUT_MARKERS = (
 )
 
 
-def status_path() -> Path:
-    """The status file this process reads and writes."""
-    override = os.environ.get(_ENV_PATH)
-    if override:
-        return Path(override)
+def tracked_path() -> Path:
+    """The COMMITTED artifact of this checkout, whatever the environment says."""
     from utils.paths import repo_path
     return repo_path(*_REL_PATH)
+
+
+def status_path() -> Path:
+    """The status file this process READS (the gate, the prune tool): `$GEN3AI_SLOW_STATUS_FILE`, else the committed one."""
+    override = os.environ.get(_ENV_PATH)
+    return Path(override) if override else tracked_path()
+
+
+def recording_target(environ: Optional[Mapping[str, str]] = None) -> Optional[Path]:
+    """Where THIS session banks the `slow` verdicts it measures, or ``None`` = nowhere. **The one place that decides.**
+
+    * `$GEN3AI_SLOW_STATUS_FILE` set -> that file (an explicit target is a deliberate act, and it never reaches the
+      committed one);
+    * else `$GEN3AI_SLOW_STATUS_BANK` set (and not ``0``) -> the committed file;
+    * else ``None``: an ordinary session, however many slow tests it runs, leaves the tracked file byte-identical.
+
+    ``environ`` is injectable so the table is pinned without a session (`slow_tier_status_bank_test.py` pins the real
+    session too, which is what fails on a revert of the conftest's use of this).
+    """
+    env = os.environ if environ is None else environ
+    explicit = env.get(_ENV_PATH)
+    if explicit:
+        return Path(explicit)
+    if env.get(BANK_ENV, "") not in ("", "0"):
+        return tracked_path()
+    return None
 
 
 # ───────────────────────────────────────────────────────────────────── recording ──
@@ -201,15 +232,16 @@ def _write_atomic(target: Path, doc: Dict[str, Any]) -> None:
     os.replace(tmp, target)
 
 
-def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = None) -> Path:
-    """MERGE ``{nodeid: row}`` into the status file and return the path written.
+def record_results(results: Dict[str, Dict[str, Any]], path: Path) -> Path:
+    """MERGE ``{nodeid: row}`` into the status file ``path`` and return it. ``path`` is REQUIRED: a default of "the
+    committed file" is how an ordinary session came to rewrite it - the caller names its target (`recording_target`).
 
     Merge, never replace: running one slow test must not erase the other rows, and two xdist
     workers finishing at the same moment must not lose each other's results. Per row, a SKIP never
     replaces a recorded pass / fail / inconclusive - it only annotates it (`merge_row`). The read-modify-write
     is done under an exclusive `flock` (`_exclusive`) and committed with an atomic rename.
     """
-    target = Path(path) if path is not None else status_path()
+    target = Path(path)
     with _exclusive(target):
         doc = _read(target) if target.exists() else {"schema": SCHEMA, "tests": {}}
         doc.setdefault("schema", SCHEMA)
@@ -244,6 +276,22 @@ def prune_rows(collected: "set[str]", path: Optional[Path] = None, *, write: boo
                 del doc["tests"][n]
             _write_atomic(target, doc)
     return removed
+
+
+def orphaned(doc: Dict[str, Any], is_ancestor: "Callable[[str], bool]") -> List[Tuple[str, str]]:
+    """``[(id, commit)]`` of the rows banked at a commit that is NOT an ancestor of HEAD. Pure (the git question is
+    ``is_ancestor``). Such a row is a measurement of code that never reached this history (typically a worktree commit the
+    ship's rebase rewrote): the gate reports it STALE, and unlike a dead row it is never deleted - the test still exists,
+    so only a re-measure (`GEN3AI_SLOW_STATUS_BANK=1`) replaces it, and deleting a red one would hide the red."""
+    verdict: Dict[str, bool] = {}
+    out = []
+    for nodeid, row in sorted(doc.get("tests", {}).items()):
+        sha = str(row.get("commit", ""))
+        if sha not in verdict:
+            verdict[sha] = bool(sha) and sha != "unknown" and is_ancestor(sha)
+        if not verdict[sha]:
+            out.append((nodeid, sha))
+    return out
 
 
 #: The verdicts a later SKIP may NOT replace — everything that is a measurement. See `merge_row`.
@@ -330,10 +378,10 @@ class Verdict:
                          f"on {row.get('at', '?')}  ({row.get('detail', '') or 'no detail'})")
         lines += [
             "",
-            "Fix the test, then re-record it:",
-            "    export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest <that test> -q",
-            "(any run in which the test executes updates its row; the full refresh is "
-            "`python3 -m pytest src/ -m slow -q -n 2`).",
+            "Fix the test, then re-bank it (a session banks only when told to):",
+            f"    export PYTHONPATH=$PYTHONPATH:src && {BANK_ENV}=1 python3 -m pytest <that test> -q",
+            f"(a run of the test with {BANK_ENV}=1 updates its row; the full refresh is "
+            f"`{BANK_ENV}=1 python3 -m pytest src/ -m slow -q -n 2`).",
             "If the test was RENAMED or DELETED, drop its row in the same commit: "
             "`python -m utils.slow_tier_prune --write` removes every row no longer collected as `slow`.",
         ]

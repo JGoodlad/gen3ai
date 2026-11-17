@@ -74,6 +74,25 @@ def test_an_empty_collected_set_is_never_read_as_every_test_gone(status_file: Pa
     assert status_file.read_bytes() == before
 
 
+def test_orphaned_rows_are_reported_never_pruned_and_never_change_the_exit_code(status_file: Path, capsys) -> None:
+    """A row of a STILL-collected test banked at a commit outside HEAD's history (a rebased worktree commit) is stale, not
+    dead: the report names it, the file is untouched, and `--write` keeps it (deleting a red one would hide the red)."""
+    doc = json.loads(status_file.read_text())
+    doc["tests"][KEEP_PASS]["commit"] = "b" * 40                      # not an ancestor
+    status_file.write_text(json.dumps(doc, indent=1) + "\n")
+    assert ST.orphaned(doc, lambda sha: sha != "b" * 40) == [(KEEP_PASS, "b" * 40)]
+    assert ST.orphaned(doc, lambda sha: True) == [], "an all-ancestor file has no orphans"
+    assert [n for n, _ in ST.orphaned({"tests": {"a::t": {"commit": "unknown"}, "b::t": {}}}, lambda sha: True)] == ["a::t", "b::t"], \
+        "an unknown or missing commit is an orphan, never silently fresh"
+    ancestor = lambda sha: sha != "b" * 40                            # noqa: E731
+    gone = {GONE_PASS, GONE_FAIL}
+    assert P.main(["--write"], collect=lambda: set(COLLECTED), path=status_file, is_ancestor=ancestor) == 0
+    out = capsys.readouterr().out
+    assert "1 row(s) of still-collected tests" in out and KEEP_PASS in out and "NOT ancestors" in out
+    kept = json.loads(status_file.read_text())["tests"]
+    assert KEEP_PASS in kept and not gone & set(kept), "the orphan row survives --write"
+
+
 def test_collect_output_parses_and_its_count_must_match_the_summary() -> None:
     out = "\x1b[32msrc/a_test.py::test_x[a-b]\x1b[0m\nsrc/a_test.py::test_y\n\n618/13357 tests collected (12739 deselected) in 25s\n"
     ok = "src/a_test.py::test_x[a-b]\nsrc/a_test.py::test_y\n\n2/13357 tests collected (13355 deselected) in 25s\n"

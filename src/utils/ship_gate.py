@@ -26,8 +26,8 @@ named, and one far over it (>= 2x the contention-stretched bar) FAILS the gate; 
 half the bar is written to :data:`BAR_REPORT` for calibration.
 
 Why it can be ~15 min beside a live run: the expensive tests are tiered ``slow`` by their MEASURED
-cost (designs/ops/testing.md "The SHIP GATE"), and the slow tier banks its verdicts in
-``designs/ops/slow_tier_status.json`` — a recorded red there FAILS this gate. A slow test that broke
+cost (designs/ops/testing.md "The SHIP GATE"), and a slow-tier session told to bank (``GEN3AI_SLOW_STATUS_BANK=1``)
+records its verdicts in ``designs/ops/slow_tier_status.json`` — a recorded red there FAILS this gate. A slow test that broke
 since its last banked run still reads green here; only running the slow tier closes that.
 
 USAGE

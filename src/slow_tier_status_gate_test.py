@@ -7,7 +7,8 @@ that marker (2026-09-07), and the obs-golden linchpin rode main red three separa
 old `-m "not integration"` cut. **A gate that reads GREEN while a test is red is the GIGO class.**
 
 This test closes it for one JSON read: the slow tier WRITES its verdict (the root `conftest.py`
-merges every `slow` test that actually ran into `designs/ops/slow_tier_status.json`), and this
+merges every `slow` test that actually ran into `designs/ops/slow_tier_status.json` when the session
+is told to bank, `GEN3AI_SLOW_STATUS_BANK=1`; an ordinary session never writes it), and this
 unmarked test READS it in every tier. The full contract — the four verdict classes, why staleness
 is reported and never fatal, why the artifact is committed rather than gitignored, why a missing
 file fails, and the honest limitation that a test which broke *since* the last recorded run still
@@ -19,7 +20,7 @@ tier has not been run lately) are REPORTED, as warnings that survive `-q`, and p
 
 Refresh the artifact:
 
-    export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/ -m slow -q -n 2
+    export PYTHONPATH=$PYTHONPATH:src && GEN3AI_SLOW_STATUS_BANK=1 python3 -m pytest src/ -m slow -q -n 2
 
 Opt out with `GEN3AI_SKIP_SLOW_STATUS_GATE=1`. Runs in every tier; measured **0.03 s** plus one
 `git rev-list` per distinct recorded commit.
@@ -62,7 +63,7 @@ rebase, a stray delete, or a hand-edited tree.
 FIX — restore it from git, or regenerate it by running the tier:
 
     git checkout -- designs/ops/slow_tier_status.json
-    export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/ -m slow -q -n 2
+    export PYTHONPATH=$PYTHONPATH:src && GEN3AI_SLOW_STATUS_BANK=1 python3 -m pytest src/ -m slow -q -n 2
 
 Set {env}=1 to run without this gate (a pure-unit CI that does not carry the artifact)."""
 
@@ -130,7 +131,7 @@ def test_the_slow_tier_status_artifact_exists_and_is_a_status_document():
     assert doc["tests"], (
         f"{path} records ZERO slow tests. NO SLOW-TIER STATUS RECORDED — the routine gate is "
         f"reading nothing at all, which is exactly the blind spot this gate exists to remove. "
-        f"Run: export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/ -m slow -q -n 2")
+        f"Run: export PYTHONPATH=$PYTHONPATH:src && GEN3AI_SLOW_STATUS_BANK=1 python3 -m pytest src/ -m slow -q -n 2")
 
 
 def test_no_slow_tier_test_is_recorded_red(request):
