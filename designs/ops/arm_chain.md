@@ -70,7 +70,13 @@ The field rules:
 - **`models_dir`** is passed to every CPU tool (`GEN3AI_MODELS_DIR`, the thin planner's `--models-dir`), so the
   chain and its tools never read two different archives.
 - **`verify` is an optional list of commands.** They run before the dry run and again just before the GO. The X52
-  arms used this for `python -m main.x35.x52 verify`.
+  arms used this for `python -m main.x35.x52 verify`. A phase-2 arm of the two-phase kit (X35-A3's `a3`) carries
+  `python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json`, which judges the record in full, not "three files
+  that hash": it names exactly the registered exploiter runs at their final paths with their recorded hash and step,
+  and each run must show (through `main.lineage`, `main.sidecar_audit`, `main.dose`) a RECORDED lineage that is an
+  exploiter fork of P*, only the side's pin, the kit's own argv as its `original_command`, and C0's dose within 10 %
+  (`kit.PHASE1_DOSE`). The call record and the side's pin are read from the record's own folder, so the item needs
+  no other flag. Tests: `src/main/x35/phase1_test.py`.
 - **`banner` and `throughput` are the post-spawn guards.** The throughput gate counts `within_min` (default 60) from
   the FIRST TRAINER LINE in `launcher_child.log` (the launcher's `child attached` header is not one), or from the
   first own checkpoint if that comes first, never from the GO: a cold start took ~22-23 min from the GO to its first

@@ -17,9 +17,10 @@ canonical flag order (the order carries no meaning to the trainer's parser):
 * the TWO-PHASE kits. Phase 1 (+5M, F16's ``--no-self-play`` where the parent self-plays): ``a3_mx`` -- a main
   exploiter of P* (seeds 3511-3513) -- and ``a6_lx`` -- a league exploiter of P* + the archive, share 1.0, stable
   PFSP (seeds 3521-3523). Between the phases, ``phase1-record`` writes ONE write-once record of the three
-  exploiter finals (path, step, sha256), refusing a missing or short final. Phase 2 (+20M): ``a3`` / ``a6`` carry
-  those finals as ``--stable-opponents`` at share 0.4 with ``--stable-opponent-pfsp`` (the registered round-1 B
-  recipe), seeds 3501-3505, b-OFF = C0;
+  exploiter finals (path, step, sha256), refusing a missing or short final; ``verify-phase1`` judges that record in
+  full (the registered runs, each one's final, recorded lineage, pin, argv and dose: :func:`verify_phase1`). Phase 2
+  (+20M): ``a3`` / ``a6`` carry those finals as ``--stable-opponents`` at share 0.4 with ``--stable-opponent-pfsp``
+  (the registered round-1 B recipe), seeds 3501-3505, b-OFF = C0;
 * the G-E READERS (``main.x35.ge``, F27 closed for the readers, 2026-10-20; +5M): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` /
   ``ge_d3`` / ``ge_n1p`` / ``ge_x60t`` (AM-X60T-2) / ``ge_c0`` -- one fresh best responder of the arm's seed-3501 FINAL (``--model F --exploiter F --no-self-play``, the
   pinned offense 5-team archetype, ``--fork-lr 5.6e-05 --fork-lr-freeze``), launched only when the arm's primary reads
@@ -90,7 +91,7 @@ canonical flag order (the order carries no meaning to the trainer's parser):
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
     python -m main.x35.kit phase1-record --arm a3 --call <R_production.json> --out <stage>/phase1_a3.json
-    python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json
+    python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json   # the REGISTERED exploiters, each run judged (T55)
     python -m main.x35.kit live                    # exit 1 while any TRAINING run is live (pre-check 1; an agent's CPU smoke is not one)
     python -m main.x35.kit disk --required-gib 20.68 [--thinning]   # pre-check 8 (F22)
     python -m main.x35.kit validate-run --arm toy_x47 --seed 3601 --call <R_toy.json> --dryrun F --checkargs F \\
@@ -138,6 +139,11 @@ CKPT_EVERY = "1000000"
 #: F22: the launcher's REQUIRED headroom for one 20M production fork (dry-run, 2026-10-17).
 FORK_GIB = 20.68
 PHASE1_SCHEMA = "x35_phase1_exploiters_v1"
+#: The DOSE a registered phase-1 arm's exploiters trained at, ``(dose rate, relative tolerance)``: the main exploiter
+#: types no recipe knob, so it inherits P*'s recipe as C0's forks did, and the registration states C0's dose, 2.044e-08
+#: (``python -m main.dose``, eight C0 forks), within 10 % (X35-A3 PREREG §3 and §4: R0's 0.53x is why it is not an
+#: exploiter). A phase-1 arm with no row here has no registered dose, and :func:`verify_phase1` refuses its record.
+PHASE1_DOSE: Dict[str, Tuple[float, float]] = {"a3_mx": (2.044e-08, 0.10)}
 TOY_EXTRAS = ["--snapshot-ladder-games", "0", "--supply-starve-cycles", "self_play_pool=0"]
 #: D1 / X38's ONE lever (``design_diversity_teams_opponents.md`` §4.2): half of each side's draws from the pin-safe
 #: forum corpus (``utils.team_corpora``, tier ABC = 1,982 teams since AMENDMENT D1-CORPUS), both sides; eval stays on
@@ -592,6 +598,19 @@ def _final_step(zip_path: str) -> int:
     return int(r.num_timesteps)
 
 
+def _phase1_expected(arm: str, call: Mapping[str, Any], models_dir: str) -> List[Dict[str, Any]]:
+    """The exploiters a phase-1 arm REGISTERS, one per registered seed: its run, the label the record and the banner
+    carry, the path its FINAL lands at (``<models_dir>/<run>/final_model.zip``) and the step floor (P* + the arm's
+    length). ``phase1_record`` writes them and ``verify_phase1`` judges a record against them."""
+    a, p = ARMS[arm], call["pstar"]
+    out = []
+    for s in a.seeds:
+        rn = run_name(arm, s)
+        out.append({"run": rn, "label": rn.replace("rb_x35_", ""), "seed": s,
+                    "path": str(Path(models_dir) / rn / "final_model.zip"), "step": int(p["step"]) + a.length})
+    return out
+
+
 def phase1_record(arm: str, call: Mapping[str, Any], models_dir: str, out: str,
                   now: Optional[dt.datetime] = None) -> Dict[str, Any]:
     """Freeze the three exploiter finals of a phase-1 arm (``a3_mx`` / ``a6_lx``); write-once."""
@@ -603,7 +622,7 @@ def phase1_record(arm: str, call: Mapping[str, Any], models_dir: str, out: str,
     p = call["pstar"]
     want = int(p["step"]) + a.length
     ex: List[Dict[str, Any]] = []
-    finals = [(run_name(arm, s), Path(models_dir) / run_name(arm, s) / "final_model.zip") for s in a.seeds]
+    finals = [(e["run"], Path(e["path"])) for e in _phase1_expected(arm, call, models_dir)]
     for rn, z in finals:
         if not z.is_file():
             raise KitError(f"{rn}: no final_model.zip (an interrupted or running exploiter is not a phase-1 final)")
@@ -621,19 +640,167 @@ def phase1_record(arm: str, call: Mapping[str, Any], models_dir: str, out: str,
     return doc
 
 
-def verify_phase1(path: str) -> List[str]:
+def side_pin(stage: str, side: str) -> str:
+    """The side's registered pin (``x35_pin_batch1_<side>.txt`` in the stage folder), the one every phase-1 exploiter
+    must have trained at."""
+    rec = _B.read_pin_file(_B.pin_path(stage, side), side)
+    if rec is None:
+        raise KitError(f"no {os.path.basename(_B.pin_path(stage, side))} in {stage}: the {side} pin the exploiters "
+                       "must have trained at is not recorded")
+    return str(rec["sha"])
+
+
+def phase1_shape_problems(doc: Mapping[str, Any], arm: str, call: Mapping[str, Any], models_dir: str) -> List[str]:
+    """The problems with a phase-1 record's SHAPE, which touch no run and no checkpoint: its schema and arm, P*, and
+    exactly the registered exploiters (run, label, final path, step floor, a sha256 field).
+    :func:`verify_phase1` judges a record by this and then by the runs."""
+    a, p = ARMS[arm], call["pstar"]
+    probs: List[str] = []
+    if doc.get("schema") != PHASE1_SCHEMA:
+        probs.append(f"schema {doc.get('schema')!r} != {PHASE1_SCHEMA}")
+    if doc.get("arm") != arm:
+        probs.append(f"the record is for arm {doc.get('arm')!r}, not {arm}")
+    if doc.get("pstar_sha256") != p["sha256"] or doc.get("pstar_step") != int(p["step"]):
+        probs.append(f"the record is from P* {str(doc.get('pstar_sha256'))[:12]} @{doc.get('pstar_step')}, not the "
+                     f"call record's {str(p['sha256'])[:12]} @{int(p['step'])}")
+    ex = doc.get("exploiters")
+    want = _phase1_expected(arm, call, models_dir)
+    if not isinstance(ex, list) or not all(isinstance(e, dict) for e in ex):
+        return probs + ["the record's exploiters are not a list of entries"]
+    if [e.get("run") for e in ex] != [w["run"] for w in want]:
+        return probs + [f"the record names {[e.get('run') for e in ex]}, not the {len(want)} registered exploiters "
+                        f"{[w['run'] for w in want]}"]
+    for e, w in zip(ex, want):
+        if e.get("label") != w["label"]:
+            probs.append(f"{w['run']}: label {e.get('label')!r} != {w['label']!r}")
+        if os.path.realpath(str(e.get("path"))) != os.path.realpath(w["path"]):
+            probs.append(f"{w['run']}: path {e.get('path')} is not its final {w['path']}")
+        step = e.get("step")
+        if not isinstance(step, int) or isinstance(step, bool) or step < w["step"]:
+            probs.append(f"{w['run']}: step {step!r} < the registered {w['step']:,} (P* + {a.length:,})")
+        sha = e.get("sha256")
+        if not (isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{64}", sha)):
+            probs.append(f"{w['run']}: sha256 {sha!r} is not a sha256")
+    return probs
+
+
+def _trainer_argv(command: str) -> Tuple[List[str], Optional[str]]:
+    """``(the trainer argv, the --pin-commit)`` of a run's recorded launcher command: the script path dropped and
+    the two flags the kit's launch adds (``--restart-interval-hours N --pin-commit SHA``) taken out."""
+    toks = shlex.split(command)[1:]
+    out: List[str] = []
+    pin: Optional[str] = None
+    i = 0
+    while i < len(toks):
+        if toks[i] == "--restart-interval-hours" and i + 1 < len(toks):
+            i += 2
+        elif toks[i] == "--pin-commit" and i + 1 < len(toks):
+            pin = toks[i + 1]
+            i += 2
+        else:
+            out.append(toks[i])
+            i += 1
+    return out, pin
+
+
+def _exploiter_run_problems(arm: str, w: Mapping[str, Any], e: Mapping[str, Any], call: Mapping[str, Any],
+                            models_dir: str, pin: str) -> List[str]:
+    """What the RUN behind one recorded exploiter must show (``w`` = :func:`_phase1_expected`'s row): the final is
+    the registered file with the recorded hash and step; the run's RECORDED lineage is an exploiter fork of P*; every
+    pin the run recorded is the side's; its recorded command is the kit's argv for this seed; its dose is the
+    registered one. Each read goes through ``main.lineage`` / ``main.sidecar_audit`` / ``main.dose``."""
+    from agents.training.lineage import read_original_command
+    from main import dose as _dose
+    from main import lineage as _lin
+    from main import sidecar_audit as _audit
+
+    run, p = w["run"], call["pstar"]
+    rd = str(Path(models_dir) / run)
+    z = Path(str(e["path"]))
+    probs: List[str] = []
+    if not z.is_file():
+        probs.append(f"{run}: {z} is missing")
+    else:
+        if sha256_file(z) != e["sha256"]:
+            probs.append(f"{run}: {z} sha256 changed since the record")
+        try:
+            got = _final_step(str(z))
+        except KitError as exc:
+            probs.append(str(exc))
+        else:
+            if got != e["step"]:
+                probs.append(f"{run}: the final's own step {got:,} != the record's {e['step']:,}")
+    row = _lin.read_run(rd)
+    if row["error"]:
+        return probs + [f"{run}: {rd}: {row['error']}"]
+    if not row["recorded"] or row["derived"]:
+        probs.append(f"{run}: its lineage is not a RECORDED block (derived or absent: a guess, not provenance)")
+    if row["role"] != "exploiter":
+        probs.append(f"{run}: lineage role {row['role']!r}, not 'exploiter'")
+    fp, tgt = row.get("fork_parent") or {}, row.get("exploiter_target") or {}
+    pstar = os.path.realpath(str(p["path"]))
+    if fp.get("sha256") != p["sha256"] or os.path.realpath(str(fp.get("resolved_file") or fp.get("path"))) != pstar:
+        probs.append(f"{run}: its fork parent is {fp.get('path')} ({str(fp.get('sha256'))[:12]}), not P* {p['path']}")
+    if row.get("fork_step") != int(p["step"]):
+        probs.append(f"{run}: fork step {row.get('fork_step')} != P*'s {int(p['step'])}")
+    if os.path.realpath(str(tgt.get("resolved_file") or tgt.get("path"))) != pstar:
+        probs.append(f"{run}: its exploiter target is {tgt.get('path')}, not P* {p['path']}")
+    probs += [f"{run}: lineage link: {c}" for c in row["checks"]]
+    if not isinstance(row["num_timesteps"], int) or row["num_timesteps"] < w["step"]:
+        probs.append(f"{run}: the run's own step {row['num_timesteps']} < the registered {w['step']:,}")
+    aud = _audit.audit_run(rd)
+    hashes = [str(h) for h in [aud["git_hash"], *[x.get("git_hash") for x in aud["pin_history"] if isinstance(x, dict)]]
+              if h]
+    if not hashes:
+        probs.append(f"{run}: no recorded pin (metadata.json without git_hash / pin_history)")
+    bad = sorted({h[:12] for h in hashes if not _B.same_sha(h, pin)})
+    if bad:
+        probs.append(f"{run}: recorded pin(s) {bad} != the side pin {pin[:12]}")
+    if aud["n_unexplained"]:
+        probs.append(f"{run}: {aud['n_unexplained']} checkpoint sidecar(s) name a commit its pin history does not")
+    cmd = read_original_command(rd)
+    if cmd is None:
+        probs.append(f"{run}: no recorded original_command")
+    else:
+        argv, cmd_pin = _trainer_argv(cmd)
+        want = build_argv(arm, int(w["seed"]), call)
+        if cmd_pin is None or not _B.same_sha(cmd_pin, pin):
+            probs.append(f"{run}: launched with --pin-commit {cmd_pin}, not the side pin {pin[:12]}")
+        if argv != want:
+            diff = next((i for i, (x, y) in enumerate(zip(argv, want)) if x != y), min(len(argv), len(want)))
+            probs.append(f"{run}: its recorded command is not the kit's argv for {arm} s{w['seed']}: token {diff} is "
+                         f"{(argv[diff:diff + 1] or ['<end>'])[0]!r}, the kit's {(want[diff:diff + 1] or ['<end>'])[0]!r}")
+    ref = PHASE1_DOSE.get(arm)
+    if ref is None:
+        probs.append(f"{run}: no registered dose for arm {arm} (PHASE1_DOSE): a phase-1 record is verified only for a "
+                     "registered arm")
+    else:
+        d = _dose.read_run(rd)
+        if d["error"] or d["dose_rate"] is None:
+            probs.append(f"{run}: its dose is unreadable ({d['error']})")
+        elif abs(d["dose_rate"] / ref[0] - 1.0) > ref[1]:
+            probs.append(f"{run}: dose rate {d['dose_rate']:.3e} ({d['dose_rate'] / ref[0]:.2f}x) is not the registered "
+                         f"{ref[0]:.3e} within {ref[1]:.0%} (read from {d['source']})")
+    return probs
+
+
+def verify_phase1(path: str, *, call: Mapping[str, Any], models_dir: str, pin: str) -> List[str]:
+    """Every problem with a phase-1 record (empty = it is the REGISTERED phase 1). Not "do three files hash": the
+    record must name exactly the registered exploiters of its arm (:func:`phase1_shape_problems`), and each must be a
+    trained exploiter of P* as registered (:func:`_exploiter_run_problems`: the final's hash and step, the run's
+    recorded lineage, pin, argv and dose)."""
     try:
         doc = json.loads(Path(path).read_text())
     except (OSError, ValueError) as exc:
         return [f"{path}: unreadable ({exc})"]
-    probs = [] if doc.get("schema") == PHASE1_SCHEMA else [f"schema {doc.get('schema')!r}"]
-    if len(doc.get("exploiters") or []) != 3:
-        probs.append("a phase-1 record holds exactly 3 exploiters")
-    for e in doc.get("exploiters") or []:
-        if not os.path.exists(e["path"]):
-            probs.append(f"{e['path']}: missing")
-        elif sha256_file(e["path"]) != e["sha256"]:
-            probs.append(f"{e['path']}: sha256 changed since the record")
+    arm = doc.get("arm") if isinstance(doc, dict) else None
+    if not isinstance(arm, str) or arm not in ARMS or ARMS[arm].phase != 1:
+        return [f"{path}: arm {arm!r} is not a phase-1 arm ({[n for n, x in ARMS.items() if x.phase == 1]})"]
+    probs = phase1_shape_problems(doc, arm, call, models_dir)
+    if probs:
+        return probs
+    for w, e in zip(_phase1_expected(arm, call, models_dir), doc["exploiters"]):
+        probs += _exploiter_run_problems(arm, w, e, call, models_dir, pin)
     return probs
 
 
@@ -1010,8 +1177,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     r.add_argument("--call", required=True)
     r.add_argument("--models-dir", default=None)
     r.add_argument("--out", required=True)
-    v = sub.add_parser("verify-phase1")
+    v = sub.add_parser("verify-phase1", help="the record names the REGISTERED exploiters and each run is a trained "
+                                             "exploiter of P* as registered: exit 0 / 1")
     v.add_argument("file")
+    v.add_argument("--stage", default=None, help="the stage folder: the side's pin file (default: the record's folder)")
+    v.add_argument("--call", default=None, help="the frozen R file (default: <stage>/reference_population_<side>.json)")
+    v.add_argument("--models-dir", default=None, help="where the exploiters' runs are (default: main's)")
     sub.add_parser("live")
     q = sub.add_parser("pool-seed-check", help="T54's post-spawn check: exit 0 PASS, 1 FAIL, 3 PENDING")
     q.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
@@ -1107,7 +1278,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"[x35 kit] phase-1 record {a.out}: " + ", ".join(e["label"] for e in doc["exploiters"]))
             return 0
         if a.cmd == "verify-phase1":
-            probs = verify_phase1(a.file)
+            from utils.paths import main_models_dir
+
+            stage = a.stage or os.path.dirname(os.path.abspath(a.file))
+            doc = _load(a.file)
+            side = ARMS[doc["arm"]].side if doc.get("arm") in ARMS else "production"
+            call_file = a.call or os.path.join(stage, f"reference_population_{side}.json")
+            bad = verify_call(call_file)
+            if bad:
+                raise KitError(f"the call record {call_file} does not verify: {bad}")
+            probs = verify_phase1(a.file, call=_load(call_file), models_dir=a.models_dir or str(main_models_dir() or ""),
+                                  pin=side_pin(stage, side))
             for x in probs:
                 print(f"[x35 kit] {x}", file=sys.stderr)
             return 0 if not probs else 1

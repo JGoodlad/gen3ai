@@ -721,7 +721,8 @@ def recorded_pins(run_dir: str) -> List[str]:
     return hs
 
 
-def _same_sha(a: str, b: str) -> bool:
+def same_sha(a: str, b: str) -> bool:
+    """Two git shas (full, or a prefix of at least 7) naming one commit."""
     n = min(len(a), len(b))
     return n >= 7 and a[:n] == b[:n]
 
@@ -991,11 +992,11 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
                          f"(unset), so its recorded pin(s) {[h[:12] for h in hs]} cannot be judged")
             continue
         allowed = ((want, own) if run_arm in ARM_PIN_PREFIX_OK else (own,)) if own is not None else (want,)
-        bad = sorted({h for h in hs if not any(_same_sha(h, a) for a in allowed)})
+        bad = sorted({h for h in hs if not any(same_sha(h, a) for a in allowed)})
         if bad:
             ok = False
             lines.append(f"{d}: recorded pin(s) {[h[:12] for h in bad]} != {' / '.join(a[:12] for a in allowed)}")
-        elif run_arm in ARM_PINS and any(_same_sha(h, want) for h in hs):
+        elif run_arm in ARM_PINS and any(same_sha(h, want) for h in hs):
             lines.append(f"{d}: a PRE-FIX {run_arm} attempt at {label} {want[:12]} (AM-D1-FIX-f: VOID, never read)")
     if mine:
         lines.append(f"{len(mine)} side-pinned {side} run(s) checked against {want[:12]}")

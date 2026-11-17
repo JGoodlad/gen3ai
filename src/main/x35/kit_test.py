@@ -102,7 +102,6 @@ def test_the_phase_1_record_feeds_phase_2_and_refuses_a_short_final(tmp_path, mo
     monkeypatch.setattr(K, "_final_step", lambda z: 185000055)
     rec = K.phase1_record("a3_mx", call, str(md), str(tmp_path / "p1.json"))
     assert [e["label"] for e in rec["exploiters"]] == ["mx_s3511", "mx_s3512", "mx_s3513"]
-    assert K.verify_phase1(str(tmp_path / "p1.json")) == []
     f = flags(K.build_argv("a3", 3501, call, rec))
     assert f["--stable-opponent-selfplay-share"] == "0.4" and f["--stable-opponent-pfsp"] is True
     assert str(f["--stable-opponents"]).count(":mx_s35") == 3 and f["--run-name"] == "rb_x35_a3mx_s3501"
@@ -113,8 +112,6 @@ def test_the_phase_1_record_feeds_phase_2_and_refuses_a_short_final(tmp_path, mo
     monkeypatch.setattr(K, "_final_step", lambda z: 185000054)
     with pytest.raises(K.KitError, match="< the registered"):
         K.phase1_record("a3_mx", call, str(md), str(tmp_path / "p1b.json"))
-    (md / "rb_x35_mx_s3512" / "final_model.zip").write_bytes(b"swapped")
-    assert any("sha256 changed" in p for p in K.verify_phase1(str(tmp_path / "p1.json")))
 
 
 def test_a_missing_exploiter_final_is_refused(tmp_path):
