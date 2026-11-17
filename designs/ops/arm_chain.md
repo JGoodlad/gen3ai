@@ -1,7 +1,7 @@
 # The arm chain: one tested module that operates production arms end to end
 
 > Always-current (`designs/CLAUDE.md`). Code: [`src/main/ops/arm_chain/`](../../src/main/ops/arm_chain/), entry point
-> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (289; fake `/proc`, a fake
+> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (314 collected 2026-11-16; fake `/proc`, a fake
 > launcher, temp git repos; nothing touches the GPU). **Status: LIVE since 2026-10-26 23:04 PDT** (chain `x35-lrf-oct26`:
 > d3 3504 and 3505 and LR-F 3502 and 3503, `chain COMPLETE` 10-27 15:39). The job-directory scripts are retired (§7 step 9).
 
@@ -58,6 +58,11 @@ environment variable or a run-name glob is a required field here, checked when t
 The field rules:
 
 - **Each arm has its OWN full 40-hex `pin`.** There is no chain-wide or default pin.
+- **`off_main_pins` is the optional chain-level map {40-hex pin: reason}** for a pin kept off main (the X35 pins are the
+  side pin plus a commit or two, held by a tag). `plan --check-pins` refuses an arm whose pin is neither an ancestor
+  of `origin/main` nor named here with a non-empty reason, and an allowed pin that no branch or tag holds (git can
+  collect it mid-campaign). It is chain-level, never an arm field: a new arm field changes `spec.as_dict`, every
+  started item's saved snapshot would differ, and a restarted supervisor would refuse the chain (`chain._load_state`).
 - **`run` must agree with the kit's describe.** Every later match is on that exact name.
 - **`thin` is `planner` or `none` plus a `thin_reason`.** It is never a `case` on the run name.
 - **`go_by` records whose GO the arm runs under.**
@@ -95,7 +100,7 @@ The field rules:
 
 | verb | what it does |
 |---|---|
-| `plan CHAIN [--check-pins] [--describe]` | validates the file. `--check-pins` checks that each pin is a commit. `--describe` asks the kit for each arm's describe on CPU and checks the run name. A wrong arm name or run is refused when the chain is PLANNED, not at the hand-off |
+| `plan CHAIN [--check-pins [--main-ref R]] [--describe]` | validates the file. `--check-pins` JUDGES each arm's own pin (`pins.py`): it is a commit in the main checkout; it is an ancestor of `R` (default `origin/main`), or the chain file's `off_main_pins` names it with a reason AND a branch or tag holds it; and the arm's kit-describe argv passes `python -m main.checkargs --pin <the arm's pin> --argv …`, run from the main checkout as the kit's pre-check 5 runs it (the pinned `build_parser()`; a static-scan or unavailable verdict is a refusal, not a pass). A window's `require_commit` must be a commit. Each problem line names the arm, the pin and the reason, and the plan exits 1. It asks the kit for the describe itself (~10 s per arm, checkargs included), so `--check-pins` needs the kit and the card's reference call, as `--describe` does. `--describe` asks the kit for each arm's describe on CPU and checks the run name. A wrong arm name, run or pin is refused when the chain is PLANNED, not at the hand-off |
 | `run CHAIN` | the SUPERVISOR: walks the items from the saved state. Exit 0 = advanced or complete, 3 = HOLD, 4 = another supervisor holds this chain |
 | `status CHAIN` | first the supervisor's liveness, `supervisor: ALIVE pid N` / `STALE` / `DEAD` (`!!!` in front when an item is mid-flight with no supervisor, or the heartbeat is past its own deadline), then each item's phase and hold. It never takes the lock (§3, "Liveness"). A loud reading that is not certain is probed again 10 s later (CB-48) |
 | `clear-hold CHAIN --item KEY --by WHO --why WHY [--resolution R]` | the orchestrator's decision on a held item, recorded in the history and a status line. `retry` (default) re-runs the held step; `relaunch` and `accept` are below. Refused while a supervisor holds the lock |
@@ -282,6 +287,7 @@ dry run and GO stand either way.
 | CB-46 | a chain file without `x_dose_comparator` silently dropped `c0_comparator` (finding 13) | `chain.dose_comparator`: the chain file's (`null` omits it), else the block every dose record in main's stage agrees on, else none; a status line says which | `chain_review_test::test_the_dose_record_takes_the_comparator_the_stages_records_agree_on` |
 | CB-47 | `monitor` held `launcher_child.full.log` open for its whole life, so the thin of every arm it followed refused "pid(s) … have the run dir open" (d3 3504, 10-27 03:14: K9(b) PASS, then a HOLD and an idle GPU); the HOLD named only the pid | the follower opens, reads and closes each file per pass (rotation found by inode beside the path), and drops an arm's run-dir log once its phase is ENDED or later (`monitor.POST_RUN`; one last read first; only a live launcher back in that dir, which the thin refuses anyway, restores it); the thin's HOLD names each holder's cmdline (`armend.open_holders`; the planner's refusal too) | `monitor_test::test_the_10_27_incident_a_running_monitor_never_blocks_the_arm_ends_thin` (a real monitor process, the real planner's dry run; reverted, it reproduces the refusal), `…the_follower_holds_no_file_open_between_polls`, `…a_rotation_by_rename_is_drained_without_a_held_handle`, `…chain_files_never_lists_an_ended_arms_run_dir`; `armend_test::test_a_thin_held_by_an_open_run_dir_names_each_holders_command_line` |
 | CB-48 | `monitor` paged "SUPERVISOR DEAD: NO supervisor while arm … RUNNING is mid-flight" about a LIVE supervisor (10-27 12:43:42: same start ticks, last beat 18 s old, the lock file unchanged, `status` ALIVE a moment later): one `/proc/locks` read skipped its row and nothing re-checked | a missed lock read is re-read 3 times; a fresh heartbeat with a live pid overrides it; a pid gone from `/proc` is DEAD at once, and every other DEAD / STALE needs two probes 10 s apart (`monitor` across passes, `status` by a second probe) | `liveness_test::test_a_lock_read_that_misses_once_is_re_read_and_finds_the_holder`, `…a_missed_lock_read_with_a_fresh_heartbeat_and_a_live_pid_reads_alive`, `…a_fresh_heartbeat_does_not_save_a_pid_that_is_gone`, `…a_dead_pid_is_dead_at_once_on_the_first_probe`, `…a_proc_read_that_fails_is_not_a_death`, `…two_consecutive_misses_with_a_stale_heartbeat_alert_and_one_does_not`, `…status_re_probes_a_loud_verdict_and_reports_the_second`; `chain_review_test::test_a_transient_lock_miss_with_a_fresh_heartbeat_pages_nothing`, `…a_supervisor_whose_pid_is_gone_is_paged_on_the_first_pass`, `…two_consecutive_lock_misses_with_a_stale_heartbeat_are_paged_on_the_second`, `…the_monitor_pages_a_dead_supervisor_once`, `…status_re_probes_a_dead_reading_and_reports_the_supervisor_that_is_there_now` |
+| CB-49 | an arm's pin was judged only when the chain REACHED the arm (the kit's GO-time pre-checks), days after the plan: `plan --check-pins` only asked whether the sha was a commit, so a pin off main with no tag, or whose parser lacks a flag of the arm's argv, HELD the chain with the GPU idle | `pins.check_pins` (resolve, ancestry of `origin/main`, `off_main_pins` + a holding ref) and `pins.check_argv_at_pin` (`main.checkargs --pin` on the kit's describe argv; only an authoritative parser verdict passes) | `pins_test::test_a_pin_off_main_is_refused_unless_the_chain_file_allows_it`, `test_an_allowed_off_main_pin_that_no_ref_holds_is_refused`, `test_a_main_ref_that_does_not_resolve_refuses_the_chain_instead_of_skipping_the_ancestry`, `test_the_verdict_reader_on_real_transcripts`, `test_the_argv_is_judged_the_way_the_kit_runs_it`, `test_plan_check_pins_exits_nonzero_naming_the_arm_the_pin_and_the_reason`, `test_an_off_main_allowance_never_enters_an_items_saved_snapshot`; a file the argv names is NOT checked at the pin: it is read from the launching checkout (X52's teams are absent at its pin) |
 | restart | the 10-26 supervisor (`93a05fe91`) is replaced at a restart by this code, onto the state it wrote | the state schema stays `arm_chain_state_v1`: every addition (`supervisor`, `data.stopping` / `attempts` / `accepted`) is optional, and each version keeps the other's keys | `chain_review_test::test_a_93a05fe9_*` on `testdata/state_93a05fe9_*.json` (written by `93a05fe91`'s code on these fakes: held at LAUNCHED twice, held at SPAWNED, mid-RUNNING, an async ship) |
 
 Two classes stay with their owners:
@@ -291,6 +297,10 @@ Two classes stay with their owners:
 
 **Validated against the real artifacts** (10-26, read-only):
 - `plan --describe` against the real kit agrees for `n1p 3502` and `toy_x47 3601`, and refuses `x47` (CB-01).
+- `plan --check-pins` on X70's items (`measurements/x70_ent0_control_2026-11-13/chain_items_x70.json`, pin `9e97cad5`,
+  11-16, read-only, a scratch job dir): refused without `off_main_pins` (the pin is not on `origin/main`; its tag is
+  `ce3d-pin-9e97cad5`), `PLAN OK` with it (the pinned parser accepted the kit's argv), and an arm moved to an old
+  commit refused by that commit's own parser (`--behaviour-check` is absent at `7b26e396`).
 - The transcript verifier passes the real dry runs of `rb_x35_n1p_s3501` and `rb_x35_d3mut_s3503`.
 - `completeness` passes both runs.
 - `dose_record` reproduces both shipped dose records field for field.
@@ -381,7 +391,9 @@ Two classes stay with their owners:
    - `disk_need_gib`, taken from the last dry run's REQUIRED GiB.
 
    For each window: its steps, `on_fail` and its preempt marker.
-4. **`python -m main.ops.arm_chain plan <file> --check-pins --describe` must print `PLAN OK`.**
+4. **`python -m main.ops.arm_chain plan <file> --check-pins --describe` must print `PLAN OK`.** It is the pin gate:
+   an off-main pin needs its `off_main_pins` entry (and its tag), and every arm's argv must pass the PINNED parser.
+   Run it at agent priority (rule 5b); it takes about 10 s per arm.
 5. **Retire the old chain without signalling it mid-step.** Let the last old arm-end finish with next `none -`, or
    do not arm one. Confirm that no old chain script is alive.
 6. **Start the canary logger.** Run `python -m main.ops.arm_chain canary --out-dir ~/.claude/jobs/x35/canary

@@ -22,7 +22,8 @@ from main.ops.arm_chain.launch import X35Launcher
 from main.ops.arm_chain.procwatch import ProcRef, wait_gone
 from main.ops.arm_chain.ship import ShipResult
 from main.ops.arm_chain.spec import ChainSpec
-from main.ops.arm_chain.testing_fakes import FakeRunner, World, k9b_handler, make_world, planner_handler
+from main.ops.arm_chain.testing_fakes import (FakeRunner, World, checkargs_handler, describe_handler, k9b_handler, make_world,
+                                              planner_handler)
 
 pytestmark = pytest.mark.integration
 
@@ -306,14 +307,16 @@ def test_the_cli_plans_and_reports_status(w, capsys):
     p = os.path.join(w.root, "chain.json")
     with open(p, "w") as f:
         json.dump(w.chain_dict([w.arm("a1", 1, w.pin_a)]), f)
-    assert cli.main(["plan", p, "--check-pins"]) == 0
+    plan = ["plan", p, "--check-pins", "--main-ref", "main"]
+    ok = FakeRunner().on(*describe_handler()).on(*checkargs_handler())
+    assert cli.main(plan, runner=ok) == 0
     assert "PLAN OK" in capsys.readouterr().out
     assert cli.main(["status", p]) == 0
     assert "arm:rb_a1_s1" in capsys.readouterr().out
     bad = w.chain_dict([w.arm("a1", 1, "0" * 40)])
     with open(p, "w") as f:
         json.dump(bad, f)
-    assert cli.main(["plan", p, "--check-pins"]) == 1
+    assert cli.main(plan, runner=ok) == 1
 
 
 def test_an_earlier_failed_gos_start_line_does_not_poison_the_dose(w):

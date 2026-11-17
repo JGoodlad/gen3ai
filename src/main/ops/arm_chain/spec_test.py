@@ -1,6 +1,5 @@
 """Regression tests for the chain file (spec.py): every default an ad hoc script used to take is a required field."""
 import copy
-import subprocess
 
 import pytest
 
@@ -123,29 +122,25 @@ def test_input_dict_is_not_mutated():
     assert d == before
 
 
-# -- check_pins (git) ------------------------------------------------------------------------------------------
+# -- off_main_pins (the pin judgement itself is pins_test.py) ---------------------------------------------------
 
-@pytest.mark.integration
-def test_check_pins_real_commit_passes_and_fake_sha_is_reported(tmp_path):
-    """CB-05: a pin that is not a commit in the main checkout is reported, a real one is not."""
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t",
-           "PATH": "/usr/bin:/bin", "HOME": str(tmp_path)}
+def test_off_main_pins_is_a_chain_level_map_of_pin_to_reason():
+    assert spec.parse(minimal_chain()).off_main_pins == {}
+    s = spec.parse(minimal_chain(off_main_pins={PIN_A: "main + the magnet; tag ce3d-pin-aaaa"}))
+    assert s.off_main_pins == {PIN_A: "main + the magnet; tag ce3d-pin-aaaa"}
 
-    def git(*a):
-        return subprocess.run(["git", "-C", str(repo), *a], check=True, capture_output=True, text=True, env=env).stdout
 
-    git("init", "-q")
-    (repo / "f").write_text("x")
-    git("add", "f")
-    git("commit", "-q", "-m", "c1")
-    real = git("rev-parse", "HEAD").strip()
-    good = spec.parse(minimal_chain(repo=str(repo), items=[minimal_arm(pin=real)]))
-    assert spec.check_pins(good) == []
-    fake = spec.parse(minimal_chain(repo=str(repo), items=[minimal_arm(pin="0" * 40)]))
-    problems = spec.check_pins(fake)
-    assert len(problems) == 1 and "0" * 40 in problems[0]
+@pytest.mark.parametrize("bad, match", [
+    ({"a" * 8: "abbreviated"}, "not a full 40-hex"),
+    ({PIN_A: ""}, "needs a reason"),
+    ({PIN_A: "   "}, "needs a reason"),
+    ({PIN_A: None}, "needs a reason"),
+    (["a" * 40], "must be an object"),
+])
+def test_a_malformed_off_main_allowance_is_refused(bad, match):
+    """The allowance is the written reason a pin may sit off main: no reason, no allowance."""
+    with pytest.raises(spec.SpecError, match=match):
+        spec.parse(minimal_chain(off_main_pins=bad))
 
 
 def test_a_status_file_the_kit_does_not_write_is_refused():

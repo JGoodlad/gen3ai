@@ -1,6 +1,10 @@
 """``python -m main.ops.arm_chain <verb>`` — the arm chain's command line (design: ``designs/ops/arm_chain.md``).
 
-    plan        CHAIN [--check-pins] [--describe]   validate the chain file; --describe asks the kit for each arm's run
+    plan        CHAIN [--check-pins [--main-ref R]] [--describe]
+                                                    validate the chain file; --check-pins judges each arm's OWN pin
+                                                    (a commit, on R = origin/main or allowed off it, and the pinned
+                                                    parser accepts the kit's argv: main.checkargs --pin); --describe
+                                                    asks the kit for each arm's run
     run         CHAIN                               the SUPERVISOR: walk the items from the saved state (nohup setsid)
     status      CHAIN                               supervisor ALIVE / STALE / DEAD, then each item's phase and hold
     clear-hold  CHAIN --item KEY --by WHO --why WHY [--resolution retry|relaunch|accept]
@@ -32,11 +36,11 @@ import signal
 import sys
 from typing import List, Optional, Sequence
 
-from main.ops.arm_chain import canary, cpugate, live, monitor, spec as spec_mod
+from main.ops.arm_chain import canary, cpugate, live, monitor, pins, spec as spec_mod
 from main.ops.arm_chain.chain import RESOLUTIONS, Chain, ChainError, default_shipper, own_tag, ship_worker
 from main.ops.arm_chain.launch import Hold, X35Launcher
 from main.ops.arm_chain.procwatch import ProcRef, ref_of, signal_if, wait_gone
-from main.ops.arm_chain.runner import SubprocessRunner
+from main.ops.arm_chain.runner import Runner, SubprocessRunner
 from main.ops.arm_chain.statuslog import StatusLog
 from utils import core_split
 
@@ -46,21 +50,25 @@ def _models_default() -> str:
     return str(main_models_dir() or "")
 
 
-def _plan(a: argparse.Namespace) -> int:
+def _plan(a: argparse.Namespace, runner: Optional[Runner] = None) -> int:
     s = spec_mod.load(a.chain)
     for i, it in enumerate(s.items):
         print(f"{i:2d}. {spec_mod.describe_item(it)}")
     bad: List[str] = []
     if a.check_pins:
-        bad += spec_mod.check_pins(s)
-    if a.describe:
-        lau = X35Launcher(s, SubprocessRunner(), dict(os.environ))
+        bad += pins.check_pins(s, main_ref=a.main_ref)
+    if a.check_pins or a.describe:   # the pin check needs each arm's argv, which only the kit's describe gives
+        lau = X35Launcher(s, runner or SubprocessRunner(), dict(os.environ))
         for it in s.arms():
             try:
                 d = lau.describe_offline(it)
-                print(f"    {it.key}: the kit agrees — FORK of {d.parent_run_dir}, {d.delta_text}, --steps {d.steps:,}")
             except Hold as h:
-                bad.append(str(h))
+                bad.append(f"{h}" + (" (its pin was NOT judged: no argv)" if a.check_pins else ""))
+                continue
+            if a.describe:
+                print(f"    {it.key}: the kit agrees — FORK of {d.parent_run_dir}, {d.delta_text}, --steps {d.steps:,}")
+            if a.check_pins and pins.is_commit(s.repo, it.pin):   # an unresolvable pin is already a problem above
+                bad += pins.check_argv_at_pin(s, it, d, lau.runner, lau.base_env)
     for b in bad:
         print(f"REFUSED: {b}")
     print("PLAN OK" if not bad else f"PLAN REFUSED ({len(bad)} problem(s))")
@@ -111,13 +119,16 @@ def _run(a: argparse.Namespace) -> int:
     return rc
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Optional[Sequence[str]] = None, runner: Optional[Runner] = None) -> int:
+    """``runner`` is the seam ``plan`` runs the kit's describe and ``checkargs`` through (tests only)."""
     ap = argparse.ArgumentParser(prog="python -m main.ops.arm_chain", description=__doc__.split("\n\n")[0],
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("plan")
     p.add_argument("chain")
     p.add_argument("--check-pins", action="store_true")
+    p.add_argument("--main-ref", default=pins.DEFAULT_MAIN_REF,
+                   help="the ref an arm's pin must be an ancestor of (unless the chain file's off_main_pins allows it)")
     p.add_argument("--describe", action="store_true")
     for name in ("run", "status"):
         sub.add_parser(name).add_argument("chain")
@@ -172,7 +183,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         if a.cmd == "plan":
-            return _plan(a)
+            return _plan(a, runner)
         if a.cmd == "run":
             return _run(a)
         if a.cmd == "status":

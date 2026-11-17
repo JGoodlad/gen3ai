@@ -11,14 +11,13 @@ environment variable or a run-name glob is a REQUIRED field here, validated at l
   AM-R0 / AM-X47 / AM-X52 keep-every-checkpoint arms were each a new glob, and a family the glob missed is thinned);
 * ``go_by`` records whose GO the arm runs under (the orchestrator's; a design block is not a launch command).
 
-Loading never touches the GPU, ``models/`` or git; ``check_pins`` (git) is a separate call.
+Loading never touches the GPU, ``models/`` or git; judging the pins (git, ``main.checkargs``) is ``pins.py``'s.
 """
 from __future__ import annotations
 
 import json
 import os
 import re
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
@@ -144,6 +143,9 @@ class ChainSpec:
     items: Tuple[Item, ...]
     source: str = ""
     extra: Mapping[str, Any] = field(default_factory=dict)
+    #: pin -> why it is kept off main (``pins.check_pins``). Chain-level, never an arm field: an arm field would change
+    #: ``as_dict`` and so every started item's saved snapshot (``chain._load_state`` refuses a changed started item).
+    off_main_pins: Mapping[str, str] = field(default_factory=dict)
 
     @property
     def state_path(self) -> str:
@@ -263,6 +265,18 @@ def _window(d: Mapping[str, Any], where: str) -> WindowItem:
                       preempt_marker=str(_req(d, "preempt_marker", where)))
 
 
+def _off_main_pins(d: Mapping[str, Any]) -> Dict[str, str]:
+    raw = d.get("off_main_pins", {})
+    if not isinstance(raw, dict):
+        raise SpecError("chain: off_main_pins must be an object {<40-hex pin>: <reason>}")
+    for sha, why in raw.items():
+        if not _SHA40.fullmatch(str(sha)):
+            raise SpecError(f"chain: off_main_pins key '{sha}' is not a full 40-hex commit")
+        if not isinstance(why, str) or not why.strip():
+            raise SpecError(f"chain: off_main_pins[{sha[:12]}] needs a reason (why this pin is kept off main)")
+    return {str(k): str(v) for k, v in raw.items()}
+
+
 def parse(d: Mapping[str, Any], source: str = "") -> ChainSpec:
     if d.get("schema") != SCHEMA:
         raise SpecError(f"schema must be '{SCHEMA}', not {d.get('schema')!r}")
@@ -314,7 +328,7 @@ def parse(d: Mapping[str, Any], source: str = "") -> ChainSpec:
         submodules=_str_list(rec.get("submodules", []), "records.submodules"),
         agent_cores_pin=_opt_str(cpu.get("agent_cores")), trainer_cores_pin=_opt_str(cpu.get("trainer_cores")),
         disk_headroom_gib=float(d.get("disk_headroom_gib", 30)), items=tuple(items), source=source,
-        extra={k: v for k, v in d.items() if k.startswith("x_")})
+        extra={k: v for k, v in d.items() if k.startswith("x_")}, off_main_pins=_off_main_pins(d))
 
 
 def load(path: str) -> ChainSpec:
@@ -323,18 +337,6 @@ def load(path: str) -> ChainSpec:
     except (OSError, ValueError) as e:
         raise SpecError(f"{path}: {e}") from e
     return parse(d, source=os.path.abspath(path))
-
-
-def check_pins(spec: ChainSpec) -> List[str]:
-    """Every arm's pin and every window's required commit names a commit in the main checkout; the problems found."""
-    bad = []
-    for it in spec.items:
-        sha = it.pin if isinstance(it, ArmItem) else it.require_commit
-        p = subprocess.run(["git", "-C", spec.repo, "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"],
-                           capture_output=True, text=True)
-        if p.returncode != 0:
-            bad.append(f"{it.key}: {sha} is not a commit in {spec.repo}")
-    return bad
 
 
 def describe_item(it: Item) -> str:

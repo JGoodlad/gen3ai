@@ -235,3 +235,36 @@ def planner_handler(models: str, refuse_open_times: int = 0, keep_extra: Sequenc
         open(out, "w").write("\n".join(lines) + "\n")
         return 0
     return pred, fn
+
+
+def describe_handler(refuse: Optional[str] = None) -> Handler:
+    """``main.x35.kit describe``: the argv a fork of ``<arm> <seed>`` would get (run name ``rb_<arm>_s<seed>``, as
+    :meth:`World.arm` names it); ``refuse`` makes the kit refuse every arm with that message."""
+    def pred(argv: Sequence[str]) -> bool:
+        return "main.x35.kit" in argv and "describe" in argv
+
+    def fn(argv: Sequence[str], out: str) -> int:
+        if refuse is not None:
+            open(out, "w").write(f"[x35 kit] REFUSED: {refuse}\n")
+            return 2
+        arm, seed = _arg(argv, "--arm"), _arg(argv, "--seed")
+        run = f"rb_{arm}_s{seed}"
+        with open(out, "w") as f:
+            json.dump({"run_name": run, "parent_run_dir": "/p/parent", "delta_text": "+1,000 steps",
+                       "argv": ["--model", "/p/parent/checkpoints/ck_1000_steps.zip", "--steps", "2000",
+                                "--seed", seed, "--run-name", run]}, f)
+        return 0
+    return pred, fn
+
+
+def checkargs_handler(rc: int = 0, text: str = "  ✅ argv validated against PINNED parser @abc via the pinned "
+                      "build_parser() [mode=build_parser, 390 options, 2.5s]\n  ✓ this command still launches\n",
+                      ) -> Handler:
+    """``python -m main.checkargs``: exit ``rc`` with ``text`` as its transcript."""
+    def pred(argv: Sequence[str]) -> bool:
+        return "main.checkargs" in argv
+
+    def fn(argv: Sequence[str], out: str) -> int:
+        open(out, "w").write(text)
+        return rc
+    return pred, fn
