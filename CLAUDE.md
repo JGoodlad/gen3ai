@@ -118,7 +118,8 @@ export PYTHONPATH=$PYTHONPATH:src
 ```
 
 - **`./scripts/bootstrap.sh`** sets up a checkout or worktree idempotently (env, submodule, Showdown symlinks, cargo);
-  `--dry-run` prints the plan. The conda env is SHARED: a worktree whose env file differs is refused; never
+  `--dry-run` prints the plan. **A fresh worktree runs `scripts/bootstrap.sh --skip-env --no-rust --no-check` (~40 s) BEFORE any
+  gate or pytest**: both refuse without it. The conda env is SHARED: a worktree whose env file differs is refused; never
   `conda env update` it to get past that (`docs/DEVELOPING.md`). The cu128 twin and the frozen `gen3ai_stable` are
   `designs/launcher/interpreter.md`'s.
 - **In a worktree, a direct `python` imports MAIN's code unless you export `PYTHONPATH`** (the editable install names

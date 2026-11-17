@@ -189,3 +189,72 @@ def test_max_run_s_goes_to_mem_cap_the_innermost_wrapper_so_no_queue_wait_counts
     for bad in (["run", "--max-run-s", "0"], ["run", "--max-run-s", "soon"], ["run", "--max-run-s"],
                 ["--max-run-s", "60", "run"]):
         assert SG.main(bad) == 2, bad
+
+
+# --- the pre-queue bootstrap preflight (recurring 2026-11-16: a never-bootstrapped worktree queued 20-40 min, then failed) ---
+
+def _checkout(root: Path, *, bootstrapped: bool, worktree: bool) -> Path:
+    """A fake repo root: a linked worktree's ``.git`` is a file, the main checkout's a directory."""
+    if worktree:
+        (root / ".git").write_text("gitdir: /elsewhere/.git/worktrees/x\n")
+    else:
+        (root / ".git").mkdir()
+    if bootstrapped:
+        from utils import checkout_deps
+        (root / checkout_deps.REQUIRED_DEPS[0]).parent.mkdir(parents=True)
+        (root / checkout_deps.REQUIRED_DEPS[0]).write_text("//\n")
+        (root / checkout_deps.REQUIRED_DEPS[1]).mkdir(parents=True)
+    return root
+
+
+def _spy_nothing_queues(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(SG, "resolve_shape", lambda: pytest.fail("the shape was resolved before the preflight"))
+    monkeypatch.setattr(SG.subprocess, "call", lambda *a, **k: pytest.fail("the gate lock / heavy slot was reached"))
+
+
+def test_an_unbootstrapped_worktree_is_refused_in_seconds_before_any_queue(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    import time
+    monkeypatch.delenv("GEN3AI_SKIP_DEPS_GUARD", raising=False)
+    monkeypatch.setattr(SG, "repo_path", lambda *a: _checkout(tmp_path, bootstrapped=False, worktree=True).joinpath(*a))
+    _spy_nothing_queues(monkeypatch)
+    t0 = time.monotonic()
+    assert SG.main(["run"]) == SG.EXIT_UNBOOTSTRAPPED == 4
+    assert time.monotonic() - t0 < 2.0
+    err = capsys.readouterr().err
+    assert "REFUSING before queueing" in err
+    assert "scripts/bootstrap.sh --skip-env --no-rust --no-check" in err          # the exact worktree command
+    assert "dist/sim/index.js" in err and "node_modules" in err                    # both probes, by name
+
+
+def test_an_unbootstrapped_main_checkout_is_told_the_plain_bootstrap(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    monkeypatch.delenv("GEN3AI_SKIP_DEPS_GUARD", raising=False)
+    monkeypatch.setattr(SG, "repo_path", lambda *a: _checkout(tmp_path, bootstrapped=False, worktree=False).joinpath(*a))
+    _spy_nothing_queues(monkeypatch)
+    assert SG.main(["run"]) == 4
+    err = capsys.readouterr().err
+    assert "./scripts/bootstrap.sh" in err and "--skip-env" not in err
+
+
+def test_a_bootstrapped_checkout_passes_the_preflight_and_reaches_the_gate(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("GEN3AI_SKIP_DEPS_GUARD", raising=False)
+    root = _checkout(tmp_path, bootstrapped=True, worktree=True)
+    monkeypatch.setattr(SG, "repo_path", lambda *a: root.joinpath(*a))
+    assert SG.preflight() == ""
+    seen = {}
+    monkeypatch.setattr(SG, "resolve_shape", lambda: SG.Shape({}, None, 0, 6))
+    monkeypatch.setattr(SG.subprocess, "call", lambda cmd, cwd, env: seen.update(cmd=cmd) or 0)
+    assert SG.main(["run"]) == 0 and seen["cmd"]
+
+
+def test_the_preflight_honours_the_deps_guard_opt_out_and_a_dry_run_never_checks(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(SG, "repo_path", lambda *a: _checkout(tmp_path, bootstrapped=False, worktree=True).joinpath(*a))
+    monkeypatch.delenv("GEN3AI_SKIP_DEPS_GUARD", raising=False)
+    monkeypatch.setattr(SG, "resolve_shape", lambda: SG.Shape({}, None, 0, 6))
+    assert SG.main(["--dry-run"]) == 0                      # prints the plan; checks nothing
+    assert SG.preflight() != ""
+    monkeypatch.setenv("GEN3AI_SKIP_DEPS_GUARD", "1")
+    assert SG.preflight() == ""

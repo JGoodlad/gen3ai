@@ -233,7 +233,7 @@ on `main` by push:
 ```bash
 git worktree add ../gen3ai-myfeature -b myfeature
 cd ../gen3ai-myfeature
-./scripts/bootstrap.sh              # detects the worktree; symlinks instead of rebuilding
+./scripts/bootstrap.sh              # detects the worktree; symlinks instead of rebuilding (agents: add --skip-env --no-rust --no-check for the ~40 s form)
 export PYTHONPATH=$PYTHONPATH:src   # required here, see below
 # ... work, test ...
 bash scripts/land.sh myfeature ../gen3ai-myfeature
@@ -259,6 +259,12 @@ by hand, guard each link with `[ -e ]` and run it only in a worktree: in the mai
 `deps/pokemon-showdown/dist` is a real directory, so `ln -s TARGET dist` creates `dist/dist`
 pointing at its own parent and `node build` dies with `ELOOP`. Never symlink the whole
 `deps/pokemon-showdown` directory either; git then treats the submodule path as a symlink.
+
+**An un-bootstrapped worktree fails fast, not after the queue.** `scripts/ops/ship_gate.sh run` first checks (milliseconds, no
+network) that `dist/sim/index.js` and `node_modules/` exist, and refuses with exit 4 naming the bootstrap command before it takes
+the gate lock or a heavy slot; every pytest session, the static tier included, refuses the same way at its start. One definition:
+`src/utils/checkout_deps.py`. In a worktree the command is `scripts/bootstrap.sh --skip-env --no-rust --no-check` (it never
+touches the shared conda env and builds no Rust). `GEN3AI_SKIP_DEPS_GUARD=1` opts out for a pure-unit CI.
 
 Long training runs use `python -m main.launcher`, which creates its own git worktree pinned to the
 launch commit, so pushing to `main` never disturbs a run in flight.

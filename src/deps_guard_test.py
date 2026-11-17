@@ -83,6 +83,15 @@ def test_a_missing_submodule_fails_the_session_with_one_message(tmp_path):
     assert " failed" not in out, f"the guard must REPLACE test failures, not add to them\n{out}"
 
 
+def test_a_linked_worktree_is_told_the_cheap_bootstrap(tmp_path):
+    """A linked worktree's `.git` is a file: the message names the env-untouching, Rust-free command the same
+    `utils.checkout_deps` gives `ship_gate.sh` before it queues (one definition, one message)."""
+    tree = _tree(tmp_path, present=False)
+    (tree / ".git").write_text("gitdir: /elsewhere/.git/worktrees/x\n")
+    out = (lambda r: r.stdout + r.stderr)(_run_pytest(tree))
+    assert "scripts/bootstrap.sh --skip-env --no-rust --no-check" in out, out
+
+
 def test_a_bootstrapped_tree_runs_normally(tmp_path):
     """The guard is invisible once the checkout is finished — the control arm."""
     res = _run_pytest(_tree(tmp_path, present=True))

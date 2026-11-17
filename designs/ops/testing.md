@@ -607,6 +607,14 @@ started with `CUDA_VISIBLE_DEVICES` empty or `-1`. An agent's CPU smoke on the a
 (one gate at a time) and `mem_cap.sh 24`, always with `CUDA_VISIBLE_DEVICES=""`. It never selects tests by the
 change (owner, 2026-09-30); it is fast because the routine set was RE-TIERED by measured cost.
 
+**A preflight runs FIRST, before the gate lock or a heavy slot** (2026-11-16): a checkout that was never bootstrapped (a fresh
+worktree: no Showdown `dist/` or `node_modules/`) is refused in milliseconds, exit 4, naming the command
+(`scripts/bootstrap.sh --skip-env --no-rust --no-check` in a linked worktree: ~40 s, no env change, no Rust build; `./scripts/bootstrap.sh`
+in the main checkout). It never runs bootstrap itself (that can build Rust). Before it, such a gate queued 20-40 min and failed only when pytest
+started. The probe is `utils.checkout_deps`, the ONE definition the pytest session's own guard (root `conftest.py`, so the static tier
+too) reads: file existence only, no network, no subprocess; `GEN3AI_SKIP_DEPS_GUARD=1` opts out of both; `--dry-run` does not check.
+Pinned by `src/utils/ship_gate_test.py` and `src/deps_guard_test.py`.
+
 **Measured beside a live training run** (rule 5b shape, `nice 19 taskset -c <the 5+3 agent cores> -n 3`, trainer on
 <the 5+3 trainer cores>, other agents' nice-19 jobs and the maturity queue's SCHED_IDLE slots on the same agent cores; walls
 are the gate-lock HELD time, queue wait excluded):

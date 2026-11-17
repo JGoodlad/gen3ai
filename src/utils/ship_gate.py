@@ -41,7 +41,10 @@ it goes to ``mem_cap.sh`` (``utils.mem_cap``, THE RUN-TIME BOUND), whose clock s
 queue; past it the gate is stopped and exits 89.
 
 No argument REFUSES (exit 2), like every scripts/ops/ entry point: a gate is never started by accident.
-Exit status: the gate's own; 89 = ``--max-run-s`` stopped it; 2 = usage.
+An UN-BOOTSTRAPPED checkout (no Showdown ``dist/`` / ``node_modules``: a fresh worktree) is refused BEFORE any queue, exit 4, naming
+the command (``scripts/bootstrap.sh --skip-env --no-rust --no-check`` in a worktree): ``utils.checkout_deps``, also the pytest
+session's guard. ``--dry-run`` does not check.
+Exit status: the gate's own; 89 = ``--max-run-s`` stopped it; 2 = usage; 4 = not bootstrapped.
 """
 from __future__ import annotations
 
@@ -53,6 +56,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence
 
+from utils import checkout_deps
 from utils import core_split
 from utils import heavy_slots as HS
 from utils import mem_cap
@@ -135,6 +139,19 @@ def build_argv(shape: Shape, python: str, extra: Sequence[str] = (), *, max_run_
                   python, "-m", "pytest", "src/", "-m", MARKERS, "-q", "-n", str(shape.workers), *extra]
 
 
+#: pytest's UsageError code, which the same refusal returns when pytest itself starts (``conftest.py``).
+EXIT_UNBOOTSTRAPPED = 4
+
+
+def preflight() -> str:
+    """``""`` when this checkout is bootstrapped, else the refusal naming the exact bootstrap command. Runs BEFORE the gate
+    lock and the heavy slot (a never-bootstrapped worktree used to queue 20-40 min and only then fail at pytest's start):
+    the SAME definition as the pytest session's guard (``utils.checkout_deps``), file-existence only, milliseconds.
+    It never runs bootstrap (that can build Rust)."""
+    refused = checkout_deps.refusal(str(repo_path()))
+    return f"[ship_gate] REFUSING before queueing: this checkout is not bootstrapped.\n{refused}" if refused else ""
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     if args[:1] in (["-h"], ["--help"]):
@@ -155,6 +172,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
               "options go after --. See --help.", file=sys.stderr)
         return 2
     dry = head == ["--dry-run"]
+    if not dry:
+        refused = preflight()
+        if refused:
+            print(refused, file=sys.stderr)
+            return EXIT_UNBOOTSTRAPPED
     shape = resolve_shape()
     cmd = build_argv(shape, os.environ.get("GEN3AI_PYTHON") or sys.executable, extra, max_run_s=max_run_s)
     print(f"[ship_gate] {shape.describe()}", file=sys.stderr)
