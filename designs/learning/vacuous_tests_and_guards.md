@@ -393,7 +393,7 @@ Generalised: **presence is a property of the source; reachability is a property 
 A source-level gate can never see a dead branch. Pair them.
 
 **And the rule that guards the rules:** every gate needs a **vacuity guard** — a test that the
-scan *can* fail. `paths_test.py::test_the_scan_can_actually_fail` is the template. It is the only
+scan *can* fail. `utils/home_path_literal_gate_test.py::test_the_scan_can_actually_fail` is the template. It is the only
 defence against the gate itself joining this taxonomy, which is not hypothetical: an allowlist
 entry here **outlived its own fix** and then misled every reader after, including a subagent
 briefed from it. When a deferral dies, **delete it**.

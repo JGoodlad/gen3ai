@@ -65,7 +65,7 @@ def test_the_legality_check_can_actually_fail():
     """The vacuity guard: prove the oracle says NO to something.
 
     Without this, a validator bridge that returned ``valid: True`` unconditionally — a JSON shape
-    change, a swallowed Node error — would make the gate above green forever. `paths_test.py`'s
+    change, a swallowed Node error — would make the gate above green forever. `utils/home_path_literal_gate_test.py`'s
     `test_the_scan_can_actually_fail` is the precedent.
     """
     # A single mon with no moves: the validator rejects this and has no way not to.

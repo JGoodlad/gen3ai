@@ -1,6 +1,6 @@
 """`designs/ops/anchors.json` — the one place a box-specific path is allowed to live.
 
-`src/utils/paths_test.py` fails any module under `src/agents`, `src/main`, `src/utils` that uses a
+`src/utils/home_path_literal_gate_test.py` fails any module under `src/agents`, `src/main`, `src/utils` that uses a
 `/home/...` literal as a VALUE, and it is right to: four tests once read `models/` through such a
 literal and therefore skipped forever on every other machine — invisible coverage loss, because a
 skip that is supposed to happen looks exactly like a skip that is not. Metamon and Foul Play are
@@ -180,7 +180,7 @@ def test_describe_prints_every_key_with_its_env_var_and_whether_it_exists(tmp_pa
 def test_the_committed_config_holds_the_absolute_paths_src_may_not_hold() -> None:
     """The reason this file exists, stated as a test.
 
-    `src/utils/paths_test.py` fails any module under `src/` that uses an absolute home path as a
+    `src/utils/home_path_literal_gate_test.py` fails any module under `src/` that uses an absolute home path as a
     VALUE. The anchor checkouts ARE at absolute paths outside the repo, so the config is where
     they live — and every one of them must be absolute, because a relative path here would resolve
     against whatever directory the caller happened to be standing in.

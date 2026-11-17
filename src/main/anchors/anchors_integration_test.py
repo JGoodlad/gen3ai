@@ -47,7 +47,7 @@ to load on the tree under test, and no longer needs the run archive at all.
 **It SKIPS with a named reason** when the Metamon checkout, its interpreter or its weight cache is
 absent — which is every box but this one. 🚨 A skip that is supposed to happen
 looks exactly like a skip that is not, so the reason is always printed and always specific:
-``src/utils/paths_test.py`` was written after four tests skipped forever on a ``/home/...`` literal
+``src/utils/home_path_literal_gate_test.py`` was written after four tests skipped forever on a ``/home/...`` literal
 nobody noticed.
 """
 from __future__ import annotations

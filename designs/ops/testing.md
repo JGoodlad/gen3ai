@@ -685,7 +685,7 @@ has NO fixture and the test costs 2.2 s warm — `BotReader` resolves `bot_reade
 
 **LINCHPINS — kept routine at any cost** (each carries a `# LINCHPIN` comment; add one only with a reason a
 whole-repo red must block every ship): `learner_golden_test::test_the_production_golden_is_the_bf16_update_…`
-(the production update, bit for bit), `paths_test::test_no_module_hardcodes_an_absolute_home_path` (a
+(the production update, bit for bit), `home_path_literal_gate_test::test_no_module_hardcodes_an_absolute_home_path` (a
 `/home/…` literal makes a test skip forever everywhere else) and `env_files_test::test_every_third_party_import_is_declared_by_the_env_file`.
 Each also carries `@pytest.mark.linchpin`, the 8 s bar's exemption.
 

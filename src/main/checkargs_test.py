@@ -652,7 +652,7 @@ def test_pin_commit_beside_sync_to_main_is_REPORTED_as_the_launcher_would_refuse
 # differs at this commit`, which is EXACTLY what a genuine arity regression looks like.
 # `argv_from_run` had always stripped it; `--argv` had not.
 # A neutral absolute prefix on purpose: this is a FIXTURE standing for "the command
-# as it was typed", not a path this box resolves — and `paths_test` rightly fails a
+# as it was typed", not a path this box resolves — and `home_path_literal_gate_test` rightly fails a
 # `/home/...` literal anywhere under src/.
 _RECORDED = ("/opt/gen3ai/src/main/launcher/__main__.py "
              "--run-name ai_v12_01_winprob_critic --pin-commit e798c13a --steps 75000000")

@@ -3,7 +3,7 @@
     "WHERE THE EXTERNAL ANCHOR OPPONENTS LIVE ON THIS BOX.",
     "Read by src/main/anchors/config.py; every value is overridable by an env var (the env var",
     "name for each key is printed by `python -m main.anchors --show-config`). This file exists",
-    "because `src/utils/paths_test.py` forbids a /home/... literal anywhere under src/ — an",
+    "because `src/utils/home_path_literal_gate_test.py` forbids a /home/... literal anywhere under src/ — an",
     "absolute path that is TRUE ON ONE BOX belongs in a config, not in a module.",
     "Neither checkout is inside this repo and neither is ours to pin: record the commit that",
     "answered, which `python -m main.anchors` does on every row it writes.",

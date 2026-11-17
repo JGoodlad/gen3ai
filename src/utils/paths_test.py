@@ -1,6 +1,8 @@
-"""Gates for path discovery — the arithmetic, the worktree reach-across, and the CLASS.
+"""Gates for path discovery — the arithmetic and the worktree reach-across.
 
-Three things are pinned here, and the third is the durable one:
+Two things are pinned here (the third, the hard-coded-path CLASS, is the static-tier gate
+``src/utils/home_path_literal_gate_test.py``: it only scans source, so it runs in the static tier and a
+targeted ship set cannot miss it):
 
   1. **The depth arithmetic is right**, cross-checked against ``git rev-parse`` rather than
      asserted. `utils/paths.py` computes the repo root from ``__file__``; if the file ever moves,
@@ -10,13 +12,7 @@ Three things are pinned here, and the third is the durable one:
      ``$GEN3AI_MODELS_DIR`` at an empty directory — the four tests that read `models/` are driven
      through their skip path *here*, on this box, because on this box they otherwise never take
      it. A skip path nothing exercises is a skip path nobody has ever seen work.
-  3. **No module under `src/agents`, `src/main`, `src/utils` may hardcode a `/home/…` path as a
-     VALUE.** This closes the class the four tests were instances of. It is an AST scan, not a
-     grep: comments are absent from the AST entirely and docstrings are skipped, so the gate is
-     about code that *uses* an absolute path, never about prose that mentions one. Measured
-     2026-08-22: exactly one exemption, and it is a scanner naming its own pattern.
 """
-import ast
 import pathlib
 import subprocess
 
@@ -138,95 +134,6 @@ def test_audit_states_real_trace_gate_skips_on_an_empty_archive(monkeypatch, tmp
         with pytest.raises(Skipped) as ei:
             real_trace_test()
         assert m._REAL_TRACE_RUN in str(ei.value)
-
-
-# ------------------------------------------------------------------- 3. the class, closed
-#: Scope mirrors the ruff and file-size gates. `src/rust_sim` is a Rust crate whose Python is
-#: harness scratch — not ours to shape.
-_SCANNED_ROOTS = ("agents", "main", "utils")
-
-#: The files allowed to hold an absolute-home literal, because their job IS scanning for them.
-#: An exemption without a stated reason outlives its own fix and then misleads every reader.
-_SCAN_EXEMPT = {
-    "src/main/launcher/interpreter_test.py": "the launcher's own path-literal scanner — the "
-                                             "literal here is the regex it searches WITH",
-    "src/utils/paths_test.py": "this file — same reason",
-    "src/main/ops/ops_scripts_test.py": "the same scan extended to scripts/ops/*.sh — a shell "
-                                        "script is not a Python module, so this gate cannot see "
-                                        "it; the literal there is what that scan searches WITH",
-}
-
-
-def _string_values(path: pathlib.Path):
-    """Every string CONSTANT in `path` that is not a docstring, with its line.
-
-    Comments never reach the AST, so prose mentioning a path is structurally out of scope; only
-    a string the code actually *uses* can fail this gate.
-    """
-    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
-    docstrings = set()
-    for node in ast.walk(tree):
-        body = getattr(node, "body", None)
-        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) \
-                and body and isinstance(body[0], ast.Expr) \
-                and isinstance(body[0].value, ast.Constant) \
-                and isinstance(body[0].value.value, str):
-            docstrings.add(id(body[0].value))
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Constant) and isinstance(node.value, str) \
-                and id(node) not in docstrings:
-            yield node.lineno, node.value
-
-
-# LINCHPIN (ship gate, 2026-10-19): kept in the routine gate at any cost — designs/ops/testing.md "The SHIP GATE"
-@pytest.mark.linchpin
-def test_no_module_hardcodes_an_absolute_home_path():
-    """THE CLASS. Four tests read `models/` through a `/home/goodlad/...` literal and therefore
-    skipped forever on every other machine — invisible coverage loss, because a skip that is
-    supposed to happen looks exactly like a skip that is not. Fixing the four lines closes four
-    instances; this closes the class.
-    """
-    offenders = []
-    for pkg in _SCANNED_ROOTS:
-        for path in sorted((src_root() / pkg).rglob("*.py")):
-            if "__pycache__" in path.parts:
-                continue
-            rel = path.relative_to(repo_root()).as_posix()
-            if rel in _SCAN_EXEMPT:
-                continue
-            try:
-                values = list(_string_values(path))
-            except SyntaxError:
-                continue  # syntax_test.py owns that failure
-            for lineno, value in values:
-                if "/home/" in value:
-                    offenders.append(f"{rel}:{lineno}: {value[:100]!r}")
-    assert not offenders, (
-        "absolute home path used as a value — it is correct on exactly one machine, and where it "
-        "guards a skip it makes the test vanish silently everywhere else. Resolve it with "
-        "`utils.paths` (repo_path/src_path/main_models_dir):\n  " + "\n  ".join(offenders))
-
-
-def test_the_scan_exemptions_are_all_still_load_bearing():
-    """An exemption that stopped being needed must LEAVE the list — the c-family house rule."""
-    stale = []
-    for rel in _SCAN_EXEMPT:
-        path = repo_root() / rel
-        assert path.is_file(), f"exempt file {rel} no longer exists — drop the entry"
-        if not any("/home/" in v for _, v in _string_values(path)):
-            stale.append(rel)
-    assert not stale, f"exemptions no longer needed, delete them: {stale}"
-
-
-def test_the_scan_can_actually_fail(tmp_path):
-    """A gate that cannot fail is not a gate (the vacuity family)."""
-    bad = tmp_path / "bad.py"
-    bad.write_text('X = "/home/someone/models"\n', encoding="utf-8")
-    assert any("/home/" in v for _, v in _string_values(bad))
-    good = tmp_path / "good.py"
-    good.write_text('# /home/someone/models is where it lives\n"""/home/x doc."""\nX = 1\n',
-                    encoding="utf-8")
-    assert not any("/home/" in v for _, v in _string_values(good))
 
 
 def test_git_root_helpers_accept_a_cwd_and_are_consistent(tmp_path, monkeypatch):

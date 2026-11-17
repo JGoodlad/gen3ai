@@ -23,7 +23,7 @@ from main.ops.arm_chain.testing_fakes import (FakeRunner, World, checkargs_handl
 pytestmark = pytest.mark.integration
 
 #: Real ``main.checkargs --pin 9e97cad5 --argv <X70 s7331's kit argv>`` (exit 0), trimmed (the box's absolute paths made relative:
-#: ``utils.paths_test`` forbids a home path in any string).
+#: ``utils.home_path_literal_gate_test`` forbids a home path in any string).
 OK_TRANSCRIPT = """checked 8 flags from --argv
   parser                         : the PINNED commit 9e97cad5's — --pin
   ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 2.5s]

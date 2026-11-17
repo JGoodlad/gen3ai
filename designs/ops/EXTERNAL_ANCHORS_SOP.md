@@ -734,7 +734,7 @@ matchup and is not a clean read.
 `designs/ops/anchors.json`, with a per-key env override (`GEN3AI_METAMON_DIR`,
 `GEN3AI_METAMON_PYTHON`, `GEN3AI_METAMON_CACHE_DIR`, `GEN3AI_FOULPLAY_DIR`,
 `GEN3AI_FOULPLAY_PYTHON`, `GEN3AI_SHOWDOWN_NODE`), or `$GEN3AI_ANCHORS_CONFIG` for the whole file.
-A path literal may not live under `src/` — `src/utils/paths_test.py` fails it, because a `/home/…`
+A path literal may not live under `src/` — `src/utils/home_path_literal_gate_test.py` fails it, because a `/home/…`
 literal is correct on one box and an invisible permanent skip on every other. A missing checkout is
 a **named refusal** naming the key and its env var, never a skip and never a zero.
 

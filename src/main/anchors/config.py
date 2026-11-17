@@ -3,7 +3,7 @@
 Metamon and Foul Play are **third-party checkouts outside this repo**, each with its own
 interpreter (Metamon runs UPSTREAM poke-env 0.8.3.3, we vendor a fork; Foul Play runs its own
 conda env), so `main.anchors` drives both as SUBPROCESSES and never imports either. That makes
-"where are they" a real question with a box-specific answer — and `src/utils/paths_test.py`
+"where are they" a real question with a box-specific answer — and `src/utils/home_path_literal_gate_test.py`
 forbids a ``/home/...`` literal as a value anywhere under ``src/agents``, ``src/main``,
 ``src/utils``, for exactly the reason that bit four tests before it: a path literal is correct on
 one machine and an invisible permanent skip on every other.

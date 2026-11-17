@@ -144,7 +144,7 @@ golden test rode `main` red three separate times.
 
 ### The static gates
 
-**Twenty-one static gates run inside the suite** (there is no CI on this box, so a check outside the
+**Twenty-two static gates run inside the suite** (there is no CI on this box, so a check outside the
 suite is a check that rots). All declare the `static` tier, so they run in every tier, and all are
 ~free warm. A missing linter **fails** rather than skips: a linter that silently opts out reads
 exactly like one that found nothing.
@@ -172,6 +172,7 @@ exactly like one that found nothing.
 | `src/eval_ledger_reader_gate_test.py` | every reader of the eval count ledger goes through `eval_ledger.read` / `read_by_regime` with a fully spelled-out `ReaderDecl`, and the ledger's closed lists equal `design_evaluation.md` §0b.2's table | `GEN3AI_SKIP_LEDGER_READER_GATE=1` |
 | `src/core_split_literal_gate_test.py` | no tracked file but the owner (`src/utils/core_split.py`, its test, this gate, `designs/ops/core_split.md`) spells a trainer or agent CPU list of any split; exempt by class, never by entry: the frozen `designs/research_state/` tree (its `LIVE_KITS` and every code file in a measurement directory dated 2026-11-10 or later are scanned), `designs/CHANGELOG.md`, and files whose name carries a date | `GEN3AI_SKIP_CORE_SPLIT_GATE=1` |
 | `src/lock_listing_gate_test.py` | only `src/utils/procfs.py` reads the `/proc/locks` listing (one read can SKIP a live lock, so "not listed" is never "not held"): nothing else in `src/` or `scripts/` names its raw readings, calls the listed-only `procfs.holders`, or spells the listing's path or `lslocks`; the one cheap reading (`LockTable.listed_holders`) has one declared caller, the waiters (`.waiters`: unverifiable, so display only) have one declared caller, and only tests import `utils.lock_listing_testing`. Ask `procfs.holds_lock(pid, key)` about a pid you know, `procfs.lock_holders(key)` for who holds a file; the allowlist is empty | `GEN3AI_SKIP_LOCK_LISTING_GATE=1` |
+| `src/utils/home_path_literal_gate_test.py` | no module under `src/agents`, `src/main` or `src/utils` holds an absolute `/home/…` path as a value (an AST scan: docstrings and comments are out of scope; a path correct on one box makes a test skip forever on every other, and a targeted ship set once missed it when the scan lived in `utils/paths_test.py`); exempt only the scanners that spell the pattern, each with its stated reason | none (static, ~free) |
 
 One more test guards the import path itself and is not a static-tier gate:
 `src/packaging_gate_test.py` (`PYTHONPATH` still outranks the editable install). The count above is

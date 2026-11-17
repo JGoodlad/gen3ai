@@ -11,7 +11,7 @@ them, so what can be checked statically is checked here, cheaply:
    the script, not from a document. Exit 0, and the usage names the script.
 3. **Bare invocation REFUSES.** No argument must not mean "watch the default run": the whole
    reason these were promoted is that their session copies had one run's name compiled in.
-4. **No `/home/…` literal.** The same rule `src/utils/paths_test.py` enforces for modules, for
+4. **No `/home/…` literal.** The same rule `src/utils/home_path_literal_gate_test.py` enforces for modules, for
    the same reason — a literal is correct on exactly one box and silently wrong everywhere else.
    The ONE exemption is `_common.sh`'s interpreter fall-back, which mirrors `scripts/land.sh`.
 
@@ -81,7 +81,7 @@ def test_no_argument_refuses_rather_than_defaulting_to_a_run(path) -> None:
 
 @pytest.mark.parametrize("path", _ALL_SCRIPTS, ids=lambda p: p.name)
 def test_no_absolute_home_literal(path) -> None:
-    """Same class as `paths_test.py`'s module scan: a `/home/…` value is correct on one box."""
+    """Same class as `home_path_literal_gate_test.py`'s module scan: a `/home/…` value is correct on one box."""
     if path.name in _HOME_LITERAL_EXEMPT:
         pytest.skip(f"{path.name}: documented interpreter fall-back, as in scripts/land.sh")
     offenders = [
