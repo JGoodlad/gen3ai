@@ -18,7 +18,7 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   exploiter of P* (seeds 3511-3513) -- and ``a6_lx`` -- a league exploiter of P* + the archive, share 1.0, stable
   PFSP (seeds 3521-3523). Between the phases, ``phase1-record`` writes ONE write-once record of the three
   exploiter finals (path, step, sha256), refusing a missing or short final; ``verify-phase1`` judges that record in
-  full (the registered runs, each one's final, recorded lineage, pin, argv and dose: :func:`verify_phase1`). Phase 2
+  full (the registered runs, each one's final, recorded lineage, pin and argv; its dose is REPORTED against C0's, never refused: :func:`verify_phase1`). Phase 2
   (+20M): ``a3`` / ``a6`` carry those finals as ``--stable-opponents`` at share 0.4 with ``--stable-opponent-pfsp``
   (the registered round-1 B recipe), seeds 3501-3505, b-OFF = C0. ``describe --plan`` is ``arm_chain plan``'s: before
   phase 1 has finished a phase-2 arm is built from declared PLACEHOLDERS (shape only), at the boundary from the
@@ -147,7 +147,8 @@ PHASE1_PLACEHOLDER_SHA = "<sha256 of the final, declared by phase1-record when t
 #: The DOSE a registered phase-1 arm's exploiters trained at, ``(dose rate, relative tolerance)``: the main exploiter
 #: types no recipe knob, so it inherits P*'s recipe as C0's forks did, and the registration states C0's dose, 2.044e-08
 #: (``python -m main.dose``, eight C0 forks), within 10 % (X35-A3 PREREG §3 and §4: R0's 0.53x is why it is not an
-#: exploiter). A phase-1 arm with no row here has no registered dose, and :func:`verify_phase1` refuses its record.
+#: exploiter). REPORT-ONLY: the PREREG registers a dose bound for the phase-2 forks (§9), not the phase-1 exploiters, so
+#: :func:`verify_phase1` warns on a dose off this row (or an arm with none) and never refuses.
 PHASE1_DOSE: Dict[str, Tuple[float, float]] = {"a3_mx": (2.044e-08, 0.10)}
 TOY_EXTRAS = ["--snapshot-ladder-games", "0", "--supply-starve-cycles", "self_play_pool=0"]
 #: D1 / X38's ONE lever (``design_diversity_teams_opponents.md`` §4.2): half of each side's draws from the pin-safe
@@ -733,17 +734,21 @@ def _trainer_argv(command: str) -> Tuple[List[str], Optional[str]]:
 
 
 def _exploiter_run_problems(arm: str, w: Mapping[str, Any], e: Mapping[str, Any], call: Mapping[str, Any],
-                            models_dir: str, pin: str) -> List[str]:
+                            models_dir: str, pin: str, warns: Optional[List[str]] = None) -> List[str]:
     """What the RUN behind one recorded exploiter must show (``w`` = :func:`_phase1_expected`'s row): the final is
     the registered file with the recorded hash and step; the run's RECORDED lineage is an exploiter fork of P*; every
-    pin the run recorded is the side's; its recorded command is the kit's argv for this seed; its dose is the
-    registered one. Each read goes through ``main.lineage`` / ``main.sidecar_audit`` / ``main.dose``."""
+    pin the run recorded is the side's; its recorded command is the kit's argv for this seed. Its dose is
+    compared with C0's. The dose is REPORT-ONLY: the A3 PREREG registers a dose bound for the phase-2 forks (§9),
+    not for the phase-1 exploiters, so a dose off the reference goes to ``warns``, never to the problems (the argv
+    check already catches a wrongly launched exploiter). Each read goes through ``main.lineage`` /
+    ``main.sidecar_audit`` / ``main.dose``."""
     from agents.training.lineage import read_original_command
     from main import dose as _dose
     from main import lineage as _lin
     from main import sidecar_audit as _audit
 
     run, p = w["run"], call["pstar"]
+    warns = warns if warns is not None else []
     rd = str(Path(models_dir) / run)
     z = Path(str(e["path"]))
     probs: List[str] = []
@@ -801,23 +806,24 @@ def _exploiter_run_problems(arm: str, w: Mapping[str, Any], e: Mapping[str, Any]
                          f"{(argv[diff:diff + 1] or ['<end>'])[0]!r}, the kit's {(want[diff:diff + 1] or ['<end>'])[0]!r}")
     ref = PHASE1_DOSE.get(arm)
     if ref is None:
-        probs.append(f"{run}: no registered dose for arm {arm} (PHASE1_DOSE): a phase-1 record is verified only for a "
-                     "registered arm")
+        warns.append(f"{run}: no registered dose reference for arm {arm} (PHASE1_DOSE): its dose is not compared")
     else:
         d = _dose.read_run(rd)
         if d["error"] or d["dose_rate"] is None:
-            probs.append(f"{run}: its dose is unreadable ({d['error']})")
+            warns.append(f"{run}: its dose is unreadable ({d['error']})")
         elif abs(d["dose_rate"] / ref[0] - 1.0) > ref[1]:
-            probs.append(f"{run}: dose rate {d['dose_rate']:.3e} ({d['dose_rate'] / ref[0]:.2f}x) is not the registered "
-                         f"{ref[0]:.3e} within {ref[1]:.0%} (read from {d['source']})")
+            warns.append(f"{run}: dose rate {d['dose_rate']:.3e} ({d['dose_rate'] / ref[0]:.2f}x) is outside the "
+                         f"reference {ref[0]:.3e} +/- {ref[1]:.0%} (read from {d['source']})")
     return probs
 
 
-def verify_phase1(path: str, *, call: Mapping[str, Any], models_dir: str, pin: str) -> List[str]:
+def verify_phase1(path: str, *, call: Mapping[str, Any], models_dir: str, pin: str,
+                  warns: Optional[List[str]] = None) -> List[str]:
     """Every problem with a phase-1 record (empty = it is the REGISTERED phase 1). Not "do three files hash": the
     record must name exactly the registered exploiters of its arm (:func:`phase1_shape_problems`), and each must be a
     trained exploiter of P* as registered (:func:`_exploiter_run_problems`: the final's hash and step, the run's
-    recorded lineage, pin, argv and dose). A placeholder record never verifies."""
+    recorded lineage, pin and argv; its dose is reported, not judged). A placeholder record never verifies. ``warns``,
+    when given, receives the report-only lines (a dose off C0's reference)."""
     try:
         doc = json.loads(Path(path).read_text())
     except (OSError, ValueError) as exc:
@@ -831,7 +837,7 @@ def verify_phase1(path: str, *, call: Mapping[str, Any], models_dir: str, pin: s
     if probs:
         return probs
     for w, e in zip(_phase1_expected(arm, call, models_dir), doc["exploiters"]):
-        probs += _exploiter_run_problems(arm, w, e, call, models_dir, pin)
+        probs += _exploiter_run_problems(arm, w, e, call, models_dir, pin, warns)
     return probs
 
 
@@ -1370,13 +1376,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             doc = _load(a.file)
             side = ARMS[doc["arm"]].side if doc.get("arm") in ARMS else "production"
             call_file = a.call or os.path.join(stage, f"reference_population_{side}.json")
+            warns: List[str] = []
             bad = verify_call(call_file)
             if bad:
                 raise KitError(f"the call record {call_file} does not verify: {bad}")
             probs = verify_phase1(a.file, call=_load(call_file), models_dir=a.models_dir or str(main_models_dir() or ""),
-                                  pin=side_pin(stage, side))
+                                  pin=side_pin(stage, side), warns=warns)
+            for x in warns:
+                print(f"[x35 kit] WARN (report-only, never a refusal): {x}", file=sys.stderr)
             for x in probs:
                 print(f"[x35 kit] {x}", file=sys.stderr)
+            print(f"[x35 kit] verify-phase1: {'PASS' if not probs else 'FAIL'} ({len(warns)} warning(s))", file=sys.stderr)
             return 0 if not probs else 1
         if a.cmd == "pool-seed-check":
             from agents.training.lineage import checkpoint_num_timesteps

@@ -202,15 +202,40 @@ def test_a_run_launched_with_another_argv_is_refused(w: World) -> None:
     assert any("rb_x35_mx_s3511" in p and "not the kit's argv for a3_mx s3511" in p for p in probs), probs
 
 
-def test_a_run_at_another_dose_is_refused_and_one_within_the_tolerance_passes(w: World) -> None:
-    """The registered dose is C0's, 2.044e-8, within 10 % (PREREG §3): R0's frozen 5.6e-5 is 0.55x."""
+def test_a_run_at_another_dose_is_warned_never_refused(w: World) -> None:
+    """The A3 PREREG registers a dose bound for the phase-2 forks (§9), not the phase-1 exploiters: a dose off C0's
+    2.044e-8 (R0's frozen 5.6e-5 is 0.55x) is a WARN line and a PASS, one within 10 % is silent."""
     w.make_run(3511, lr=5.6e-5)
     w.make_run(3512, lr=LR_OK * 1.05)
     w.make_run(3513, lr=LR_OK * 1.5)
-    probs = w.verify(w.record())
-    assert any("rb_x35_mx_s3511" in p and "dose rate" in p and "0.56x" in p for p in probs), probs
-    assert any("rb_x35_mx_s3513" in p and "dose rate" in p and "1.50x" in p for p in probs), probs
-    assert not [p for p in probs if "rb_x35_mx_s3512" in p], probs
+    warns: List[str] = []
+    probs = K.verify_phase1(str(w.record()), call=w.call, models_dir=str(w.md), pin=PIN, warns=warns)
+    assert probs == [], probs
+    assert any("rb_x35_mx_s3511" in x and "dose rate" in x and "0.56x" in x for x in warns), warns
+    assert any("rb_x35_mx_s3513" in x and "dose rate" in x and "1.50x" in x for x in warns), warns
+    assert not [x for x in warns if "rb_x35_mx_s3512" in x], warns
+
+
+def test_the_verify_command_prints_the_dose_warn_and_still_passes(w: World, capsys: Any) -> None:
+    w.make_run(3511, lr=5.6e-5)
+    w.make_run(3512)
+    w.make_run(3513)
+    assert K.main(["verify-phase1", str(w.record()), "--models-dir", str(w.md)]) == 0
+    err = capsys.readouterr().err
+    assert "WARN (report-only, never a refusal)" in err and "rb_x35_mx_s3511" in err and "0.56x" in err, err
+    assert "verify-phase1: PASS (1 warning(s))" in err, err
+
+
+def test_a_wrong_argv_is_still_refused_beside_a_wrong_dose(w: World) -> None:
+    """The dose went report-only; the argv check, which catches a wrongly launched exploiter, stays hard."""
+    w.make_run(3512)
+    w.make_run(3513)
+    w.make_run(3511, lr=5.6e-5, extra_argv=["--fork-lr", "5.6e-05", "--fork-lr-freeze"])
+    warns: List[str] = []
+    probs = K.verify_phase1(str(w.record()), call=w.call, models_dir=str(w.md), pin=PIN, warns=warns)
+    assert any("not the kit's argv for a3_mx s3511" in p for p in probs), probs
+    assert not any("dose" in p for p in probs), probs
+    assert any("dose rate" in x for x in warns), warns
 
 
 def test_a_run_that_never_reached_the_registered_step_is_refused(w: World) -> None:
@@ -221,11 +246,13 @@ def test_a_run_that_never_reached_the_registered_step_is_refused(w: World) -> No
     assert any("rb_x35_mx_s3511" in p and "the run's own step" in p for p in probs), probs
 
 
-def test_a_phase_1_arm_with_no_registered_dose_is_never_verified(w: World, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_phase_1_arm_with_no_dose_reference_is_warned_not_refused(w: World, monkeypatch: pytest.MonkeyPatch) -> None:
     w.make_runs()
     rec = w.record()
     monkeypatch.delitem(K.PHASE1_DOSE, ARM)
-    assert any("no registered dose" in p for p in w.verify(rec))
+    warns: List[str] = []
+    assert K.verify_phase1(str(rec), call=w.call, models_dir=str(w.md), pin=PIN, warns=warns) == []
+    assert any("no registered dose reference" in x for x in warns), warns
 
 
 def test_a_record_of_another_p_star_another_arm_or_a_placeholder_is_refused(w: World) -> None:

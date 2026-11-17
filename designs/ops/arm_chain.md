@@ -74,8 +74,10 @@ The field rules:
   `python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json`, which judges the record in full, not "three files
   that hash": it names exactly the registered exploiter runs at their final paths with their recorded hash and step,
   and each run must show (through `main.lineage`, `main.sidecar_audit`, `main.dose`) a RECORDED lineage that is an
-  exploiter fork of P*, only the side's pin, the kit's own argv as its `original_command`, and C0's dose within 10 %
-  (`kit.PHASE1_DOSE`). The call record and the side's pin are read from the record's own folder, so the item needs
+  exploiter fork of P*, only the side's pin and the kit's own argv as its `original_command`. Its dose is
+  REPORT-ONLY: off C0's 2.044e-08 by more than 10 % (`kit.PHASE1_DOSE`) it prints a `WARN` line with the measured
+  ratio and still passes, because the A3 PREREG registers a dose bound for the phase-2 forks (§9), not the phase-1
+  exploiters. The call record and the side's pin are read from the record's own folder, so the item needs
   no other flag. Tests: `src/main/x35/phase1_test.py`.
 - **`banner` and `throughput` are the post-spawn guards.** The throughput gate counts `within_min` (default 60) from
   the FIRST TRAINER LINE in `launcher_child.log` (the launcher's `child attached` header is not one), or from the
