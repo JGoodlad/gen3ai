@@ -3,10 +3,15 @@
 of ``getHiddenPower`` (pinned by ``hidden_power_test.py`` and ``tests/hidden_power_fill_test.rs``). A second
 type -> IVs table, IVs -> type / power formula, or formula-order type list anywhere else under ``src/`` FAILS here:
 import the module instead. (JavaScript harnesses are dev oracles outside this guard; ``ou_random_teams.js`` keeps its
-own solver because its output is the frozen P72 panel's provenance.)"""
+own solver because its output is the frozen P72 panel's provenance.) It reads source and runs none of the product, so
+it declares the ``static`` tier."""
 import re
 
+import pytest
+
 from utils.paths import src_root
+
+pytestmark = pytest.mark.static
 
 HOMES = {"agents/gen3_data/hidden_power.py", "rust_sim/src/state.rs"}
 SELF = "agents/gen3_data/hidden_power_single_impl_test.py"

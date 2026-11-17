@@ -3,25 +3,21 @@
 1. ``trainee_spaces`` builds ``(observation_space, action_space)`` from the args alone — the production
    argv's 23 keys, every label gate opening exactly its keys.
 2. **The Python env core is GONE** (deletion pass U3, 2026-10-02): ``Gen3Env`` / ``wrappers`` /
-   ``env_factory`` / ``async_vec_env`` / ``bridge_session`` do not exist, and no module in the tree
-   imports one. (Until U3 this file held the runtime proof that a production launch never LOADED them
-   and the static list of every remaining importer with its deletion unit; the list is empty now.)
+   ``env_factory`` / ``async_vec_env`` / ``bridge_session`` do not exist; that no module in the tree
+   imports one is the static gate ``python_env_core_import_gate_test.py``. (Until U3 this file held the
+   runtime proof that a production launch never LOADED them and the static list of every remaining
+   importer with its deletion unit; the list is empty now.)
 """
 from __future__ import annotations
 
-import ast
 import contextlib
 import importlib.util
 import io
 
 import pytest
 
-from utils.paths import src_path
+from agents.training.python_env_core_import_gate_test import PY_CORE
 
-#: The Python env core — what deletion pass R1 deleted. A file by one of these names coming back, or
-#: any module importing one, fails here.
-PY_CORE = ("agents.training.gen3_env", "agents.training.wrappers", "agents.training.async_vec_env",
-           "main.train.env_factory", "utils.bridge.bridge_session")
 
 def _resolved(*argv: str):
     from main.train.config import resolve_config
@@ -88,34 +84,6 @@ def test_the_derived_gates():
 def test_the_python_env_core_modules_do_not_exist():
     for m in PY_CORE:
         assert importlib.util.find_spec(m) is None, f"{m} is back — the Python env core was deleted (U3)"
-
-
-def _importers() -> dict:
-    root = src_path()
-    found: dict = {}
-    for p in sorted(root.rglob("*.py")):
-        rel = p.relative_to(root).as_posix()
-        if rel.startswith(("poke_env/", "rust_sim/", "rust_env/")) or "/target/" in rel \
-                or rel == "agents/training/trainee_spaces_test.py":
-            continue
-        for n in ast.walk(ast.parse(p.read_text())):
-            names = []
-            if isinstance(n, ast.ImportFrom) and n.module:
-                names = [n.module] + [f"{n.module}.{a.name}" for a in n.names]
-            elif isinstance(n, ast.Import):
-                names = [a.name for a in n.names]
-            hit = set(PY_CORE) & set(names)
-            if hit:
-                found.setdefault(rel, set()).update(hit)
-    return found
-
-
-@pytest.mark.slow  # ship gate (2026-10-19): 13 s beside a live run
-def test_no_module_imports_the_deleted_python_env_core():
-    found = _importers()
-    assert not found, (f"module(s) import the deleted Python env core: {sorted(found)} — the Rust env core "
-                       "is the only core (deletion pass U3); read spaces / class tables / the eval team "
-                       "table from agents.training.trainee_spaces, opponent_classes, eval_teams")
 
 
 def test_the_model_packages_class_table_agrees_with_the_declared_one():

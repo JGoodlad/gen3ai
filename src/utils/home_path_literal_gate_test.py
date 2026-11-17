@@ -25,10 +25,10 @@ _SCANNED_ROOTS = ("agents", "main", "utils")
 #: The files allowed to hold an absolute-home literal, because their job IS scanning for them.
 #: An exemption without a stated reason outlives its own fix and then misleads every reader.
 _SCAN_EXEMPT = {
-    "src/main/launcher/interpreter_test.py": "the launcher's own path-literal scanner — the "
-                                             "literal here is the regex it searches WITH",
+    "src/main/launcher/interpreter_literal_gate_test.py": "the launcher's own path-literal scanner — the "
+                                                          "literal here is the regex it searches WITH",
     "src/utils/home_path_literal_gate_test.py": "this file — same reason",
-    "src/main/ops/ops_scripts_test.py": "the same scan extended to scripts/ops/*.sh — a shell "
+    "src/main/ops/ops_scripts_home_literal_gate_test.py": "the same scan extended to scripts/ops/*.sh — a shell "
                                         "script is not a Python module, so this gate cannot see "
                                         "it; the literal there is what that scan searches WITH",
 }

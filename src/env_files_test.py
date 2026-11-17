@@ -14,7 +14,8 @@ Two defects this pins (both found 2026-10-12 by the first cloud rental):
 
 Env-dependent on purpose in one place only: the import scan maps module names to distributions through the
 INTERPRETER's installed metadata (`importlib.metadata.packages_distributions`), exactly as an env built from the
-file would have them.
+file would have them. It parses source and reads metadata, running none of the product, so it declares the
+``static`` tier (and stays a LINCHPIN of the routine gate).
 """
 from __future__ import annotations
 
@@ -29,6 +30,8 @@ import pytest
 
 from utils import env_file as ef
 from utils.paths import repo_path
+
+pytestmark = pytest.mark.static
 
 _MAIN = "environment_torch28.yml"
 _TWIN = "environment_torch28_cu128.yml"

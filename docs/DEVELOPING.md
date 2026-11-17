@@ -144,7 +144,7 @@ golden test rode `main` red three separate times.
 
 ### The static gates
 
-**Twenty-three static gates run inside the suite** (there is no CI on this box, so a check outside the
+**Twenty-nine static gates run inside the suite** (there is no CI on this box, so a check outside the
 suite is a check that rots). All declare the `static` tier, so they run in every tier, and all are
 ~free warm. A missing linter **fails** rather than skips: a linter that silently opts out reads
 exactly like one that found nothing.
@@ -174,6 +174,12 @@ exactly like one that found nothing.
 | `src/lock_listing_gate_test.py` | only `src/utils/procfs.py` reads the `/proc/locks` listing (one read can SKIP a live lock, so "not listed" is never "not held"): nothing else in `src/` or `scripts/` names its raw readings, calls the listed-only `procfs.holders`, or spells the listing's path or `lslocks`; the one cheap reading (`LockTable.listed_holders`) has one declared caller, the waiters (`.waiters`: unverifiable, so display only) have one declared caller, and only tests import `utils.lock_listing_testing`. Ask `procfs.holds_lock(pid, key)` about a pid you know, `procfs.lock_holders(key)` for who holds a file; the allowlist is empty | `GEN3AI_SKIP_LOCK_LISTING_GATE=1` |
 | `src/utils/home_path_literal_gate_test.py` | no module under `src/agents`, `src/main` or `src/utils` holds an absolute `/home/…` path as a value (an AST scan: docstrings and comments are out of scope; a path correct on one box makes a test skip forever on every other, and a targeted ship set once missed it when the scan lived in `utils/paths_test.py`); exempt only the scanners that spell the pattern, each with its stated reason | none (static, ~free) |
 | `src/utils/run_dir_writer_gate_test.py` | no run-dir writer module (the list `RUN_DIR_WRITER_MODULES`, held only in the gate; every module importing `utils.run_dir` must be on it) calls `os.makedirs`, `os.mkdir` or `Path.mkdir`: a run dir is created once, by `utils.run_dir.create_run_root` at startup, and everything below it by `ensure_subdir` / `atomic_write(root=)`, so a run dir deleted under a live run is never re-created (an AST scan; `designs/training/checkpoint_writes.md`) | none (static, ~free) |
+| `src/main/syntax_test.py` | every first-party module under `src/` (but the vendored `poke_env`) parses (`ast.parse`): an entry point no unit test imports once shipped a `SyntaxError` that surfaced only at launch | none (static; ~10 s of parsing over ~1,900 ids) |
+| `src/env_files_test.py` | every third-party import in `src/` and `tools/` is declared by both conda env files (directly or by what they require, read from the interpreter's installed metadata), and the cu128 twin pins every non-CUDA package at the main file's version; a LINCHPIN of the routine gate too | its `_NOT_OURS_TO_DECLARE` list, each with its reason |
+| `src/agents/gen3_data/hidden_power_single_impl_test.py` | `agents.gen3_data.hidden_power` is the one Python Hidden Power table and formula and `rust_sim/src/state.rs` the one Rust copy: a second type → IVs table, formula or formula-order type list in any `.py` / `.rs` under `src/` fails | the two homes |
+| `src/agents/training/python_env_core_import_gate_test.py` | no module imports the deleted Python env core (`gen3_env`, `wrappers`, `async_vec_env`, `env_factory`, `bridge_session`; an AST scan, split from `trainee_spaces_test.py`, which pins that the modules do not exist) | none (static) |
+| `src/main/launcher/interpreter_literal_gate_test.py` | no launcher module names a machine-specific interpreter or home path (the child's interpreter is `$GEN3AI_PYTHON`, else `sys.executable`; split from `interpreter_test.py`) | `interpreter_test.py`, whose docstring quotes the deleted literal |
+| `src/main/ops/ops_scripts_home_literal_gate_test.py` | no `scripts/ops/*.sh` holds a `/home/…` literal outside a comment (the shell twin of the module scan; split from `ops_scripts_test.py`, whose `bash -n` and `--help` checks run the scripts) | `_common.sh`'s interpreter fall-back |
 
 One more test guards the import path itself and is not a static-tier gate:
 `src/packaging_gate_test.py` (`PYTHONPATH` still outranks the editable install). The count above is

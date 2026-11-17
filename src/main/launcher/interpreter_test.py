@@ -12,12 +12,11 @@ running under the environment the run wants, so the child inherits it on any mac
 under any env name. On this box the resolved value is still the conda interpreter
 whenever the launcher was started with it, so the change is behaviour-identical here.
 
-The absolute-literal test is the durable one — it fails if anyone re-introduces a
+The durable guard is the static gate ``interpreter_literal_gate_test.py``: it fails if anyone re-introduces a
 machine-specific path anywhere in the launcher package, not just at the old line.
 """
 
 import os
-import re
 import subprocess
 import sys
 import time
@@ -27,7 +26,6 @@ from main.launcher.child import PYTHON_ENV_VAR, resolve_child_python
 
 from utils.paths import src_root
 
-_LAUNCHER_DIR = os.path.dirname(os.path.abspath(__file__))
 _SRC = str(src_root())
 
 
@@ -59,26 +57,6 @@ def test_resolution_is_not_cached_at_import(monkeypatch):
     assert resolve_child_python() == "/first/python3"
     monkeypatch.setenv(PYTHON_ENV_VAR, "/second/python3")
     assert resolve_child_python() == "/second/python3"
-
-
-# --- the durable guard ---
-
-def test_no_machine_specific_interpreter_literal_in_the_launcher_package():
-    """No launcher module may name an absolute interpreter/home path. This is what
-    actually keeps a fresh clone launchable; the unit tests above only pin the helper."""
-    bad = re.compile(r"/home/\w+|/(?:opt|usr/local)/miniconda|/miniconda\d*/envs/")
-    offenders = []
-    for name in sorted(os.listdir(_LAUNCHER_DIR)):
-        if not name.endswith(".py") or name == os.path.basename(__file__):
-            continue
-        text = open(os.path.join(_LAUNCHER_DIR, name), encoding="utf-8").read()
-        for i, line in enumerate(text.splitlines(), 1):
-            if bad.search(line):
-                offenders.append(f"{name}:{i}: {line.strip()}")
-    assert not offenders, (
-        "launcher modules must not hardcode a machine-specific path — use "
-        f"resolve_child_python() / ${PYTHON_ENV_VAR}:\n  " + "\n  ".join(offenders)
-    )
 
 
 # --- end to end: the resolved interpreter is the one actually spawned ---

@@ -3,13 +3,16 @@
 Exists because a shipped edit to `train_rl_agent.py` once landed a `SyntaxError` (a keyword arg
 inserted before a positional in a call) that NO test caught: the entry-point modules are never
 imported by the unit suite, so the error only surfaced at launch, crashing the run at startup.
-`ast.parse` is milliseconds per file and catches that whole failure class at test time."""
+`ast.parse` is milliseconds per file and catches that whole failure class at test time. It runs none of the
+product, so it declares the ``static`` tier."""
 
 import ast
 
 import pytest
 
 from utils.paths import src_root
+
+pytestmark = pytest.mark.static
 
 SRC = src_root()
 _FILES = sorted(

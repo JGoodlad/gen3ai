@@ -62,8 +62,9 @@ set none (tests), so a launcher that outlives a dozen children across restarts s
 > no flag and no override until 2026-08-22 — a fresh clone died with `FileNotFoundError` on its
 > first launcher run and the only fix was editing the source. On this box the change is
 > behaviour-identical (the launcher *is* started with that interpreter, so `sys.executable` resolves
-> to it). Gate: `interpreter_test.py`, whose durable half fails if **any** launcher module
-> re-introduces a machine-specific path — not just the old line.
+> to it). Gates: `interpreter_test.py` (the resolution rule) and the static gate
+> `interpreter_literal_gate_test.py`, which fails if **any** launcher module re-introduces a
+> machine-specific path — not just the old line.
 
 **Recorded commands are unaffected.** `run.py` records `LAUNCHER_COMMAND = " ".join(sys.argv)`, and
 `sys.argv[0]` is the launcher's `__main__.py`, never the interpreter — verified over all 104

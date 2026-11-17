@@ -110,6 +110,9 @@ _STATIC_GATES = (
     "src/strict_checkpoint_load_gate_test.py", "src/eval_ledger_reader_gate_test.py",
     "src/human_data_doc_gate_test.py", "src/core_split_literal_gate_test.py", "src/lock_listing_gate_test.py",
     "src/utils/home_path_literal_gate_test.py", "src/utils/run_dir_writer_gate_test.py",
+    "src/main/syntax_test.py", "src/env_files_test.py", "src/agents/gen3_data/hidden_power_single_impl_test.py",
+    "src/agents/training/python_env_core_import_gate_test.py", "src/main/launcher/interpreter_literal_gate_test.py",
+    "src/main/ops/ops_scripts_home_literal_gate_test.py",
 )
 
 

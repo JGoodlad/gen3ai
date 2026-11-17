@@ -11,15 +11,13 @@ them, so what can be checked statically is checked here, cheaply:
    the script, not from a document. Exit 0, and the usage names the script.
 3. **Bare invocation REFUSES.** No argument must not mean "watch the default run": the whole
    reason these were promoted is that their session copies had one run's name compiled in.
-4. **No `/home/…` literal.** The same rule `src/utils/home_path_literal_gate_test.py` enforces for modules, for
-   the same reason — a literal is correct on exactly one box and silently wrong everywhere else.
-   The ONE exemption is `_common.sh`'s interpreter fall-back, which mirrors `scripts/land.sh`.
+4. **No `/home/…` literal** is the static gate `ops_scripts_home_literal_gate_test.py` (it reads the scripts, runs
+   none).
 
 Unmarked (runs in every tier) and ~free: four `bash -n` calls and four `--help` runs.
 """
 from __future__ import annotations
 
-import re
 import subprocess
 
 import pytest
@@ -31,11 +29,6 @@ _OPS_DIR = repo_path("scripts", "ops")
 #: The executable entry points. `_common.sh` is SOURCED, so it has no `--help` of its own.
 _ENTRY_POINTS = sorted(p for p in _OPS_DIR.glob("*.sh") if not p.name.startswith("_"))
 _ALL_SCRIPTS = sorted(_OPS_DIR.glob("*.sh"))
-
-#: `_common.sh` carries the `gen3ai_torch28` interpreter fall-back, exactly as `scripts/land.sh`
-#: does — the one place a box-specific path is the right answer, because it is a FALL-BACK that
-#: is tested for executability before use and superseded by `$GEN3AI_PYTHON`.
-_HOME_LITERAL_EXEMPT = {"_common.sh"}
 
 #: Entry points that act on no RUN, so they have no run to resolve (they still source `_common.sh`
 #: for the interpreter and the checkout root). `gpu_lock.sh`, `gate_lock.sh` and `mem_cap.sh` wrap an arbitrary command, `gpu_lease.sh` a lock,
@@ -77,29 +70,6 @@ def test_no_argument_refuses_rather_than_defaulting_to_a_run(path) -> None:
         f"{path.name} with no argument exited {r.returncode}, not 2 — a watcher that "
         f"defaults to a run is the defect this promotion removed"
     )
-
-
-@pytest.mark.parametrize("path", _ALL_SCRIPTS, ids=lambda p: p.name)
-def test_no_absolute_home_literal(path) -> None:
-    """Same class as `home_path_literal_gate_test.py`'s module scan: a `/home/…` value is correct on one box."""
-    if path.name in _HOME_LITERAL_EXEMPT:
-        pytest.skip(f"{path.name}: documented interpreter fall-back, as in scripts/land.sh")
-    offenders = [
-        (i, line.strip())
-        for i, line in enumerate(path.read_text().splitlines(), 1)
-        if "/home/" in line and not re.match(r"\s*#", line)
-    ]
-    assert not offenders, (
-        f"{path.name}: absolute home path(s) outside a comment at {offenders} — resolve the "
-        f"checkout with ops_repo_root / ops_models_dir from _common.sh instead"
-    )
-
-
-def test_the_exemption_is_still_load_bearing() -> None:
-    """An exemption that no longer holds a literal is an exemption that misleads the next reader."""
-    for name in _HOME_LITERAL_EXEMPT:
-        text = (_OPS_DIR / name).read_text()
-        assert "/home/" in text, f"{name} no longer holds a /home literal — drop the exemption"
 
 
 @pytest.mark.parametrize("path", _ENTRY_POINTS, ids=lambda p: p.name)
