@@ -218,10 +218,12 @@ def test_anything_that_is_not_exactly_memory_reads_as_count(tmp_path, monkeypatc
 
 def test_the_reserve_covers_the_measured_training_peak_and_the_budget_fits_the_jobs_it_was_sized_for():
     """Measured 2026-11-09 (module docs): the training tree's worst summed RSS 18.4 GiB, 7.5 GiB of everything else.
-    On the box's 89.66 GiB the budget must hold four 12 GiB play units, and a 24 GiB routine gate beside three of them."""
+    On the box's 89.66 GiB the budget must hold four 12 GiB play units, and the routine gate (the largest cap it declares: its
+    quiet -n 6 shape) beside three of them."""
+    from utils import ship_gate as SG
     assert HA.RESERVE_GB >= 18.4 + 7.5
     budget = min(HA.DEFAULT_SLICE_GB, 89.66 - HA.RESERVE_GB)
-    assert 4 * 12 <= budget and 24 + 3 * 12 <= budget
+    assert 4 * 12 <= budget and SG.mem_cap_gb(SG.QUIET_WORKERS) + 3 * 12 <= budget
     assert budget <= HA.DEFAULT_SLICE_GB, "the heavy jobs' caps may never sum past the slice's own cap"
 
 

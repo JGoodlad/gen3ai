@@ -432,7 +432,7 @@ def test_the_caps_a_command_line_declares():
 def test_the_ship_gates_argv_declares_the_gates_cap(max_run_s):
     argv = SG.build_argv(SG.Shape({"/m/rb_x": 1}, [5, 6, 7], 19, 3), sys.executable, max_run_s=max_run_s)
     inner = argv[argv.index(str(repo_path("scripts", "ops", "gate_lock.sh"))) + 1:]      # what gate_lock is handed
-    assert M.declared_cap_gb(inner) == float(SG.MEM_CAP_GB) == 24.0
+    assert M.declared_cap_gb(inner) == float(SG.mem_cap_gb(3)) == 16.0         # the Shape above is the -n 3 one
 
 
 def test_the_gate_is_admitted_by_its_own_cap(box, tmp_path, monkeypatch):

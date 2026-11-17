@@ -462,7 +462,7 @@ of 14 days of job logs (25,177 capped jobs):
   `~/.claude/jobs/x35/rss/`, 21 runs): median 14.5 GiB at its worst sample, 18.4 GiB the worst run.
 
 **The rule** (`utils.heavy_admission`; taken in `utils.heavy_slots`). A job that DECLARES its cap (`mem_cap.sh <GB>`; the
-routine gate through its own `mem_cap.sh 24`) takes a slot while all of these hold:
+routine gate through its own measured cap, `ship_gate.mem_cap_gb`: 16 at `-n 3`) takes a slot while all of these hold:
 
 1. every job queued ahead of it would be admitted with it (FIFO per lane and the short lane's jumps are unchanged: nobody
    passes a queued job whose cap does not fit yet);
@@ -474,8 +474,8 @@ routine gate through its own `mem_cap.sh 24`) takes a slot while all of these ho
 
 The sum of caps bounds the sum of use, because each cap is a cgroup limit the kernel enforces. **The 28 GiB reserve** is
 what the heavy jobs may never be promised: the worst training tree (18.4) + everything else on the box measured with a run
-live (7.5: sessions, the page cache's floor, kernel slab) + 2 of margin. Four 12 GiB units fit (48), and the 24 GiB gate
-beside three of them (60).
+live (7.5: sessions, the page cache's floor, kernel slab) + 2 of margin. Four 12 GiB units fit (48), and the gate (16 at `-n 3`,
+21 at `-n 6`) beside three of them (52, 57).
 
 **Fail-safe: every unknown is the fixed count of 2**, never a guess: a job that declares no cap (a bare
 `heavy_slot()` caller), an unreadable MemTotal or cgroup tree, a scope with no `memory.max`, a holder with neither a
@@ -605,7 +605,7 @@ WORK is not a training run for the shape** (`core_split.split_runs`, 2026-11-09;
 descendants, threads) sits inside the agent list by the owner's rule (`core_split.is_agent_work`), or its trainer was
 started with `CUDA_VISIBLE_DEVICES` empty or `-1`. An agent's CPU smoke on the agent cores once read as a trainer
 "pinned to EVERY cpu" and refused the gate for 25 min; the dry-run line names such a run. Always through `gate_lock.sh`
-(one gate at a time) and `mem_cap.sh 24`, always with `CUDA_VISIBLE_DEVICES=""`. It never selects tests by the
+(one gate at a time) and `mem_cap.sh <cap>` (the measured cap, next paragraph), always with `CUDA_VISIBLE_DEVICES=""`. It never selects tests by the
 change (owner, 2026-09-30); it is fast because the routine set was RE-TIERED by measured cost.
 
 **A preflight runs FIRST, before the gate lock or a heavy slot** (2026-11-16): a checkout that was never bootstrapped (a fresh
@@ -615,6 +615,26 @@ in the main checkout). It never runs bootstrap itself (that can build Rust). Bef
 started. The probe is `utils.checkout_deps`, the ONE definition the pytest session's own guard (root `conftest.py`, so the static tier
 too) reads: file existence only, no network, no subprocess; `GEN3AI_SKIP_DEPS_GUARD=1` opts out of both; `--dry-run` does not check.
 Pinned by `src/utils/ship_gate_test.py` and `src/deps_guard_test.py`.
+
+**The gate's memory cap is MEASURED, not a habit** (2026-11-17). The heavy slots admit by the SUM OF DECLARED CAPS, and the gate declared
+24 GB while it peaked at 5-10: 14 GB of promise nobody used, kept from the next job. `ship_gate.mem_cap_gb(n)` is 1.5 x the
+measured peak at `n` xdist workers, rounded up (each worker imports and collects the whole suite, so the memory scales with
+`-n`; the line is through the two maxima below):
+
+| shape | measured peak (GiB) | cap |
+|---|---|---|
+| `-n 3`, rule 5b (beside a live run) | 64 gates, 2026-11-09..17: min 5.1, median 7.0, p90 8.4, **max 10.18** | **16** |
+| `-n 6`, quiet | **max 13.57** over 66 `pytest` jobs capped at 24 that took no slot (a quiet gate takes none; **UNVERIFIED** that every one was a gate: it is taken as the bound it is) | **21** |
+
+Source: the `capped` rows of `~/.claude/jobs/heavy_slots/events.jsonl` (`peak_gb`), joined by time to the gate's own `slot` rows
+(`-n` read from their `cmd`). `-- -n 6` after the shape's `-n 3` is pytest's last `-n`, and the cap follows it
+(`ship_gate.effective_workers`). The cap still KILLS an overrun (exit 86, "peak X of cap Y"), so a gate that outgrows it fails
+LOUDLY: re-derive from the `capped` rows when a gate's peak passes the anchor (10.2 at `-n 3`). `utils/ship_gate_test.py`.
+B1's `drive_look.sh` (and the kit copy `main.b1.fresh`) declares 24 for a CPU play unit that peaks 1.7: left alone, a frozen driver.
+What the cap buys, measured on the night of 11-16/17 (8.8 h, 281 slot rows): all four slots were held 52 % of the time (the count of 4
+binds first), and with fewer than four held a 24 GB gate did not fit by memory 25.4 % of the time, a 16 GB one 17.0 %; the night's jobs
+declared 3,320 GB of caps for 659 GB of peaks (5x), the gate's share being the part this fixes. The first gate at the new cap
+(`-n 3`): 17,536 passed, **peak 6.25 of 16 GB (39 %)**, 290 s at the gate lock, 0 s at the heavy slots.
 
 **Measured beside a live training run** (rule 5b shape, `nice 19 taskset -c <the 5+3 agent cores> -n 3`, trainer on
 <the 5+3 trainer cores>, other agents' nice-19 jobs and the maturity queue's SCHED_IDLE slots on the same agent cores; walls

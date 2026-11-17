@@ -1,6 +1,7 @@
 """The ship gate's SHAPE: it runs the routine gate's whole set, and only the shape follows the box."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -97,7 +98,7 @@ def test_it_runs_the_WHOLE_routine_set_never_a_selection(live: bool) -> None:
     assert argv[i + 1:i + 3 + len(roots)] == [*roots, "-m", "not slow and not e2e"]
     assert SG.MARKERS == "not slow and not e2e"
     assert argv[-1] == "--durations=20"
-    lock, cap = argv.index(next(a for a in argv if a.endswith("gate_lock.sh"))), argv.index(str(SG.MEM_CAP_GB))
+    lock, cap = argv.index(next(a for a in argv if a.endswith("gate_lock.sh"))), argv.index(str(SG.mem_cap_gb(shape.workers)))
     assert lock < cap < i
 
 
@@ -176,7 +177,7 @@ def test_max_run_s_goes_to_mem_cap_the_innermost_wrapper_so_no_queue_wait_counts
     assert "--max-run-s" not in plain
     argv = SG.build_argv(shape, "py", max_run_s=2700.0)
     cap = next(i for i, a in enumerate(argv) if a.endswith("mem_cap.sh"))
-    assert argv[cap + 1:cap + 4] == ["--max-run-s", "2700", str(SG.MEM_CAP_GB)]
+    assert argv[cap + 1:cap + 4] == ["--max-run-s", "2700", str(SG.mem_cap_gb(6))]
     assert argv[cap - 1].endswith("gate_lock.sh")
     assert argv[:cap + 1] + argv[cap + 3:] == plain
     seen: dict = {}
@@ -260,3 +261,41 @@ def test_the_preflight_honours_the_deps_guard_opt_out_and_a_dry_run_never_checks
     assert SG.preflight() != ""
     monkeypatch.setenv("GEN3AI_SKIP_DEPS_GUARD", "1")
     assert SG.preflight() == ""
+
+
+# --- the gate's memory cap is MEASURED and scales with -n (2026-11-17) ---------------------------------------------------
+#
+# The gate declared 24 GB and peaked at 6.6-10.2: the heavy slots admit by the SUM OF DECLARED CAPS, so 14 GB of promise nobody
+# used kept the next job waiting. The numbers below are the measured peaks of ``ship_gate``'s module docs.
+
+#: the largest peak of 64 gates at -n 3 (2026-11-09..17), read from events.jsonl's ``capped`` rows
+MEASURED_MAX_AT_3_GB = 10.18
+
+
+def test_the_gates_cap_is_the_measured_peak_with_a_margin_not_a_habit() -> None:
+    """Fails on a revert to the fixed 24 (`16` is the cap at the live shape) and on a cap that no longer covers the measured
+    peak with the stated margin (a gate that outgrows its cap is OOM-killed, so the margin is what keeps it green)."""
+    assert SG.mem_cap_gb(3) == 16
+    assert SG.mem_cap_gb(3) >= SG.CAP_MARGIN * MEASURED_MAX_AT_3_GB
+    assert SG.mem_cap_gb(6) == 21 and SG.mem_cap_gb(6) >= SG.CAP_MARGIN * 13.57     # the quiet shape's largest no-slot job
+    assert all(SG.mem_cap_gb(n) < 24 for n in (1, 2, 3, 6)), "the 24 GB habit is back"
+    caps = [SG.mem_cap_gb(n) for n in range(1, 13)]
+    assert caps == sorted(caps) and len(set(caps[:6])) > 1, "the cap must grow with the workers that hold the memory"
+    assert SG.mem_cap_gb(0) == SG.mem_cap_gb(1) >= 1                              # a nonsense count never gives a zero cap
+
+
+def test_the_argv_declares_the_cap_of_the_workers_it_really_runs() -> None:
+    """``-- -n 6`` after the shape's ``-n 3`` is the LAST ``-n``, the one pytest takes: the cap follows it. Fails if the cap
+    is read from the shape alone (a 6-worker gate under the 3-worker cap is OOM-killed at the margin the 3-worker peak bought)."""
+    from utils import mem_cap as M
+    live = SG.Shape({"/m/rb_x": 1}, [5, 6, 7], 19, 3)
+
+    def declared(extra: list) -> Optional[float]:
+        argv = SG.build_argv(live, "py", extra)
+        return M.declared_cap_gb(argv[next(i for i, a in enumerate(argv) if a.endswith("gate_lock.sh")) + 1:])
+
+    assert declared([]) == 16.0
+    assert declared(["-n", "6"]) == 21.0 and declared(["-n6"]) == 21.0 and declared(["--numprocesses=6"]) == 21.0
+    assert declared(["-n", "2", "-n", "6"]) == 21.0, "pytest takes the last -n"
+    assert declared(["--durations=20"]) == 16.0
+    assert SG.effective_workers(3, ["-n", "auto"]) == len(os.sched_getaffinity(0))

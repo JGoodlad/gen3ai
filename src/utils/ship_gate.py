@@ -20,7 +20,8 @@ The session WARMS the Rust binaries the tests resolve lazily before its first te
 the root conftest's ``pytest_sessionstart`` -> ``utils.ship_gate_warm``: a cargo build paid inside a test body
 is that test's cost to the bar; one gate-lock slot covers both).
 
-Always through ``scripts/ops/gate_lock.sh`` (one gate at a time) and ``scripts/ops/mem_cap.sh``, and always with ``CUDA_VISIBLE_DEVICES=""`` (standing rule 5: a gate is never a GPU lease). Always with THE
+Always through ``scripts/ops/gate_lock.sh`` (one gate at a time) and ``scripts/ops/mem_cap.sh`` (a cap measured from the gate's peaks and
+scaled by its ``-n``: :func:`mem_cap_gb`), and always with ``CUDA_VISIBLE_DEVICES=""`` (standing rule 5: a gate is never a GPU lease). Always with THE
 8 s BAR on (``$GEN3AI_SHIP_BAR=1``, ``utils.ship_bar``): a routine test over the bar the re-tier set is
 named, and one far over it (>= 2x the contention-stretched bar) FAILS the gate; every test at or over
 half the bar is written to :data:`BAR_REPORT` for calibration.
@@ -49,6 +50,7 @@ Exit status: the gate's own; 89 = ``--max-run-s`` stopped it; 2 = usage; 4 = not
 from __future__ import annotations
 
 import configparser
+import math
 import os
 import shlex
 import subprocess
@@ -71,8 +73,20 @@ MARKERS = "not slow and not e2e"
 QUIET_WORKERS = 6
 #: xdist workers per LOGICAL agent cpu beside a live run — MEASURED, designs/ops/testing.md "The SHIP GATE".
 LIVE_WORKERS_PER_CPU = 0.5
-#: The memory cap (GB) the gate runs under (scripts/ops/mem_cap.sh).
-MEM_CAP_GB = 24
+#: THE GATE'S MEMORY CAP (``scripts/ops/mem_cap.sh <GB>``) is MEASURED, not a habit (2026-11-17). The cap is what the heavy slots
+#: ADMIT by (``utils.heavy_admission``: the caps of the running jobs sum to <= 61.7 GiB), so a cap far above the gate's use
+#: keeps a slot from the next job for nothing: the gate declared 24 and peaked at 6.6. The peaks are the ``capped`` rows
+#: of ``~/.claude/jobs/heavy_slots/events.jsonl`` (``kind: capped``, ``peak_gb``), joined to the gate's own slot rows:
+#:   -n 3 (rule 5b, the shape beside a live run): 64 gates, 2026-11-09..17, peak min 5.1, median 7.0, p90 8.4, MAX 10.18;
+#:   -n 6 (the quiet shape): MAX 13.57 over 66 ``pytest`` jobs capped at 24 that took no slot (a quiet gate takes none) -
+#:   UNVERIFIED that every one of them was a gate, so it is taken as the bound it is: none was higher.
+#: The cap is ``CAP_MARGIN`` x the line through those two maxima at the gate's ``-n`` (xdist workers are what the memory
+#: scales with: each imports and collects the whole suite), rounded UP to a whole GB: 16 at -n 3, 21 at -n 6. The cap still
+#: kills an overrun (exit 86, "peak X of cap Y"), so a gate that outgrows it fails LOUDLY: re-derive from the ``capped`` rows
+#: when the peak passes two thirds of it (``mem_cap.sh --status`` shows each job's peak).
+PEAK_AT_3_GB = 10.2
+PEAK_AT_6_GB = 13.6
+CAP_MARGIN = 1.5
 #: Where the last ship gate's 8 s-bar rows land (``utils.ship_bar``; per user, like the test-cost table).
 BAR_REPORT = os.path.join(os.path.expanduser("~"), ".cache", "gen3ai", "ship_bar_last.json")
 
@@ -127,6 +141,30 @@ def resolve_shape(runs: Optional[Dict[str, int]] = None, *, online: Optional[Seq
     return Shape(dict(runs), agent, 19, max(1, int(len(agent) * LIVE_WORKERS_PER_CPU)), agent_runs=aside)
 
 
+def mem_cap_gb(workers: int) -> int:
+    """The gate's declared memory cap in whole GB for ``workers`` xdist workers (see :data:`PEAK_AT_3_GB`): ``CAP_MARGIN`` x
+    the measured peak at that many workers, rounded up."""
+    slope = (PEAK_AT_6_GB - PEAK_AT_3_GB) / 3.0
+    return max(1, math.ceil(CAP_MARGIN * (PEAK_AT_3_GB + slope * (max(1, workers) - 3))))
+
+
+def effective_workers(shape_workers: int, extra: Sequence[str] = ()) -> int:
+    """The ``-n`` the gate really runs: the LAST one in ``extra`` (pytest takes the last; ``-- -n 6`` overrides the shape's),
+    else the shape's. ``-n auto`` / ``logical`` / a count that is not a number read as every logical cpu this process may use."""
+    args = list(extra)
+    found: Optional[str] = None
+    for i, a in enumerate(args):
+        if a in ("-n", "--numprocesses") and i + 1 < len(args):
+            found = args[i + 1]
+        elif a.startswith("--numprocesses="):
+            found = a.split("=", 1)[1]
+        elif a.startswith("-n") and len(a) > 2 and not a.startswith("--"):
+            found = a[2:]
+    if found is None:
+        return shape_workers
+    return int(found) if found.isdigit() else max(1, len(os.sched_getaffinity(0)))
+
+
 def collected_roots() -> List[str]:
     """The roots the gate collects: ``pytest.ini``'s ``testpaths``, the ONE list (``src/uncollected_tests_gate_test.py``
     fails on a test file outside it, so a root added there is gated here without an edit)."""
@@ -145,7 +183,8 @@ def build_argv(shape: Shape, python: str, extra: Sequence[str] = (), *, max_run_
     if shape.cpus is not None:
         pre += ["taskset", "-c", cpu_list(shape.cpus)]
     return pre + [str(repo_path("scripts", "ops", "gate_lock.sh")),
-                  str(repo_path("scripts", "ops", "mem_cap.sh")), *bound, str(MEM_CAP_GB),
+                  str(repo_path("scripts", "ops", "mem_cap.sh")), *bound,
+                  str(mem_cap_gb(effective_workers(shape.workers, extra))),
                   python, "-m", "pytest", *collected_roots(), "-m", MARKERS, "-q", "-n", str(shape.workers), *extra]
 
 
