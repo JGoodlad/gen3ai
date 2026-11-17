@@ -133,6 +133,19 @@ its GO.
   licenses registering a next step only; nothing moves a recipe without the owner. The hand-off
   (`chain_items_x70.json`) carries no GO; it names the training pin in `off_main_pins`, which the arm chain's plan
   requires for a pin kept off main.
+- **X71, the exploitability probe of the entropy arms: REGISTERED 2026-11-16, NOT LAUNCHED**
+  ([`research_state/measurements/x71_exploitability_probe_2026-11-16/PREREG.md`](research_state/measurements/x71_exploitability_probe_2026-11-16/PREREG.md), full tier;
+  the post-B1 queue's Q3). Does a fresh best responder get further against a low-entropy arm's final than against
+  the control's? One target per arm (the final of its lowest seed: C0, X67, the CE-3d swap, later X70), two
+  responders each: R0's responder cut to 5M steps, the control recipe typed for every target, all at the CE-3d
+  training pin. The statistic is the gap the responders learned over the target's own rate on the same deals,
+  compared with C0's target; classes MORE-EXPLOITABLE / LESS-EXPLOITABLE / NOT-MORE-BY-BAR (+5 pp) / UNRESOLVED /
+  INCONCLUSIVE. MORE-EXPLOITABLE is the registered veto input on carrying that arm's lever into the baseline; one
+  final per arm, so it is not a class for the arm as a population. **Power:** R0 banked one responder, so the spread
+  between two responders is UNVERIFIED; at a spread of ≤ 1 pp the probe sees an extra +7.5 pp with probability 0.92,
+  at 3 pp it sees +10 pp with 0.55. **Cost** ≈ 8.4 GPU-h (eight responders) and 64,000 CPU games (≈ 10.5 lane-h at
+  an UNVERIFIED rate). The six argvs whose target exists pass `checkargs` at the pin; the launcher's dry run stops
+  only at this session's hidden card and nice 19. No kit arm or chain items exist for the responders (owed).
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

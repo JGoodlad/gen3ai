@@ -31694,3 +31694,56 @@ venue tests, the hand-off's pin entry).
 View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X70).
 
 Tag: **AMENDMENT · X70 Amendment 1 · GO conditions · crosses on the card, one venue a cross (exit 7) · statistic unchanged · on-card rate and engine start UNVERIFIED, check not run · blind · not launched**
+
+### 2026-11-16 · REGISTRATION · **X71, the exploitability probe of the entropy arms (full tier; blind: before any X71 training step or game): two fresh 5M best responders against one final each of C0, X67, the CE-3d swap and later X70; the class compares the gap the responders LEARNED against an arm's final with C0's; NOT LAUNCHED**
+
+**Why.** The low-entropy arms' evidence is head to head between forks (X67, CE-3d's swap), and a policy can win
+those crosses by becoming sharper and easier to exploit. CE-3d's registration says its meter "measures neither
+exploitability nor cycling"; X70 §10 says a regulariser-free policy "may win head to head and be MORE exploitable".
+The only exploitability number on record is R0's, for P\* (+11.1 pp [+8.3, +13.8], 2026-10-22). The post-B1 queue
+places this probe (its Q3) after X70 on the card, as the veto input on carrying an entropy lever into the baseline.
+
+**What is registered** (`measurements/x71_exploitability_probe_2026-11-16/PREREG.md`).
+
+- **Targets, chosen by rule, blind:** the final of each arm's lowest registered seed: `rb_x35_c0_s3501`
+  (`ent_coef` 0.05), `rb_x35_x67ent_s6701` (0.0125), `rb_x35_ce3dswap_s7321` (0 + magnet 0.05), and
+  `rb_x35_x70ent0_s7331` (0) once it exists. The three existing files' hashes are frozen in the rule.
+- **Responders:** two per target, seeds 7111 and 7112, runs `rb_x35_x71_<tag>_s<seed>`. Each is R0's responder
+  (forked from its target, trained against it alone on the five offense teams at the frozen fork rate) cut to +5M,
+  with `--ent-coef 0.05 --magnet-kl-coef 0` TYPED so the learner is the same for every target, all at the CE-3d
+  training pin `9e97cad5`.
+- **The read:** R0's reader's regime (the Rust eval core on CPU, greedy against greedy, seed 20261020). Per target,
+  the target against itself (8,000 games) and each responder's final against it (4,000 each), the same teams and
+  deals in every cell. Read 1 classes X67 and the swap against C0; read 2 classes X70 and reuses read 1's cells.
+- **The statistic:** L_t = the responders' mean gap minus the target's own; D_a = L_a − L_c0, with the
+  responder-to-responder variance pooled over the read's targets into the SE and a t multiplier (3.182 / 2.776).
+  `MORE-EXPLOITABLE` iff the lower end > 0; `LESS-EXPLOITABLE` iff the upper end < 0; `NOT-MORE-BY-BAR` iff the upper
+  end < +5 pp; else `UNRESOLVED`; `INCONCLUSIVE` if a cell is unreadable or C0's responders gained nothing.
+
+**Power, from R0's banked curve** (`power.log`; reproduced by the test). R0's anchor: gap(0) −2.5 pp, +9.0 pp
+learned at 5M. R0 banked ONE responder, so the spread between two responders of one target is **UNVERIFIED** and is
+a parameter: P(`MORE-EXPLOITABLE`) at a true extra of +7.5 pp is 0.998 / 0.92 / 0.59 / 0.34 at a spread of 0 / 1 /
+2 / 3 pp (read 1), and at +10 pp 1.00 / 0.99 / 0.83 / 0.55. A false `MORE-EXPLOITABLE` at a true zero is ≤ 2.1 %.
+R0's own 400 games a point would class nothing (half-width ≈ 13.7 pp).
+
+**What was executed.** `checkargs` at the pin: exit 0 for the six argvs whose target exists. The launcher's dry run
+(scratch models dir, the card hidden): exit 3 for all six, stopping only at the registering shell's two refusals
+(the hidden card, nice 19); role FORK of the target, +5,000,000 steps, 7.91 GiB REQUIRED each. The reader's playing
+function on a stand-in (R0's final against P\*, CPU, a handful of games). **Not executed / UNVERIFIED:** any
+responder, any X71 game, the dry run with the card visible, the X70-target argvs (no X70 final yet), the CPU rate
+(≈ 10.5 lane-h for 64,000 games is from R0's "≈ 4 min a 400-game point"), and that the typed entropy and magnet
+values win over the parent's record at run time (checked at launch by GO condition G6 and by the reader's plan).
+
+**Limits written into the registration.** One final per arm (no class for the arm as a population); a responder
+starts as a copy of its target, so exploitability is mixed with how fast those weights move; a 5M responder reads
+about two thirds of what R0 learned; the two pairs of targets trained at different pins; three arms classed with no
+multiplicity adjustment.
+
+**Cost.** ≈ 8.4 GPU-h (8 × ≈ 1.05); 64,000 CPU games. **Owed:** a kit arm / chain items for the responders (the
+arm chain launches kit arms only); until then the validated path is the direct launcher command of PREREG §4.1.
+
+**Record:** `measurements/x71_exploitability_probe_2026-11-16/` (`PREREG.md`, `x71_rule.py`, `read_x71.py`,
+`power.log`, `selfcheck.log`, the `argv_*` / `checkargs_*` / `dryrun_*` transcripts); `src/main/x35/x71_test.py`.
+View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X71).
+
+Tag: **REGISTRATION · X71 exploitability probe · 4 targets × 2 responders @ 5M · MORE-EXPLOITABLE / LESS-EXPLOITABLE / NOT-MORE-BY-BAR / UNRESOLVED / INCONCLUSIVE · +7.5 pp seen 0.92 at a 1 pp responder spread (spread UNVERIFIED) · seeds 7111–7112 at `ce3d-pin-9e97cad5` · ≈ 8.4 GPU-h · not launched · moves no recipe**
