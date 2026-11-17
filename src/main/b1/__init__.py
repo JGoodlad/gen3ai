@@ -10,4 +10,10 @@ confirming Kakuna meter, the ``main.reads`` rule ``b1_kakuna`` (registered in ``
 because ``main/reads/__init__.py`` is on the anchor lane's play path and its docstring must name every module of
 that package: a rule module added there changes the play-path digest of every read in flight. The pin is an argument of
 every command: the registration (the measurement folder's ``PREREG.md``) is the one place it is written.
+
+After BOUNDARY-1, ``main.b1.fresh`` plans, guards, plays and reads ONE fresh three-seed cell against ONE banked B1 cell
+(``measurements/fresh_cell_frame_2026-11-17/FRAME.md``), reusing the modules above unchanged, and
+``main.b1.fresh_rule`` is its statistic and classes, the ``main.reads`` rule ``b1_fresh_cell`` (it lives here for
+the reason ``kakuna_rule`` does). Unlike B1's own, the fresh-cell kit names B1's launch pin as a constant (an older
+commit) and takes the arm's pin from the card's arm file.
 """

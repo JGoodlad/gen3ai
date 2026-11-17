@@ -131,5 +131,5 @@ holds the card and comes back as a build; a fix after the pin sends the arm to F
 
 **Not launch-ready.** Ready: the argvs and their CPU checks, the fit count, the CPU graph capture, the smokes.
 Owed: § 6 on the card (the one thing a CPU cannot show: the CUDA compile, the graph capture and the memory fit
-at 256); then the FULL `PREREG.md` on main; before its 50M look, the `b1_fresh_cell` rule and kit (FRAME F1).
+at 256); then the FULL `PREREG.md` on main; the `b1_fresh_cell` rule and kit are built (FRAME F1; its arm file `fresh_arm_q6n.json` / `_q6w`).
 Order (queue proposal § 3): Q6 ranks above Q5 if B1's width factor wins, since then trunk capacity is what pays.

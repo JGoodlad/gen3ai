@@ -1,0 +1,31 @@
+{
+ "schema": "gen3_b1_fresh_arm_v1",
+ "card": "q5w",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "banked_arm": "W",
+ "lever": [
+  "--n-epochs",
+  "5",
+  "--lr",
+  "6e-4"
+ ],
+ "declared_keys": [
+  "lr",
+  "n_epochs"
+ ],
+ "fresh": [
+  {
+   "seed": 5204,
+   "run": "rb_q5w_s5204"
+  },
+  {
+   "seed": 5205,
+   "run": "rb_q5w_s5205"
+  },
+  {
+   "seed": 5206,
+   "run": "rb_q5w_s5206"
+  }
+ ],
+ "note": "DRAFT with CARD_Q5_epochs.md (FRAME.md \u00a7 3): the card's PREREG registers this file or a copy; python -m main.b1.fresh describe --arm <this file>"
+}

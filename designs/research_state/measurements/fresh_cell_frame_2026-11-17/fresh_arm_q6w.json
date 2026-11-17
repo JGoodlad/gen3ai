@@ -1,0 +1,28 @@
+{
+ "schema": "gen3_b1_fresh_arm_v1",
+ "card": "q6w",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "banked_arm": "W",
+ "lever": [
+  "--policy-readout",
+  "trunk"
+ ],
+ "declared_keys": [
+  "policy_readout"
+ ],
+ "fresh": [
+  {
+   "seed": 5214,
+   "run": "rb_q6w_s5214"
+  },
+  {
+   "seed": 5215,
+   "run": "rb_q6w_s5215"
+  },
+  {
+   "seed": 5216,
+   "run": "rb_q6w_s5216"
+  }
+ ],
+ "note": "DRAFT with CARD_Q6_policy_readout.md (FRAME.md \u00a7 3): the card's PREREG registers this file or a copy; python -m main.b1.fresh describe --arm <this file>"
+}

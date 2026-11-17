@@ -106,17 +106,37 @@ log) instead of two.
   through the look step is PASS. A look is INCONCLUSIVE (never a class) if a cell is missing, duplicated, or holds
   other than the registered pairs; if more than a quarter of a cell's games are drawn; or if its rows name more than
   one commit, team set per panel, device or backend.
-- **The registered rule does not exist yet, and this frame names it: `b1_fresh_cell`** (finding F1). No registered
-  function applies B1's rule to ONE arm a side: `main.b1.cross.factor_stat` takes only the 2 × 2, and the one-arm
-  function, `main.b1.cross.simple_effect` (with `pair_design_of`), is called only by `read_survivor`, which never
-  classes it. No `main.reads` rule fits either: none plans or reads a head-to-head cross (`designs/tools/reads.md`'s
-  rule table; `b1_kakuna` is the Kakuna meter). So the rule is a BUILD, owed before the first fresh cell's 50M look
-  (not before its launch): `b1_fresh_cell` = `simple_effect` on N, `classify("100M", …)` at 100M and § 4's
-  Δ̂ > +0.005 rule at 50M, every other view REPORTED; with `plan` / `check-run` / `read` for the 3 × 3 design in
-  the B1 kit (`main.b1.look` today plans, guards and reads only B1's twelve runs: its `check-run` holds each run to
-  a B1 argv), a fresh-arm table (argv, seeds, declared keys) per card, and tests that fail on revert (a classed
-  3 × 3 read on fixed scores, the 0.005 pp boundary on both rules, a foreign argv refused) under the routine gate.
-  Size: about one agent-day (**UNVERIFIED**, a guess).
+- **The registered rule is `b1_fresh_cell`, and the kit is `python -m main.b1.fresh`** (finding F1, BUILT
+  2026-11-17). The rule (`main.b1.fresh_rule`, registered in `main.reads.rules.RULES`; `designs/tools/reads.md` §5)
+  is `main.b1.cross.simple_effect` on N, `classify("100M", …)` at 100M and § 4's Δ̂ > +0.005 rule at 50M, every other
+  view REPORTED, with B1's draw and INCONCLUSIVE rules (`scores_from_cells`, `row_problems`) unchanged. `main.reads`
+  plays no head-to-head cross, so a `main.reads` spec naming the rule is refused and the kit decides it; its two
+  halves are pure, so `recheck` re-decides a look from `result/inputs.json` alone. Each card's fresh-arm table is a
+  file beside it (`fresh_arm_q5n.json`, `_q5w`, `_q6n`, `_q6w`: argv tokens, seeds, run names, declared keys; DRAFT
+  with its card). The commands, run from a kit checkout of main, with a clean detached checkout of the pin (Rust env
+  core built) as `PIN_DIR`:
+
+  ```bash
+  python -m main.b1.fresh describe    --arm <card>/fresh_arm_q5n.json        # the fresh argvs and their resumes
+  python -m main.b1.fresh lever-check --arm <J> --pin-tree $PIN_DIR          # § 2 item 2 at both targets; exit 3 FAIL
+  python -m main.b1.fresh check-run   --arm <J> --run rb_q5n_s5201 --pin-tree $PIN_DIR   # one run, first checkpoint
+  python -m main.b1.fresh plan  --arm <J> --look 50M --pin-tree $PIN_DIR \
+      --b1-look <B1's 50M work dir>/look.json --out <W>                     # exit 3 = REFUSED (the six runs' guards)
+  python -m main.b1.fresh play  --work <W> --pin-dir $PIN_DIR --device cuda # four panels; the caller holds the lease
+  python -m main.b1.fresh read  --work <W>                                  # <W>/result/{inputs,verdict}.json
+  python -m main.b1.fresh recheck --work <W>                                # re-decide from inputs.json; exit 3 differs
+  python -m main.b1.fresh bootstrap --work <W>                              # REPORTED: B1's team-cluster bootstrap
+  ```
+
+  `plan` refuses a fresh run that is not exactly its card's lever over the banked argv (its `original_command`, the
+  pin's resolved-config diff, its last process's declared keys, `n_epochs` and B1's lever keys, any undeclared
+  `cli_args` drift), any run on another pin (an arm on another pin buys its own control: `own_control` in its
+  arm file, § 7), and a banked run that fails B1's own `main.b1.look.check_run` or whose look file is not the bytes
+  B1's `look.json` at that step records (§ 2 item 6). The parser the lever check uses is the PIN's, in `$PIN_DIR`; the
+  rest of the kit (the K9(b) judge, the ledger reader) is the kit commit's. Tests: `src/main/b1/fresh_rule_test.py`
+  (a hand-worked 3 × 3, every 0.005 pp boundary of both rules, label order, the INCONCLUSIVE rules),
+  `fresh_test.py` (the arm files against the cards' recorded argvs, the guards on fixture runs, play's commands,
+  a real-ledger read), and the opt-in CPU rehearsal `fresh_rehearsal_e2e_test.py`.
 
 ## 4. The looks: 50M decides whether to continue, 100M decides
 
@@ -259,14 +279,14 @@ judgment, which this frame does not allow.
 
 ## 10. FINDINGS
 
-- **F1. No registered rule applies B1's statistic to one arm a side, and no kit can play or read a fresh-vs-banked
-  cross** (§ 3). The rule is named `b1_fresh_cell` and is a build (tests that fail on revert, the routine gate),
-  owed before the first fresh cell's 50M look, not before its launch.
+- **F1. No registered rule applied B1's statistic to one arm a side, and no kit could play or read a fresh-vs-banked
+  cross** (§ 3). BUILT 2026-11-17: the rule `b1_fresh_cell` (`main.b1.fresh_rule`) and the kit `main.b1.fresh`, with
+  tests under the routine gate (§ 3 holds the commands).
 - **F2. Nothing kept the banked cell's checkpoints past B1 §9** (≈ 11-27 by the queue proposal), while a fresh
   cell's 100M look is weeks later (Segment C, to 12-16). § 2 item 6 now states the rule, "never thin these"; it binds
   once the first card registers, and until then B1 §4's hold covers them. **UNVERIFIED:** whether any thinning is
   scheduled before then.
 - **F3. B1's simple effect is REPORTED-only inside B1** (`read_survivor` never classes it). `b1_fresh_cell` classes
-  the same statistic with B1's `classify`; no B1 test holds a classed 3 × 3 read, so the build owes one.
+  the same statistic with B1's `classify`; `fresh_rule_test.py` holds a classed 3 × 3 read worked by hand.
 - **F4. Main has no entropy-schedule flag** (the orchestrator's input from the X70 follow-up drafts). Neither card
   needs one; § 8 says why realized entropy is reported, not matched.

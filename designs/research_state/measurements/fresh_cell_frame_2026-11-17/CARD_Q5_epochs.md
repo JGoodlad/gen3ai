@@ -129,6 +129,6 @@ first minutes of a real launch remain the test of that layer.
 
 Ready: the argvs, their checks, the dose definition. Owed before the first launch: the FULL `PREREG.md` (adopting the
 frame, this card's § 2 and § 3, the σ amendment after B1's 50M look) and its landing on main; the GPU slot (Segment C
-of the queue proposal). Owed before its 50M look: the `b1_fresh_cell` rule and kit (FRAME F1). No GPU check is owed:
+of the queue proposal). The `b1_fresh_cell` rule and kit are built (FRAME F1; its arm file `fresh_arm_q5n.json` / `_q5w`). No GPU check is owed:
 the arm's network is the control's, so B1's pilots cover its fit and compile; five epochs change only how many
 passes the same compiled update makes (**UNVERIFIED** on the card: no five-epoch fresh run at this pin has run).
