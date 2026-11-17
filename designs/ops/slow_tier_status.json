@@ -3,10 +3,10 @@
  "tests": {
   "src/agents/inference/service/aot_test.py::test_a_real_cpu_aot_build_serves_eager": {
    "status": "pass",
-   "commit": "64f5536496ce3c5ce501c1328a31885810136070",
-   "at": "2026-11-09T21:39:27Z",
-   "duration_s": 17.57,
-   "contention": 1.4,
+   "commit": "45eae7fa88028e2e3d42a953d3e7e965f2b9b46b",
+   "at": "2026-11-17T05:47:13Z",
+   "duration_s": 20.02,
+   "contention": 1.65,
    "detail": ""
   },
   "src/agents/inference/service/flat_weights_test.py::test_NaN_weights_are_REFUSED_at_load_before_the_slot_is_touched": {
@@ -5902,5 +5902,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-14T21:16:29Z"
+ "last_written": "2026-11-17T05:47:13Z"
 }
