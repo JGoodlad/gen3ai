@@ -124,6 +124,8 @@ def test_save_refuses_a_metadata_that_disagrees_with_the_config_and_writes_nothi
     assert not (tmp_path / "run" / "model_config.json").exists(), "a refused save must leave the run untouched"
     with pytest.raises(OR.RevealProvenanceError, match="env_core.oracle_reveal = 'off'"):
         save_model_snapshot(str(tmp_path / "run"), _version(SPEC), git_hash="t", hparams=_hparams(SPEC, env="off"))
+    for d in ("ok", "bare"):
+        (tmp_path / d).mkdir()                       # a save never creates its run dir (`utils.run_dir`)
     save_model_snapshot(str(tmp_path / "ok"), _version(SPEC), git_hash="t", hparams=_hparams(SPEC, env=SPEC))
     assert OR.run_provenance(str(tmp_path / "ok"))["known_bad"] is False
     # a save that states no mode (no hparams: the fresh-checkpoint tools) is not judged
@@ -134,6 +136,7 @@ def test_the_sidecar_write_is_judged_against_the_runs_model_config(tmp_path):
     from agents.model.snapshot import record_checkpoint, save_model_snapshot
 
     run = tmp_path / "run"
+    run.mkdir()
     save_model_snapshot(str(run), _version(SPEC), git_hash="t", hparams=_hparams(SPEC, env=SPEC))
     ckpt = run / "checkpoints" / "checkpoint_100_steps.zip"
     ckpt.parent.mkdir()
@@ -258,6 +261,7 @@ def _fork_load(parent, run_archive):
     _, layout, pk = _production_policy_kwargs(args)
     version = ModelVersion.from_layout_and_policy_kwargs(layout, pk, vf_coef=float(args.vf_coef))
     child = run_archive / "rb_child"
+    child.mkdir()                                   # the trainer makes the run dir at startup (`utils.run_dir`)
     stamp = DF.decide(consent="reveal-provenance test", model_path=str(zip_path), model_dir=str(child),
                       requested=SPEC, now="2026-10-15T00:00:00+00:00")
     model = load_model_snapshot(str(zip_path), env=None, current_version=version, device="cpu",

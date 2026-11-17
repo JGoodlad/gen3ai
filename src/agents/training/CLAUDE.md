@@ -34,7 +34,7 @@ changes in the same commit as the code.
 | `--compile-trainer`, compile regions, the sentinel / canary / cache, `--trunk-precision` | `designs/training/compile_flags.md` |
 | `stats.py`, `main.policy_drift`, other offline meters | `designs/training/offline_meters.md` |
 | the stall-tail harvest | `designs/training/stall_tail_harvest.md` |
-| any write a resume or a reader loads (a checkpoint, `latest.txt`, `metadata.json`, a pool or eval file) | `designs/training/checkpoint_writes.md` |
+| any write a resume or a reader loads (a checkpoint, `latest.txt`, `metadata.json`, a pool or eval file), or a dir a live run creates | `designs/training/checkpoint_writes.md` |
 
 
 ## Metrics

@@ -133,6 +133,7 @@ def test_a_same_run_restart_builds_NOTHING(tmp_path):
 def test_the_block_survives_a_restart_byte_for_byte(tmp_path):
     """save_model_snapshot's existing-value-wins rule, the same one `original_command` uses."""
     run = str(tmp_path / "run")
+    os.makedirs(run)                                 # a save never creates its run dir (`utils.run_dir`)
     original = {"schema": LINEAGE_SCHEMA, "role": "fold", "fork_parent": {"path": "PARENT.zip"},
                 "fork_step": 11, "teachers": [], "exploiter_target": None, "ancestry": []}
     save_model_snapshot(run, _StubVersion(), git_hash="a", lineage=original)
@@ -147,6 +148,7 @@ def test_the_block_survives_a_restart_byte_for_byte(tmp_path):
 
 def test_a_run_with_no_block_stays_without_one(tmp_path):
     run = str(tmp_path / "run")
+    os.makedirs(run)                                 # a save never creates its run dir (`utils.run_dir`)
     save_model_snapshot(run, _StubVersion(), git_hash="a")
     with open(os.path.join(run, "metadata.json")) as f:
         assert "lineage" not in json.load(f)
@@ -167,6 +169,7 @@ def test_a_fresh_run_writes_the_null_form(tmp_path):
 
 def test_the_null_form_round_trips_through_metadata(tmp_path):
     run = str(tmp_path / "run")
+    os.makedirs(run)                                 # a save never creates its run dir (`utils.run_dir`)
     block = build_lineage(model_path=None, model_dir=run, fork_step=0)
     save_model_snapshot(run, _StubVersion(), git_hash="a", lineage=block)
     assert read_block(run) == block
@@ -573,6 +576,7 @@ def test_both_model_build_paths_write_the_lineage():
 def test_dose_and_lineage_are_independent_blocks(tmp_path):
     """`dose` is written on every save; `lineage` is written once. Neither may eat the other."""
     run = str(tmp_path / "run")
+    os.makedirs(run)                                 # a save never creates its run dir (`utils.run_dir`)
     save_model_snapshot(run, _StubVersion(), git_hash="a",
                         hparams={"dose": {"dose_rate_now": 1.0}},
                         lineage=build_lineage(model_path=None, model_dir=run, fork_step=0))

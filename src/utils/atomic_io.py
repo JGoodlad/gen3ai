@@ -26,6 +26,7 @@ import secrets
 from typing import Any, Callable, List
 
 from utils import procfs
+from utils.run_dir import ensure_subdir
 
 #: ``.<final name>.<pid>.<token>.tmp`` (see the module docstring).
 _TEMP_RE = re.compile(r"^\..+\.(?P<pid>\d+)\.[0-9a-f]{8}\.tmp$")
@@ -91,14 +92,33 @@ def _fsync_dir(directory: str) -> None:
             os.close(fd)
 
 
-def atomic_write(path: "str | os.PathLike[str]", write_fn: Callable[[str], Any], *, sweep: bool = True) -> str:
+def _ensure_parent(directory: str, root: "str | os.PathLike[str] | None") -> None:
+    """Create ``directory`` for a write: ``makedirs`` when no ``root`` is named; under a named run ``root``, only
+    the levels BELOW it (``utils.run_dir.ensure_subdir``), refusing typed (``RunDirGoneError``) when the root is gone
+    and never re-creating it."""
+    if root is None:
+        os.makedirs(directory or ".", exist_ok=True)
+        return
+    root_s = os.path.abspath(os.fspath(root))
+    rel = os.path.relpath(os.path.abspath(directory or "."), root_s)
+    if rel == os.pardir or rel.startswith(os.pardir + os.sep):
+        raise ValueError(f"atomic_write: {directory} is not inside its run root {root_s}")
+    ensure_subdir(root_s, rel)
+
+
+def atomic_write(path: "str | os.PathLike[str]", write_fn: Callable[[str], Any], *, sweep: bool = True,
+                 root: "str | os.PathLike[str] | None" = None) -> str:
     """Write ``path`` atomically: ``write_fn(tmp)`` writes the whole file at the temp path it is given (any
     writer that takes a path: ``model.save``, ``shutil.copy2``, an ``open``); then fsync, ``os.replace``,
     directory fsync. If ``write_fn`` raises (or produces nothing) the temp is removed and the exception
-    propagates, with the previous ``path`` untouched. Returns ``path``."""
+    propagates, with the previous ``path`` untouched. Returns ``path``.
+
+    ``root`` names the RUN DIR ``path`` lives under: a gone root raises ``utils.run_dir.RunDirGoneError`` before
+    anything is written, and only directories below it are created (a run dir deleted under a live run is never
+    resurrected; ``utils.run_dir``). Without it, every missing parent is created (a non-run file)."""
     final = os.fspath(path)
     directory = os.path.dirname(final)
-    os.makedirs(directory or ".", exist_ok=True)
+    _ensure_parent(directory, root)
     if sweep:
         sweep_stale_temps(directory or ".")
     tmp = temp_path(final)
@@ -120,29 +140,32 @@ def atomic_write(path: "str | os.PathLike[str]", write_fn: Callable[[str], Any],
     return final
 
 
-def atomic_write_bytes(path: "str | os.PathLike[str]", data: bytes) -> str:
+def atomic_write_bytes(path: "str | os.PathLike[str]", data: bytes, *,
+                       root: "str | os.PathLike[str] | None" = None) -> str:
     def _w(tmp: str) -> None:
         with open(tmp, "wb") as f:
             f.write(data)
 
-    return atomic_write(path, _w)
+    return atomic_write(path, _w, root=root)
 
 
-def atomic_write_text(path: "str | os.PathLike[str]", text: str, *, encoding: "str | None" = None) -> str:
+def atomic_write_text(path: "str | os.PathLike[str]", text: str, *, encoding: "str | None" = None,
+                      root: "str | os.PathLike[str] | None" = None) -> str:
     def _w(tmp: str) -> None:
         with open(tmp, "w", encoding=encoding) as f:
             f.write(text)
 
-    return atomic_write(path, _w)
+    return atomic_write(path, _w, root=root)
 
 
-def atomic_write_json(path: "str | os.PathLike[str]", obj: Any, **dump_kwargs: Any) -> str:
+def atomic_write_json(path: "str | os.PathLike[str]", obj: Any, *, root: "str | os.PathLike[str] | None" = None,
+                      **dump_kwargs: Any) -> str:
     """``json.dump(obj, f, **dump_kwargs)`` into ``path``, atomically (the same bytes the bare ``open`` wrote)."""
     def _w(tmp: str) -> None:
         with open(tmp, "w") as f:
             json.dump(obj, f, **dump_kwargs)
 
-    return atomic_write(path, _w)
+    return atomic_write(path, _w, root=root)
 
 
 def model_zip_path(path: "str | os.PathLike[str]") -> str:
@@ -151,10 +174,11 @@ def model_zip_path(path: "str | os.PathLike[str]") -> str:
     return str(p.with_suffix(".zip")) if p.suffix == "" else str(p)
 
 
-def atomic_save_model(model: Any, path: "str | os.PathLike[str]") -> str:
+def atomic_save_model(model: Any, path: "str | os.PathLike[str]", *,
+                      root: "str | os.PathLike[str] | None" = None) -> str:
     """``model.save(path)`` atomically; returns the final ``.zip`` path (see :func:`model_zip_path`).
 
     The model is handed the TEMP name, which carries a suffix (``.tmp``), so SB3 writes exactly there; the
     weights appear at the final name only once complete, and the name's previous file (and every other hard
     link to it) is never written through."""
-    return atomic_write(model_zip_path(path), lambda tmp: model.save(tmp))
+    return atomic_write(model_zip_path(path), lambda tmp: model.save(tmp), root=root)

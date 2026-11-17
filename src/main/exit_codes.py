@@ -113,6 +113,9 @@ _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
                   # `utils.paths.RunArchiveError`: a run dir the archive cannot hold (no archive, or
                   # inside a linked worktree's own models/) — a restart meets the same refusal.
                   "RunArchiveError": TrainExitCode.FATAL_CONFIG,
+                  # `utils.run_dir.RunDirGoneError`: a run-dir writer found its run dir deleted or moved aside under
+                  # the live run and refused to re-create it — a restart into a dir that is not there replays it.
+                  "RunDirGoneError": TrainExitCode.FATAL_CONFIG,
                   "ParityFailure": TrainExitCode.FATAL_CONFIG,
                   # `agents.training.train_logger.MetricKeyCollisionError` (gen3_metric_key_collision_v1): two
                   # metric keys collide in an output format — the key set is the code's, a restart replays it.

@@ -46,6 +46,7 @@ class _Model:
 
 
 def _cb(tmp_path, model, *, free, stop_enabled=True):
+    (tmp_path / "run").mkdir(exist_ok=True)         # the trainer makes the run dir at startup (`utils.run_dir`)
     cb = _TrackingCheckpointCallback(interval_env_steps=100, save_path=str(tmp_path / "run" / "checkpoints"))
     cb.model = model
     cb._init_callback()

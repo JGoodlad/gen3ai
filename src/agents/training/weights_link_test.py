@@ -270,6 +270,7 @@ def test_the_checkpointer_gives_a_re_reached_step_a_fresh_inode(tmp_path):
     from main.train.run_io import _TrackingCheckpointCallback
 
     ckpt_dir = tmp_path / "run" / "checkpoints"
+    ckpt_dir.parent.mkdir()                          # the trainer makes the run dir at startup (`utils.run_dir`)
     cb = _TrackingCheckpointCallback(interval_env_steps=100, save_path=str(ckpt_dir))
     model = MagicMock()
     model.num_timesteps = 0

@@ -44,16 +44,27 @@ Every path that saves a resumable zip runs the same steps; an exception anywhere
    `model_config.json` and `metadata.json`), each atomic;
 4. `latest.txt`, run-relative, LAST.
 
-Before step 1 the run dir must exist (`run_io.require_run_dir`): `atomic_write`'s `makedirs` would otherwise re-create a
-run dir deleted or moved aside under a live run, resurrecting it at its old name (2026-11-14). The save raises
-`RunDirGoneError` (a `FatalConfigError`) and writes nothing; the periodic and forced saves end the run with it, and the
-interrupted save exits `FATAL_CONFIG` (3), never 15 (`DeferredAbort.abort` exits with a body's mapped FATAL code). Each
-prints `[RunDir] FATAL`, a launcher FATAL signature. A fresh run's first save finds the dir the trainer made at startup;
-`checkpoints/` under it is still created on demand. Pinned by `main/train/run_dir_gone_test.py`.
+Before step 1 the run dir must exist (§ "A run dir is never re-created"); `checkpoints/` under it is created on demand.
 
 A failure after step 1 leaves a complete but unreferenced zip and the pointer on the previous target. For the
 interrupted save that makes the GPU window HOLD on "no checkpoint saved by the pause" (it reads the pointer's target and
 its mtime), which is the loud outcome; before, a torn file passed.
+
+## A run dir is never re-created: `src/utils/run_dir.py`
+
+A run dir is created ONCE, at its run's startup; a writer that `mkdir -p`s its target would resurrect a run dir deleted
+or moved aside under a live run at its old name, as a half-run (2026-11-14). So a run-dir writer goes through
+`require_run_dir` (the root must exist), `ensure_subdir(run_dir, name)` (levels below an existing root, one `os.mkdir`
+at a time, so a root that vanishes mid-call raises) or `atomic_write(..., root=run_dir)` (both, built in; without
+`root` it still `makedirs` for a non-run file). A gone root raises `RunDirGoneError`, mapped by name to `FATAL_CONFIG`
+(3): the launcher does not restart into a dir that is not there.
+
+- **The choke points:** `commit_checkpoint` (step 0, and `root=` on the zip and `latest.txt`), the checkpointer's
+  `checkpoints/`, `save_model_snapshot`, `record_eval_results`, `record_team_win_rates`, `record_snapshot_in_history`.
+- **How a run ends on it:** the periodic and forced saves and the team win-rate instrument print `[RunDir] FATAL` (a
+  launcher FATAL signature) and raise; the interrupted save exits 3, never 15 (`DeferredAbort.abort` exits with a body's
+  mapped FATAL code).
+- Pinned by `utils/run_dir_test.py` and `main/train/run_dir_gone_test.py`, each failing on a revert.
 
 ## Audit: every write, before and after (2026-10-20, `dccb920e`)
 

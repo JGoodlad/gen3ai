@@ -37,6 +37,7 @@ from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.opp_intent import OPP_CLASS_NAMES
 from agents.model.snapshot import record_team_win_rates
+from utils.run_dir import RunDirGoneError
 
 #: The table rides metadata.json as the top-level ``team_win_rates`` block (the owner's
 #: recording rule: beside ``latest_eval``'s per-opponent records, NO TensorBoard emission —
@@ -229,7 +230,10 @@ class TeamWinRateCallback(BaseCallback):
         if not self._run_dir:
             return
         try:
-            os.makedirs(self._run_dir, exist_ok=True)
             record_team_win_rates(self._run_dir, self.snapshot())
+        except RunDirGoneError as e:
+            # Not an instrument's failure: the run dir is gone under the live run, and the next save refuses too.
+            print(f"[RunDir] FATAL: {e}", flush=True)
+            raise
         except Exception as e:      # never take a run down for an instrument
             print(f"[team_wr] metadata write failed (non-fatal): {e}", flush=True)

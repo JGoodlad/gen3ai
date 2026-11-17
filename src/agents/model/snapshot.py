@@ -15,6 +15,7 @@ from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.instrumented_ppo.inference import InferenceMaskablePPO
 from agents.training.instrumented_ppo.strict_load import StrictMaskablePPO
 from utils.atomic_io import atomic_write_json
+from utils.run_dir import require_run_dir
 from utils.git import get_git_hash
 
 #: The launcher exports its chosen pin here; every git_hash written for a run reads it.
@@ -200,7 +201,9 @@ def save_model_snapshot(
     if any(v is not None for v in _stated.values()):
         check_provenance(config=version.oracle_reveal, witnesses=_stated, where=f"save {model_dir}")
 
-    os.makedirs(model_dir, exist_ok=True)
+    # The run dir exists already (a run creates it once, at startup; `utils.run_dir`): a save never re-creates one
+    # deleted or moved aside under the live run -- it raises `RunDirGoneError` (FATAL_CONFIG) and writes nothing.
+    require_run_dir(model_dir)
 
     # `model_config.json` = the recorded config, PLUS one DERIVED annotation.
     #
@@ -221,7 +224,7 @@ def save_model_snapshot(
         _cfg["inert_reward_flags"] = inert_reward_flags(version)
     except Exception:  # noqa: BLE001 — an ANNOTATION must never be able to fail a save
         pass
-    atomic_write_json(os.path.join(model_dir, "model_config.json"), _cfg, indent=2, sort_keys=True)
+    atomic_write_json(os.path.join(model_dir, "model_config.json"), _cfg, root=model_dir, indent=2, sort_keys=True)
 
     # ONE resolver for the run metadata and every checkpoint sidecar (`resolve_git_hash`),
     # so the two can never disagree about which commit ran — and it RAISES when the
@@ -387,7 +390,7 @@ def save_model_snapshot(
         })
     if matchup_history:
         metadata["matchup_history"] = matchup_history
-    atomic_write_json(meta_path, metadata, indent=2)
+    atomic_write_json(meta_path, metadata, root=model_dir, indent=2)
 
 
 def record_team_win_rates(model_dir: str, table: dict) -> None:
@@ -403,7 +406,7 @@ def record_team_win_rates(model_dir: str, table: dict) -> None:
         with open(meta_path) as f:
             meta = json.load(f)
     meta["team_win_rates"] = table
-    atomic_write_json(meta_path, meta, indent=2)
+    atomic_write_json(meta_path, meta, root=model_dir, indent=2)
 
 
 def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
@@ -428,7 +431,7 @@ def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
         "step": step,
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
     }
-    atomic_write_json(meta_path, meta, indent=2)
+    atomic_write_json(meta_path, meta, root=model_dir, indent=2)
 
 
 def append_eval_result_row(
@@ -750,7 +753,7 @@ def record_snapshot_in_history(
         num_timesteps,
     )
     meta["snapshot_history"] = history
-    atomic_write_json(meta_path, meta, indent=2)
+    atomic_write_json(meta_path, meta, root=model_dir, indent=2)
 
 
 def record_checkpoint(

@@ -17,7 +17,8 @@ from agents.training.eval_callback import request_forced_eval
 from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event
 from main.train.deferred_abort import DeferredAbort
-from main.train.run_io import RunDirGoneError, _model_hparams, _write_latest_txt, commit_checkpoint
+from main.train.run_io import _model_hparams, _write_latest_txt, commit_checkpoint
+from utils.run_dir import RunDirGoneError
 
 
 def _apply_grad_checkpointing(model, enabled: bool) -> None:

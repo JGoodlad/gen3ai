@@ -197,7 +197,7 @@ class DeferredAbort:
         graceful restart's rollout end, or `safe_point`). Does not return.
 
         A body that raises an error with a dedicated FATAL code (`exit_codes.fatal_exit_code_for`: the run dir
-        gone, `run_io.RunDirGoneError` -> FATAL_CONFIG) exits with THAT code, so the launcher never reads a
+        gone, `utils.run_dir.RunDirGoneError` -> FATAL_CONFIG) exits with THAT code, so the launcher never reads a
         refused save as the saved stop 15 claims."""
         if not self._claim("safe point"):
             self._park()

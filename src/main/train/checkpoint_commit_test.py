@@ -268,6 +268,7 @@ def test_a_forced_checkpoint_commits_its_sidecar_before_the_pointer(tmp_path, ho
 
 def _periodic(tmp_path, model, monkeypatch, *, sidecar_fails=False):
     ckpts = tmp_path / "run" / "checkpoints"
+    ckpts.parent.mkdir(parents=True, exist_ok=True)  # the trainer makes the run dir at startup (`utils.run_dir`)
     cb = _TrackingCheckpointCallback(interval_env_steps=100, save_path=str(ckpts))
     model.num_timesteps = 0                  # (the anchor of the first boundary test; the caller steps past 100)
     cb.model = model

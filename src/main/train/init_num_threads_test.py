@@ -129,6 +129,7 @@ def test_a_fork_records_its_own(fresh_at_three_threads: Any, tmp_path: Path) -> 
     model, args, pk, layout, _ = fresh_at_three_threads
     v = _version(args, pk, layout)
     parent, fork = tmp_path / "parent", tmp_path / "fork"
+    parent.mkdir(), fork.mkdir()                              # a save never creates its run dir (`utils.run_dir`)
     save_model_snapshot(str(parent), v, git_hash="test", hparams=_model_hparams(model))
     (parent / "metadata.json").unlink()                       # the fork must not read the parent's file
     save_model_snapshot(str(fork), v, git_hash="test", hparams=_model_hparams(model))
