@@ -63,4 +63,4 @@ evidence and tables are in `designs/launcher/` (`README.md` indexes them and hol
   rather than auto-resumes (`designs/launcher/gpu_window.md`).
 - **The child's interpreter is decided once per launcher session** (`torch_runtime.resolve_for_launch`;
   a resume or fork gets the torch its run recorded) and held in the child's `$GEN3AI_PYTHON`, so every
-  restart spawns the same one; never a machine path (`interpreter_test.py`).
+  restart spawns the same one; never a machine path (`interpreter_literal_gate_test.py`).

@@ -29,7 +29,7 @@ SEEDS = (7111, 7112)
 def _banked_models_root() -> str:
     """The models directory the registration's argvs were written against, READ from the banked record (the first
     committed argv's ``--model``) and never typed here: an absolute home path as a value is correct on one machine
-    only (``utils/paths_test.py``). Every other banked argv and transcript is then checked against this one root."""
+    only (``utils/home_path_literal_gate_test.py``). Every other banked argv and transcript is then checked against this one root."""
     argv = (DIR / "argv_x71_c0_s7111.txt").read_text().split()
     root, run, name = argv[argv.index("--model") + 1].rsplit("/", 2)
     assert (run, name) == ("rb_x35_c0_s3501", "final_model.zip") and root.startswith("/") and root.endswith("/models")
