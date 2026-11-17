@@ -10,7 +10,9 @@ and before any look or game; and 2026-11-12 (Amendment 5, §18: a signalled stop
 STOP, resumed on the same pin from the checkpoint `latest.txt` names; no re-pin), also before any look or game;
 and 2026-11-16 (Amendment 6, §18: a DEFAULT with an owner veto for every outcome that went to the owner, the
 plateau continuation's order, stop rule and bound, the candidates' read against P\*, and a torch precondition on
-every resume), during phase 1 and before any look or game.
+every resume), during phase 1 and before any look or game; and 2026-11-17 (Amendment 7, §18: the twelve runs'
+retention after §9 closes, and a disclosure that two rehearsals played BOUNDARY-1 runs head-to-head into scratch
+ledgers only; no term changes), during phase 1 and before any look.
 LAUNCHED 2026-11-12 17:18 PST** ([1] `rb_b1c_s5101`; that first attempt was stopped
 by a kit bug at its early check and is discarded whole, Amendment 4). **The LAUNCH pin is
 `15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
@@ -1720,6 +1722,50 @@ follows each *owner* row (item 1), the plateau continuation (item 3) and the rea
    acted, each leg's command, dry run, realised GPU-hours and plateau status, the ticks' device and verdicts,
    and the plateau read's spec commit and record.
 
+### Amendment 7 (2026-11-17): the banked runs' retention; a disclosure of two rehearsals that played BOUNDARY-1 runs into scratch
+
+Written during phase 1 (nine of the twelve runs complete at 50M and [10] `rb_b1w_s5111` training at the driver's
+last record folded here, 2026-11-17 12:05 PST; the 50M look needs all twelve), before the 50M look and every
+other look, on the orchestrator's instruction, from the Training session's pending list
+(`~/.claude/jobs/x35/b1/S8_pending.txt`; outside the repository). **Blind to every score, with the one disclosure
+of item 2: no registered look has been planned or played and no Kakuna row exists; the writer of this amendment
+did not open, list or read the rehearsals' scratch outputs and reports only what the pending list says of them.**
+**It moves no bar and no class**: the +4 pp bar, the −2 pp harm stop, the 1.76 pp floor, the 90 % level, the
+0.005 pp band, the views, the classes and their order, the net rule, the panels, the pairs a cell, the seeds, the
+run names, the argvs, the budget, the Kakuna rule, the K9(b) ceilings and reader, §10's guards as worded and its
+two replacement causes are as they were; §5, §6, §8 and §9 are untouched, and so is every default of
+Amendment 6. The launch pin and the kit commit do not move. The same pending list's operations records are in
+slot S8 below.
+
+1. **Retention of the twelve runs, as the orchestrator's record words it (2026-11-17 03:20 PST):** "S9, retention
+   (2026-11-17): the twelve BOUNDARY-1 runs rb_b1{c,w,br,wb}_s51NN are never thinned, moved or rewritten after
+   section 9 closes, until a written owner decision releases them. Their 50M and 100M look checkpoints, sidecars
+   and final models are the controls of every fresh-cell arm. Held by archive_grooming_tiers.BANKED_B1_PREFIXES
+   and models_retention_policy.md, commit 07fc04c1d."
+   - **What it adds.** A constraint on what is done with the run directories once §9 has acted (its rows, the
+     continuation of Amendment 6 item 3 and the read of item 4 included, all of which still run as registered).
+     It names no outcome and follows from none; no row of §9 changes.
+   - **Where it is held.** `07fc04c1d` is on main (`docs(retention): BOUNDARY-1's banked cells are protected`);
+     the constant is in `src/main/ops/archive_grooming/tiers.py` and the policy is
+     `designs/research_state/models_retention_policy.md`. **UNVERIFIED here:** that the constant's prefixes cover
+     exactly the twelve run names (the code was not re-read for this amendment).
+2. **DISCLOSURE: two CPU rehearsals played real head-to-head games between BOUNDARY-1 runs, into SCRATCH ledgers
+   only.** Amendment 6's blindness statement says no head-to-head game between BOUNDARY-1 runs exists; that was
+   true when it was written and is no longer true of scratch. As the orchestrator's record (2026-11-17 04:32
+   PST) states them:
+   - **(1) The `drive_look.sh` rehearsal, 2026-11-16 / 17**: on 8 of the 12 runs' 50M finals, 96 cells × 1 pair
+     (192 games), plus a minimal pass on the real `b1_look_pin`. Its read returned INCONCLUSIVE (pairs / draws),
+     and a relaxed in-process statistic run exercised the code path.
+   - **(2) The `b1_fresh_cell` kit rehearsal, 2026-11-17**: on 1M checkpoints (C 5101 and W 5103 against C 5102
+     and W 5104), 4 pairs a cell.
+   - **What reached whom.** No number from either reached the orchestrator or any registered record. The scratch
+     outputs (the look rehearsal's scratch directory and the fresh-kit agent's scratch) **are not to be read**.
+   - **What it changes: nothing.** No term changes. No rehearsal game is a registered game: none may enter a
+     look, a cell, a ledger of record or any count.
+   - **UNVERIFIED:** everything in this item beyond the record's own words. The games' counts, the checkpoints
+     and "no number reached the orchestrator" are the orchestrator's statement and were not checked against the
+     scratch outputs, by design.
+
 ### Pre-launch and launch records
 
 Written here, each before the launch or look it gates: the re-pin; §13's
@@ -1931,7 +1977,8 @@ scratch models dir; neither is a BOUNDARY-1 run and neither is read at any look.
   the warm start's cost; each run's realised GPU-hours (§7; the first control run's hours to 50M check §12's
   central figure); every start failure and its retry (Amendment 3); every unsaved stop with its lost steps and
   its resume, and the quit-save probe's record once the Training session reports it (Amendment 5); the twelve
-  arm-end K9(b) records. **Written so far (2026-11-13): run [1]'s two launches and the warm start's cost.**
+  arm-end K9(b) records. **Written so far (2026-11-17): run [1]'s two launches, the warm start's cost, and runs
+  [1] to [10] at phase 1 (the last sub-item).**
   Evidence: `~/.claude/jobs/x35/b1/` (the driver's records; outside the repository). Every launch is from main
   with `--pin-commit 15136b61634b667bb9da5ccc6647ff9265238829`, on an RTX 3080 Ti that `nvidia-smi` read at
   33 MiB used of 12,288 with no compute app, `gdm` inactive.
@@ -1970,6 +2017,59 @@ scratch models dir; neither is a BOUNDARY-1 run and neither is read at any look.
     At the pin the shared key of a `--model` start carries the inert `--batch-size` default (4096) where a
     fresh start carries 2048, so a restart and a fresh start of one arm use different entries. Before the
     launch only the C arm's restart entry had been filled, by the probe. W's first restart is expected COLD;
-    whether Br's and WB's share an entry with C's or W's is UNVERIFIED. On the probe a cold restart's service
+    whether Br's and WB's share an entry with C's or W's is UNVERIFIED (read since: the last sub-item). On the
+    probe a cold restart's service
     came up in ≈ 1,041 s. Both of [1]'s launches above started warm because C's pilot had filled the
     fresh-start entry.
+  - **Runs [1] to [10] at phase 1 (written 2026-11-17, from the Training session's driver records; each line of
+    its list is checked against the logs by that session, not re-read here).** Nine runs are COMPLETE at 50M
+    ([2] to [9] logged with launcher exit 0); [10] was training at the last record (2026-11-17 12:05 PST); [11]
+    and [12] had
+    not launched. A green dry run is recorded for each of [4] to [10]; the core split is
+    recorded as equal at [2] and as 5 + 3 from [4] on (the trainer on 0-4,8-12 at [7]). Every early check PASSED
+    on 9 rows with maximum
+    4.77e-07 (ceiling 1e-3) and the canary at update 10 equal to eager. Times are PST; "fresh" is START to
+    `LEARNER FREEZE`; "wall" is START to COMPLETE, restarts included (it is not a GPU-hours reading of the card).
+
+    | # | run | START | fresh start (s; T2 s) | early check (99th pct) | restarts (s; T2 s) | COMPLETE (steps) | wall h |
+    |---|---|---|---|---|---|---|---|
+    | [1] | `rb_b1c_s5101` | 11-12 19:26:24 | 304; 155.2 | 19:41:28 (2.38e-07) | 1 warm: 251; 118.4 | 11-13 05:07:57 (50,000,412) | 9.69 |
+    | [2] | `rb_b1w_s5103` | 11-13 05:10:54 | 285; 142.8 | 05:28:56 (not logged) | 1 COLD: 1,182; 878.8 | 11-13 18:31:43 (50,000,086) | 13.35 |
+    | [3] | `rb_b1br_s5105` | 11-13 18:31:48 | ≈ 297; 136.9 | 18:45:51 (3.58e-07) | 1 warm: 295; 128.4 | 11-14 04:01:52 (50,000,082) | 9.50 |
+    | [4] | `rb_b1wb_s5107` | 11-14 04:01:57 | 309; 138.6 | 04:19:59 (2.38e-07) | 2 warm: 286; 118.6, then not logged | 11-14 17:04:45 (50,000,127) | 13.05 |
+    | [5] | `rb_b1c_s5102` | 11-14 17:04:51 | 280; 139.8 | 17:18:52 (2.38e-07) | 1 warm: 250; 119.0 | 11-15 02:36:31 (50,000,041) | 9.53 |
+    | [6] | `rb_b1w_s5104` | 11-15 02:36:37 | 289; 139.7 | 02:54:38 (2.38e-07) | 2 warm: 239; 107.0 and 278; 121.4 | 11-15 15:37:27 (50,000,080) | 13.01 |
+    | [7] | `rb_b1br_s5106` | 11-15 15:37:33 | 301; 137.0 | 15:51:35 (2.38e-07) | 1 warm: 280; 118.4 | 11-16 01:06:17 (50,000,139) | 9.48 |
+    | [8] | `rb_b1wb_s5108` | 11-16 01:06:23 | 309; 137.8 | 01:24:24 (2.38e-07) | 2 warm: 266; 107.1 and 301; 119.2 | 11-16 14:05:09 (50,000,005) | 12.98 |
+    | [9] | `rb_b1c_s5110` | 11-16 14:05:14 | 271; 137.7 | 14:19:16 (3.58e-07) | 1 warm: 249; 120.7 | 11-16 23:45:42 (50,000,220) | 9.68 |
+    | [10] | `rb_b1w_s5111` | 11-16 23:45:49 | 368; 186.2 | 00:05:52 (3.58e-07) | 2 warm so far: 332; 158.4 and 374; 165.8 | training at the last record | — |
+
+    - **[2]'s launch** was from main at `5fecaee43`, the GO marker at `cf9258ab6`, the core split equal; the
+      early check also read peak reserved 9,372 MiB (as at [4]; S5's figure at 256). [10]'s early check
+      recorded torch 2.8.0+cu126 and its dry run 0 refusals, with "item 8 anchors present (as at [8])" in the
+      record's words.
+    - **The HOLD between [1] and [2], 2026-11-13 05:07:57: not a run event.** The cause was the Training
+      session's own orphaned pytest trainer (pid 1672381, with a `rust_env_proc` 1673545), left by a pytest on
+      the main checkout that timed out. The card idled ≈ 3 min (05:07:57 to 05:10:54) and the chain resumed
+      with `--go --from 2` on the orchestrator's GO. No run was stopped, resumed or replaced by it.
+    - **No start failure (Amendment 3) and no unsaved stop (Amendment 5) is in the records for [1]'s relaunch
+      to [10]**; the restart lines logged for [6] to [10] each read no FATAL and no traceback. Every restart
+      is logged at its child's six-hour mark; [9]'s and [10]'s are recorded as taken at the rollout boundary
+      from `final_model_interrupted.zip`. The list words [3]'s and [4]'s as "signal"; whether a signal was sent
+      there is UNVERIFIED (none was at [1]'s, above).
+    - **The compile-cache sharing left UNVERIFIED above is now read, both ways VERIFIED by the launcher's
+      SHARED-HIT lines.** Br shares C's entries: fresh `1bdf57369a43` ([3], 11-13 18:32:33) and restart
+      `70105b399543` ([3]'s first restart, 11-14 00:38:43; the entry made 11-12 17:57:43). WB shares W's: fresh
+      `652315d6d32f` ([4], 11-14 04:02:41; the entry made 11-12 06:12:07) and restart `fac918815f6b` ([4]'s first
+      restart, 11-14 10:08:01). **W's first restart was COLD, as expected**: [2]'s, 1,182 s (T2 878.8 s, the
+      prewarm 246.4 s), which made `fac918815f6b` (11-13 11:16:37). It is the one cold start among the 24 starts
+      recorded from [1]'s relaunch on (10 fresh, 14 restarts); the 12 warm restarts with a logged duration read
+      239 to 374 s.
+    - **[10]'s starts are slower than the other wide runs'**: fresh 368 s (T2 186.2 s) against [8]'s 309 s
+      (137.8 s); restarts 332 s and 374 s (T2 158.4 and 165.8 s) against [6]'s and [8]'s 239 to 301 s (107 to
+      121 s). All were warm cache hits. **UNVERIFIED:** the cause; the records name none.
+    - **Wall hours against §12's central figures** (9.48 narrow, 13.20 wide, GPU-h to 50M): the five narrow
+      runs read 9.48 to 9.69 h and the four wide runs 12.98 to 13.35 h (the widest, [2], carries the one cold
+      restart).
+    - **Still OPEN in S8:** [10]'s completion and [11] and [12]; the quit-save probe's record (Amendment 5);
+      the twelve arm-end K9(b) records; each run's GPU-hours as a card reading.
