@@ -1,0 +1,12 @@
+# FRAME.md § 2 item 5: main.b1.arms.scan_collisions (main 81594609b) pointed at the two cards' seeds and names, 2026-11-17
+{
+ "roots": [
+  "/home/goodlad/dev/gen3ai/models",
+  "/home/goodlad/gen3ai_archive"
+ ],
+ "sidecars": 688,
+ "dirs": 4146,
+ "hits": []
+}
+seeds (5201, 5202, 5203, 5204, 5205, 5206, 5209, 5211, 5212, 5213, 5214, 5215, 5216, 5219)
+names ['rb_q5n_s5201', 'rb_q5n_s5202', 'rb_q5n_s5203', 'rb_q5n_s5209', 'rb_q5w_s5204', 'rb_q5w_s5205', 'rb_q5w_s5206', 'rb_q5w_s5209', 'rb_q6n_s5211', 'rb_q6n_s5212', 'rb_q6n_s5213', 'rb_q6n_s5219', 'rb_q6w_s5214', 'rb_q6w_s5215', 'rb_q6w_s5216', 'rb_q6w_s5219']
