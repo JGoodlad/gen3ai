@@ -1,0 +1,115 @@
+arms {'cand': ['k1', 'k2', 'k3'], 'pstar': ['p1']} (4 runs); contrast {'cand': 1.0, 'pstar': -1.0}; the effect is added to ('cand',)
+design: 360 deals x 2 games = 720 games a run a panel; teams piloted 70 of 72 (uses 1-11); teams in either role 70
+model: base 0.5, our-team SD 10 pp, their-team SD 9 pp, team-by-arm interaction SD 5 pp; seed 20261109; 4000 experiments a cell (a rate's Monte-Carlo SE is at most 0.0079)
+
+(1) THE REGISTERED ANALYTIC INTERVAL (the wider of our_team / dyadic). Per cell: P(POSITIVE) at each true per-panel effect; at a true 0, false POSITIVE / false NEGATIVE / coverage.
+
+  target U (true value = 1 x the per-panel effect), level 0.95
+    seed SD 0.0 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 7.28 pp | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.009 +5: 0.052 +6: 0.169 +8: 0.676 +10: 0.955 | 0.80-detected true value 8.9 pp
+        at 0: true SD of psi 1.29 pp; mean V_S 1.45 V_T 1.69 V_TS 2.43 pp^2 (our_team); V_T > V_TS in 0.000; dyadic decides in 0.748; median df 2.0; coverage at +4: 1.0000
+    seed SD 1.0 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 7.51 pp | P(POSITIVE) +2: 0.003 +3: 0.008 +4: 0.028 +5: 0.076 +6: 0.178 +8: 0.530 +10: 0.815 | 0.80-detected true value 9.9 pp
+        at 0: true SD of psi 1.72 pp; mean V_S 2.74 V_T 1.69 V_TS 2.43 pp^2 (our_team); V_T > V_TS in 0.000; dyadic decides in 0.566; median df 2.0; coverage at +4: 1.0000
+    seed SD 1.5 pp | at 0: false POS 0.0003 false NEG 0.0003 coverage 0.9995 | median half-width 7.93 pp | P(POSITIVE) +2: 0.007 +3: 0.015 +4: 0.041 +5: 0.094 +6: 0.178 +8: 0.416 +10: 0.656 | 0.80-detected true value > 10 pp
+        at 0: true SD of psi 2.16 pp; mean V_S 4.33 V_T 1.70 V_TS 2.44 pp^2 (our_team); V_T > V_TS in 0.000; dyadic decides in 0.411; median df 2.0; coverage at +4: 0.9998
+    seed SD 2.5 pp | at 0: false POS 0.0037 false NEG 0.0027 coverage 0.9935 | median half-width 11.32 pp | P(POSITIVE) +2: 0.018 +3: 0.029 +4: 0.051 +5: 0.089 +6: 0.133 +8: 0.253 +10: 0.391 | 0.80-detected true value > 10 pp
+        at 0: true SD of psi 3.14 pp; mean V_S 9.87 V_T 1.69 V_TS 2.43 pp^2 (our_team); V_T > V_TS in 0.000; dyadic decides in 0.224; median df 2.0; coverage at +4: 0.9940
+
+  target U (true value = 1 x the per-panel effect), level 0.9
+    seed SD 0.0 pp | at 0: false POS 0.0003 false NEG 0.0003 coverage 0.9995 | median half-width 4.94 pp | P(POSITIVE) +2: 0.017 +3: 0.061 +4: 0.222 +5: 0.497 +6: 0.761 +8: 0.978 +10: 0.999 | 0.80-detected true value 6.4 pp
+    seed SD 1.0 pp | at 0: false POS 0.0013 false NEG 0.0015 coverage 0.9972 | median half-width 5.10 pp | P(POSITIVE) +2: 0.041 +3: 0.111 +4: 0.238 +5: 0.422 +6: 0.607 +8: 0.880 +10: 0.972 | 0.80-detected true value 7.4 pp
+    seed SD 1.5 pp | at 0: false POS 0.0063 false NEG 0.0065 coverage 0.9865 | median half-width 5.38 pp | P(POSITIVE) +2: 0.058 +3: 0.123 +4: 0.216 +5: 0.362 +6: 0.484 +8: 0.758 +10: 0.899 | 0.80-detected true value 8.6 pp
+    seed SD 2.5 pp | at 0: false POS 0.0217 false NEG 0.0220 coverage 0.9560 | median half-width 7.68 pp | P(POSITIVE) +2: 0.075 +3: 0.117 +4: 0.178 +5: 0.251 +6: 0.325 +8: 0.487 +10: 0.646 | 0.80-detected true value > 10 pp
+
+  target F (true value = 1 x the per-panel effect), level 0.95
+    seed SD 0.0 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 12.69 pp | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.000 +5: 0.002 +6: 0.004 +8: 0.035 +10: 0.142 | 0.80-detected true value > 10 pp
+        at 0: true SD of psi 2.27 pp; mean V_S 4.23 V_T 5.08 V_TS 7.28 pp^2 (our_team); V_T > V_TS in 0.015; dyadic decides in 0.635; median df 2.0; coverage at +4: 1.0000
+    seed SD 1.0 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 12.86 pp | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.001 +5: 0.002 +6: 0.007 +8: 0.045 +10: 0.153 | 0.80-detected true value > 10 pp
+        at 0: true SD of psi 2.51 pp; mean V_S 5.51 V_T 5.05 V_TS 7.29 pp^2 (our_team); V_T > V_TS in 0.016; dyadic decides in 0.592; median df 2.0; coverage at +4: 1.0000
+    seed SD 1.5 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 13.11 pp | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.002 +5: 0.003 +6: 0.014 +8: 0.057 +10: 0.159 | 0.80-detected true value > 10 pp
+        at 0: true SD of psi 2.89 pp; mean V_S 7.20 V_T 5.09 V_TS 7.32 pp^2 (our_team); V_T > V_TS in 0.020; dyadic decides in 0.528; median df 2.0; coverage at +4: 0.9998
+    seed SD 2.5 pp | at 0: false POS 0.0003 false NEG 0.0008 coverage 0.9990 | median half-width 14.01 pp | P(POSITIVE) +2: 0.002 +3: 0.001 +4: 0.007 +5: 0.016 +6: 0.027 +8: 0.065 +10: 0.159 | 0.80-detected true value > 10 pp
+        at 0: true SD of psi 3.64 pp; mean V_S 12.55 V_T 5.07 V_TS 7.29 pp^2 (our_team); V_T > V_TS in 0.018; dyadic decides in 0.385; median df 2.0; coverage at +4: 0.9998
+
+  target F (true value = 1 x the per-panel effect), level 0.9
+    seed SD 0.0 pp | at 0: false POS 0.0003 false NEG 0.0000 coverage 0.9998 | median half-width 8.61 pp | P(POSITIVE) +2: 0.003 +3: 0.007 +4: 0.027 +5: 0.064 +6: 0.133 +8: 0.386 +10: 0.679 | 0.80-detected true value > 10 pp
+    seed SD 1.0 pp | at 0: false POS 0.0005 false NEG 0.0005 coverage 0.9990 | median half-width 8.73 pp | P(POSITIVE) +2: 0.008 +3: 0.013 +4: 0.036 +5: 0.078 +6: 0.138 +8: 0.392 +10: 0.657 | 0.80-detected true value > 10 pp
+    seed SD 1.5 pp | at 0: false POS 0.0018 false NEG 0.0022 coverage 0.9960 | median half-width 8.90 pp | P(POSITIVE) +2: 0.009 +3: 0.022 +4: 0.051 +5: 0.084 +6: 0.161 +8: 0.363 +10: 0.605 | 0.80-detected true value > 10 pp
+    seed SD 2.5 pp | at 0: false POS 0.0057 false NEG 0.0063 coverage 0.9880 | median half-width 9.51 pp | P(POSITIVE) +2: 0.028 +3: 0.036 +4: 0.064 +5: 0.116 +6: 0.159 +8: 0.289 +10: 0.470 | 0.80-detected true value > 10 pp
+
+  target NET (true value = 2 x the per-panel effect), level 0.95
+    seed SD 0.0 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 17.85 pp | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.002 +5: 0.012 +6: 0.044 +8: 0.268 +10: 0.703 | 0.80-detected true value > 20 pp
+        at 0: true SD of psi 3.21 pp; mean V_S 8.34 V_T 10.15 V_TS 14.59 pp^2 (our_team); V_T > V_TS in 0.002; dyadic decides in 0.713; median df 2.0; coverage at +4: 1.0000
+    seed SD 1.0 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 18.27 pp | P(POSITIVE) +2: 0.000 +3: 0.001 +4: 0.007 +5: 0.024 +6: 0.065 +8: 0.279 +10: 0.600 | 0.80-detected true value > 20 pp
+        at 0: true SD of psi 3.88 pp; mean V_S 13.92 V_T 10.10 V_TS 14.58 pp^2 (our_team); V_T > V_TS in 0.002; dyadic decides in 0.578; median df 2.0; coverage at +4: 1.0000
+    seed SD 1.5 pp | at 0: false POS 0.0003 false NEG 0.0000 coverage 0.9998 | median half-width 18.91 pp | P(POSITIVE) +2: 0.002 +3: 0.003 +4: 0.016 +5: 0.028 +6: 0.078 +8: 0.268 +10: 0.502 | 0.80-detected true value > 20 pp
+        at 0: true SD of psi 4.79 pp; mean V_S 20.63 V_T 10.15 V_TS 14.63 pp^2 (our_team); V_T > V_TS in 0.001; dyadic decides in 0.469; median df 2.0; coverage at +4: 1.0000
+    seed SD 2.5 pp | at 0: false POS 0.0013 false NEG 0.0015 coverage 0.9972 | median half-width 23.09 pp | P(POSITIVE) +2: 0.011 +3: 0.017 +4: 0.027 +5: 0.058 +6: 0.087 +8: 0.178 +10: 0.327 | 0.80-detected true value > 20 pp
+        at 0: true SD of psi 6.60 pp; mean V_S 41.83 V_T 10.12 V_TS 14.59 pp^2 (our_team); V_T > V_TS in 0.002; dyadic decides in 0.284; median df 2.0; coverage at +4: 0.9965
+
+  target NET (true value = 2 x the per-panel effect), level 0.9
+    seed SD 0.0 pp | at 0: false POS 0.0000 false NEG 0.0000 coverage 1.0000 | median half-width 12.12 pp | P(POSITIVE) +2: 0.006 +3: 0.029 +4: 0.102 +5: 0.247 +6: 0.466 +8: 0.844 +10: 0.985 | 0.80-detected true value 15.5 pp
+    seed SD 1.0 pp | at 0: false POS 0.0013 false NEG 0.0005 coverage 0.9982 | median half-width 12.40 pp | P(POSITIVE) +2: 0.022 +3: 0.053 +4: 0.133 +5: 0.259 +6: 0.415 +8: 0.754 +10: 0.932 | 0.80-detected true value 17.0 pp
+    seed SD 1.5 pp | at 0: false POS 0.0057 false NEG 0.0032 coverage 0.9910 | median half-width 12.83 pp | P(POSITIVE) +2: 0.032 +3: 0.069 +4: 0.144 +5: 0.240 +6: 0.369 +8: 0.659 +10: 0.845 | 0.80-detected true value 19.0 pp
+    seed SD 2.5 pp | at 0: false POS 0.0140 false NEG 0.0160 coverage 0.9700 | median half-width 15.67 pp | P(POSITIVE) +2: 0.058 +3: 0.088 +4: 0.141 +5: 0.208 +6: 0.280 +8: 0.437 +10: 0.604 | 0.80-detected true value > 20 pp
+
+(1b) FOR COMPARISON, NOT REGISTERED: the PAIRED composition V_S + max(0, V_T - V_deal) (the registered one floors V_S at V_TS, which holds the team main effects that cancel in a contrast of runs playing the same deals)
+    U level 0.95 seed SD 0.0 | at 0: false POS 0.0285 coverage 0.9410 | median half-width 4.17 pp | P(POSITIVE) +2: 0.195 +3: 0.309 +4: 0.474 +5: 0.621 +6: 0.748 +8: 0.898 +10: 0.974 | 0.80-detected 6.7 pp
+    U level 0.95 seed SD 1.0 | at 0: false POS 0.0280 coverage 0.9380 | median half-width 5.81 pp | P(POSITIVE) +2: 0.123 +3: 0.199 +4: 0.296 +5: 0.405 +6: 0.510 +8: 0.710 +10: 0.853 | 0.80-detected 9.3 pp
+    U level 0.95 seed SD 1.5 | at 0: false POS 0.0288 coverage 0.9450 | median half-width 7.48 pp | P(POSITIVE) +2: 0.100 +3: 0.158 +4: 0.217 +5: 0.308 +6: 0.369 +8: 0.560 +10: 0.701 | 0.80-detected > 10 pp
+    U level 0.95 seed SD 2.5 | at 0: false POS 0.0235 coverage 0.9503 | median half-width 11.21 pp | P(POSITIVE) +2: 0.065 +3: 0.090 +4: 0.124 +5: 0.166 +6: 0.203 +8: 0.314 +10: 0.426 | 0.80-detected > 10 pp
+    U level 0.9 seed SD 0.0 | at 0: false POS 0.0535 coverage 0.8898 | median half-width 2.87 pp | P(POSITIVE) +2: 0.327 +3: 0.499 +4: 0.692 +5: 0.837 +6: 0.919 +8: 0.988 +10: 0.999 | 0.80-detected 4.7 pp
+    U level 0.9 seed SD 1.0 | at 0: false POS 0.0532 coverage 0.8892 | median half-width 3.97 pp | P(POSITIVE) +2: 0.222 +3: 0.350 +4: 0.485 +5: 0.629 +6: 0.736 +8: 0.902 +10: 0.974 | 0.80-detected 6.8 pp
+    U level 0.9 seed SD 1.5 | at 0: false POS 0.0522 coverage 0.8978 | median half-width 5.12 pp | P(POSITIVE) +2: 0.183 +3: 0.274 +4: 0.370 +5: 0.493 +6: 0.574 +8: 0.790 +10: 0.904 | 0.80-detected 8.2 pp
+    U level 0.9 seed SD 2.5 | at 0: false POS 0.0515 coverage 0.8970 | median half-width 7.64 pp | P(POSITIVE) +2: 0.123 +3: 0.172 +4: 0.235 +5: 0.301 +6: 0.365 +8: 0.508 +10: 0.657 | 0.80-detected > 10 pp
+    F level 0.95 seed SD 0.0 | at 0: false POS 0.0285 coverage 0.9470 | median half-width 7.00 pp | P(POSITIVE) +2: 0.096 +3: 0.151 +4: 0.223 +5: 0.313 +6: 0.405 +8: 0.573 +10: 0.726 | 0.80-detected > 10 pp
+    F level 0.95 seed SD 1.0 | at 0: false POS 0.0300 coverage 0.9433 | median half-width 8.08 pp | P(POSITIVE) +2: 0.096 +3: 0.129 +4: 0.196 +5: 0.266 +6: 0.341 +8: 0.487 +10: 0.642 | 0.80-detected > 10 pp
+    F level 0.95 seed SD 1.5 | at 0: false POS 0.0295 coverage 0.9430 | median half-width 9.33 pp | P(POSITIVE) +2: 0.070 +3: 0.115 +4: 0.164 +5: 0.223 +6: 0.275 +8: 0.419 +10: 0.545 | 0.80-detected > 10 pp
+    F level 0.95 seed SD 2.5 | at 0: false POS 0.0288 coverage 0.9447 | median half-width 12.21 pp | P(POSITIVE) +2: 0.065 +3: 0.086 +4: 0.119 +5: 0.149 +6: 0.184 +8: 0.276 +10: 0.383 | 0.80-detected > 10 pp
+    F level 0.9 seed SD 0.0 | at 0: false POS 0.0565 coverage 0.8935 | median half-width 4.87 pp | P(POSITIVE) +2: 0.174 +3: 0.256 +4: 0.372 +5: 0.496 +6: 0.609 +8: 0.792 +10: 0.903 | 0.80-detected 8.1 pp
+    F level 0.9 seed SD 1.0 | at 0: false POS 0.0565 coverage 0.8915 | median half-width 5.59 pp | P(POSITIVE) +2: 0.161 +3: 0.231 +4: 0.328 +5: 0.418 +6: 0.523 +8: 0.715 +10: 0.854 | 0.80-detected 9.2 pp
+    F level 0.9 seed SD 1.5 | at 0: false POS 0.0555 coverage 0.8880 | median half-width 6.44 pp | P(POSITIVE) +2: 0.134 +3: 0.201 +4: 0.282 +5: 0.373 +6: 0.452 +8: 0.633 +10: 0.772 | 0.80-detected > 10 pp
+    F level 0.9 seed SD 2.5 | at 0: false POS 0.0520 coverage 0.8918 | median half-width 8.40 pp | P(POSITIVE) +2: 0.120 +3: 0.155 +4: 0.211 +5: 0.262 +6: 0.322 +8: 0.448 +10: 0.579 | 0.80-detected > 10 pp
+    NET level 0.95 seed SD 0.0 | at 0: false POS 0.0305 coverage 0.9403 | median half-width 9.82 pp | P(POSITIVE) +2: 0.151 +3: 0.233 +4: 0.365 +5: 0.471 +6: 0.611 +8: 0.797 +10: 0.910 | 0.80-detected 16.1 pp
+    NET level 0.95 seed SD 1.0 | at 0: false POS 0.0278 coverage 0.9457 | median half-width 12.95 pp | P(POSITIVE) +2: 0.115 +3: 0.172 +4: 0.262 +5: 0.354 +6: 0.449 +8: 0.637 +10: 0.787 | 0.80-detected > 20 pp
+    NET level 0.95 seed SD 1.5 | at 0: false POS 0.0270 coverage 0.9463 | median half-width 15.99 pp | P(POSITIVE) +2: 0.092 +3: 0.137 +4: 0.202 +5: 0.274 +6: 0.338 +8: 0.531 +10: 0.652 | 0.80-detected > 20 pp
+    NET level 0.95 seed SD 2.5 | at 0: false POS 0.0283 coverage 0.9433 | median half-width 22.83 pp | P(POSITIVE) +2: 0.069 +3: 0.089 +4: 0.128 +5: 0.164 +6: 0.205 +8: 0.297 +10: 0.409 | 0.80-detected > 20 pp
+    NET level 0.9 seed SD 0.0 | at 0: false POS 0.0592 coverage 0.8830 | median half-width 6.82 pp | P(POSITIVE) +2: 0.248 +3: 0.388 +4: 0.575 +5: 0.704 +6: 0.820 +8: 0.944 +10: 0.990 | 0.80-detected 11.7 pp
+    NET level 0.9 seed SD 1.0 | at 0: false POS 0.0595 coverage 0.8890 | median half-width 8.87 pp | P(POSITIVE) +2: 0.198 +3: 0.298 +4: 0.436 +5: 0.556 +6: 0.677 +8: 0.846 +10: 0.949 | 0.80-detected 14.9 pp
+    NET level 0.9 seed SD 1.5 | at 0: false POS 0.0490 coverage 0.8950 | median half-width 10.92 pp | P(POSITIVE) +2: 0.164 +3: 0.248 +4: 0.350 +5: 0.442 +6: 0.546 +8: 0.744 +10: 0.868 | 0.80-detected 17.8 pp
+    NET level 0.9 seed SD 2.5 | at 0: false POS 0.0485 coverage 0.9010 | median half-width 15.53 pp | P(POSITIVE) +2: 0.123 +3: 0.167 +4: 0.229 +5: 0.286 +6: 0.355 +8: 0.492 +10: 0.634 | 0.80-detected > 20 pp
+
+(2) SENSITIVITY of the registered interval's coverage at a true 0 (seed SD 0 and 1.5 pp), level 0.95 / 0.90; in brackets the true SD of psi, the 0.95 median half-width, and the paired comparison's coverage
+  S1: a their-team-by-arm interaction of 5 pp too; seed SD 0.0 | U 1.0000 / 0.9985 (true SD 1.42, half 7.46; paired 0.9227 / 0.8668) | F 1.0000 / 0.9998 (true SD 2.41, half 12.94; paired 0.9427 / 0.8922) | NET 1.0000 / 0.9998 (true SD 3.40, half 18.28; paired 0.9323 / 0.8732)
+  S1: a their-team-by-arm interaction of 5 pp too; seed SD 1.5 | U 0.9992 / 0.9838 (true SD 2.22, half 8.04; paired 0.9303 / 0.8798) | F 1.0000 / 0.9950 (true SD 3.01, half 13.38; paired 0.9363 / 0.8842) | NET 0.9998 / 0.9928 (true SD 4.88, half 19.29; paired 0.9370 / 0.8782)
+  S2: the team-by-arm interaction at 10 pp; seed SD 0.0 | U 1.0000 / 0.9988 (true SD 1.61, half 7.81; paired 0.9253 / 0.8652) | F 1.0000 / 0.9988 (true SD 2.73, half 13.63; paired 0.9287 / 0.8748) | NET 0.9998 / 0.9990 (true SD 3.82, half 19.19; paired 0.9307 / 0.8765)
+  S2: the team-by-arm interaction at 10 pp; seed SD 1.5 | U 0.9988 / 0.9848 (true SD 2.31, half 8.30; paired 0.9243 / 0.8782) | F 1.0000 / 0.9958 (true SD 3.23, half 13.96; paired 0.9283 / 0.8788) | NET 0.9995 / 0.9918 (true SD 5.10, half 20.06; paired 0.9285 / 0.8790)
+  S3: no team-by-arm interaction; seed SD 0.0 | U 1.0000 / 1.0000 (true SD 1.20, half 7.08; paired 0.9443 / 0.8962) | F 1.0000 / 0.9998 (true SD 2.12, half 12.37; paired 0.9465 / 0.8945) | NET 1.0000 / 1.0000 (true SD 3.00, half 17.36; paired 0.9457 / 0.8920)
+  S3: no team-by-arm interaction; seed SD 1.5 | U 0.9995 / 0.9880 (true SD 2.07, half 7.81; paired 0.9485 / 0.8978) | F 1.0000 / 0.9988 (true SD 2.67, half 12.77; paired 0.9470 / 0.9022) | NET 1.0000 / 0.9942 (true SD 4.49, half 18.48; paired 0.9503 / 0.9010)
+  S4: team main effects of 3 pp (not 10 / 9), interaction 5 pp; seed SD 0.0 | U 1.0000 / 0.9970 (true SD 1.30, half 5.87; paired 0.9450 / 0.8970) | F 1.0000 / 0.9978 (true SD 2.25, half 10.24; paired 0.9483 / 0.9005) | NET 1.0000 / 0.9980 (true SD 3.22, half 14.42; paired 0.9423 / 0.9018)
+  S4: team main effects of 3 pp (not 10 / 9), interaction 5 pp; seed SD 1.5 | U 0.9942 / 0.9673 (true SD 2.21, half 7.47; paired 0.9407 / 0.8900) | F 0.9988 / 0.9805 (true SD 2.94, half 10.84; paired 0.9440 / 0.8950) | NET 0.9985 / 0.9735 (true SD 4.80, half 16.19; paired 0.9363 / 0.8880)
+  S5: team main effects of 3 pp, interaction 10 pp; seed SD 0.0 | U 0.9995 / 0.9925 (true SD 1.61, half 6.11; paired 0.9313 / 0.8755) | F 0.9992 / 0.9878 (true SD 2.80, half 10.82; paired 0.9427 / 0.8930) | NET 0.9995 / 0.9902 (true SD 3.96, half 15.11; paired 0.9330 / 0.8880)
+  S5: team main effects of 3 pp, interaction 10 pp; seed SD 1.5 | U 0.9942 / 0.9597 (true SD 2.37, half 7.18; paired 0.9290 / 0.8830) | F 0.9982 / 0.9802 (true SD 3.27, half 11.39; paired 0.9405 / 0.8938) | NET 0.9960 / 0.9702 (true SD 5.18, half 16.66; paired 0.9300 / 0.8898)
+
+(3) THE TWO REPORTED BOOTSTRAPS, coverage at a true 0 (1000 experiments a cell, 1000 draws each, not the read's 10,000): literal (seeds n-of-n) / Rao-Wu (n - 1 seed draws), level 0.95 then 0.90
+  seed SD 0.0 | U 0.968 / 0.974 ; 0.933 / 0.945 | F 0.971 / 0.975 ; 0.929 / 0.942 | NET 0.968 / 0.973 ; 0.933 / 0.943
+  seed SD 1.0 | U 0.893 / 0.912 ; 0.835 / 0.857 | F 0.941 / 0.953 ; 0.897 / 0.920 | NET 0.925 / 0.942 ; 0.881 / 0.901
+  seed SD 1.5 | U 0.845 / 0.876 ; 0.777 / 0.811 | F 0.938 / 0.946 ; 0.888 / 0.906 | NET 0.880 / 0.903 ; 0.822 / 0.847
+  seed SD 2.5 | U 0.717 / 0.765 ; 0.631 / 0.681 | F 0.845 / 0.870 ; 0.768 / 0.802 | NET 0.781 / 0.807 ; 0.712 / 0.745
+
+(4) THE CONFIRMING CONTRASTS at 720 games a run a panel. REGISTERED LEVEL 0.9 (two-sided; the other level beside it)
+  candidate_U level 0.9 (REGISTERED) seed SD 0.0 pp | true 0: false POSITIVE 0.0003 false NEGATIVE 0.0003 | P(POSITIVE) +2: 0.017 +3: 0.061 +4: 0.222 +5: 0.497 +6: 0.761 | median half-width 4.94 pp | 0.80-detected 6.4 pp
+  candidate_U level 0.9 (REGISTERED) seed SD 1.0 pp | true 0: false POSITIVE 0.0013 false NEGATIVE 0.0015 | P(POSITIVE) +2: 0.041 +3: 0.111 +4: 0.238 +5: 0.422 +6: 0.607 | median half-width 5.10 pp | 0.80-detected 7.4 pp
+  candidate_U level 0.9 (REGISTERED) seed SD 1.5 pp | true 0: false POSITIVE 0.0063 false NEGATIVE 0.0065 | P(POSITIVE) +2: 0.058 +3: 0.123 +4: 0.216 +5: 0.362 +6: 0.484 | median half-width 5.38 pp | 0.80-detected 8.6 pp
+  candidate_U level 0.9 (REGISTERED) seed SD 2.5 pp | true 0: false POSITIVE 0.0217 false NEGATIVE 0.0220 | P(POSITIVE) +2: 0.075 +3: 0.117 +4: 0.178 +5: 0.251 +6: 0.325 | median half-width 7.68 pp | 0.80-detected > 10 pp
+  candidate_U level 0.95 (not registered) seed SD 0.0 pp | true 0: false POSITIVE 0.0000 false NEGATIVE 0.0000 | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.009 +5: 0.052 +6: 0.169 | median half-width 7.28 pp | 0.80-detected 8.9 pp
+  candidate_U level 0.95 (not registered) seed SD 1.0 pp | true 0: false POSITIVE 0.0000 false NEGATIVE 0.0000 | P(POSITIVE) +2: 0.003 +3: 0.008 +4: 0.028 +5: 0.076 +6: 0.178 | median half-width 7.51 pp | 0.80-detected 9.9 pp
+  candidate_U level 0.95 (not registered) seed SD 1.5 pp | true 0: false POSITIVE 0.0003 false NEGATIVE 0.0003 | P(POSITIVE) +2: 0.007 +3: 0.015 +4: 0.041 +5: 0.094 +6: 0.178 | median half-width 7.93 pp | 0.80-detected > 10 pp
+  candidate_U level 0.95 (not registered) seed SD 2.5 pp | true 0: false POSITIVE 0.0037 false NEGATIVE 0.0027 | P(POSITIVE) +2: 0.018 +3: 0.029 +4: 0.051 +5: 0.089 +6: 0.133 | median half-width 11.32 pp | 0.80-detected > 10 pp
+  candidate_F level 0.9 (REGISTERED) seed SD 0.0 pp | true 0: false POSITIVE 0.0003 false NEGATIVE 0.0000 | P(POSITIVE) +2: 0.003 +3: 0.007 +4: 0.027 +5: 0.064 +6: 0.133 | median half-width 8.61 pp | 0.80-detected > 10 pp
+  candidate_F level 0.9 (REGISTERED) seed SD 1.0 pp | true 0: false POSITIVE 0.0005 false NEGATIVE 0.0005 | P(POSITIVE) +2: 0.008 +3: 0.013 +4: 0.036 +5: 0.078 +6: 0.138 | median half-width 8.73 pp | 0.80-detected > 10 pp
+  candidate_F level 0.9 (REGISTERED) seed SD 1.5 pp | true 0: false POSITIVE 0.0018 false NEGATIVE 0.0022 | P(POSITIVE) +2: 0.009 +3: 0.022 +4: 0.051 +5: 0.084 +6: 0.161 | median half-width 8.90 pp | 0.80-detected > 10 pp
+  candidate_F level 0.9 (REGISTERED) seed SD 2.5 pp | true 0: false POSITIVE 0.0057 false NEGATIVE 0.0063 | P(POSITIVE) +2: 0.028 +3: 0.036 +4: 0.064 +5: 0.116 +6: 0.159 | median half-width 9.51 pp | 0.80-detected > 10 pp
+  candidate_F level 0.95 (not registered) seed SD 0.0 pp | true 0: false POSITIVE 0.0000 false NEGATIVE 0.0000 | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.000 +5: 0.002 +6: 0.004 | median half-width 12.69 pp | 0.80-detected > 10 pp
+  candidate_F level 0.95 (not registered) seed SD 1.0 pp | true 0: false POSITIVE 0.0000 false NEGATIVE 0.0000 | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.001 +5: 0.002 +6: 0.007 | median half-width 12.86 pp | 0.80-detected > 10 pp
+  candidate_F level 0.95 (not registered) seed SD 1.5 pp | true 0: false POSITIVE 0.0000 false NEGATIVE 0.0000 | P(POSITIVE) +2: 0.000 +3: 0.000 +4: 0.002 +5: 0.003 +6: 0.014 | median half-width 13.11 pp | 0.80-detected > 10 pp
+  candidate_F level 0.95 (not registered) seed SD 2.5 pp | true 0: false POSITIVE 0.0003 false NEGATIVE 0.0008 | P(POSITIVE) +2: 0.002 +3: 0.001 +4: 0.007 +5: 0.016 +6: 0.027 | median half-width 14.01 pp | 0.80-detected > 10 pp

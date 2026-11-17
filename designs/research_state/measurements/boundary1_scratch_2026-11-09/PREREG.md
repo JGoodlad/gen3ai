@@ -7,7 +7,10 @@ three runs a cell, twelve runs) and 2026-11-12 (Amendment 2, §18: every run typ
 before any launch, game or read; and once more 2026-11-12 (Amendment 4, §18: the early check and every look are
 read from the kit at `1d592e6cd`, while every run still trains at the launch pin), after [1]'s first launch attempt
 and before any look or game; and 2026-11-12 (Amendment 5, §18: a signalled stop that saved nothing is an UNSAVED
-STOP, resumed on the same pin from the checkpoint `latest.txt` names; no re-pin), also before any look or game.
+STOP, resumed on the same pin from the checkpoint `latest.txt` names; no re-pin), also before any look or game;
+and 2026-11-16 (Amendment 6, §18: a DEFAULT with an owner veto for every outcome that went to the owner, the
+plateau continuation's order, stop rule and bound, the candidates' read against P\*, and a torch precondition on
+every resume), during phase 1 and before any look or game.
 LAUNCHED 2026-11-12 17:18 PST** ([1] `rb_b1c_s5101`; that first attempt was stopped
 by a kit bug at its early check and is discarded whole, Amendment 4). **The LAUNCH pin is
 `15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
@@ -362,12 +365,12 @@ agree?". Whether another 72 teams would agree is reported beside every full look
   - The other factor's surviving comparison (W against C, or Br against C) is played at 100M and 75M with `look
     plan --survivor <that factor>`: 9 cells a panel, three runs against three. Its simple effect is REPORTED on
     every view with a 4-df interval (half-width at least 3.06 pp; for breadth, with the net's point estimate), under
-    the outcome `NO-CLASS`, and goes to the owner.
+    the outcome `NO-CLASS`, and goes to the owner (its default: §18 Amendment 6 item 1).
   - Why still no class: at registration two runs against two found a +4 pp effect one time in six, and a class
     there would have been decided by noise. Three against three find it about six times in ten at a seed SD of 1.76
     and four in ten at 2.5 (§11.5), so a class is now arguable; Amendment 1 moves no class rule, and registering
-    one is the orchestrator's decision, by an amendment before the 50M look. No Kakuna read is registered for this
-    case.
+    one is the orchestrator's decision, by an amendment before the 50M look (Amendment 6 item 2 registers none). No
+    Kakuna read is registered for this case.
   - If both factors stop, only the control continues.
 - **Where the 50M look is played.** It gates phase 2, so it is played on the card between the phases (≈ 2 GPU-h,
   §12). On the three agent cores it takes ≈ 27 h with the card idle; that is the fallback, not the plan.
@@ -382,29 +385,32 @@ agree?". Whether another 72 teams would agree is reported beside every full look
     rows name more than one device or backend (a near-tie greedy decision can differ between CPU and CUDA, so a
     look is played on ONE device).
 - **Ledger.** One family a panel, `b1_scratch_h2h_<panel>`; one request a look and panel, `b1_<look>_<panel>`
-  (for example `b1_50m_forum72`); the EQ look's request carries its step (`b1_eq61m_<panel>`) and a survivor
+  (for example `b1_50m_forum72`); the EQ look's request carries its step (`b1_eq71m_<panel>`; this example read
+  `b1_eq61m_<panel>`, the name at the guessed ρ, until Amendment 6 item 5) and a survivor
   look's its factor (`b1_100m_breadthonly_<panel>`); protocol `gen3_eval_protocol_v1_h2h`.
 
 ## 9. What each outcome does
 
 A WIN is not an adoption. It selects which runs continue to the plateau; the plateau candidate against P\* is its
-own registered read (each at its own pin, Kakuna on U, clustered by team).
+own registered read (each at its own pin, Kakuna on U, clustered by team). **§18 Amendment 6 registers the
+continuation (item 3) and that read (item 4).**
 
 **The order of reading, fixed here:**
 
 1. **Nothing acts before the confirming meter.** No row below acts, and no run is resumed past 100M, until the
    Kakuna read's record exists and neither factor's label is UNREAD (§6).
 2. **Owner rows first.** If ANY row marked *owner* applies to either factor, the whole outcome goes to the owner
-   and no other row acts.
+   and no other row acts. **Since Amendment 6 (§18, item 1) that holds for a 72-hour veto window: the owner is
+   notified, and each owner row's DEFAULT acts after the window unless the owner has ruled.**
 3. **Otherwise each factor's own row applies**, and the cell that continues is set by which factors read WIN:
    width alone → W; breadth alone → Br; both → WB; neither → C.
 
 | 100M outcome | action |
 |---|---|
-| **WIN** (for breadth: with the net rule passed) | The factor is in the continuing cell (rule 3). The cell's three runs continue to the plateau (`python -m main.plateau tick`). |
+| **WIN** (for breadth: with the net rule passed) | The factor is in the continuing cell (rule 3). The cell's three runs continue to the plateau (`python -m main.plateau tick`; order, stop rule and bound: §18 Amendment 6 item 3). |
 | **LOSS** | The factor is retired from scratch as specified (this width under this recipe; this corpus at this share). |
 | **NO-USEFUL-GAIN** | **Not shown at this size**: no gain of +4 pp at 100M with three runs a cell. The factor is not carried forward by this experiment. It is never recorded or quoted as retired, nor as "no effect" (§16). |
-| neither factor WIN, no owner row | The control is BOUNDARY-1's lineage; its three runs are the candidates. |
+| neither factor WIN, no owner row | The control is BOUNDARY-1's lineage; its three runs are the candidates, continued as the WIN row's (Amendment 6 item 3). |
 | *owner:* **UNDECIDED**, either factor | With the intervals and no pre-priced option (below). |
 | *owner:* **WIN-NET-NEGATIVE** (breadth) | Not adopted, not retired: reported with its cost and gain. |
 | *owner:* both WIN and the interaction reads **ANTAGONISM on N** | The choice of cell. |
@@ -412,10 +418,14 @@ own registered read (each at its own pin, Kakuna on U, clustered by team).
 | *owner:* a **STOP-HARM** at 50M (§8) | No class for either factor; the survivor's reported simple effect. |
 | *owner:* INCONCLUSIVE, or any §10 hazard | No adoption. |
 
+**Every *owner* row above has a default since Amendment 6** (§18, item 1's table): UNDECIDED width keeps the
+lineage at 128, UNDECIDED breadth keeps it on the pool, and no default adopts a factor that did not read WIN or
+retires one that did not read LOSS. The owner's veto is the 72-hour window.
+
 **No extension is registered (Amendment 1).** The registration priced ONE option after an UNDECIDED: a third seed in
 every arm (≈ 104 GPU-h), read as a second stage. That seed is now in the design from the start, so the option is
 spent and the three-run class is read ONCE. An UNDECIDED at three runs goes to the owner with both factors'
-intervals. A fourth seed an arm would cost ≈ 104 GPU-h more; that figure is quoted for scale, not registered, and
+intervals (and, since Amendment 6, with item 1's default). A fourth seed an arm would cost ≈ 104 GPU-h more; that figure is quoted for scale, not registered, and
 such a step would need its own amendment (seeds, a fresh scan, the kit's seed table, and its error rates as a
 two-stage rule) before any of it is played.
 
@@ -516,6 +526,13 @@ two-stage rule) before any of it is played.
   the owner with the drawn shares. No cell is replayed at another turn limit and no drawn game is dropped or
   rescored, except by an amendment written before the replay (after the first look, the owner's: header).
 - **No game is excluded for its outcome.** No panel, cell, seed or look is added after a look is read.
+- **Every "goes to the owner" in this section has a default since Amendment 6** (§18, item 1's last row): no
+  adoption, no retirement, no class, no game replayed or added, a second loss not replaced; whether the remaining
+  phases and looks run is the orchestrator's recorded decision, and nothing of BOUNDARY-1's launches before it.
+- **HOLD before every resume (Amendment 6 item 8): the run's own torch.** A resume's `--dry-run` must print `run
+  torch   : 2.8.0+cu126` and an `interpreter :` line at torch 2.8.0+cu126; `--allow-torch-switch` is never typed.
+  A save under another torch appends a second pin entry, and the guard above then refuses the run at every later
+  look, with no replacement cause to cover it.
 - **HOLDs before launch** (the registration is re-read, not launched, if either holds): X60-T reads
   ADOPT-CANDIDATE (human teams would then enter the base of every run); the owner changes `ent_coef` after X67.
   **Both are closed (Amendment 2).** X60-T read NO-TRANSFER, final (`75abf79d8`, 2026-11-11): the HOLD fired only
@@ -699,6 +716,8 @@ this replaces were built on a guessed ρ of 1.65: ≈ 311 GPU-h (270–340) and 
 | Kakuna, 25,920 games | — | ≈ 180 lane-h | ≈ 60 h on 3 lanes |
 | **to the decision** | **≈ 281 of training (210–281) + ≈ 20 of starts + ≈ 8 of looks ≈ 309** | | **≈ 15.4 days** |
 | after a WIN: three candidates to the plateau | ≈ 154 for a wide cell, ≈ 111 for a narrow one (GUESS) | ≈ 45 lane-h | ≈ 6.4 / 4.6 days |
+| Amendment 6 item 3's bound: the cell's three runs in 50M legs, at most four a run (to 300M) | at most ≈ 123 narrow, ≈ 171 wide (GUESS), + ≈ 2 / ≈ 3 of warm starts | the plateau ticks (cost UNVERIFIED) | at most ≈ 5.2 / ≈ 7.3 days |
+| Amendment 6 item 4: the candidates' read against P\*, 8,640 games | — | ≈ 60 lane-h | ≈ 20 h on 3 lanes |
 | not registered, for scale: a fourth seed an arm | ≈ 94 | ≈ 60 lane-h | ≈ 3.9 days |
 
 - **The narrow figure is X26's measured hours, and it is the central one**: `rb_x26_s2601` took 4.40 / 9.48 /
@@ -730,7 +749,9 @@ this replaces were built on a guessed ρ of 1.65: ≈ 311 GPU-h (270–340) and 
   estimate) are inside both pilots' rates and not in X26's.
 - **After a WIN** the cell's three runs go on to the plateau: X26 took 36.95 GPU-h from 100M to its plateau at
   280M (56.5 − 19.55), so three runs cost ≈ 111 GPU-h in a narrow cell and ≈ 154 (× ρ) in a wide one. A GUESS
-  either way: nothing says this lineage plateaus near 280M.
+  either way: nothing says this lineage plateaus near 280M. Amendment 6 item 3 bounds the continuation at 300M a
+  run (the same rate: at most ≈ 123 / ≈ 171 GPU-h) and item 4 prices the read against P\* (the row's ≈ 45 lane-h
+  priced the three candidates alone; with P\* re-played it is ≈ 60).
 - **Figures elsewhere that were priced at the guessed ρ and are not edited:** §9's and Amendment 1's "≈ 104 GPU-h"
   for a seed an arm (≈ 94 at the measured ρ: 2 × 19.55 + 2 × 27.21), and Amendment 1's bill (twelve runs cost
   ≈ 94 GPU-h more than eight, ≈ 281 against ≈ 187; it was written as ≈ 104 more than ≈ 207). A look holds 2.25
@@ -826,7 +847,8 @@ refuses a GPU launch typed from a shell above nice 10). **`<PIN>` in every comma
   launch" (a phase-2 dry run reads "RESTART of models/<run>"). Re-issuing a phase-2 command on a run that already
   reached 100M exits 0 and trains nothing. On a phase-2 launch the launcher's banner reads "`--model` launch
   (fork)"; that wording is the launcher's for every `--model` command. The dry run's `role : RESTART`, the child's
-  `[Recipe] --model launch (restart)` lines and the lineage sidecar are what say it is the same run.
+  `[Recipe] --model launch (restart)` lines and the lineage sidecar are what say it is the same run. **Every
+  resume's dry run must also show the run's own torch (§10's HOLD; Amendment 6 item 8).**
 - **After every launch** (§10's early check; no lease, seconds), once the run has its first checkpoint, from a
   clean checkout of the KIT commit (Amendment 4), with `git -C <main checkout> rev-parse HEAD` and `python -m utils.core_split show`
   noted at the launch itself; all three go into §18:
@@ -904,7 +926,9 @@ own tests.)
   all four.
 - **Width is read under the 128-wide recipe alone**: the learning rate, batch and epochs are production's, tuned
   at 128, and `ent_coef` 0.0125 was screened at 128 only. A LOSS or a NO-USEFUL-GAIN is about 256 under that recipe, not about width with a
-  recipe of its own.
+  recipe of its own. **And the factor is "width plus the learning-rate controller's response to it"** (Amendment
+  6 item 7, REPORTED): at 50M the adaptive controller's median rate is 1.005e-4 on all four wide runs read and
+  1.74e-4 to 2.5e-4 on the four narrow ones, so no class separates the trunk's width from the step size.
 - Nothing about other corpora or shares than `n1_proc_v1` at 0.5 on both sides.
 - No pp against Kakuna from a pp in-house: the mapping is unmeasured.
 - **Kakuna cannot confirm a breadth gain much below +4 pp** (it finds a true +2 pp on forum72 one time in four,
@@ -919,6 +943,12 @@ own tests.)
 - Nothing from the team bootstrap (§5.5) beyond "the class would, or would not, survive another 72 teams", and
   that only as an upper bound.
 - Breadth's read on H, P72, U and N is contaminated by its own training teams and is never quoted as generalisation.
+- **A default (Amendment 6 item 1) is not a finding.** A factor a default leaves out is unresolved at this size,
+  not retired and not "no effect"; it keeps its class and interval in every quote.
+- **Nothing from the candidates' read against P\* beyond its printed class and interval** (Amendment 6 item 4).
+  SPANS-ZERO is not "equal to P\*": the read finds a true +4 pp about one time in five. A NOT-PLATEAUED
+  candidate is not a plateau, and `TIER1_PLATEAU` alone names a candidate, not the two-tier plateau of
+  `designs/endstate/design_evaluation.md` §8.3.
 
 ## 17. Deviations from the draft, and the registrar's choices (each flagged for the orchestrator)
 
@@ -1056,6 +1086,45 @@ and of the code):
     step are judged beside the resumed child's rows at the same steps. That can only add a fire. The sentinel's
     FATAL line is not the non-finite FATAL line the read looks for, so it does not fire by itself (as the read of
     [1]'s stopped attempt showed: PASS, Amendment 4 item 3).
+
+**Amendment 6's choices** (the registrar's, each flagged for the orchestrator; §18 Amendment 6):
+
+52. **The veto window is 72 hours, and its clock starts at the COMPLETE outcome** (the look's verdict and the
+    Kakuna record), with a heads-up at the 100M look that starts no clock. The decision asked for "N days"; three
+    costs the card nothing, since other queued work runs meanwhile.
+53. **The defaults are per factor**, by one principle (a default never adopts without a clean WIN and never
+    retires without a clean LOSS), where the queue proposal priced every owner row as "neither, on the narrow
+    side". They agree on UNDECIDED; they differ when one factor reads a clean WIN beside the other's owner row:
+    here that WIN's cell continues.
+54. **The ANTAGONISM default is the least certain choice.** It picks the cell from three forum72 point estimates
+    whose intervals are at least 3.06 pp wide a side, so near a tie it is decided by noise; a tie goes to the
+    narrow cell. The alternatives were "always Br" (cheapest, blind to the data) and no default (the card's
+    continuation waits on the owner).
+55. **A mid-flow INCONCLUSIVE goes to the ORCHESTRATOR, with nothing launched until its record**, where the other
+    rows act by themselves: continuing phase 2 after a lost run would buy a 100M look that is already
+    INCONCLUSIVE (unequal runs an arm). **The STOP-HARM default acts with no Kakuna record**, because §8
+    registers no Kakuna read for that case; §9 rule 1 is read as not applying there.
+56. **A run stops on Tier 1 alone, per run, at leg ends**, with Tier 2 REPORTED. The cycle monitor and the panel
+    are not conditions because §9 named Tier 1's tool alone and the tool itself calls a Tier-1 plateau a
+    candidate. Legs of 50M and a 300M bound follow X26's 280M; the 1.25 cap on realised hours is a
+    round figure, not a measurement.
+57. **A NOT-PLATEAUED run is still read against P\***, tagged, where it could have been dropped: dropping would
+    leave fewer candidates and a read chosen by its own data.
+58. **The read against P\* uses `b1_kakuna` three against one, and it is WEAK** (a true +4 pp reads POSITIVE
+    about one time in five; four in five only from 6.4 to 8.6 pp). It was chosen because it is the registered
+    rule, unchanged, its error is on the safe side, and the lineage question is the one a re-base needs. The
+    alternative, a files-fixed team-clustered class as §9's "clustered by team" and x26c's precedent suggest,
+    would be sharper (item 4's figures) and has no existing rule for three candidates; it is REPORTED. Registering it
+    as the class would need a new rule and its own simulation, by an amendment before the read is planned.
+59. **The read's spec file is not committed**, only its fixed blocks; the cell, the stop steps and the pin are
+    filled by a records commit. Which candidate's file a POSITIVE would make the baseline is not registered.
+60. **Lane priority is stated in THIS file** (item 6) rather than left to X70's GO, because the read that would
+    be delayed is BOUNDARY-1's. X70's PREREG is not edited.
+61. **The learning-rate note is REPORTED and changes nothing** (item 7), though a 2 × difference in step size
+    rides on the width contrast. Holding the rate fixed would be a different experiment; four runs were unread
+    when it was written and the cause of the wide runs' identical median was not looked for.
+62. **The torch precondition is a HOLD read off the dry run**, not a new guard in the kit: the launcher at main
+    already refuses a switch, and the kit commit does not move.
 
 ## 18. Amendments and pre-launch records
 
@@ -1434,13 +1503,232 @@ one operational failure and says what follows it.
    (`src/main/train/signals_under_compile_lock_test.py`, `src/main/launcher/unsaved_stop_test.py`), which do
    not run the pin's code.
 
+### Amendment 6 (2026-11-16): a default for every outcome that went to the owner; the plateau continuation; the candidates' read against P\*
+
+Written during phase 1 (eight of the twelve runs complete at 50M, [9] `rb_b1c_s5110` training, [10] to [12] not
+launched), before the 50M look and every other look, on the orchestrator's decision (the queue proposal
+`~/.cache/gen3ai/handoffs/post_b1_queue_proposal_2026-11-16.md`, D2 and D3: the owner has given the orchestrator
+full discretion and has little time, and the likeliest unclear outcome had no default). **Blind to every score: no
+look has been planned or played, no head-to-head game between BOUNDARY-1 runs and no Kakuna row exists.** What WAS
+read to write it, none of it a score: the 50M look-readiness review
+(`~/.cache/gen3ai/handoffs/b1_look50_readiness_2026-11-16.md`), which read the eight complete runs' guard records
+(early checks, K9(b), pin histories, torch) and `python -m main.dose`'s learning-rate medians (item 7); and three
+runs' `metadata.json` pin histories (item 8). **It moves no bar and no class**: the +4 pp bar, the −2 pp harm stop,
+the 1.76 pp floor, the 90 % level, the 0.005 pp band, the views, the classes and their order, the net rule, the
+panels, the pairs a cell, the seeds, the run names, the argvs, the Kakuna rule, the K9(b) ceilings and reader,
+§10's guards as worded and its two replacement causes are as they were; §5 and §6 are untouched. **It does touch §8
+and §9**, which the header allows before the first look: §8's printed request name (item 5), and in §9 what
+follows each *owner* row (item 1), the plateau continuation (item 3) and the read §9 named and never registered
+(item 4). The launch pin and the kit commit do not move.
+
+1. **Every *owner* row now has a DEFAULT, and the owner keeps a veto.** Until this amendment an outcome on an
+   owner row stopped everything until the owner ruled, with no option priced (§9).
+   - **The veto window.** When an *owner* row of §9, or an owner clause of §8 or §10, applies, the orchestrator
+     notifies the owner with the outcome, the row and the default it triggers. **The default acts 72 hours after
+     that notification unless the owner has ruled otherwise.** For a 100M outcome the notification that starts
+     the clock is the one sent when the outcome is complete (the 100M look's verdict and the Kakuna record, §9
+     rule 1); a heads-up with the in-house classes goes out when the 100M look is read and starts no clock.
+     Nothing of BOUNDARY-1's acts inside the window (§9 rule 2 holds for that long), and the card and the lanes
+     take other queued work meanwhile: nothing waits on the owner. A ruling inside the window replaces the
+     default and is recorded in slot S9 with its date. A ruling after it governs only what is not yet spent (a
+     leg not launched, a game not played) and is recorded as written after data (header).
+   - **What a default may do.** It never puts a factor in the continuing cell unless that factor read WIN with
+     the net rule passed and no Kakuna contradiction, and it never records a factor as retired unless it read
+     LOSS with no Kakuna contradiction. A factor it leaves out keeps its class, its interval and its label in
+     every quote. It adds no game, seed, panel, look or class, and it changes no class already read. After the
+     window each factor's own row or default applies, and the continuing cell is §9 rule 3's over the factors
+     that are IN the cell.
+
+   | *owner* row | DEFAULT, acting after the veto window |
+   |---|---|
+   | **UNDECIDED, width** (§9) | **The lineage stays at width 128.** Width is not in the cell. It is recorded UNDECIDED with its interval: not retired, not "no effect", not a null (§16). |
+   | **UNDECIDED, breadth** (§9) | **Pool only.** Breadth is not in the cell. Recorded the same way. |
+   | WIN-NET-NEGATIVE, breadth (§9) | As registered: not adopted, not retired, reported with its cost and gain. Breadth is not in the cell. |
+   | both WIN and ANTAGONISM on N (§9) | The cell is read off the 100M look's `simple_effects.<a>_vs_<b>.forum72.estimate_pp` (forum72 is the one panel no arm trained on): **WB** if `WB_vs_W` and `WB_vs_Br` are both above +0.005 pp; otherwise **W** if `Br_vs_W` is below −0.005 pp; otherwise **Br** (a tie goes to the narrow, cheaper cell). Both factors stay recorded WIN, with the interaction's class beside them. |
+   | IN-HOUSE-ONLY (§6) | The factor is not in the cell and is not retired. Its WIN is quoted only with the label. |
+   | KAKUNA-ONLY (§6) | The factor is not in the cell. Its in-house class stands in every quote, with the label, but an in-house LOSS is NOT acted on as a retirement. The POSITIVE contrast is recorded as a lead for a later registration. |
+   | an UNREAD that cannot be finished (§6) | Declared by the orchestrator in slot S9 with the cause, and only after `python -m main.reads run` was re-issued and still could not finish the read. The in-house classes then act as they would under UNCONFIRMED (a WIN) or NO-CONTRADICTION (anything else), and every quote carries UNREAD: decided in-house alone. |
+   | a STOP-HARM at 50M (§8, §9) | §8 is unchanged: the stopped factor's ON arms get no phase 2, no class is read for either factor, and the survivor's simple effect is REPORTED under `NO-CLASS`. Default: no factor is adopted or carried forward from a `NO-CLASS`; the survivor is not retired and is not continued past 100M; **the control's three runs are the candidates**. §8 registers no Kakuna read for this case, so §9 rule 1 has no record to wait for: the default acts once the survivor look's verdict exists and the window has passed. |
+   | INCONCLUSIVE; any §10 hazard; a look made INCONCLUSIVE by a run lost to its lever, by a K9(b) VOID or by the drawn-share rule; a second loss (§10) | No adoption, no retirement, no class. No game is replayed, dropped, rescored or added, and a second lost run is not replaced: it is treated as lost to its lever. **Whether BOUNDARY-1's remaining registered phases and looks still run is the ORCHESTRATOR's decision**, written into slot S9 with its reason; until that record exists no further BOUNDARY-1 run is launched and the card takes other queued work. If the 100M look itself is INCONCLUSIVE, the control's runs that reached 100M and pass §10's guards are the candidates. |
+
+   §5.5's `class_moves` "goes to the owner beside the outcome and acts on nothing": it is a notification and needs
+   no default.
+2. **What this amendment does NOT register.**
+   - **No fourth seed.** An UNDECIDED at three runs is the result (§9's "no extension" stands; ≈ 94 GPU-h at the
+     measured ρ stays a figure for scale).
+   - **No class for the survivor after a STOP-HARM.** §8 left that to the orchestrator "by an amendment before
+     the 50M look"; none was asked for here, so the hook stays open until the 50M look is played and closes then.
+   - **Not fewer than three continuing runs** (§17 item 21): the cell's three continue.
+   - **No second replacement seed**, and no new look, panel or view.
+3. **The plateau continuation: its order, stop rule and bound.** §9 said the continuing cell's runs "continue to
+   the plateau (`python -m main.plateau tick`)" and nothing more.
+   - **When.** After §9 rule 1 holds (the Kakuna record exists and no label is UNREAD; after a STOP-HARM, item
+     1's row), after `python -m main.reads plan` has copied the 100M finals (§6), and after the veto window if an
+     owner row applied. With no owner row it starts at once: it needs no further decision.
+   - **Which runs.** The three runs of the continuing cell (W, Br, WB or C), each in its own folder, on the launch
+     pin. No fork, no new run name, no new seed, no lever or recipe flag.
+   - **Before the first leg.** `python -m main.plateau tick models/<run>` on each of the three at 100M plays the
+     due Tier-1 checks on the 10M grid (60M against 10M, up to 100M against 50M), with the tool's defaults and
+     none typed: Δ = 10M, lag 5, slack 500,000; H0 0.50 / H1 0.52, α = β = 0.05, 40-pair batches, cap 6,000
+     pairs. A run that already reads `TIER1_PLATEAU` is not resumed: its candidate is its 100M final.
+   - **A leg** is one resume of 50,000,000 steps by the registered resume form (§14), with the next multiple of
+     50,000,000 as `--steps` (150M, 200M, 250M, 300M): `python -m main.launcher --restart-interval-hours 6
+     --pin-commit <PIN> --model models/<run>/final_model.zip --steps <target> --device cuda --log-level periodic`,
+     nothing else typed, from a shell at nice ≤ 10. Its `--dry-run` comes first and must read `role : RESTART of
+     models/<run>` and pass item 8's precondition.
+   - **Order.** Round-robin in the launch block's order within the cell: one leg of every run still continuing
+     before any run's next leg, so a stop for any cause leaves the cell's runs within one leg of each other.
+   - **No signalled stop.** A leg ends by reaching its step (Amendment 5's hazard), and the stop rule is read
+     only at leg ends.
+   - **After each leg:** `python -m main.plateau tick models/<run>`, then `python -m main.plateau status
+     models/<run> --json`. The ticks run on the agent cores in rule 5b's shape (CPU, the tool's default), or with
+     `--device cuda` under the GPU lease between legs; which, and every check's verdict, go to slot S9. The
+     status is read only when no check at or below the leg's end step is still due; a `MISSING_NODE` check is a
+     HOLD for the orchestrator, never played against a substitute.
+   - **The stop rule, per run.** A run STOPS at the first leg end where `tier1.status` is `TIER1_PLATEAU` (the
+     newest decided check FLAT, and the check 10M before it FLAT). Its candidate is its `final_model.zip` at
+     that leg end. Every other status (`CLIMBING`, `FLAT_ONCE`, `CONTINUE`, `NOT_YET`) takes the next leg. No run
+     is launched on its next leg before its status is read; if none is ready, the card takes other queued work.
+     The candidates may therefore stand at different steps; the read takes each at its own.
+   - **Tier 2** (`python -m main.cycle_monitor tick`: the cycle monitor and the panel) is REPORTED beside each
+     candidate and stops nothing. Tier 1 alone names a CANDIDATE, the tool's own word, and a candidate is what
+     item 4 reads.
+   - **The bound.** At most four legs a run (300M), twelve in the cell. At §12's rate (X26: 36.95 GPU-h from
+     100M to 280M, so ≈ 10.3 GPU-h a narrow leg and ≈ 14.3 a wide one) that is at most ≈ 123 GPU-h of training
+     in a narrow cell and ≈ 171 in a wide one, plus ≈ 2 / ≈ 3 GPU-h of warm starts (two starts a narrow leg,
+     three a wide one, 251 s each: slot S8). A GUESS, as §12's is. The bound binds in STEPS. If the realised
+     training hours reach 1.25 times the priced figure (≈ 154 / ≈ 214 GPU-h) before the legs are done, no
+     further leg is launched and the rest goes to the orchestrator.
+   - **At the bound.** A run at 300M without `TIER1_PLATEAU` is tagged **NOT-PLATEAUED**. It is still read
+     (item 4), every quote of it carries the tag, and training it further needs a new amendment.
+   - **Checkpoints.** No periodic checkpoint of a continuing run is thinned before item 4's record exists: the
+     ticks need the 10M nodes, and a node file that changed is a refusal.
+   - **UNVERIFIED:** what a tick costs on the CPU (a check is at most 6,000 pairs; no rate is measured for a
+     BOUNDARY-1 run); that main's `tick` loads a launch-pin checkpoint (`tick --dry-run` on the first run is the
+     check, and a refusal is a HOLD); and that this recipe plateaus by 300M at all (X26 read its plateau at
+     280M at `ent_coef` 0.05; nothing says this lineage does).
+4. **The candidates' read against P\*, registered.** §9 named it ("its own registered read (each at its own pin,
+   Kakuna on U, clustered by team)") with no spec, rule or power figure.
+   - **Meter and games.** Kakuna (`metamon:Kakuna`) on H `heldout72_hpfix`, F `forum72` and P72 `p72` (U is the
+     three at equal weight), unit seeds 0–35: 720 games a model a panel, as in §6. Four models: the cell's three
+     candidates (arm `cand`: `final` refs, `min_step` each run's stop step, `quiet_s` 300) and P\* (arm `pstar`),
+     the named baseline `pstar_plateau` of `designs/baselines.json`
+     (`models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip`, sha256
+     `814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed`, a `pinned` ref). **P\* is re-played in
+     this read**, so the four models meet the same deals; no earlier Kakuna number of P\* is reused. 8,640
+     games, ≈ 60 lane-h, ≈ 20 h on three lanes at §12's rate.
+   - **The rule** is `b1_kakuna`, unchanged (§6's interval: both clusterings, the wider decides, Satterthwaite
+     df, two-sided 90 %, the 0.005 pp boundary, INCONCLUSIVE under 95 % of a panel's games or over a quarter
+     timed out). **CONFIRMING contrast: `candidate_U`, the mean of the three candidates minus P\*, on U.**
+     POSITIVE (lo > 0), NEGATIVE (hi < 0), SPANS-ZERO. REPORTED, never a class: `candidate_F` (forum72 alone),
+     each candidate's own rate on each panel, the two bootstraps, and a FILES-FIXED figure, the contrast's
+     team-clustered standard error from the record's `v_t_pp2` with no seed term ("these four files on other
+     teams").
+   - **What the class does.** The read adopts nothing by itself. POSITIVE: this lineage's plateau is above P\*
+     on unfamiliar teams, and the orchestrator MAY re-base `pstar_plateau` with `python -m main.baselines set …
+     --reason` citing the record; which candidate's file would become the baseline is not registered here.
+     SPANS-ZERO: P\* stands, and the result is never quoted as "equal to P\*" or "no gain". NEGATIVE: P\* stands.
+   - **Power, said plainly: the read is WEAK and conservative.** P\* is ONE run, so the rule charges it the
+     candidates' pooled seed variance on 2 degrees of freedom. `kakuna_oc_pstar.py` in this folder is the
+     registration's simulation (`kakuna_oc.py`, imported) with the arms table and the contrast changed: 4,000
+     experiments a cell, seed 20261109, the registration's team model (our-team SD 10 pp, their-team SD 9 pp,
+     team-by-arm 5 pp); its log is `kakuna_oc_pstar.log`. For `candidate_U` at the registered level:
+
+     | seed SD | false POSITIVE at 0 | coverage at 0 | median half-width | P(POSITIVE) at +4 pp | at +6 pp | at +8 pp | found four times in five from |
+     |---|---|---|---|---|---|---|---|
+     | 0 pp | 0.0003 | 0.9995 | 4.94 pp | 0.22 | 0.76 | 0.98 | 6.4 pp |
+     | 1.0 pp | 0.0013 | 0.9972 | 5.10 pp | 0.24 | 0.61 | 0.88 | 7.4 pp |
+     | 1.5 pp | 0.0063 | 0.9865 | 5.38 pp | 0.22 | 0.48 | 0.76 | 8.6 pp |
+     | 2.5 pp | 0.0217 | 0.9560 | 7.68 pp | 0.18 | 0.33 | 0.49 | above 10 pp |
+
+     A true +4 pp over P\* reads POSITIVE about one time in five. The read finds a gain reliably only from
+     about 6.5 to 8.5 pp, and it almost never errs the other way (a false POSITIVE in at most 2.2 % against a
+     nominal 5 %). `candidate_F` is weaker still: at +4 pp it reads POSITIVE in 0.03 to 0.06, with a half-width
+     of 8.6 to 9.5 pp. The seed SD of a BOUNDARY-1 cell at its plateau is unknown.
+   - **Why this rule, and what it cannot say** (flagged, §17 item 58). The rule asks whether this LINEAGE's
+     plateau is above P\*'s lineage, and with one P\* run no rule answers that tightly. The narrower question,
+     "are these three files above this P\* file", is the REPORTED files-fixed figure: at the simulation's team
+     model the contrast's true SD with no seed spread is 1.29 pp (the log's "true SD of psi"). No existing rule
+     classes it for three candidates (x26c's `anchor_trajectory` is one file against one). The log's section
+     (1b), a paired composition that is NOT registered, shows the size of what a different variance rule would
+     buy: a median half-width of 2.87 pp and P(POSITIVE) at +4 pp of 0.69 at a seed SD of 0, and 3.97 pp and
+     0.49 at 1.0 pp.
+   - **Guards.** A candidate enters the read only if its pin history is still ONE entry from step 0 (item 8)
+     and its K9(b) read through its stop step is not VOID (§10's rule, by the kit's `python -m main.b1.look
+     check-run`; **UNVERIFIED:** that the kit's check reads a run past 100M). A candidate that fails is
+     REPORTED and not read. With two candidates the rule still reads, on 1 degree of freedom; with one it
+     refuses and no class is read. **UNVERIFIED:** nothing was simulated below three candidates.
+   - **The spec is not written today**: the cell, the stop steps and the pin do not exist. A records commit
+     writes `read_spec_plateau_pstar.json` after the last leg and before `plan`, filling ONLY the three run
+     names, their stop steps and `pin`. Everything else is fixed here: `anchor {"kakuna": {"opponent":
+     "metamon:Kakuna", "teamsets": ["heldout72_hpfix", "forum72", "p72"], "unit_seeds": "0-35", "models": [the
+     four]}}` and `decision {"rule": "b1_kakuna", "params": {"group": "kakuna", "contrasts": {"candidate_U":
+     {"arms": {"cand": 1.0, "pstar": -1.0}, "panels": ["heldout72_hpfix", "forum72", "p72"]}, "candidate_F":
+     {"arms": {"cand": 1.0, "pstar": -1.0}, "panels": ["forum72"]}}, "reported_contrasts": ["candidate_F"],
+     "nets": {}, "level": 0.9, "games_per_panel": 720, "min_games_frac": 0.95, "bootstrap": {"draws": 10000,
+     "seed": 20261109}}}`. A draft of exactly this shape, with the C cell standing in, passes `python -m
+     main.reads check-spec --pin-pending` at main `bd0a49871` (2026-11-16). It was not checked at the launch
+     pin and it is not committed.
+   - **The pin** is the launch pin first, so the candidates play on the code they trained on. **UNVERIFIED:**
+     that P\* (config version 158, commit `9c0334890` in the registry) loads at the launch pin; `check-spec` and `plan` are
+     the check. If it does not, the pin is the oldest main commit at which all four load, with the reason in
+     slot S9. §9's "each at its own pin" is read as: each file is loaded through its own recorded config
+     version by the read's ONE pin, which is how the x26c read loaded P\* beside its continuation.
+   - **Playing it.** `python -m main.reads plan` once the last candidate exists, then `run --lane anchor
+     --concurrency 3`, under item 6's priority; `record` writes the class.
+5. **§8's printed request name, corrected: cosmetic.** §8's Ledger bullet gave `b1_eq61m_<panel>` as the EQ
+   look's request, the name at the guessed ρ. The EQ step is 71,000,000 (slot S3), so the name is
+   `b1_eq71m_<panel>`. The kit builds the name from `--eq-step`, so no request, family or game changes; only
+   the example in the text did.
+6. **Lanes: BOUNDARY-1's Kakuna read comes first, and that priority is stated HERE.** X70's three crosses are
+   priced at ≈ 53 CPU lane-h on the same three anchor lanes (its PREREG §11). From `plan`'s copy of the twelve
+   finals until the Kakuna record exists, the three anchor lanes on the agent cores are this read's and no other
+   read's CPU games share them. X70's crosses go on the card, as its own §12 option A already says (≈ 1.3
+   GPU-h; **UNVERIFIED:** that rate, no cross was played on the card), or wait for the record. The same
+   priority holds while item 4's read plays. The plateau ticks of item 3 claim no priority and yield to either
+   read. X70's PREREG is not edited by this amendment: its GO names which of the two it takes.
+7. **REPORTED, no statistic moves: the width factor is "width plus the learning-rate controller's response to
+   it".** `python -m main.dose` on the eight runs complete at 50M (2026-11-16, each at ≈ 50.05M steps, effective
+   batch 65,536 and 10 epochs on every run) reads these median learning rates: C 1.736e-4 (`rb_b1c_s5101`) and
+   2.083e-4 (`rb_b1c_s5102`); Br 2.5e-4 (`rb_b1br_s5105`) and 2.083e-4 (`rb_b1br_s5106`); and **1.005e-4 on all
+   four wide runs** (`rb_b1w_s5103`, `rb_b1w_s5104`, `rb_b1wb_s5107`, `rb_b1wb_s5108`). The rate is the
+   KL-adaptive controller's, and the registered argvs differ in the lever flags alone, so the gap is the
+   controller's response to the wider trunk: the wide runs train at 0.40 to 0.58 of the narrow runs' rate. A
+   width WIN, LOSS, NO-USEFUL-GAIN or UNDECIDED is therefore about "256 wide, at the rate the controller chose
+   for it, under the recipe tuned at 128"; it does not separate the trunk's width from the step size. This
+   sharpens §16's width bullet and changes no view, bar, class or statistic. The twelve runs' medians at 100M
+   are REPORTED beside the 100M outcome. **UNVERIFIED:** why all four wide runs sit at exactly 1.005e-4 (a
+   bound of the controller is one reading; it was not checked); the four runs not yet at 50M are unread.
+8. **A precondition on every resume of a BOUNDARY-1 run: the run's own torch, 2.8.0+cu126.** It covers phase
+   2's twelve resumes, every form (b) or (c) resume, and every leg of item 3.
+   - **Why.** The pin's `src/agents/model/snapshot.py` (`_update_pin_history`) extends a run's last pin entry
+     only while BOTH the commit and the torch version are unchanged. A save under another torch appends a
+     second entry, and §10 then refuses the run at every later look (ONE pin entry from step 0; one torch
+     version across a look). That is neither of §10's two replacement causes: the run would be lost to an
+     operator error with no remedy registered.
+   - **What holds today.** `rb_b1c_s5101`, `rb_b1w_s5103` and `rb_b1wb_s5108` each carry one entry: the launch
+     pin, `first_step` 0, torch `2.8.0+cu126` (read 2026-11-16); the look-readiness review reports the same of
+     all eight complete runs. `gen3ai_torch28` carries 2.8.0+cu126. Main's launcher
+     (`src/main/launcher/torch_runtime.py`) requires the run's recorded torch on every `--model` launch, by
+     release and CUDA build, and refuses with `FATAL_CONFIG` unless `--allow-torch-switch` is typed.
+   - **The precondition**, checked on the `--dry-run` that already precedes every resume (§14): it prints `run
+     torch   : 2.8.0+cu126`, an `interpreter :` line at torch 2.8.0+cu126, and `role : RESTART of
+     models/<run>`. `--allow-torch-switch` is never typed on a BOUNDARY-1 run. Any other reading is a HOLD for
+     the orchestrator and nothing launches. The shared environment is not updated while a BOUNDARY-1 run can
+     still be resumed.
+9. **Records.** Slot S9 holds every owner notification with its time and text, every ruling, every default that
+   acted, each leg's command, dry run, realised GPU-hours and plateau status, the ticks' device and verdicts,
+   and the plateau read's spec commit and record.
+
 ### Pre-launch and launch records
 
 Written here, each before the launch or look it gates: the re-pin; §13's
 results; ρ, §12 rewritten from it, and the EQ step; which block launched (phased or fallback); for EVERY launch its
 date, run, `git rev-parse HEAD` of the main checkout, `python -m utils.core_split show`, and the early check's
 JSON once the run has its first checkpoint; every FATAL, resume and replacement with its cause; every K9(b) record
-(Amendment 2); every start failure and its retry (Amendment 3); every unsaved stop and its resume (Amendment 5).
+(Amendment 2); every start failure and its retry (Amendment 3); every unsaved stop and its resume (Amendment 5);
+every owner notification, ruling and default, each continuation leg with its plateau status, and the plateau
+read's spec commit (Amendment 6, slot S9).
 
 **The re-pin record (2026-11-12; §18's single re-pin, steps 1 to 6).** Written by the agent the orchestrator
 named, on CPU (no GPU lease), in the commit after the launch pin. It launches nothing and fills none of the slots
@@ -1526,7 +1814,8 @@ main's commits had not run on the card when the re-pin was written (Amendment 2 
 check and item 3's compile cell were their first card runs, and both passed (slots S4 and S5 below).
 
 **Slots only the card can fill (all at the launch pin). S1 to S7 were filled on 2026-11-12, every one green; their
-records follow the table. S8 is written at and after the launch.**
+records follow the table. S8 is written at and after the launch. S9 (Amendment 6) is OPEN: nothing is written
+in it yet.**
 
 | slot | what | from |
 |---|---|---|
@@ -1538,6 +1827,7 @@ records follow the table. S8 is written at and after the launch.**
 | S6 | §13 item 5's record: the cross-width cell | one played cell |
 | S7 | §13 item 2 with the card visible, from a shell at nice ≤ 10: four dry runs, every preflight green | the leased agent |
 | S8 | §13 items 8 and 9; the per-launch records; the warm start's cost; each run's realised GPU-hours; every start failure and its retry (Amendment 3); every unsaved stop, its lost steps and its resume, and the quit-save probe's record (Amendment 5); the twelve arm-end K9(b) records | at and after launch |
+| S9 | Amendment 6's records: each owner notification (time, text), each ruling, each default that acted; each continuation leg's command, dry run (role, torch), realised GPU-hours and plateau status; the ticks' device and verdicts; the plateau read's spec commit and record | from the first owner row or the first leg |
 
 **The slot records (2026-11-12; S1 to S7 at the launch pin, on the card).** Run by the Training session under one
 GPU lease, 04:54 to 08:51 PST (≈ 3.95 h; the runbook planned ≈ 3.6), from a clean detached checkout of

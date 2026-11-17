@@ -158,7 +158,13 @@ its GO.
   that pin (2026-11-12; §18, slots S1 to S7):** the wide arm costs ρ = 1.392 times the narrow one (measured on two
   pilots to 4M), the EQ look is at 71M, and the width-256 update fits with 1,398.5 MiB of headroom. **AMENDED
   2026-11-12 (Amendment 3, blind):** a startup fit refusal at any start of a run is a start failure, retried from
-  the same checkpoint on the same pin; a repeat on an empty card holds that run. ≈ 309 GPU-h to the decision (≈ 281
+  the same checkpoint on the same pin; a repeat on an empty card holds that run. **AMENDED 2026-11-16 (Amendment 6,
+  blind, before any look):** every outcome that went to the owner now has a DEFAULT, acting 72 hours after the
+  owner is notified unless the owner rules (UNDECIDED width: the lineage stays at 128; UNDECIDED breadth: pool
+  only; no fourth seed); the continuing cell's three runs go on in 50M legs, each stopping at `python -m
+  main.plateau`'s `TIER1_PLATEAU`, at most 300M; the candidates are then read against P\* on Kakuna by the
+  registered rule, a WEAK read (a true +4 pp reads POSITIVE about one time in five); and every resume must show
+  the run's own torch, 2.8.0+cu126. ≈ 309 GPU-h to the decision (≈ 281
   of training, 210–281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch; the
   launch was 2026-11-12, after CE-3d's forks. Width is decided on the in-house cross over all four
   panels,
