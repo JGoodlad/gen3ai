@@ -270,6 +270,21 @@ def describe_handler(refuse: Optional[str] = None, phase1: Optional[str] = None)
     return pred, fn
 
 
+def stage_handler(verdicts: Optional[Mapping[Tuple[str, int], Tuple[str, str]]] = None) -> Handler:
+    """``main.x35.kit stage-check``: the kit's verdict line for ``(arm, seed)`` from ``verdicts`` (default ALLOWED),
+    exit 0 for ALLOWED and 1 otherwise, as ``kit.main`` does."""
+    def pred(argv: Sequence[str]) -> bool:
+        return "main.x35.kit" in argv and "stage-check" in argv
+
+    def fn(argv: Sequence[str], out: str) -> int:
+        arm, seed = _arg(argv, "--arm"), int(_arg(argv, "--seed"))
+        st, why = (verdicts or {}).get((arm, seed), ("ALLOWED", f"{arm} s{seed}: no unmet condition"))
+        with open(out, "w") as f:
+            f.write(f"[x35 kit] stage-check {arm} s{seed}: {st}: {why}\n")
+        return 0 if st == "ALLOWED" else 1
+    return pred, fn
+
+
 def checkargs_handler(rc: int = 0, text: str = "  ✅ argv validated against PINNED parser @abc via the pinned "
                       "build_parser() [mode=build_parser, 390 options, 2.5s]\n  ✓ this command still launches\n",
                       ) -> Handler:

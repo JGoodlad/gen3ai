@@ -1,7 +1,8 @@
 """``python -m main.ops.arm_chain <verb>`` — the arm chain's command line (design: ``designs/ops/arm_chain.md``).
 
     plan        CHAIN [--check-pins [--main-ref R]] [--describe]
-                                                    validate the chain file; --check-pins judges each arm's OWN pin
+                                                    validate the chain file and ask the kit's stage-check for each
+                                                    arm (REFUSED refuses the plan; PENDING is printed); --check-pins judges each arm's OWN pin
                                                     (a commit, on R = origin/main or allowed off it, and the pinned
                                                     parser accepts the kit's argv: main.checkargs --pin); --describe
                                                     asks the kit for each arm's run (a phase-2 arm: from declared
@@ -57,10 +58,20 @@ def _plan(a: argparse.Namespace, runner: Optional[Runner] = None) -> int:
     for i, it in enumerate(s.items):
         print(f"{i:2d}. {spec_mod.describe_item(it)}")
     bad: List[str] = []
+    lau = X35Launcher(s, runner or SubprocessRunner(), dict(os.environ))
+    for it in s.arms():   # the kit's stage gate, asked as the GO asks it: REFUSED never opens, PENDING still can
+        try:
+            st, why = lau.stage_offline(it)
+        except Hold as h:
+            bad.append(str(h))
+            continue
+        if st == "REFUSED":
+            bad.append(f"{it.key}: stage-check REFUSED: {why}")
+        elif st == "PENDING":
+            print(f"    {it.key}: stage-check PENDING (asked again at the GO): {why}")
     if a.check_pins:
         bad += pins.check_pins(s, main_ref=a.main_ref)
     if a.check_pins or a.describe:   # the pin check needs each arm's argv, which only the kit's describe gives
-        lau = X35Launcher(s, runner or SubprocessRunner(), dict(os.environ))
         for it in s.arms():
             try:
                 d = lau.describe_offline(it)

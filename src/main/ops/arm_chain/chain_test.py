@@ -24,7 +24,7 @@ from main.ops.arm_chain.procwatch import ProcRef, wait_gone
 from main.ops.arm_chain.ship import ShipResult
 from main.ops.arm_chain.spec import ChainSpec
 from main.ops.arm_chain.testing_fakes import (FakeRunner, World, checkargs_handler, describe_handler, k9b_handler, make_world,
-                                              planner_handler)
+                                              planner_handler, stage_handler)
 
 pytestmark = pytest.mark.integration
 
@@ -309,7 +309,7 @@ def test_the_cli_plans_and_reports_status(w, capsys):
     with open(p, "w") as f:
         json.dump(w.chain_dict([w.arm("a1", 1, w.pin_a)]), f)
     plan = ["plan", p, "--check-pins", "--main-ref", "main"]
-    ok = FakeRunner().on(*describe_handler()).on(*checkargs_handler())
+    ok = FakeRunner().on(*describe_handler()).on(*checkargs_handler()).on(*stage_handler())
     assert cli.main(plan, runner=ok) == 0
     assert "PLAN OK" in capsys.readouterr().out
     assert cli.main(["status", p]) == 0

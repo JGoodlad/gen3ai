@@ -18,7 +18,7 @@ from main.ops.arm_chain import cli, pins
 from main.ops.arm_chain.launch import Describe
 from main.ops.arm_chain.spec import ArmItem, as_dict
 from main.ops.arm_chain.testing_fakes import (FakeRunner, World, checkargs_handler, commit_all, describe_handler, _git,
-                                              make_world)
+                                              make_world, stage_handler)
 
 pytestmark = pytest.mark.integration
 
@@ -192,7 +192,67 @@ def write_chain(w: World, arms: List[Dict[str, Any]], **over: Any) -> str:
 
 
 def plan(path: str, runner: FakeRunner, *flags: str) -> int:
-    return cli.main(["plan", path, "--main-ref", "main", *flags], runner=runner)
+    """``plan`` with the kit's stage-check answering ALLOWED unless the test scripted it first (handlers match in
+    order)."""
+    return cli.main(["plan", path, "--main-ref", "main", *flags], runner=runner.on(*stage_handler()))
+
+
+def stage_calls(r: FakeRunner) -> List[List[str]]:
+    return [a for a, _ in r.calls if "stage-check" in a]
+
+
+def test_plan_asks_the_kits_stage_check_for_every_arm_without_any_flag(world, capsys):
+    """The kit's stage gate (``launch_x35.sh`` pre-check 9) is asked at PLAN time, read-only on CPU, with the arm, the
+    seed and the chain's stage, so an item the GO would refuse is refused when the chain is written."""
+    p = write_chain(world, [world.arm("a1", 1, world.pin_a), world.arm("a2", 2, world.pin_b)])
+    r = FakeRunner()
+    assert plan(p, r) == 0 and "PLAN OK" in capsys.readouterr().out
+    calls = stage_calls(r)
+    assert [(c[c.index("--arm") + 1], c[c.index("--seed") + 1]) for c in calls] == [("a1", "1"), ("a2", "2")]
+    s = spec_of(world, [world.arm("a1", 1, world.pin_a)])
+    assert all(c[c.index("--stage") + 1] == os.path.join(s.repo, s.backend.stage) for c in calls)
+    assert all(env.get("CUDA_VISIBLE_DEVICES") == "" for a, env in r.calls if "stage-check" in a)
+    assert not any("describe" in a or "main.checkargs" in a for a, _ in r.calls)   # the flags keep their meaning
+
+
+def test_plan_refuses_a_stage_REFUSED_item_with_the_kits_own_reason(world, capsys):
+    """11-17: X35-A3 ``a3`` s3504 / s3505 (seeds the kit knows, the A3 PREREG does not register) planned OK and only
+    the GO's stage-check refused them."""
+    why = "a3 s3504 is not registered by the A3 PREREG (its seeds for a3: [3501, 3502, 3503]): one look, no look 2"
+    p = write_chain(world, [world.arm("a1", 1, world.pin_a), world.arm("a2", 2, world.pin_b)])
+    r = FakeRunner().on(*stage_handler({("a2", 2): ("REFUSED", why)}))
+    assert plan(p, r) == 1
+    out = capsys.readouterr().out
+    assert "PLAN REFUSED (1 problem(s))" in out
+    line = next(ln for ln in out.splitlines() if ln.startswith("REFUSED:"))
+    assert "arm:rb_a2_s2" in line and "stage-check REFUSED" in line and why in line
+
+
+def test_a_stage_PENDING_item_still_plans_and_says_why(world, capsys):
+    """PENDING can still open (a phase-2 arm waits for the phase-1 record a later item of the same chain writes); the
+    GO asks again, so the plan names it and passes."""
+    why = "a1 s1: phase 2 waits for the phase-1 record phase1_a3.json in the stage folder"
+    p = write_chain(world, [world.arm("a1", 1, world.pin_a)])
+    r = FakeRunner().on(*stage_handler({("a1", 1): ("PENDING", why)}))
+    assert plan(p, r) == 0
+    out = capsys.readouterr().out
+    assert "PLAN OK" in out and f"arm:rb_a1_s1: stage-check PENDING (asked again at the GO): {why}" in out
+
+
+@pytest.mark.parametrize("rc, text", [(2, "[x35 kit] REFUSED: arm 'a1' is not one of [...]\n"),
+                                      (0, "[x35 kit] stage-check a1 s1: REFUSED: rc and verdict disagree\n"),
+                                      (1, "Traceback (most recent call last):\n")])
+def test_a_stage_check_with_no_verdict_refuses_the_plan(world, capsys, rc, text):
+    """No verdict line (the kit refused the arguments, crashed, or its exit code contradicts its line) is a refusal,
+    never a silent pass."""
+    def fn(argv, out):
+        open(out, "w").write(text)
+        return rc
+    p = write_chain(world, [world.arm("a1", 1, world.pin_a)])
+    r = FakeRunner().on(lambda argv: "stage-check" in argv, fn)
+    assert plan(p, r) == 1
+    out = capsys.readouterr().out
+    assert "arm:rb_a1_s1: the kit's stage-check gave no verdict" in out and f"(rc {rc})" in out
 
 
 def test_plan_check_pins_passes_when_every_arm_is_judged_ok(world, capsys):

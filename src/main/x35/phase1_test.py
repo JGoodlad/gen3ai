@@ -421,7 +421,8 @@ def test_arm_chain_plan_takes_a_phase_2_item_through_the_real_kit_before_and_aft
         return rc
 
     def plan() -> str:
-        runner = FakeRunner().on(lambda a: "main.x35.kit" in a and "describe" in a, real_kit)
+        # describe AND stage-check (``plan`` asks the stage gate of every arm): both the real kit, in process
+        runner = FakeRunner().on(lambda a: "main.x35.kit" in a and ("describe" in a or "stage-check" in a), real_kit)
         rc = cli.main(["plan", str(chain), "--describe"], runner=runner)
         out = capsys.readouterr().out
         assert (rc == 0) == out.rstrip().endswith("PLAN OK"), out

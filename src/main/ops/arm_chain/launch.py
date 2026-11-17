@@ -24,7 +24,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from main.ops.arm_chain import cpugate
 from main.ops.arm_chain.procwatch import ProcRef
@@ -77,6 +77,8 @@ def dry_transcript_path(spec: ChainSpec, it: ArmItem) -> str:
 _ROLE = re.compile(r"^\s*role\s*:\s*FORK of (\S+)\s*$", re.M)
 _PIN = re.compile(r"^\s*pin\s*:\s*([0-9a-f]{40})\b", re.M)
 _CUDA_OK = re.compile(r"^\s*cuda devices\s*:\s*✓", re.M)
+#: ``main.x35.kit stage-check``'s one verdict line (``kit.main``).
+_STAGE = re.compile(r"^\[x35 kit\] stage-check \S+ s\d+: (ALLOWED|PENDING|REFUSED): (.*)$", re.M)
 
 
 def verify_dry_transcript(text: str, pin: str, parent: str, delta_text: str) -> List[str]:
@@ -213,6 +215,27 @@ class X35Launcher:
         if d.run_name != it.run:
             raise Hold(f"{it.key}: the kit names arm {it.arm} s{it.seed}'s run {d.run_name!r}, not {it.run!r}")
         return d
+
+    def stage_offline(self, it: ArmItem) -> Tuple[str, str]:
+        """``(status, why)`` from the kit's ``stage-check`` for the arm, asked now on CPU (read-only; the SAME call
+        ``launch_x35.sh``'s pre-check 9 makes at GO): ``ALLOWED``, ``PENDING`` (a condition that can still open, e.g.
+        a phase-2 arm before its phase-1 record) or ``REFUSED`` (it never will: an unregistered seed). A transcript
+        that is none of the three (the kit refused the arguments, it crashed) is a :class:`Hold`."""
+        stage = os.path.join(self.spec.repo, self.spec.backend.stage)
+        out = os.path.join(self.spec.work_dir, f"plan_stage.{it.arm}.{it.seed}.txt")
+        argv = [self.spec.python, "-m", "main.x35.kit", "stage-check", "--arm", it.arm, "--seed", str(it.seed),
+                "--stage", stage]
+        rc = self.runner.run(argv, cwd=self.spec.repo, env=cpu_env(self.base_env, self.spec.repo), timeout_s=600,
+                             out_path=out)
+        try:
+            text = open(out, errors="replace").read()
+        except OSError:
+            text = ""
+        m = _STAGE.search(text)
+        if m is None or (rc == 0) != (m.group(1) == "ALLOWED") or rc not in (0, 1):
+            raise Hold(f"{it.key}: the kit's stage-check gave no verdict for arm {it.arm!r} seed {it.seed} "
+                       f"(rc {rc}): {tail(out, 2, 200)}")
+        return m.group(1), m.group(2).strip()
 
     def _go_wrappers(self, proc: str, arm_seed: Optional[List[str]]) -> List[ProcRef]:
         """Live ``launch_x35.sh <arm> <seed> … GO`` processes (by argv; ``arm_seed`` None = any arm), the OUTERMOST
