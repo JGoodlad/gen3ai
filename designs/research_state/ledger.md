@@ -31542,3 +31542,54 @@ draft items and REFUSED on a fifth seed; the rule's self-check reproduces CE-3d'
 View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X70, the CE-3d rows), `UNDERSTANDING.md` (§4.16, §6).
 
 Tag: **REGISTRATION · X70 ent-0 control · swap × X70, 3 × 4 @ 4,000 pairs · ANCHOR-ADDS / ANCHOR-COSTS / NOT-SEPARATED / INCONCLUSIVE · +1.5 pp seen 0.87–0.99, +1 pp 0.58–0.83 · seeds 7331–7334 at `ce3d-pin-9e97cad5` · not launched · moves no recipe**
+
+### 2026-11-11 · BUILD · **R9 step 1: the human-replay behaviour clone `hclone_hr_spec_v1_r2_s5901` TRAINED and REGISTERED (`d79f08ec2`): width 128, CONVERGED at 11.5 epochs on `hr_spec_v1.r2`; held-out REPORT half NLL 1.1078 (uniform 1.8388), top-1 0.5556; an offline fit of a trained artefact, no game played, no strength claim**
+
+**What was built.** The clone of the R9 card (`EXPERIMENT_BACKLOG.md`): a network of our architecture (`model_config.json`:
+`d_model` 128, `arch_signature` `gen3_mon_tied_gain_v1`, `total_dim` 2845, `trunk_layers` 3, `config_version` 170) trained by
+behaviour cloning on ladder-replay rows, run by the Training session 2026-11-11 17:18–18:57 PST on one RTX 3080 Ti
+(fp32, seed 5901, `--device cuda`), from a clean detached checkout of `aee363bc9` with
+`python -m main.human_data.clone train | export | register`, in three 45-minute chunks. A build with pre-stated checks, not an
+experiment: nothing was registered as a prediction and no recipe moves.
+
+**Data and its provenance.** Rowset `hr_spec_v1.r2` (`rows_manifest_sha256` `2a413c85e210…`; `designs/research_state/human_replay_snapshots.json`):
+rated ladder replays, actors rated ≥ 1300, battles up to 2026-09-20, ≥ 11 turns, first duplicate body kept, bots dropped by the
+card's rule, the held-out panels' ≥ 3-fit battles excluded, the quitter's last 10 decisions dropped and 11 flagged accounts
+dropped (the Kakuna-family audit); labels are the actor's own action, or a hidden move's set. **1,201,538 train rows, 29,904
+held-out rows** (split by account: `key64(salted account id) mod 50 == 0`). No team pool or other source enters the rows. The
+clone starts from a fresh initialisation (`init_sha256` `a8df95673c29…`). Human data: the model lives only in
+`~/gen3ai_archive/human_models/hclone_hr_spec_v1_r2_s5901/` and nothing was written under `models/` or `data/`.
+
+**The fit** (`human_model.json` `held_out`, `stop`; the training log `~/gen3ai_archive/r9_clone/hclone_r2_s5901.log`). Loss
+`logsumexp(legal) − logsumexp(target set)`; AdamW, batch 512, warm-up 1,000 steps, learning-rate ladder 3e-4 / 1.5e-4 / 7.5e-5 /
+3.75e-5, evaluated four times an epoch on the STOP half, patience 4, cap 40 epochs.
+- **Stop: CONVERGED**, not a budget stop. Step 26,565 (11.50 epochs, rung 3 of the ladder); best STOP-half NLL 1.14144 at step
+  19,635; the last four evaluations read 1.14382, 1.14619, 1.14677, 1.15086 (no gain, four bad in a row).
+- **Held-out REPORT half** (503 battles, **15,471 rows**, never used to stop or select): **NLL 1.1078**, uniform 1.8388,
+  **top-1 0.5556** on 14,238 rows (`top1_rows`).
+- **STOP half** (504 battles, 14,433 rows, used to stop): NLL 1.1414, uniform 1.8554, top-1 0.5516 on 13,297 rows. The two halves
+  together are the 1,007 held-out battles (29,904 rows).
+- The learned guard passes (final STOP NLL 1.1414 against uniform 1.8554, margin 0.1); the reloaded logits and a bare load of the
+  anchors are bit-equal.
+
+**Registered** in `human_replay_snapshots.json` (`models`), commit `d79f08ec2`, export not VOID: `checkpoint_sha256`
+`83eabd00d6b2…` (re-hashed on the archived zip 2026-11-16: matches), `manifest_sha256` `433c06c980e9…` (re-hashed: matches),
+`config_sha256` `8e8e8b9d13aa…`. Code at `aee363bc9` (`metadata.json`).
+
+**Not claimed, and what stays open.**
+- **Offline fit only.** NLL and top-1 on held-out human decisions say how well the net predicts a 1300+ player's choice; they say nothing
+  about how it plays, and the R9 question (does the clone help a fresh run as initial weights, or as a frozen opponent) is untouched:
+  step 2's arms are not registered and nothing is launched. One seed.
+- **Layout waiver.** The rowset's layout hash (`fbc5c674056d…`) differs from the code's (`b9d868ecf459…`); the build ran with
+  `--accept-layout fbc5c674056d` (`human_model.json` `layout`: `match` false, `waived` true). The waiver is the card's own command;
+  UNVERIFIED here: what in the observation layout moved between the rowset's extraction and `aee363bc9`.
+- **No comparison to earlier short clones is made in this entry**: the ledger's X59-S entries do not record a held-out NLL, and the
+  X59-S students and this clone were scored on different row subsets (the full 29,904-row held-out set against this clone's halves).
+- The rows are 1300+ ladder play; the clone predicts that population's choices, not Smogon-prior structure.
+
+**Record:** `~/gen3ai_archive/human_models/hclone_hr_spec_v1_r2_s5901/` (`hclone_hr_spec_v1_r2_s5901.zip`, `human_model.json`,
+`model_config.json`, `metadata.json`, `student_sidecar.json`); training log and split `~/gen3ai_archive/r9_clone/`; registry
+`designs/research_state/human_replay_snapshots.json`; commit `d79f08ec2`. View: `EXPERIMENT_BACKLOG.md` (R9 card),
+`endstate/human_data_architecture.md` (§5.1).
+
+Tag: **BUILD · R9 step 1 · human-replay clone, width 128, seed 5901 · CONVERGED 11.5 epochs · held-out REPORT half NLL 1.1078, top-1 0.5556 (15,471 rows) · offline fit, one seed, no game played · moves no recipe**
