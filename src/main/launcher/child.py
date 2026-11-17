@@ -347,8 +347,9 @@ def _open_child_log(state: LauncherState):
     path = child_log_path(state.run_dir)
     if not path:
         return None
+    if not os.path.isdir(state.run_dir):
+        return None          # a gone run dir is never re-created; `run._supervise` refuses to (re)start into it
     try:
-        os.makedirs(state.run_dir, exist_ok=True)
         ring = _CappedChildLog(path)
     except Exception:
         return None

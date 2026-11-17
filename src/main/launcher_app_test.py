@@ -12,6 +12,7 @@ checkpoint, no torch.
 """
 
 import io
+import os
 import queue
 import signal
 import subprocess
@@ -586,6 +587,7 @@ def _make_proc(returncode: int, pid: int = 99) -> MagicMock:
 
 def _ctx(tmp_path, *, interval_hours: float = 0.0) -> _SessionCtx:
     run_dir = str(tmp_path / "run")
+    os.makedirs(run_dir, exist_ok=True)   # the session makes it before any child (`_prepare_session`); a gone one stops it
     return _SessionCtx(
         child_args=["--debug"],
         child_env={},

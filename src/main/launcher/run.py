@@ -54,6 +54,7 @@ from main.launcher.pinned_argv import (
     report_lines,
 )
 from main.launcher.state import LauncherState
+from utils.run_dir import RunDirGoneError, ensure_subdir
 from main.train import arch_surface
 from main.launcher.worktree import (
     _git_hash,
@@ -228,10 +229,14 @@ def _save_crash_log(run_dir: "str | None", state: LauncherState, rc: int) -> "st
         return None
     snap = state.snapshot()
     token = time.strftime("%Y%m%d_%H%M%S") + "_" + secrets.token_hex(3)
-    crashes_dir = os.path.join(run_dir, "crashes")
+    try:
+        crashes_dir = ensure_subdir(run_dir, "crashes")      # never re-creates a gone run dir (`utils.run_dir`)
+    except RunDirGoneError:
+        state.add_event(f"🛑 [RunDir] the run dir {run_dir} is gone: the crash log is NOT saved (nothing re-creates "
+                        "the dir)")
+        return None
     path = os.path.join(crashes_dir, f"restart_err_{token}.txt")
     try:
-        os.makedirs(crashes_dir, exist_ok=True)
         with open(path, "w", errors="replace") as f:
             f.write("# Gen3AI launcher crash log\n")
             f.write(f"# time     : {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -256,10 +261,12 @@ def _dump_logs_on_exit(run_dir: "str | None", state: LauncherState) -> None:
     path = child_log_path(run_dir)
     if not path:
         return
+    if not os.path.isdir(run_dir):           # gone under the session: never re-created for a footer
+        print(f"\n📄 [RunDir] the run dir {run_dir} is gone: no child log to finalize", file=sys.stderr)
+        return
     try:
         snap = state.snapshot()
         had_stream = os.path.exists(path) and os.path.getsize(path) > 0
-        os.makedirs(run_dir, exist_ok=True)
         with open(path, "a", errors="replace") as f:
             if not had_stream and snap.log_lines:
                 f.write("\n".join(snap.log_lines) + "\n")
@@ -931,6 +938,14 @@ def _supervise(
         if interval_hours <= 0 and not intended_restart and not crashed:
             return 0
 
+        if not os.path.isdir(run_dir):
+            # Deleted or moved aside under the session: a restart would resume nothing and re-create the dir (the
+            # child makes its run dir at startup). The launcher stops with FATAL_CONFIG (3), the code a child's own
+            # `RunDirGoneError` maps to.
+            state.add_event(f"🛑 [RunDir] FATAL: the run dir {run_dir} is gone — will NOT restart into it")
+            _tick()
+            time.sleep(2)
+            return int(TrainExitCode.FATAL_CONFIG)
         checkpoint = find_latest_checkpoint(run_dir=run_dir, min_mtime=session_start)
         if checkpoint is None:
             state.add_event("🛑 No checkpoint found under the run dir — cannot restart")

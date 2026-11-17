@@ -77,6 +77,8 @@ from datetime import datetime, timezone
 
 from agents.training import elo as elo_mod
 from utils.atomic_io import atomic_write_json as _write_json_atomically
+from main.exit_codes import TrainExitCode
+from utils.run_dir import RunDirGoneError, ensure_subdir
 
 
 # ── paths / durability ────────────────────────────────────────────────────────────────────
@@ -172,7 +174,7 @@ def _append_game(run_dir: str, step_a: int, step_b: int, wins_a: int, games: int
     the schedule, the regime id, the core stamp, both content hashes; ~0.8 KB, still one atomic append). A row
     without it reads as a ``python_bridge`` row (:func:`row_transport`) — what every pre-boundary tree wrote; this
     tree's play path always passes it."""
-    os.makedirs(_ladder_dir(run_dir), exist_ok=True)
+    ensure_subdir(run_dir, "snapshot_ladder")      # under the EXISTING run dir; a gone one refuses (`utils.run_dir`)
     row = {"a": int(step_a), "b": int(step_b), "wins_a": int(wins_a), "games": int(games),
            "at": datetime.now(timezone.utc).isoformat(),
            "recipe_version": LADDER_FITTER_VERSION}
@@ -363,8 +365,8 @@ def own_rated_steps_ever(run_dir: str, committed: "list[int] | None" = None) -> 
     return [s for s in rated_steps_ever(run_dir, committed) if floor is None or s > floor]
 
 
-def _atomic_write_json(path: str, obj: dict) -> None:
-    _write_json_atomically(path, obj, indent=2)
+def _atomic_write_json(path: str, obj: dict, *, root: "str | None" = None) -> None:
+    _write_json_atomically(path, obj, root=root, indent=2)
 
 
 #: Public alias — `main.elo refit --apply` writes the refitted ladder (and preserves the old one)
@@ -782,7 +784,7 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
         "fit_quality": fit_quality,
     }
     if write:
-        _atomic_write_json(ladder_json_path(run_dir), ladder)
+        _atomic_write_json(ladder_json_path(run_dir), ladder, root=run_dir)
     return ladder
 
 
@@ -984,6 +986,17 @@ def print_ladder_table(ladder: dict) -> None:
 
 
 def main() -> int:
+    """The CLI, and the DETACHED updater the self-play callback spawns per promotion. A run dir gone under it (deleted
+    or moved aside while the run was live) ends it FATAL_CONFIG (3) with ``[RunDir] FATAL``, nothing written or
+    re-created; no one waits on the updater, so the code is its log's and an operator's, never the trainer's."""
+    try:
+        return _main()
+    except RunDirGoneError as e:
+        print(f"[RunDir] FATAL (snapshot ladder): {e}", flush=True)
+        return int(TrainExitCode.FATAL_CONFIG)
+
+
+def _main() -> int:
     ap = argparse.ArgumentParser(description="Frozen-snapshot ELO ladder (dense, pay-once).")
     ap.add_argument("run_dir")
     ap.add_argument("--backfill", action="store_true", help="round-robin the whole current pool")
