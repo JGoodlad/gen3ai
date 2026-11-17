@@ -1,0 +1,79 @@
+# X70 re-validation for the GO, 2026-11-16 (PREREG §14.4). CPU only, no lease, CUDA_VISIBLE_DEVICES="", nice 19 on the agent
+# cores; nothing launched, no game of any cross played. Code: main at 9970d4286 plus this amendment.
+# <scratch> = the unit's scratch directory; <worktree> = the unit's worktree (both gone after the unit).
+
+$ python -m main.ops.arm_chain plan <scratch>/x70_chain/chain.json --check-pins --describe    # the four draft items + the hand-off's off_main_pins, a scratch job_dir
+ 0. ARM x70 s7331 -> rb_x35_x70ent0_s7331 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 1. ARM x70 s7332 -> rb_x35_x70ent0_s7332 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 2. ARM x70 s7333 -> rb_x35_x70ent0_s7333 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 3. ARM x70 s7334 -> rb_x35_x70ent0_s7334 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+    arm:rb_x35_x70ent0_s7331: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7332: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7333: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7334: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+PLAN OK
+[exit 0]
+
+$ python -m main.ops.arm_chain plan <scratch>/x70_chain/chain_no_off_main.json --check-pins --describe    # the same chain WITHOUT the hand-off's off_main_pins
+REFUSED: arm:rb_x35_x70ent0_s7331 (ARM x70 s7331) at pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0: is not an ancestor of origin/main, and the chain file's off_main_pins does not name it (a pin kept off main is allowed only with a written reason: {"9e97cad5709da21a1f9d4d8846096c87eb17b1d0": "<why>"})
+REFUSED: arm:rb_x35_x70ent0_s7332 (ARM x70 s7332) at pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0: is not an ancestor of origin/main, and the chain file's off_main_pins does not name it (a pin kept off main is allowed only with a written reason: {"9e97cad5709da21a1f9d4d8846096c87eb17b1d0": "<why>"})
+REFUSED: arm:rb_x35_x70ent0_s7333 (ARM x70 s7333) at pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0: is not an ancestor of origin/main, and the chain file's off_main_pins does not name it (a pin kept off main is allowed only with a written reason: {"9e97cad5709da21a1f9d4d8846096c87eb17b1d0": "<why>"})
+REFUSED: arm:rb_x35_x70ent0_s7334 (ARM x70 s7334) at pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0: is not an ancestor of origin/main, and the chain file's off_main_pins does not name it (a pin kept off main is allowed only with a written reason: {"9e97cad5709da21a1f9d4d8846096c87eb17b1d0": "<why>"})
+PLAN REFUSED (4 problem(s))
+[exit 1]
+
+$ python -m main.ops.arm_chain plan <scratch>/x70_chain/chain_bad_seed.json --check-pins --describe    # seed 7335 in place of 7334
+ 2. ARM x70 s7333 -> rb_x35_x70ent0_s7333 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 3. ARM x70 s7335 -> rb_x35_x70ent0_s7335 at pin 9e97cad5709d (GO by <orchestrator, date>: X70, the ent-0 control of the trailing-magnet screen (PREREG x70_ent0_control_2026-11-13, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+    arm:rb_x35_x70ent0_s7331: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7332: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x70ent0_s7333: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+REFUSED: arm:rb_x35_x70ent0_s7335: the kit refuses arm 'x70' seed 7335 (rc 2): [x35 kit] REFUSED: seed 7335 is not registered for x70 ([7331, 7332, 7333, 7334]) (its pin was NOT judged: no argv)
+PLAN REFUSED (1 problem(s))
+[exit 1]
+
+$ python -m main.x35.kit stage-check --stage $STAGE --arm x70 --seed 7331
+[x35 kit] stage-check x70 s7331: ALLOWED: x70 s7331: no unmet condition (stage X70, X70 PREREG present)
+[exit 0]
+
+$ python -m main.x35.kit stage-check --stage $STAGE --arm x70 --seed 7332
+[x35 kit] stage-check x70 s7332: ALLOWED: x70 s7332: no unmet condition (stage X70, X70 PREREG present)
+[exit 0]
+
+$ python -m main.x35.kit stage-check --stage $STAGE --arm x70 --seed 7333
+[x35 kit] stage-check x70 s7333: ALLOWED: x70 s7333: no unmet condition (stage X70, X70 PREREG present)
+[exit 0]
+
+$ python -m main.x35.kit stage-check --stage $STAGE --arm x70 --seed 7334
+[x35 kit] stage-check x70 s7334: ALLOWED: x70 s7334: no unmet condition (stage X70, X70 PREREG present)
+[exit 0]
+
+$ python -m main.x35.kit stage-check --stage $STAGE --arm x70 --seed 7335
+[x35 kit] REFUSED: seed 7335 is not registered for x70 ([7331, 7332, 7333, 7334])
+[exit 2]
+
+$ python -m main.x35.kit pin-check --pin $PIN --side production --arm x70 --stage $STAGE --models-dir /home/goodlad/dev/gen3ai/models
+[x35 kit] pin-check: rb_x35_d1wide_s3501.crashed-20261022: a PRE-FIX d1 attempt at X35_PIN_1_production f4b25238def5 (AM-D1-FIX-f: VOID, never read)
+[x35 kit] pin-check: 58 side-pinned production run(s) checked against f4b25238def5
+[x35 kit] pin-check: the other side's run(s), judged at its own launches: ['rb_x35t_c0_s3601', 'rb_x35t_c0_s3602', 'rb_x35t_c0_s3603', 'rb_x35t_c0n4_s3641', 'rb_x35t_c0n4_s3642', 'rb_x35t_c0n4_s3643', 'rb_x35t_n4ffn_s3641', 'rb_x35t_n4ffn_s3642', 'rb_x35t_n4ffn_s3642.gpufault-20261101', 'rb_x35t_n4ffn_s3643', 'rb_x35t_r0_s3631', 'rb_x35t_x47d4_s3601', 'rb_x35t_x47d4_s3602', 'rb_x35t_x47d4_s3603']
+[x35 kit] pin-check: not a side-pinned arm (batch 1 / 2 / G-E reader), not judged here: ['rb_x35_x69a_s6901', 'rb_x35_x69ab_s6903', 'rb_x35_x69b_s6902']
+[exit 0]
+
+$ git -C /home/goodlad/dev/gen3ai-reads/ce3d_play_333a73dd rev-parse HEAD; git -C /home/goodlad/dev/gen3ai-reads/ce3d_play_333a73dd status --porcelain -- src data | wc -l    # the play checkout
+333a73ddda7829b9ccdf9e17ef04624eb40edeba
+0
+
+$ (at the play pin) read_cross.venues / venue_problem on CE-3d's BANKED deciding cross, read-only
+rows 48 venues {('cpu', 'eager'): 48} problem ''
+mixed -> the cross was played on more than one device/backend: cpu/eager x48 rows, cuda/graph x3 rows (PREREG §14: one venue a cross; nothing was read)
+x70 request today -> {}
+
+$ the §14.3 rate-check command's FORM on the CPU: 2 pairs (4 games), --device cpu --threads 2 --torch-threads 2,
+$ a scratch ledger, under mem_cap.sh --max-s 420 24 at nice 19 on the agent cores, with a heavy queue and B1 live.
+$ It proves the flags, the paths and the cell at the play pin; a 4-game batch through 64 envs is NOT a rate.
+[h2h] play-many: 1 cell(s) x 2 pairs in batches of 2; 1 with batches to play (1 batch(es)), 0 already recorded; purpose audit under <scratch>/ratecheck_smoke/ledger
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 1 architecture(s): eval declared from rb_x35_ce3dswap_s7321@300061272 (slots ['player', 'opponent']); eval core(s) for (player group, opponent group) [(0, 0)] in 12.1s
+[h2h] engine up in 39.0s: rb_x35_ce3dswap_s7321@300061272 vs rb_x35_ce3dswap_s7322@300060944; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/1: rb_x35_ce3dswap_s7321@300061272 vs rb_x35_ce3dswap_s7322@300060944 — 1 batch(es) to play, 0 recorded; request h2h:8c2b1c5e49e85077; swap 0.00s
+[h2h] batch 1/1: 2 pairs / 4 games in 267.7s (0.01 games/s); W/L/D 2/2/0; pair counts [1, 0, 0, 0, 1]; near-tie games 0; digest 55a143d10f3d
+[exit 0]

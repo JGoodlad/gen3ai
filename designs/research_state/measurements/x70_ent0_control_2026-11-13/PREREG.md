@@ -6,6 +6,11 @@ session's kit (arm `x70`); the hand-off is [`chain_items_x70.json`](chain_items_
 Nothing below changes after the first fork launches except by a dated amendment, written before the deciding cross
 is played, that says why.
 
+**Amendment 1 (2026-11-16, §14), blind: before any X70 fork, game or read.** It adds the conditions to check at GO
+time (§14.1), makes the card the venue of all three crosses under a one-venue-a-cross rule that the driver and the
+reader enforce (§14.2), and writes the on-card rate check as a command that has NOT been run (§14.3). The arm, its
+seeds and argv, the pin, the statistic, the rule, the classes, the pairs and the power are unchanged.
+
 **The question.** CE-3d's swap forks (the entropy bonus replaced by a pull toward a trailing copy of the policy)
 beat the unchanged recipe's forks. Did the trailing anchor do that, or did removing the entropy bonus do it alone?
 Put as the cross that decides: **at `--ent-coef 0`, do forks trained WITH the anchor beat forks trained WITHOUT
@@ -550,3 +555,159 @@ recipe row (`src/main/x35/kit.py`); its pin, stage and registration path, with `
 judge either arm that trains at `CE3D_PIN` (`src/main/x35/batch.py`); the launch script's header line; the
 no-canary-family cases (`src/main/ops/canary_decide_test.py`, `designs/training/compile_flags.md`); and
 `src/main/x35/x70_test.py`.
+
+## 14. Amendment 1 (2026-11-16, before any fork, game or read)
+
+**Blind.** Written three days after the registration (`761a5c015`; its files unchanged until now): no
+`rb_x35_x70ent0_*` directory in `models/`, no `x70_*` family or request in the eval ledger (the reader's own query
+returns no row, [`revalidation_2026-11-16.txt`](revalidation_2026-11-16.txt)), no cell of any cross played. The header's
+change rule is met: no fork has launched.
+
+What changed, and why:
+
+| | the registration | Amendment 1 | why |
+|---|---|---|---|
+| GO | "only on the orchestrator's GO" (§7); the slot a proposal (§12, option A) | the same GO, with the conditions it is checked against written down (§14.1) | the queue places X70 right after B1's phase 2; a GO checked from memory is how a fork starts in a gap a B1 run is waiting to use |
+| the crosses' venue | no device in §5.1; both venues costed in §11; §12-A: "on the card right after the fourth fork … or on the CPU after Kakuna" | **the card, for all three crosses**; the CPU is the fallback, for a WHOLE cross only (§14.2) | B1's Kakuna read holds the three CPU lanes for ≈ 60 h from ≈ 2026-11-25 while the card is otherwise idle; on the CPU the read would land ≈ 3 days later |
+| one venue a cross | not stated; the reader pooled whatever rows the request held | a cross is finished on the device and backend its first row was played on; the driver HOLDs and the reader REFUSES a mix (exit 7) | a pooled cell whose batches come from two venues is not the registered cell (§14.2) |
+| the reader's output | the verdict or the report | the same, plus `played_on`: the device, backend and row count | a number never leaves without its venue |
+| the on-card rate | "UNVERIFIED, neither cross was played on the card" (§11) | still UNVERIFIED; the check is a written command for a run boundary, ≤ 10 GPU-min, not run (§14.3) | no lease at this amendment |
+| the hand-off's pin | `chain_items_x70.json`: four items at the pin `9e97cad5`, which is OFF main (tag `ce3d-pin-9e97cad5`) | the same four items, plus a chain-level `off_main_pins` entry naming the pin and why it is kept off main | since `9970d4286` the arm chain's `plan --check-pins` judges each arm's own pin and refuses one that is not on `origin/main` unless the chain names it with a reason and a branch or tag holds it (`designs/ops/arm_chain.md`); without the entry the chain would refuse at the plan (G9) |
+| files | `cross/drive_cross.sh`, `cross/read_cross.py`, `chain_items_x70.json` | the first two carry the venue rule, the third the `off_main_pins` entry; `src/main/x35/x70_test.py` pins them; `revalidation_2026-11-16.txt` | |
+
+Unchanged: the arm, its four seeds and argv, the training pin and the play pin, the kit (`src/main/x35/`), the
+chain items, the three crosses' cells, pairs, batches, schedule seed, protocol, purpose, label, families and
+requests, the plan and its guards, `screen_rule.py` (the statistic, the classes, the readings, the power), every
+VOID guard and label, the licences, "one look", and every "moves no recipe" clause.
+
+### 14.1 The GO conditions (checked at GO time, by the orchestrator with the Training session)
+
+A GO for the first fork is given only when every row holds. A row that fails is not waived by this file: X70 waits.
+
+| # | condition | how it is checked |
+|---|---|---|
+| G1 | **B1's phase 2 is done**: every B1 run of both phases is at its registered end, and no B1 run is live, queued, held or owed a re-run that needs the card | the Training session's read of B1's own chain (its `status`), and no trainer on the card. A held or VOID B1 item that will need the card counts as waiting: §12's rule stands, a fork is never started in a gap a B1 run is waiting to use |
+| G2 | **B1's looks are played and read**: the 100M look (the one that decides), with the 75M and EQ looks B1 plays with it, as B1's PREREG and its amendments define them on that day | the look's READ entry in the research ledger (`python -m main.ledger_index` finds it); a look still being played on the card is a card in use |
+| G3 | no B1 run was paused, stopped early or re-ordered to make the slot (§12) | the same chain read: every B1 item ended at its own step count |
+| G4 | the GPU lease is the Training session's, granted by the orchestrator for X70 (root rule 5) | `scripts/ops/gpu_lease.sh status`, by the holder |
+| G5 | this amendment's commit is on `main` and the main checkout is at or after it | `git log --oneline -1 -- designs/research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md` |
+| G6 | the kit allows each seed and the pin: `stage-check` prints ALLOWED for 7331–7334, `pin-check` exits 0 | §7's two commands; re-run on 2026-11-16, [`revalidation_2026-11-16.txt`](revalidation_2026-11-16.txt) |
+| G7 | the kit's DRY RUN of the seed about to launch is green with the card visible, at the launch shell's priority (§7: the two refusals in `dryrun_x70_s*.txt` were the registering shell's own) | `bash $STAGE/launch_x35.sh x70 $s --pin $PIN --lease-owner "<owner>" --thinning`, no `GO` |
+| G8 | ≥ 15 GiB free for the fork about to launch (§7 Disk) | the dry run's disk row |
+| G9 | the chain is built from [`chain_items_x70.json`](chain_items_x70.json) with `go_by` filled and its `off_main_pins` entry copied to the chain file's top level (the training pin is off main; the tag `ce3d-pin-9e97cad5` holds it), and `python -m main.ops.arm_chain plan <chain> --check-pins --describe` prints PLAN OK | re-run on 2026-11-16 at main `9970d4286` on scratch chains: PLAN OK with the entry (each arm's pin judged, and the kit's argv accepted by the pinned parser), PLAN REFUSED on all four arms without it, a fifth seed REFUSES (`revalidation_2026-11-16.txt`) |
+| G10 | the play checkout stands at the play pin with `src` and `data` clean | the driver checks it itself (HOLD, exit 5); on 2026-11-16 `/home/goodlad/dev/gen3ai-reads/ce3d_play_333a73dd` is at `333a73dd`, clean |
+
+**For the crosses** (after the fourth fork, no second GO needed): all four forks have ended and passed their arm-end
+checks (§3, §8), which the plan enforces (exit 3 on a missing final or a failed guard); the lease is still held; and
+§14.2's order and rule are followed. The forks themselves need neither the rate check nor the play checkout.
+
+### 14.2 The venue: the card, one venue a cross
+
+**The move.** After the fourth fork's arm-end checks, the lease holder plays, in this order and each in its own
+work directory:
+
+```bash
+PIN_DIR=/home/goodlad/dev/gen3ai-reads/ce3d_play_333a73dd
+D=designs/research_state/measurements/x70_ent0_control_2026-11-13/cross
+bash $D/drive_cross.sh $PIN_DIR <work>/anchor cuda anchor     # DECIDES: 96,000 games; played and read first
+bash $D/drive_cross.sh $PIN_DIR <work>/c0     cuda c0         # reported: 64,000 games
+bash $D/drive_cross.sh $PIN_DIR <work>/x67    cuda x67        # reported: 24,000 games
+```
+
+The driver's `cuda` branch is the form B1's look driver uses on the card
+(`../boundary1_scratch_2026-11-09/looks/drive_look.sh`): `gpu_lock.sh mem_cap.sh 32 python -m main.h2h play-many
+… --device cuda`, the lease token in the caller's environment, the default graph backend.
+
+**Why the PREREG allows it, and why the statistic does not change.** §5.1 fixes the cells, the pairs, the batches,
+the schedule seed, greedy play, the reveal mode, the purpose, the label and the pin, and names no device; §11 costs
+both venues; §12-A names the card first. At the play pin a row's regime (`regime_id`, what makes two rows
+poolable) is a function of the turn limit and the mode only, so it is the same on either device; the device is
+recorded in the row's `compute` block (`device`, `backend`). The cells, the pairing, the per-cell score h, D, its
+interval, the rule and the classes are untouched, and so is §6's power (the same pairs and cells).
+
+**What does change, and the rule that follows.** The policy's forward runs in different arithmetic on the card
+(graph backend) than on the CPU (eager), and play is greedy: a decision whose top two actions are within rounding
+can flip, and the game after it differs. In CE-3d's banked deciding cross (48 rows, 48,000 games, CPU eager, this
+play pin) 4,428 games (9.2 %) hold a decision inside the wide near-tie bar (2e-3) and 41 inside the tight one
+(2e-5). **UNVERIFIED: that a cell played on the card gives the same outcomes as on the CPU at this pin.** The only
+identity check on record (ledger 2026-10-06, X5 look 1, step 1: five cells × 50 pairs, CPU eager against GPU graph,
+identical in 5 / 5) is at an older pin and a smaller model. So:
+
+1. **One venue a cross.** Every row of a cross's request is played on one device and one backend. A cross that
+   holds a row is finished where that row was played. The driver checks this before it plays or resumes (HOLD,
+   exit 7), and the reader checks it before it pools a cell (exit 7, nothing written, no class).
+2. **A mixed cross is a HOLD for the orchestrator, never a class and never INCONCLUSIVE.** Nothing is read until a
+   dated amendment, written before any further game, says what is played and why.
+3. **The deciding cross is not confounded by the venue.** Both sides of every game run on the same device, and the
+   three swap forks and the four X70 forks are compared only inside that cross. The venue could move D only if the
+   near-tie flips favoured one arm's forks, which is not expected and cannot be excluded: the result is quoted with
+   `played_on`.
+4. **The two reported crosses carry a venue label.** §5.4 sets them beside banked results that were played on the
+   CPU (X67 against C0; the swap against C0 and against X67). On the card they read: "played on the card; the
+   banked crosses beside it were played on the CPU; the venue's effect on a cell is UNVERIFIED". §5.4 already
+   puts no interval or class on a difference between crosses.
+5. **The CPU is the fallback for a whole cross**: one whose request holds no row (the card path failed to start,
+   or the orchestrator needs the card), with `drive_cross.sh … cpu <cross>` on the agent cores after B1's Kakuna
+   read, as §11 costs it. The deciding cross and the reported crosses may then differ in venue; rule 4's label
+   says so.
+
+### 14.3 The on-card rate check: a command for a run boundary. NOT RUN
+
+**UNVERIFIED, both of them:** the on-card games per second at the play pin, and the engine's start-up time on
+the card. The evidence at this amendment:
+
+| figure | value | where it is from | what it is not |
+|---|---|---|---|
+| CPU rate | 2.9 games/s on three threads (48,000 games in 16,579 s) | CE-3d's deciding cross, MEASURED, B1 live | — |
+| card rate | ≈ 40 games/s (48,000 games ≈ 20 min) | an ESTIMATE carried by X67's and CE-3d's drivers | measured at this pin, or on this model |
+| engine start on the card | 114–167 s a compile | X5 P0, MEASURED | this pin or this model (older and smaller) |
+| engine start on the card | **1,359.6 s** for one 500-pair slot | B1 §18, slot S6, MEASURED at B1's pin | X70's case: that engine served two architectures in two slot groups; X70's cells are one architecture |
+| engine start on the CPU | 39.0 s | this amendment's 4-game smoke of the command's form, eager (`revalidation_2026-11-16.txt`) | the card: eager compiles nothing |
+
+Each cross is one `play-many` process and so one engine start; §11's ≈ 1.3 GPU-h is the play time only. The check,
+for the lease holder at a run boundary (before the first fork, or between two forks; never while a trainer is on
+the card):
+
+```bash
+PIN_DIR=/home/goodlad/dev/gen3ai-reads/ce3d_play_333a73dd; M=/home/goodlad/dev/gen3ai/models
+OPS=/home/goodlad/dev/gen3ai/scripts/ops; PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3
+OUT=<a scratch directory OUTSIDE models/>; mkdir -p "$OUT"; cd "$PIN_DIR"
+PYTHONPATH=$PIN_DIR/src GEN3AI_SHARED_COMPILE_CACHE=0 "$OPS/gpu_lock.sh" "$OPS/mem_cap.sh" --max-run-s 600 32 \
+  "$PY" -m main.h2h play-many \
+  --players "$M/rb_x35_ce3dswap_s7321/final_model.zip" --opponents "$M/rb_x35_ce3dswap_s7322/final_model.zip" \
+  --pairs 1000 --batch-pairs 500 --seed 911 --device cuda --purpose audit --label x70_card_rate_check \
+  --oracle-reveal-mode off --out "$OUT/ledger" > "$OUT/rate.json" 2> "$OUT/rate.log"; echo "rc=$?"
+grep -E "engine up in|batch [0-9]+/[0-9]+:" "$OUT/rate.log"       # the start-up seconds; each batch's games/s
+```
+
+- **It reads nothing about X70.** The cell is one banked swap fork against another: it is in none of the three
+  crosses, it involves no X70 fork, its purpose is `audit`, its schedule seed is 911 (the crosses use 0), and its
+  rows go to a scratch ledger, never `models/_ledger`. The lease token is the caller's (`GEN3AI_GPU_LEASE_TOKEN` or
+  `_FILE`), as for the driver.
+- **`--max-run-s 600` bounds the RUN, not the queue wait** (never an outer `timeout` around a slot-queued job).
+- **rc 0:** the cost of the three crosses is re-stated as 3 × the start-up + 184,000 games ÷ the batch rate, in a
+  dated NOTE here. The venue stays the card whenever that total fits the idle window before the card's next
+  registered work; otherwise the orchestrator moves WHOLE crosses to the fallback, the reported ones first.
+- **rc 89:** the engine did not come up and play 2,000 games in ten minutes. That is itself the finding (a start-up
+  of the size B1's S6 recorded); the rows it did write stay in the scratch ledger; the same NOTE re-costs the
+  crosses with the start-up read from `rate.log`, or as "over ten minutes" if the line never printed.
+- **Not run at all** is allowed: the crosses are then played on the card at an unknown cost, with the first cross's
+  own log as the measurement. B1's 50M look (≈ 2026-11-18, on the card, at B1's pin) records an on-card start-up
+  and rate before then, at no cost to X70; it is a second reference, not this pin.
+
+The command's FORM was executed on 2026-11-16 on the CPU (`--device cpu`, 2 pairs, a scratch ledger, exit 0): the
+flags, the two checkpoints and the cell are accepted at the play pin. That run measured no rate.
+
+### 14.4 What was executed for this amendment, and what was not
+
+Executed, CPU only, no lease, `CUDA_VISIBLE_DEVICES=""`, nice 19 on the agent cores
+([`revalidation_2026-11-16.txt`](revalidation_2026-11-16.txt)): the arm chain's plan on scratch chains of the four
+draft items (PLAN OK with the hand-off's `off_main_pins` entry; REFUSED on all four arms without it; a fifth seed
+REFUSED); the kit's stage check for the four seeds and a fifth, and its pin
+check; the play checkout's HEAD and cleanliness; the reader's venue functions, at the play pin, on CE-3d's banked
+deciding cross (48 rows, one venue, no problem; a synthetic second venue is named); the 4-game CPU smoke above.
+
+**Not executed:** anything on the card (the rate check, the kit's dry run with the card visible, a launch); any
+game of any cross; `arm_chain` against a live chain; the driver's new venue check against a REGISTERED X70 family
+(the family is registered by the driver's own first step, and none exists; the check's logic is pinned by
+`x70_test.py` on synthetic rows and was run on CE-3d's banked rows).

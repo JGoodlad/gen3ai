@@ -288,6 +288,30 @@ def test_the_draft_chain_items_are_the_kits_forks_at_the_pin_with_the_registered
         assert not any(v in b["expect"] for v in b["void"])
 
 
+def test_the_hand_off_names_its_off_main_pin_and_the_plan_was_refused_without_it():
+    """Amendment 1: the training pin is off main, and ``arm_chain plan --check-pins`` refuses such a pin unless the
+    chain names it in ``off_main_pins`` with a reason and a ref holds it. The hand-off carries the entry for exactly
+    the items' pin, the chain's own spec accepts it, and the banked re-validation shows both plans."""
+    from main.ops.arm_chain import spec as chain_spec
+
+    doc = json.loads((DIR / "chain_items_x70.json").read_text())
+    allowed = doc["off_main_pins"]
+    assert set(allowed) == {i["pin"] for i in doc["items"]} == {B.CE3D_PIN}
+    assert doc["x_pin"]["tag"] in allowed[B.CE3D_PIN]                # the reason names the ref that holds the pin
+    assert chain_spec._off_main_pins(doc) == allowed                 # the form the chain file's loader accepts
+    assert all("off_main_pins" not in i for i in doc["items"])       # chain-level, never an arm field
+    text = (DIR / "revalidation_2026-11-16.txt").read_text()
+    with_entry, without, _rest = text.split("$ python -m main.ops.arm_chain plan ")[1:4]
+    assert with_entry.startswith("<scratch>/x70_chain/chain.json --check-pins --describe")
+    assert with_entry.count("the kit agrees — FORK of") == 4 and "\nPLAN OK\n[exit 0]\n" in with_entry
+    assert without.startswith("<scratch>/x70_chain/chain_no_off_main.json --check-pins --describe")
+    assert without.count(f"at pin {B.CE3D_PIN}: is not an ancestor of origin/main, and the chain file's "
+                         f"off_main_pins does not name it") == 4
+    assert "PLAN REFUSED (4 problem(s))\n[exit 1]\n" in without and "PLAN OK" not in without
+    g9 = next(line for line in (DIR / "PREREG.md").read_text().splitlines() if line.startswith("| G9 |"))
+    assert "`off_main_pins`" in g9 and "top level" in g9
+
+
 def test_the_recorded_plan_and_kit_checks_say_what_the_prereg_says():
     plan = (DIR / "arm_chain_plan_x70.txt").read_text()
     assert plan.count("the kit agrees — FORK of") >= 4 and "\nPLAN OK\nrc=0\n" in plan
@@ -413,3 +437,85 @@ def test_the_entropy_labels_are_ranges_against_the_swaps_and_collapse_is_a_label
     assert got["labels"] == ["ENT-COLLAPSED"] and got["collapsed_forks"] == [1]
     assert abs(got["collapse_bar_nats"] - got["swap_lowest"] / 2) < 1e-15
     assert labels([0.47, 0.49, 0.50, 0.60])["labels"] == []         # the ranges overlap: no label
+
+
+# ------------------------------------------------------------------- Amendment 1: one venue a cross (PREREG §14.2)
+@pytest.fixture()
+def reader():
+    return runpy.run_path(str(DIR / "cross" / "read_cross.py"))
+
+
+def _row(request: str, device: str, backend: str) -> dict:
+    return {"request": {"id": request, "family": "x70_swap_vs_ent0_h2h"}, "compute": {"device": device,
+                                                                                    "backend": backend}}
+
+
+CPU_ROWS = [_row("x70_swap_vs_ent0", "cpu", "eager")] * 3
+CARD_ROWS = [_row("x70_swap_vs_ent0", "cuda", "graph")] * 2
+
+
+def _serve(reader: dict, monkeypatch, rows: list) -> None:
+    """Stand the eval ledger's family read in the reader's own globals: ``rows`` are what the request holds."""
+    stub = SimpleNamespace(read=lambda decl, root, family: SimpleNamespace(rows=rows))
+    monkeypatch.setitem(reader["main"].__globals__, "L", stub)
+
+
+def test_the_reader_counts_a_requests_rows_by_device_and_backend_and_names_a_mix(reader):
+    venues, problem = reader["venues"], reader["venue_problem"]
+    other = [_row("x70_ent0_vs_c0", "cuda", "graph")]              # another cross's rows are not this cross's venue
+    assert venues(CPU_ROWS + other, "x70_swap_vs_ent0") == {("cpu", "eager"): 3}
+    assert venues([], "x70_swap_vs_ent0") == {} and problem({}) == "" and problem({("cpu", "eager"): 48}) == ""
+    mixed = venues(CPU_ROWS + CARD_ROWS, "x70_swap_vs_ent0")
+    assert mixed == {("cpu", "eager"): 3, ("cuda", "graph"): 2}
+    assert "more than one device/backend: cpu/eager x3 rows, cuda/graph x2 rows" in problem(mixed)
+    # one device under two backends is two venues too: the arithmetic differs
+    assert problem({("cuda", "graph"): 1, ("cuda", "eager"): 1}) != ""
+
+
+def test_the_reader_refuses_a_mixed_cross_before_it_writes_a_file(reader, monkeypatch, tmp_path, capsys):
+    shas = tmp_path / "shas.json"
+    shas.write_text(json.dumps({"cross": "anchor", "pairs": 4000}))
+    out = tmp_path / "result"
+    _serve(reader, monkeypatch, CPU_ROWS + CARD_ROWS)
+    monkeypatch.setattr("sys.argv", ["read_cross.py", str(shas), str(out), str(DIR / "screen_rule.py")])
+    assert reader["main"]() == 7
+    assert "REFUSED: the cross was played on more than one device/backend" in capsys.readouterr().err
+    assert list(out.iterdir()) == []                               # no cells.json, no h.json, no verdict: nothing read
+
+
+@pytest.mark.parametrize("rows,device,rc", [([], "cuda", 0), ([], "cpu", 0), (CARD_ROWS, "cuda", 0),
+                                            (CPU_ROWS, "cpu", 0), (CPU_ROWS, "cuda", 7), (CARD_ROWS, "cpu", 7),
+                                            (CPU_ROWS + CARD_ROWS, "cuda", 7)])
+def test_the_drivers_venue_check_holds_a_cross_that_holds_rows_from_another_device(reader, monkeypatch, tmp_path,
+                                                                                   capsys, rows, device, rc):
+    shas = tmp_path / "shas.json"
+    shas.write_text(json.dumps({"cross": "anchor", "pairs": 4000}))
+    _serve(reader, monkeypatch, rows)
+    monkeypatch.setattr("sys.argv", ["read_cross.py", "--venue-check", str(shas), device])
+    assert reader["main"]() == rc
+    got = capsys.readouterr()
+    assert ("one venue a cross" in got.err) == (rc == 7) and ("venue OK" in got.out) == (rc == 0), got
+
+
+def test_the_driver_checks_the_venue_before_it_plays_and_holds_on_the_readers_refusal():
+    text = (DIR / "cross" / "drive_cross.sh").read_text()
+    check, play = text.index('--venue-check "$W/shas.json" "$DEV"'), text.index('PLAY=("$PY" -m main.h2h play-many')
+    register = text.index("family-register")
+    assert register < check < play                  # the family exists by then; no game is played before the check
+    assert text[check:play].count("exit 7") == 1 and '[ "$rc" = 7 ] && {' in text
+    assert text.index('[ "$rc" = 7 ]') < text.index('[ "$rc" = 0 ] ||')        # a mix is never reported as a read failure
+
+
+def test_the_amendment_registers_the_go_conditions_the_card_venue_and_an_unrun_rate_check():
+    text = (DIR / "PREREG.md").read_text()
+    assert "## 14. Amendment 1 (2026-11-16, before any fork, game or read)" in text
+    for needle in ("### 14.1 The GO conditions", "**B1's phase 2 is done**", "**B1's looks are played and read**",
+                   "### 14.2 The venue: the card, one venue a cross", "**One venue a cross.**",
+                   "### 14.3 The on-card rate check: a command for a run boundary. NOT RUN", "--max-run-s 600",
+                   "revalidation_2026-11-16.txt"):
+        assert needle in text, needle
+    assert (DIR / "revalidation_2026-11-16.txt").is_file()
+    # the rate check's cell is in no registered cross, and its rows never reach the registered ledger
+    block = text[text.index("### 14.3"):text.index("### 14.4")]
+    assert "rb_x35_ce3dswap_s7321" in block and "rb_x35_ce3dswap_s7322" in block and STEM not in block
+    assert "--purpose audit" in block and "--seed 911" in block and '--out "$OUT/ledger"' in block

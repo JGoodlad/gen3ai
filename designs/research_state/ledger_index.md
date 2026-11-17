@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-31,646-line file. **The ledger itself is append-only and is never edited by this**;
+31,697-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1012 headings · 957 dated · 2026-08-01 → 2026-11-16 · ledger 31,646 lines.**
+**1013 headings · 958 dated · 2026-08-01 → 2026-11-16 · ledger 31,697 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1032,3 +1032,4 @@ rename.
   - `L31495` · `2026-11-13` · REGISTRATION · **X70, the ent-0 control of the trailing-magnet screen, REGISTERED (full tier, blind; NOT LAUNCHED, no GO): four P\* + 20M forks at `--ent-coef 0` with NO magnet (seeds 7331–7334, the swap's training pin `9e97cad5`) against the three banked CE-3d swap forks, 3 × 4 at 4,000 pairs a cell, one look — `ANCHOR-ADDS` / `ANCHOR-COSTS` / `NOT-SEPARATED` / `INCONCLUSIVE`; sees +1.5 pp with probability 0.87–0.99 and +1 pp with 0.58–0.83; every class licenses registering a next step only; moves no recipe**
   - `L31546` · `2026-11-11` · BUILD · **R9 step 1: the human-replay behaviour clone `hclone_hr_spec_v1_r2_s5901` TRAINED and REGISTERED (`d79f08ec2`): width 128, CONVERGED at 11.5 epochs on `hr_spec_v1.r2`; held-out REPORT half NLL 1.1078 (uniform 1.8388), top-1 0.5556; an offline fit of a trained artefact, no game played, no strength claim**
   - `L31597` · `2026-11-16` · REGISTRATION · **The Kakuna read of the banked entropy finals REGISTERED (full tier, blind, before any game): X67's three finals and CE-3d's three against the eight C0 finals, each against Kakuna on `forum72` and `heldout72_hpfix`, 1,200 games a final a panel (33,600 games) at one pin; rule `b1_kakuna`; it CONFIRMS or CONTRADICTS the two in-house PASS verdicts and decides neither**
+  - `L31646` · `2026-11-16` · AMENDMENT · **X70 PREREG Amendment 1 (blind: before any X70 fork, game or read): the GO conditions are written down, and the three crosses move to the GPU card under a one-venue-a-cross rule that the driver and the reader enforce; the statistic, rule, pairs and power are unchanged; the on-card rate and engine start stay UNVERIFIED (the ≤ 10 GPU-min check is a written command, NOT run)**

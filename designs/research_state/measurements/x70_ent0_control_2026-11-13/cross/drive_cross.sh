@@ -24,9 +24,13 @@
 #   (cd "$PIN_DIR" && ./scripts/bootstrap.sh --skip-env --with-rust)     # once, under mem_cap, rule 5b
 #   (CE-3d's play checkout /home/goodlad/dev/gen3ai-reads/ce3d_play_333a73dd is that checkout, if it still stands.)
 # usage: drive_cross.sh <PIN_DIR> <WORK_DIR> cpu|cuda [anchor|c0|x67]
-#   cuda: the caller holds the GPU lease (GEN3AI_GPU_LEASE_TOKEN or _FILE in the environment). ESTIMATES from the
+#   cuda: THE REGISTERED VENUE of all three crosses (PREREG §14, Amendment 1, 2026-11-16). The caller holds the GPU
+#         lease (GEN3AI_GPU_LEASE_TOKEN or _FILE in the environment). ESTIMATES from the
 #         figure X67's and CE-3d's drivers carry (48,000 games in about 20 min; UNVERIFIED, neither cross was played on
-#         the card): anchor ~40 min, c0 ~27 min, x67 ~10 min.
+#         the card): anchor ~40 min, c0 ~27 min, x67 ~10 min, each PLUS one engine start (UNVERIFIED at this pin; §14.3).
+#   ONE VENUE A CROSS (§14.2): a cross is finished on the device its first row was played on. The driver HOLDs (exit 7)
+#         before it plays when the request already holds rows from another device, and the reader refuses a mixed
+#         cross (exit 7) before it pools a cell. cpu is the registered FALLBACK, for a whole cross only.
 #   cpu : rule 5b's shape (nice 19, the agent cores from utils.core_split, CUDA hidden). No outer timeout: the job
 #         is slot-queued by mem_cap. Measured rate (CE-3d's deciding cross, three threads): 48,000 games in
 #         16,579 s, so ~ 9.2 h for anchor (96,000 games), ~ 6.1 h for c0 (64,000), ~ 2.3 h for x67 (24,000).
@@ -67,6 +71,8 @@ n=$("$PY" "$HERE/cross/plan_cross.py" --cross "$CROSS" --out "$W/cells_plan.json
 log "plan ($CROSS): $n cells; registering family $FAMILY and playing ($PAIRS pairs a cell, batches of 500, $DEV)"
 "$PY" -m main.eval_ledger family-register --id "$FAMILY" --decision-kind ab_verdict --rule "$RULE" \
   --protocol gen3_eval_protocol_v1_h2h --commit "$PIN" >> "$LOG" 2>&1 || { log "HOLD: family-register failed (see $LOG)"; exit 3; }
+"$PY" "$HERE/cross/read_cross.py" --venue-check "$W/shas.json" "$DEV" >> "$LOG" 2>&1 \
+  || { log "HOLD: request $REQUEST holds rows played on another device than '$DEV', or the venue check failed (PREREG §14.2; see $LOG)"; exit 7; }
 PLAY=("$PY" -m main.h2h play-many --cells "$W/cells_plan.json" --pairs "$PAIRS" --batch-pairs 500 --seed 0 --device "$DEV"
       --purpose ab --family "$FAMILY" --request "$REQUEST" --label x70_ent0_control --oracle-reveal-mode off)
 if [ "$DEV" = cuda ]; then
@@ -76,6 +82,7 @@ else
     || { log "HOLD: play-many failed (see $LOG)"; exit 4; }
 fi
 log "played; reading and applying the coded $([ "$CROSS" = anchor ] && echo rule || echo report)"
-V=$("$PY" "$HERE/cross/read_cross.py" "$W/shas.json" "$W/result" "$HERE/screen_rule.py" 2>>"$LOG") \
-  || { log "HOLD: read failed (see $LOG)"; exit 6; }
+V=$("$PY" "$HERE/cross/read_cross.py" "$W/shas.json" "$W/result" "$HERE/screen_rule.py" 2>>"$LOG"); rc=$?
+[ "$rc" = 7 ] && { log "HOLD: the cross's rows name more than one device/backend; NOTHING was read (PREREG §14.2; see $LOG)"; exit 7; }
+[ "$rc" = 0 ] || { log "HOLD: read failed (see $LOG)"; exit 6; }
 log "DONE ($CROSS): $(echo "$V" | cut -c1-400)"

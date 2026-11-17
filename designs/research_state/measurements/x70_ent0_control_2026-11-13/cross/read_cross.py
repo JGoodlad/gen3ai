@@ -16,7 +16,16 @@ A cell must hold EXACTLY the cross's registered pair count (4,000 for ``anchor``
 missing / duplicate / non-OK cell, or one with fewer OR more completed pairs, is an INCONCLUSIVE reason and the
 statistic is not computed.
 
+ONE VENUE A CROSS (PREREG §14, Amendment 1): every row of the cross's request must name ONE device and ONE backend
+(``compute.device`` / ``compute.backend``: ``cpu`` / ``eager`` on the agent cores, ``cuda`` / ``graph`` on the
+card). A greedy decision within a rounding error of a tie can flip with the device (``main.h2h.play``), so a cross
+whose rows name two venues is REFUSED here, before any cell is pooled and before any file is written: exit 7,
+nothing read, no class. That is a HOLD for the orchestrator, never ``INCONCLUSIVE``, because the one look has not
+been spent. The venue the cross was played on is written into the result as ``played_on``.
+
     python read_cross.py <shas.json> <outdir> <screen_rule.py>
+    python read_cross.py --venue-check <shas.json> <cpu|cuda>     # BEFORE playing: exit 7 if the request already
+                                                                  # holds rows played on another device
 """
 from __future__ import annotations
 
@@ -27,6 +36,7 @@ import sys
 from pathlib import Path
 
 import main.h2h.cross as X
+from agents.training import eval_ledger as L
 
 ROOT = Path(os.environ.get("GEN3AI_MODELS_DIR") or "/home/goodlad/dev/gen3ai/models") / "_ledger"
 PROTOCOL = "gen3_eval_protocol_v1_h2h"
@@ -36,7 +46,45 @@ CROSSES = {"anchor": ("x70_swap_vs_ent0_h2h", "x70_swap_vs_ent0", 4000, "verdict
            "x67": ("x70_ent0_vs_x67_h2h", "x70_ent0_vs_x67", 1000, "report_x67.json")}
 
 
+def venues(rows, request: str) -> dict:
+    """``{(device, backend): row count}`` over the ledger rows of ``request`` (a row's ``request.id``)."""
+    where: dict = {}
+    for r in rows:
+        if (r.get("request") or {}).get("id") != request:
+            continue
+        c = r.get("compute") or {}
+        k = (str(c.get("device")), str(c.get("backend")))
+        where[k] = where.get(k, 0) + 1
+    return where
+
+
+def venue_problem(where: dict) -> str:
+    """Why the rows were not played at ONE venue (``""`` = they were, or there is no row yet)."""
+    if len(where) <= 1:
+        return ""
+    return ("the cross was played on more than one device/backend: "
+            + ", ".join(f"{d}/{b} x{n} rows" for (d, b), n in sorted(where.items()))
+            + " (PREREG §14: one venue a cross; nothing was read)")
+
+
+def venue_check(shas_path: Path, device: str) -> int:
+    """The driver's check BEFORE it plays or resumes: the request's recorded rows, if any, were played on ``device``."""
+    family, request, _pairs, _out = CROSSES[json.loads(shas_path.read_text())["cross"]]
+    where = venues(L.read(X.FAMILY_READ_OFF, root=ROOT, family=family).rows, request)
+    other = {k: n for k, n in where.items() if k[0].split(":")[0] != device}
+    if other:
+        print(f"REFUSED: request {request} already holds rows played on "
+              + ", ".join(f"{d}/{b} x{n}" for (d, b), n in sorted(other.items()))
+              + f"; it is finished on that device, never on '{device}' (PREREG §14: one venue a cross)", file=sys.stderr)
+        return 7
+    print(f"venue OK: {request} holds {sum(where.values())} row(s), all on '{device}'" if where
+          else f"venue OK: {request} holds no row yet")
+    return 0
+
+
 def main() -> int:
+    if sys.argv[1] == "--venue-check":
+        return venue_check(Path(sys.argv[2]), sys.argv[3])
     shas_path, outdir, rule_path = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
     outdir.mkdir(parents=True, exist_ok=True)
     shas = json.loads(shas_path.read_text())
@@ -44,6 +92,11 @@ def main() -> int:
     family, request, pairs, out_name = CROSSES[cross]
     if shas.get("pairs") != pairs:
         raise SystemExit(f"the plan's pairs {shas.get('pairs')!r} != the registered {pairs} for '{cross}'")
+    where = venues(L.read(X.FAMILY_READ_OFF, root=ROOT, family=family).rows, request)
+    problem = venue_problem(where)
+    if problem:
+        print(f"REFUSED: {problem}", file=sys.stderr)
+        return 7
     cells = X.look_cells(ROOT, family, request, PROTOCOL)
     m = X.matrix_from_cells(cells, shas["rows"], shas["cols"], min_pairs=pairs)
     (outdir / "cells.json").write_text(json.dumps(list(m.cells), indent=1))
@@ -61,6 +114,7 @@ def main() -> int:
     else:
         verdict = rule["report"](h, cross, inconclusive=reasons)
     verdict["n_cells_read"] = len(cells)
+    verdict["played_on"] = [{"device": d, "backend": b, "rows": n} for (d, b), n in sorted(where.items())]
     verdict["family"], verdict["request"], verdict["pairs"] = family, request, pairs
     (outdir / out_name).write_text(json.dumps(verdict, indent=1, default=str))
     print(json.dumps(verdict, default=str))

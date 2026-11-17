@@ -124,10 +124,15 @@ its GO.
   the eight C0 finals and X67's three finals, are REPORTED and decide nothing. **Power:** it sees a +1.5 pp anchor
   effect with probability 0.87–0.99 and a +1 pp effect with 0.83 / 0.70 / 0.58 at a fork-seed spread of 0.3 / 0.4 /
   0.5 pp; the limit is the three banked swap forks. The first fork is also the first learner with no regulariser at
-  this pin on the card. **Cost** ≈ 16.4–17 GPU-h, plus ≈ 53 CPU lane-h or ≈ 1.3 GPU-h for the crosses. **Slot
-  (placed by the orchestrator, 2026-11-13, option A):** after BOUNDARY-1's phase 2 and its looks (≈ 2026-11-25), while its Kakuna
-  read holds the CPU lanes; no BOUNDARY-1 run is paused for it. Every class licenses registering a next step only;
-  nothing moves a recipe without the owner. The hand-off (`chain_items_x70.json`) carries no GO.
+  this pin on the card. **Cost** ≈ 16.4–17 GPU-h for the forks. **Amendment 1 (2026-11-16, blind):** the three
+  crosses are played ON THE CARD (≈ 1.3 GPU-h of play plus three engine starts; both figures UNVERIFIED, and the
+  rate check is a written command that has not been run), one device and backend a cross (the driver holds and the
+  reader refuses a mix), with the CPU (≈ 53 lane-h) as the fallback for a whole cross; the GO conditions are its
+  §14.1. **Slot (placed by the orchestrator, 2026-11-13, option A):** after BOUNDARY-1's phase 2 and its looks
+  (≈ 2026-11-25), while its Kakuna read holds the CPU lanes; no BOUNDARY-1 run is paused for it. Every class
+  licenses registering a next step only; nothing moves a recipe without the owner. The hand-off
+  (`chain_items_x70.json`) carries no GO; it names the training pin in `off_main_pins`, which the arm chain's plan
+  requires for a pin kept off main.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

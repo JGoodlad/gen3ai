@@ -13,6 +13,10 @@
   "base_base": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
   "x_note": "sha = the CE-3d swap forks' training pin (main.x35.batch.CE3D_PIN; ARM_PINS['x70']). base = the first CE-3d pin, where all three X70 crosses are PLAYED (as CE-3d's were). base_base = the production side pin."
  },
+ "off_main_pins": {
+  "9e97cad5709da21a1f9d4d8846096c87eb17b1d0": "the CE-3d swap forks' training pin (main.x35.batch.CE3D_PIN; ARM_PINS['x70']), kept off main and held by the tag ce3d-pin-9e97cad5: X70 trains where the swap forks trained, so the cross isolates one flag (PREREG \u00a73)"
+ },
+ "x_off_main_pins": "COPY off_main_pins to the chain file's TOP LEVEL with the four items (it is chain-level, never an arm field: designs/ops/arm_chain.md). Since 9970d4286, plan --check-pins REFUSES an arm whose pin is not an ancestor of origin/main unless the chain names it here with a reason and a branch or tag holds it. Added by Amendment 1 (PREREG \u00a714.1 G9), 2026-11-16; no item changed.",
  "items": [
   {
    "kind": "arm",

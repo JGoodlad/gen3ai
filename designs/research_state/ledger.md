@@ -31643,3 +31643,54 @@ is a GUESS.
 played: `~/gen3ai_archive/kakuna_entropy_2026-11-16/state`. View: `STATUS.md` (§2).
 
 Tag: **REGISTRATION · Kakuna read of the entropy finals · X67 ×3, CE-3d ×3 v C0 ×8 · forum72 + heldout72_hpfix @ 1,200 games a final a panel · rule `b1_kakuna`, level 0.90 · KAKUNA-CONFIRMED / UNCONFIRMED / CONTRADICTED / UNREAD · +4 pp seen 0.89–1.00, +2 pp 0.43–0.59 · pin `15136b616`, E6 · stop 11-23 12:00 PST · decides nothing**
+### 2026-11-16 · AMENDMENT · **X70 PREREG Amendment 1 (blind: before any X70 fork, game or read): the GO conditions are written down, and the three crosses move to the GPU card under a one-venue-a-cross rule that the driver and the reader enforce; the statistic, rule, pairs and power are unchanged; the on-card rate and engine start stay UNVERIFIED (the ≤ 10 GPU-min check is a written command, NOT run)**
+
+**Why.** The post-B1 queue places X70 first on the card after BOUNDARY-1's phase 2 (≈ 2026-11-25), while B1's
+Kakuna read holds the three CPU lanes for ≈ 60 h. On the CPU X70's crosses would wait for those lanes; on the card
+they follow the fourth fork directly. The registration (the 2026-11-13 entry) named both venues and fixed neither.
+
+**What changed** (`measurements/x70_ent0_control_2026-11-13/PREREG.md` §14; no fork has launched, so the header's
+change rule is met).
+- **GO conditions (§14.1), checked at GO time:** B1's phase 2 done (every B1 run at its registered end; none live,
+  queued, held or owed a re-run that needs the card); B1's 100M look, with its 75M and EQ looks, played and read; no
+  B1 run paused, stopped early or re-ordered; the lease granted; the amendment on `main`; the kit's `stage-check`,
+  `pin-check` and visible-card dry run green for the seed; 15 GiB free; `arm_chain plan` OK on the chain built from
+  `chain_items_x70.json`; the play checkout at `333a73dd`, clean.
+- **The hand-off names its off-main pin:** `chain_items_x70.json` gains a chain-level `off_main_pins` entry for the
+  training pin `9e97cad5` (off main, held by the tag `ce3d-pin-9e97cad5`). Since `9970d4286` the arm chain's
+  `plan --check-pins` judges each arm's own pin and refuses one that is not on `origin/main` without that entry. No
+  item changed.
+- **Venue (§14.2):** all three crosses on the card (`drive_cross.sh <pin dir> <work> cuda anchor|c0|x67`, the
+  deciding cross first). Allowed because §5.1 fixes the cells, pairs, batches, schedule seed, protocol and pin and
+  names no device, and a row's `regime_id` at the play pin does not depend on the device. The statistic, the rule,
+  the classes and the power are unchanged.
+- **One venue a cross:** a cross is finished on the device and backend its first row was played on. The driver
+  HOLDs before it plays (exit 7) and the reader refuses before it pools a cell (exit 7, nothing written, no class):
+  a HOLD for the orchestrator, never INCONCLUSIVE. The reader writes `played_on` into every result. The CPU is the
+  fallback for a WHOLE cross. The reported crosses, set beside CPU-played banked crosses, carry a venue label.
+- **Why the rule:** play is greedy and the card's arithmetic differs from the CPU's. In CE-3d's banked deciding
+  cross (48,000 games, CPU eager, the same play pin) 4,428 games (9.2 %) hold a decision inside the wide near-tie
+  bar (2e-3) and 41 inside the tight one (2e-5). **UNVERIFIED:** that a cell played on the card gives the CPU's
+  outcomes at this pin (the one identity check on record, 2026-10-06, 5 / 5 cells at 50 pairs, is at an older pin
+  and a smaller model). Both sides of a game share the device, so the deciding cross is not confounded by venue.
+- **Rate check (§14.3), NOT RUN:** one banked swap fork against another (in no registered cross, no X70 fork),
+  1,000 pairs, `--purpose audit`, seed 911, a scratch ledger, under `gpu_lock.sh mem_cap.sh --max-run-s 600 32`.
+  rc 0 re-costs the crosses as 3 × start-up + 184,000 games ÷ rate; rc 89 means the start-up alone passed ten
+  minutes. **UNVERIFIED:** the on-card rate (≈ 40 games/s is an estimate carried from older drivers) and the
+  on-card engine start (B1 §18 slot S6 recorded 1,359.6 s at B1's pin for a two-architecture engine; X5 P0
+  recorded 114–167 s on a smaller model).
+
+**Validated, CPU only, no lease** (`revalidation_2026-11-16.txt`): `arm_chain plan --check-pins --describe` (at
+main `9970d4286`) on scratch chains of the four draft items: PLAN OK with the hand-off's `off_main_pins` entry (the
+pinned parser accepted the kit's argv), REFUSED on all four arms without it, a fifth seed REFUSED; kit `stage-check` ALLOWED for 7331–7334 and
+REFUSED for 7335; `pin-check` exit 0; the play checkout at the play pin, clean; the reader's venue functions at the
+play pin on CE-3d's banked deciding cross (48 rows, one venue); the rate check's command form on the CPU (4 games,
+exit 0, a scratch ledger; engine up in 39.0 s eager; no rate measured). **Not executed:** anything on the card,
+any game of any cross, `arm_chain` against a live chain.
+
+**Record:** `measurements/x70_ent0_control_2026-11-13/` (`PREREG.md` §14, `cross/read_cross.py`,
+`cross/drive_cross.sh`, `chain_items_x70.json`, `revalidation_2026-11-16.txt`); `src/main/x35/x70_test.py` (the
+venue tests, the hand-off's pin entry).
+View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X70).
+
+Tag: **AMENDMENT · X70 Amendment 1 · GO conditions · crosses on the card, one venue a cross (exit 7) · statistic unchanged · on-card rate and engine start UNVERIFIED, check not run · blind · not launched**
