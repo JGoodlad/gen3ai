@@ -155,6 +155,29 @@ def test_the_bank_path_still_updates_the_tracked_file_and_merges(tmp_path):
     assert doc["tests"][_SENTINEL]["commit"] == "a" * 40, "the banked row of another test must survive"
     assert doc["last_written"] != "2026-01-01T00:00:00Z"
     assert "2 row(s) recorded" in out and "NOT banked" not in out, out
+    assert doc["tests"][_PASS]["base"] == head, "measured ON main, a row's base is main's HEAD"
+    assert doc["tests"][_PASS]["test_blob"] == _git(fake["repo"], "hash-object", "dummy_slow_test.py") == doc["tests"][_RED]["test_blob"]
+
+
+def test_a_banked_row_stamps_where_main_stood_and_the_bytes_of_its_test_not_just_the_worktree_commit(tmp_path):
+    """The identity the ship's rebase cannot orphan (`slow_tier_status`'s docstring): banked from a branch one commit past
+    main, with the test file edited but UNCOMMITTED, the row's `commit` is the branch HEAD (provenance), its `base` is MAIN's
+    tip (the fork point, a commit the rebase never rewrites) and its `test_blob` is the bytes that RAN, not those of HEAD.
+    Fails on a revert of the conftest's stamping."""
+    fake = _fake_checkout(tmp_path)
+    repo = fake["repo"]
+    main_tip = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "checkout", "-q", "-b", "work")
+    (repo / "unrelated.txt").write_text("x\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "a worktree commit the ship will rewrite")
+    branch_head = _git(repo, "rev-parse", "HEAD")
+    (repo / "dummy_slow_test.py").write_text(_DUMMY + "\n# edited after the last commit\n")
+    _run_session(repo, **{BANK_ENV: "1"})
+    row = json.loads(fake["tracked"].read_text())["tests"][_PASS]
+    assert row["commit"] == branch_head != main_tip
+    assert row["base"] == main_tip, "the base is main's commit the branch forked from"
+    assert row["test_blob"] == _git(repo, "hash-object", "dummy_slow_test.py") != _git(repo, "rev-parse", "HEAD:dummy_slow_test.py")
 
 
 @pytest.mark.parametrize("bank", [None, "1"], ids=["file-only", "file-and-bank"])

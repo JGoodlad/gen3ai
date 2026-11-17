@@ -1000,11 +1000,29 @@ reads it:
   | `GEN3AI_SLOW_STATUS_BANK=1` | the committed file: **the bank step**, for the commit that means to carry the rows |
   | neither (an ordinary session) | nowhere; the terminal summary says "N slow verdict(s) measured and NOT banked" |
 
-  `record_results` takes no default path, so no caller can write the tracked file by omission. Bank a run
-  from a worktree whose HEAD is the tip you will ship (a row stamps the worktree's HEAD, and the ship's rebase
-  rewrites a commit the tip has moved past: that row is "not an ancestor", STALE until re-measured).
-  `src/slow_tier_status_bank_test.py` pins each row of the table with a real child session in a fake checkout; it
-  fails on a revert of the conftest.
+  `record_results` takes no default path, so no caller can write the tracked file by omission. Bank from any worktree: a
+  row's identity is NOT the worktree commit (below), so the ship's rebase cannot orphan it.
+  `src/slow_tier_status_bank_test.py` pins each row of the table with a real child session in a fake checkout, and
+  that the row is stamped `base` + `test_blob`; it fails on a revert of the conftest.
+  🚨 **A ROW'S IDENTITY is `base` + `test_blob`; `commit` is provenance only** (2026-11-17). A row used to stamp the
+  worktree HEAD it ran at, and `/gen3ai-ship`'s rebase rewrites that commit, so the stamp became a SHA on no branch of
+  main: "not an ancestor", STALE forever (354 of 730 rows at 15 such commits on 11-16). Staleness is a COMMIT COUNT
+  (the gate never compares a test's or the code's content), so the stamp has to be a position a rebase cannot move:
+  `base` = `git merge-base HEAD main` at measurement time (`slow_tier_status.measurement_base`; ON main it is HEAD). Main
+  only appends, so `base` is an ancestor of every later HEAD; the distance is counted from it, which keeps the commits
+  main gained since the fork (unmeasured) and the worktree's own few (conservative) in the count. `test_blob` = the git
+  blob id of the test FILE's working-tree bytes as it ran: a content identity that survives the rebase when the file is
+  unchanged, and a row whose file differs from today's is stale however near its base is (it measured a different
+  test). It does not cover the code the test exercises (the honest limitation, below). A remap of SHAs at ship time was
+  rejected: it needs a hook in `/gen3ai-ship` and a patch-id match that fails when main touched the same files, where
+  the fork point is a plain git answer. `src/utils/slow_tier_identity_test.py` runs a real worktree, rebase onto a moved
+  main and fast-forward, and fails on a revert of each half.
+  **Rows an older writer stamped** (only `commit`) are judged by it as before and counted "without an identity stamp" in
+  the gate's census; `python -m utils.slow_tier_prune --adopt-stamps [--write]` fills `base` + `test_blob` from each row's
+  own commit (`slow_tier_status.adopt_stamps`, no pytest run): the fork point of that commit on main and the file at that
+  commit. A row is stamped only when git answers both; the rest (a commit git no longer has, a file not yet committed at
+  its stamp) stay byte-for-byte and are listed, never re-stamped to a guess: re-measure them. The 11-17 run stamped 708 of
+  730 rows (333 were non-ancestors) and left 22 (21 at one garbage-collected commit, 1 banked before its file was committed).
   🚨 **A PASS needs a CALL phase** (`slow_tier_status.settle`): a setup that succeeds classifies
   `pass`, so a test interrupted mid-call once banked as PASS at 0.0 s through the session-finish
   sweep (2026-09-24, a MILESTONE run stopped with SIGTERM). A test with no call report now banks
@@ -1020,18 +1038,18 @@ reads it:
   A row is keyed by test id and the writer only merges, so a deleted, renamed or un-marked test leaves its row behind:
   `python -m utils.slow_tier_prune` lists them (exit 1) and `--write` removes them (`slow_tier_status.prune_rows`, same lock
   and atomic rename; a failed collection refuses and touches nothing). Run it after tiering or renaming slow tests.
-  It drops only rows of tests no longer collected: a row of a STILL-collected test whose commit is not an ancestor of
-  HEAD is a measurement that went stale, and only a re-measure (`GEN3AI_SLOW_STATUS_BANK=1 pytest <that test>`) replaces
-  it. Deleting it would hide a red.
+  It drops only rows of tests no longer collected: a row of a STILL-collected test whose position (`base`, else the old
+  `commit`) is not an ancestor of HEAD is a measurement that went stale, and only a re-measure
+  (`GEN3AI_SLOW_STATUS_BANK=1 pytest <that test>`) replaces it. Deleting it would hide a red.
 * **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~0.03 s plus one
-  `git rev-list` per distinct recorded commit.
+  `git rev-list` per distinct recorded base and one `git hash-object` for every test file the rows name.
 
 | class | meaning | gate |
 |---|---|---|
 | `fail` | the tier ran it and it failed | **FAILS the routine gate**, naming the test id and the commit it failed at |
 | `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (Ctrl-C, a SIGTERM'd xdist worker — killed in flight) | reported — *a timeout is never a semantic outcome* |
 | unrecorded | collected as `slow` this session, no row | reported — a new slow test is not a regression |
-| stale | the row is >25 commits behind HEAD, or its commit is unknown **or not an ancestor of HEAD** (a row banked at a side-branch commit that never reached main; `_git_distance` checks `merge-base --is-ancestor` first, because a bare `git rev-list sha..HEAD` count reads such a commit as "N behind" and showed 74 of 680 rows fresh on 2026-11-09 when 0 were) | reported |
+| stale | the row's test FILE differs from the one measured (`test_blob`), **or** its `base` is >25 commits behind HEAD, unknown or **not an ancestor of HEAD** (`slow_tier_status.git_distance` checks `merge-base --is-ancestor` first, because a bare `git rev-list sha..HEAD` count reads a side-branch commit as "N behind" and showed 74 of 680 rows fresh on 2026-11-09 when 0 were) | reported |
 
 The three non-fatal classes are emitted as **warnings**, so they survive `-q` in the warnings
 summary, plus a one-line census on `-s`.
@@ -1083,7 +1101,7 @@ rows is reading nothing at all.
 
 The recording side can be turned off on its own with `GEN3AI_SKIP_SLOW_STATUS_RECORD=1`, which beats a bank request
 (a run whose verdict should not be banked even where `GEN3AI_SLOW_STATUS_BANK=1` is set: a deliberate experiment, a
-starved box). Thirteen meta-tests in the gate
+starved box). The meta-tests in the gate
 file plant each condition — a red, an inconclusive, an unrecorded, a stale row, an unknown commit,
 a merge that must not truncate, a setup-only pass that must not bank green, a skip that must not
 replace a banked verdict — so the gate's

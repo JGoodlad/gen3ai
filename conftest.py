@@ -459,8 +459,10 @@ def _write_slow_results(nodeids=None):
         return
     try:
         from utils.git import get_git_hash
+        from utils.paths import repo_root
         from utils.slow_tier_status import (
-            BANK_ENV, INTERRUPTED_DETAIL, make_row, recording_target, record_results, settle)
+            BANK_ENV, INTERRUPTED_DETAIL, make_row, measurement_base, recording_target, record_results, settle,
+            file_of, working_blobs)
         target = recording_target()
         if target is None:
             if nodeids is None:             # the session-finish sweep: ONE line, never per test
@@ -473,6 +475,10 @@ def _write_slow_results(nodeids=None):
         factor = _contention_factor()
         wanted = _slow_results if nodeids is None else {
             n: _slow_results[n] for n in nodeids if n in _slow_results}
+        # A row's IDENTITY is not the worktree commit (the ship's rebase rewrites it) but where on main's history the
+        # measured code sat (`base`) and the bytes of the test file that ran (`test_blob`): see `slow_tier_status`.
+        base = measurement_base(repo_root())
+        blobs = working_blobs(repo_root(), [file_of(n) for n in wanted])
         rows = {}
         for nodeid, r in wanted.items():
             # A test interrupted in flight has only its SETUP row here, which reads `pass`; the
@@ -481,7 +487,8 @@ def _write_slow_results(nodeids=None):
             detail = INTERRUPTED_DETAIL if status != r["status"] else r.get("detail", "")
             own = r.get("contention")
             rows[nodeid] = make_row(status, commit=commit, duration_s=r["duration_s"],
-                                    contention=factor if own is None else own, detail=detail)
+                                    contention=factor if own is None else own, detail=detail,
+                                    base=base, test_blob=blobs.get(file_of(nodeid), ""))
         if not rows:
             return
         path = record_results(rows, target)

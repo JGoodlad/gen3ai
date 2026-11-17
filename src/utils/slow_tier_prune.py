@@ -9,9 +9,17 @@ remove them: ask pytest what it collects as ``slow`` (the SAME ``-m slow`` colle
     python -m utils.slow_tier_prune            # CHECK: list the rows that would go; exit 1 if there are any
     python -m utils.slow_tier_prune --write    # delete them (under the writer's flock + atomic rename)
 
-It also REPORTS (never deletes) the rows of still-collected tests banked at a commit that is not an ancestor of HEAD
+It also REPORTS (never deletes) the rows of still-collected tests whose position is not an ancestor of HEAD
 (`slow_tier_status.orphaned`): the test exists, so the row is a stale measurement that only a re-measure
-(`GEN3AI_SLOW_STATUS_BANK=1 pytest <id>`, from a worktree at the tip you will ship) replaces. The exit code ignores them.
+(`GEN3AI_SLOW_STATUS_BANK=1 pytest <id>`) replaces. Rows an older writer stamped with only a worktree `commit` (the ship's rebase
+rewrote it) are what lands here; `--adopt-stamps` repairs the ones git can still answer for:
+
+    python -m utils.slow_tier_prune --adopt-stamps           # CHECK: what would be stamped, what git cannot map
+    python -m utils.slow_tier_prune --adopt-stamps --write   # stamp `base` + `test_blob` from each row's own commit
+
+A row is stamped only when git answers both questions (the commit of main it was built on, the test file at that commit);
+every other row is left byte-for-byte and listed, never re-stamped to a guess. It skips the collection (no pytest run) and
+exits 0 either way.
 
 Exit: 0 nothing to prune (or pruned with --write), 1 rows would be pruned (check mode), 2 the collection failed or
 its output did not parse to the count pytest reported (nothing is touched). Run it with ``PYTHONPATH`` on the
@@ -73,9 +81,28 @@ def git_is_ancestor(sha: str) -> bool:
     return r.returncode == 0
 
 
+def adopt(path: Optional[Path], cwd: Optional[Path], write: bool) -> int:
+    """`--adopt-stamps`: fill `base` / `test_blob` of the rows that have none, from each row's own commit (`ST.adopt_rows`)."""
+    target = Path(path) if path is not None else ST.status_path()
+    adopted, unmapped = ST.adopt_rows(target, cwd if cwd is not None else repo_path(), write=write)
+    verb = "stamped" if write else "WOULD stamp"
+    print(f"slow_tier_prune: {verb} {len(adopted)} row(s) with base + test_blob; {len(unmapped)} row(s) git cannot map "
+          "(left untouched: re-measure them)" + (":" if unmapped else ""))
+    by_why: dict = {}
+    for nodeid, why in unmapped:
+        by_why.setdefault(why, []).append(nodeid)
+    for why, ids in sorted(by_why.items()):
+        print(f"  {len(ids):3d} row(s): {why}  (e.g. {ids[0]})")
+    return 0
+
+
 def main(argv: Optional[Sequence[str]] = None, *, collect: Callable[[], Set[str]] = collect_slow_ids,
-         path: Optional[Path] = None, is_ancestor: Callable[[str], bool] = git_is_ancestor) -> int:
-    write = "--write" in (argv if argv is not None else sys.argv[1:])
+         path: Optional[Path] = None, is_ancestor: Callable[[str], bool] = git_is_ancestor,
+         git_cwd: Optional[Path] = None) -> int:
+    args = argv if argv is not None else sys.argv[1:]
+    write = "--write" in args
+    if "--adopt-stamps" in args:
+        return adopt(path, git_cwd, write)
     try:
         collected = collect()
     except CollectionError as e:
@@ -90,7 +117,8 @@ def main(argv: Optional[Sequence[str]] = None, *, collect: Callable[[], Set[str]
     verb = "pruned" if write else "WOULD prune"
     print(f"slow_tier_prune: {verb} {len(removed)} row(s) of the status file; {len(collected)} slow tests collected")
     target = Path(path) if path is not None else ST.status_path()
-    orphans = ST.orphaned(ST._read(target), is_ancestor)
+    doc = ST._read(target)
+    orphans = ST.orphaned(doc, is_ancestor)
     if orphans:
         commits = sorted({c for _, c in orphans})
         print(f"slow_tier_prune: {len(orphans)} row(s) of still-collected tests are banked at {len(commits)} commit(s) that are "
@@ -99,6 +127,9 @@ def main(argv: Optional[Sequence[str]] = None, *, collect: Callable[[], Set[str]
         if len(orphans) <= 10:
             for nodeid, sha in orphans:
                 print(f"  {nodeid}  @ {sha[:12] or '?'}")
+    unstamped = sum(1 for r in doc.get("tests", {}).values() if not r.get("base"))
+    if unstamped:
+        print(f"slow_tier_prune: {unstamped} row(s) carry no `base` (an older writer): `--adopt-stamps` stamps the ones git can answer for")
     return 1 if (removed and not write) else 0
 
 

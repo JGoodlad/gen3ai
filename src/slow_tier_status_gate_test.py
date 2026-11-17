@@ -22,8 +22,12 @@ Refresh the artifact:
 
     export PYTHONPATH=$PYTHONPATH:src && GEN3AI_SLOW_STATUS_BANK=1 python3 -m pytest src/ -m slow -q -n 2
 
-Opt out with `GEN3AI_SKIP_SLOW_STATUS_GATE=1`. Runs in every tier; measured **0.03 s** plus one
-`git rev-list` per distinct recorded commit.
+A row's staleness is judged by its IDENTITY, not by the worktree commit that measured it (a ship's rebase rewrites that
+commit): its `base` (a commit of main) for the distance, its `test_blob` for "this is still the test that ran" - the module
+docstring of `utils.slow_tier_status` has the why.
+
+Opt out with `GEN3AI_SKIP_SLOW_STATUS_GATE=1`. Runs in every tier; measured **0.03 s** plus one `git rev-list` per
+distinct recorded base and one `git hash-object` for all the test files.
 """
 from __future__ import annotations
 
@@ -41,12 +45,15 @@ from utils.slow_tier_status import (
     Verdict,
     classify,
     evaluate,
+    git_distance,
     make_row,
     merge_outcome,
     merge_row,
     record_results,
     settle,
     status_path,
+    file_of,
+    working_blobs,
 )
 
 pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
@@ -91,33 +98,12 @@ def _load_doc():
 _DIST_CACHE: dict = {}
 
 
-def _git_distance(sha: str, cwd):
-    """How many commits HEAD is ahead of ``sha``; ``None`` when git does not know the commit OR
-    ``sha`` is not an ancestor of HEAD.
-
-    ``rev-list --count sha..HEAD`` alone is blind to the second case: for a side-branch commit it
-    counts HEAD's commits missing from that branch and reads as "N behind", so a row banked at a
-    commit that never reached main looked fresh (2026-11-09: 0 of 680 rows was a verified pass
-    within 25 commits). ``evaluate`` reports ``None`` as stale."""
-    try:
-        anc = subprocess.run(["git", "merge-base", "--is-ancestor", sha, "HEAD"], cwd=str(cwd),
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if anc.returncode != 0:  # 1 = not an ancestor, 128 = unknown commit
-            return None
-        out = subprocess.check_output(
-            ["git", "rev-list", "--count", f"{sha}..HEAD"],
-            cwd=str(cwd), text=True, stderr=subprocess.DEVNULL).strip()
-        return int(out)
-    except Exception:
-        return None
-
-
 def _commit_distance(sha: str):
-    """Cached ``_git_distance`` against this checkout; ``None`` for an empty / ``unknown`` sha."""
+    """Cached ``git_distance`` against this checkout; ``None`` for an empty / ``unknown`` sha."""
     if not sha or sha == "unknown":
         return None
     if sha not in _DIST_CACHE:
-        _DIST_CACHE[sha] = _git_distance(sha, repo_path())
+        _DIST_CACHE[sha] = git_distance(sha, repo_path())
     return _DIST_CACHE[sha]
 
 
@@ -139,7 +125,9 @@ def test_no_slow_tier_test_is_recorded_red(request):
     _skip_if_opted_out()
     path, doc = _load_doc()
     collected = getattr(request.config, "_gen3ai_slow_collected", set())
-    v = evaluate(doc, collected=collected, commit_distance=_commit_distance)
+    # ONE `git hash-object` for every test file the rows name: a row stamped with a different blob measured another test.
+    blobs = working_blobs(repo_path(), sorted({file_of(n) for n in doc["tests"]}))
+    v = evaluate(doc, collected=collected, commit_distance=_commit_distance, test_blob_now=blobs.get)
     _report(v, path)
     assert v.ok, v.red_message()
 
@@ -149,7 +137,7 @@ def _report(v: Verdict, path) -> None:
     print(f"[slow-tier status] {path}: {v.n_rows} row(s), {v.n_pass} pass, {v.n_skip} skip, "
           f"{len(v.reds)} FAIL, {len(v.inconclusive)} inconclusive, "
           f"{len(v.unrecorded)} unrecorded, {len(v.stale)} stale, "
-          f"{len(v.skipped_since)} kept over a later skip")
+          f"{len(v.skipped_since)} kept over a later skip, {len(v.unstamped)} without an identity stamp")
     if v.inconclusive:
         warnings.warn(
             "slow-tier INCONCLUSIVE (a timeout signature or an interrupted run — never a verdict): "
@@ -161,9 +149,14 @@ def _report(v: Verdict, path) -> None:
             + (" …" if len(v.unrecorded) > 6 else ""), stacklevel=2)
     if v.stale:
         warnings.warn(
-            f"{len(v.stale)} slow-tier row(s) older than {STALE_COMMITS} commits — the tier has "
-            f"not been run lately, so how much a green here is worth is a question about the "
-            f"schedule: {v.stale[0][0]} ({v.stale[0][1]})", stacklevel=2)
+            f"{len(v.stale)} slow-tier row(s) stale (a changed test file, or older than {STALE_COMMITS} commits — the "
+            f"tier has not been run lately, so how much a green here is worth is a question about the "
+            f"schedule): {v.stale[0][0]} ({v.stale[0][1]})", stacklevel=2)
+    if v.unstamped:
+        warnings.warn(
+            f"{len(v.unstamped)} slow-tier row(s) carry no base/test_blob identity (an older writer): judged by their "
+            f"commit alone, which a rebase may have orphaned. `python -m utils.slow_tier_prune --adopt-stamps` "
+            f"stamps those git can still answer for, a re-measure (`GEN3AI_SLOW_STATUS_BANK=1`) the rest: {v.unstamped[0]}", stacklevel=2)
 
 
 # ═════════════════════════════════════════ THE META-TESTS — a planted red MUST fire ══
@@ -326,7 +319,7 @@ def test_the_env_override_points_the_reader_at_a_scratch_file(tmp_path, monkeypa
 
 
 def test_a_commit_that_is_not_an_ancestor_of_HEAD_is_stale_not_N_behind(tmp_path):
-    """Pins the blind spot: a row banked at a SIDE-branch commit must read as unknown (stale), not
+    """Pins the blind spot (`git_distance`): a row banked at a SIDE-branch commit must read as unknown (stale), not
     as the count of HEAD's commits the side branch lacks. Fails on the old bare `rev-list --count`."""
     def git(*a):
         return subprocess.check_output(
@@ -340,7 +333,7 @@ def test_a_commit_that_is_not_an_ancestor_of_HEAD_is_stale_not_N_behind(tmp_path
     git("commit", "-q", "--allow-empty", "-m", "side")
     side = git("rev-parse", "HEAD")
     git("checkout", "-q", "main")
-    assert _git_distance(base, tmp_path) == 2          # an ancestor: honest distance
-    assert _git_distance(git("rev-parse", "HEAD"), tmp_path) == 0
-    assert _git_distance(side, tmp_path) is None       # not an ancestor: stale, never "2 behind"
-    assert _git_distance("0" * 40, tmp_path) is None   # unknown to git
+    assert git_distance(base, tmp_path) == 2          # an ancestor: honest distance
+    assert git_distance(git("rev-parse", "HEAD"), tmp_path) == 0
+    assert git_distance(side, tmp_path) is None       # not an ancestor: stale, never "2 behind"
+    assert git_distance("0" * 40, tmp_path) is None   # unknown to git

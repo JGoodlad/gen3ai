@@ -38,7 +38,29 @@ where nothing measured is on file. (`merge_row`; 2026-09-29, seven GPU PASS rows
 | `fail` | the slow tier RAN this test and it failed | **FAILS the routine gate**, naming the test and the commit it failed at |
 | `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (killed or interrupted in flight) | reported, never fatal — *a timeout is never a semantic outcome* |
 | unrecorded | collected as `slow` this session, no row here — or a row that has only ever SKIPPED (no measurement) | reported — a new slow test is not a regression |
-| stale | the row's commit is far behind HEAD, or not an ancestor of it | reported |
+| stale | the row's test FILE changed since it was measured, or its BASE (below) is far behind HEAD or not an ancestor of it | reported |
+
+**A MEASUREMENT'S IDENTITY: `base` + `test_blob`, never the worktree commit** (2026-11-17). A row used to stamp only
+`commit` = the HEAD it was measured at, and a measurement is made in a WORKTREE, whose commits `/gen3ai-ship`'s rebase
+then rewrites: the stamp became a SHA that is on no branch of main ("not an ancestor", stale forever; 354 of 730 rows
+at 15 such commits on 2026-11-16). Staleness has never been about the code's content, it is a COMMIT COUNT (HEAD more
+than `STALE_COMMITS` ahead of the stamp, or the stamp not in HEAD's history) - so the stamp has to be a position in
+main's history that a rebase cannot move, and the one thing that cannot move is a commit already on main:
+
+* `base` = `git merge-base HEAD main` at measurement time: the main commit the measured code was built on. Main only
+  ever appends (`/gen3ai-ship` rebases then fast-forwards), so `base` is an ancestor of every later HEAD whatever
+  happens to the worktree commits on top of it. The distance is counted from it, so the commits main gained between the
+  fork and the ship count as unmeasured (honest), and the worktree's own commits count too (conservative by a handful of
+  commits against a threshold of 25). Measured ON main, `base` is HEAD itself.
+* `test_blob` = the git blob id of the test FILE as measured (the working-tree bytes, so a bank before the commit stamps
+  what ran). It is a CONTENT identity: it survives a rebase unchanged when the file is unchanged, and a row whose file
+  differs from today's is a measurement of a different test, so it is reported stale however near its base is. It does
+  NOT cover the code the test exercises: that stays the commit count's job (the honest limitation below).
+* `commit` stays as provenance only (the red message names it); no judgement reads it once `base` exists.
+
+A row with no `base` (an older writer, a GPU window pinned before this) is judged by its `commit` as before and counted
+`unstamped`; `python -m utils.slow_tier_prune --adopt-stamps` fills `base` and `test_blob` from the row's own commit
+wherever git can still answer (`adopt_stamps`), and REPORTS the rest without touching it.
 
 **WHY STALENESS IS REPORTED AND NOT FATAL.** A stale row is a statement about the *schedule*, not
 about the code — nobody has run the tier lately. Failing on it would make "the tier has not been run
@@ -81,6 +103,7 @@ import contextlib
 import hashlib
 import json
 import os
+import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -155,6 +178,89 @@ def recording_target(environ: Optional[Mapping[str, str]] = None) -> Optional[Pa
     if env.get(BANK_ENV, "") not in ("", "0"):
         return tracked_path()
     return None
+
+
+# ──────────────────────────────────────────────────────────────── a measurement's identity ──
+
+#: The branch a measurement's `base` is taken against. Shipped work only ever reaches it by a fast-forward, so a commit
+#: reachable from it is on no branch the ship's rebase can rewrite.
+INTEGRATION_BRANCH = "main"
+
+
+def file_of(nodeid: str) -> str:
+    """The repo-relative path of the file a node id lives in."""
+    return nodeid.split("::", 1)[0]
+
+
+def _git(cwd, *argv: str, stdin: Optional[str] = None) -> Optional[str]:
+    """``git <argv>`` in ``cwd``: its stdout stripped, ``None`` on any failure (git absent, a nonzero exit, a timeout)."""
+    try:
+        r = subprocess.run(["git", *argv], cwd=str(cwd), input=stdin, capture_output=True, text=True, timeout=60)
+    except Exception:
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def fork_point(cwd, commit: str) -> Optional[str]:
+    """The commit of `INTEGRATION_BRANCH` that ``commit`` was built on (``git merge-base``), or ``None`` when git cannot say
+    (no such branch, an unknown or garbage-collected commit). ``commit`` itself when it is already on the branch."""
+    out = _git(cwd, "merge-base", commit, INTEGRATION_BRANCH)
+    return out.splitlines()[0] if out else None
+
+
+def measurement_base(cwd) -> str:
+    """The `base` a row measured NOW, in ``cwd``, stamps (see the module docstring): the fork point of HEAD on main. A
+    checkout with no main branch falls back to HEAD itself (the pre-2026-11-17 stamp, not rebase-safe); ``""`` when git
+    cannot answer at all."""
+    return fork_point(cwd, "HEAD") or _git(cwd, "rev-parse", "HEAD") or ""
+
+
+def working_blobs(cwd, relpaths: "List[str]") -> Dict[str, str]:
+    """``{relpath: git blob id}`` of those files AS THEY ARE ON DISK now, in ONE git call; a path that is not a file is
+    simply absent from the answer."""
+    present = [p for p in dict.fromkeys(relpaths) if (Path(cwd) / p).is_file()]
+    if not present:
+        return {}
+    out = _git(cwd, "hash-object", "--stdin-paths", stdin="\n".join(present) + "\n")
+    ids = out.splitlines() if out else []
+    return dict(zip(present, ids)) if len(ids) == len(present) else {}
+
+
+def blobs_at(cwd, specs: "List[Tuple[str, str]]") -> "List[Optional[str]]":
+    """The blob id of ``path`` at ``commit`` for each ``(commit, path)``, in ONE git call; ``None`` where the commit or the
+    path does not exist."""
+    if not specs:
+        return []
+    out = _git(cwd, "cat-file", "--batch-check", stdin="".join(f"{c}:{p}\n" for c, p in specs))
+    lines = out.splitlines() if out is not None else []
+    if len(lines) != len(specs):
+        return [None] * len(specs)
+    return [ln.split()[0] if len(ln.split()) == 3 and ln.split()[1] == "blob" else None for ln in lines]
+
+
+def git_distance(sha: str, cwd) -> Optional[int]:
+    """How many commits HEAD is ahead of ``sha``; ``None`` when git does not know the commit OR ``sha`` is not an
+    ancestor of HEAD.
+
+    ``rev-list --count sha..HEAD`` alone is blind to the second case: for a side-branch commit it counts HEAD's commits
+    missing from that branch and reads as "N behind", so a row banked at a commit that never reached main looked fresh
+    (2026-11-09: 0 of 680 rows was a verified pass within 25 commits). ``evaluate`` reports ``None`` as stale."""
+    try:
+        anc = subprocess.run(["git", "merge-base", "--is-ancestor", sha, "HEAD"], cwd=str(cwd),
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if anc.returncode != 0:  # 1 = not an ancestor, 128 = unknown commit
+            return None
+        out = subprocess.check_output(["git", "rev-list", "--count", f"{sha}..HEAD"], cwd=str(cwd), text=True,
+                                      stderr=subprocess.DEVNULL).strip()
+        return int(out)
+    except Exception:
+        return None
+
+
+def position(row: Dict[str, Any]) -> str:
+    """The commit a row's staleness is counted from: its `base` (a commit of main, rebase-proof), else the `commit` an older
+    writer stamped (``""`` when neither)."""
+    return str(row.get("base") or row.get("commit") or "")
 
 
 # ───────────────────────────────────────────────────────────────────── recording ──
@@ -279,19 +385,68 @@ def prune_rows(collected: "set[str]", path: Optional[Path] = None, *, write: boo
 
 
 def orphaned(doc: Dict[str, Any], is_ancestor: "Callable[[str], bool]") -> List[Tuple[str, str]]:
-    """``[(id, commit)]`` of the rows banked at a commit that is NOT an ancestor of HEAD. Pure (the git question is
-    ``is_ancestor``). Such a row is a measurement of code that never reached this history (typically a worktree commit the
-    ship's rebase rewrote): the gate reports it STALE, and unlike a dead row it is never deleted - the test still exists,
-    so only a re-measure (`GEN3AI_SLOW_STATUS_BANK=1`) replaces it, and deleting a red one would hide the red."""
+    """``[(id, position)]`` of the rows whose `position` (`base`, else the old `commit` stamp) is NOT an ancestor of HEAD.
+    Pure (the git question is ``is_ancestor``). A `base` is a commit of main, so this is what remains for a row an older
+    writer stamped with a worktree commit the ship's rebase rewrote (`adopt_stamps` maps those) or whose commit git no
+    longer has: the gate reports it STALE, and unlike a dead row it is never deleted - the test still exists, so only a
+    re-measure (`GEN3AI_SLOW_STATUS_BANK=1`) replaces it, and deleting a red one would hide the red."""
     verdict: Dict[str, bool] = {}
     out = []
     for nodeid, row in sorted(doc.get("tests", {}).items()):
-        sha = str(row.get("commit", ""))
+        sha = position(row)
         if sha not in verdict:
             verdict[sha] = bool(sha) and sha != "unknown" and is_ancestor(sha)
         if not verdict[sha]:
             out.append((nodeid, sha))
     return out
+
+
+def adopt_stamps(doc: Dict[str, Any], *, fork: "Callable[[str], Optional[str]]",
+                 blobs: "Callable[[List[Tuple[str, str]]], List[Optional[str]]]") -> Tuple[List[str], List[Tuple[str, str]]]:
+    """Give every row that has NO `base` its `base` and `test_blob`, derived from the row's own `commit`: ``fork(commit)``
+    (the commit of main it was built on) and ``blobs([(commit, test file)])`` (the file at that commit - the same
+    clean-tree assumption the `commit` stamp always made). **Deterministic or nothing**: a row is stamped only when git
+    answers BOTH questions; every other row is left byte-for-byte as it was and returned as ``(id, why)`` so the caller
+    reports it - never re-stamped to a guess. Rows that already carry a `base` are never touched (so a partial stamp of
+    the new writer is not overwritten with a derivation from a possibly dirty tree). Mutates ``doc`` in place; returns
+    ``(adopted ids, [(unmapped id, why)])``."""
+    todo = [(n, r) for n, r in sorted(doc.get("tests", {}).items()) if not r.get("base")]
+    commits = {n: str(r.get("commit") or "") for n, r in todo}
+    blob_of: Dict[str, Optional[str]] = {}
+    known = [n for n, _ in todo if commits[n] not in ("", "unknown")]
+    for n, b in zip(known, blobs([(commits[n], file_of(n)) for n in known])):
+        blob_of[n] = b
+    forks: Dict[str, Optional[str]] = {}
+    adopted: List[str] = []
+    unmapped: List[Tuple[str, str]] = []
+    for nodeid, row in todo:
+        c = commits[nodeid]
+        if c in ("", "unknown"):
+            unmapped.append((nodeid, "no commit stamp to derive from"))
+            continue
+        if c not in forks:
+            forks[c] = fork(c)
+        if not forks[c]:
+            unmapped.append((nodeid, f"commit {c[:12]} is unknown to git (or has no fork point on {INTEGRATION_BRANCH})"))
+        elif not blob_of.get(nodeid):
+            unmapped.append((nodeid, f"{file_of(nodeid)} does not exist at commit {c[:12]}"))
+        else:
+            row["base"] = forks[c]
+            row["test_blob"] = blob_of[nodeid]
+            adopted.append(nodeid)
+    return adopted, unmapped
+
+
+def adopt_rows(path: Path, cwd, *, write: bool = True) -> Tuple[List[str], List[Tuple[str, str]]]:
+    """`adopt_stamps` on the status file ``path`` against the git history of ``cwd``, under the writer's flock and atomic
+    rename (a bank in flight loses nothing); with ``write=False`` it only reports what it WOULD adopt."""
+    target = Path(path)
+    with _exclusive(target):
+        doc = _read(target)
+        adopted, unmapped = adopt_stamps(doc, fork=lambda c: fork_point(cwd, c), blobs=lambda specs: blobs_at(cwd, specs))
+        if write and adopted:
+            _write_atomic(target, doc)
+    return adopted, unmapped
 
 
 #: The verdicts a later SKIP may NOT replace — everything that is a measurement. See `merge_row`.
@@ -326,9 +481,10 @@ def merge_row(old: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, A
 
 
 def make_row(status: str, *, commit: str, duration_s: float,
-             contention: float, detail: str = "") -> Dict[str, Any]:
-    """One test's row. `detail` is the first line of the failure, for the gate's message."""
-    return {
+             contention: float, detail: str = "", base: str = "", test_blob: str = "") -> Dict[str, Any]:
+    """One test's row. `detail` is the first line of the failure, for the gate's message. `commit` is the provenance
+    (the HEAD it ran at); `base` and `test_blob` are its IDENTITY (module docstring) and are written only when known."""
+    row: Dict[str, Any] = {
         "status": status,
         "commit": commit,
         "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -336,6 +492,11 @@ def make_row(status: str, *, commit: str, duration_s: float,
         "contention": round(float(contention), 2),
         "detail": detail[:300],
     }
+    if base:
+        row["base"] = base
+    if test_blob:
+        row["test_blob"] = test_blob
+    return row
 
 
 def _read(path: Path) -> Dict[str, Any]:
@@ -357,6 +518,9 @@ class Verdict:
     inconclusive: List[Tuple[str, Dict[str, Any]]] = field(default_factory=list)
     unrecorded: List[str] = field(default_factory=list)
     stale: List[Tuple[str, str]] = field(default_factory=list)
+    #: Measured rows with no `base` or no `test_blob` (an older writer): judged by their `commit` alone, so the content
+    #: check and the rebase-proof position are missing. `slow_tier_prune --adopt-stamps` fills them where git can.
+    unstamped: List[str] = field(default_factory=list)
     n_rows: int = 0
     n_pass: int = 0
     n_skip: int = 0
@@ -375,7 +539,8 @@ class Verdict:
         for nodeid, row in self.reds:
             lines.append(f"  {nodeid}")
             lines.append(f"      failed at commit {row.get('commit', '?')[:12]} "
-                         f"on {row.get('at', '?')}  ({row.get('detail', '') or 'no detail'})")
+                         + (f"(on main's {row['base'][:12]}) " if row.get("base") else "")
+                         + f"on {row.get('at', '?')}  ({row.get('detail', '') or 'no detail'})")
         lines += [
             "",
             "Fix the test, then re-bank it (a session banks only when told to):",
@@ -389,13 +554,16 @@ class Verdict:
 
 
 def evaluate(doc: Dict[str, Any], collected: Optional[set] = None,
-             commit_distance=None) -> Verdict:
+             commit_distance=None, test_blob_now=None) -> Verdict:
     """Turn a status document into a `Verdict`. Pure — the gate test's whole decision lives here.
 
     ``collected`` is the set of `slow` node ids THIS session collected (the root conftest records
     it before `-m` deselection runs, so the routine gate sees the full slow set even though it
     runs none of them). ``commit_distance(sha) -> Optional[int]`` answers "how many commits is HEAD
-    ahead of this one", returning ``None`` when the commit is unknown or not an ancestor.
+    ahead of this one", returning ``None`` when the commit is unknown or not an ancestor; it is asked about
+    the row's `position` (its `base`). ``test_blob_now(relpath) -> Optional[str]`` answers "what is this test
+    file's blob id now" (``None``: not a readable file): a row stamped with a `test_blob` that differs is stale
+    however near its base is, because it measured a different test.
     """
     v = Verdict()
     tests = doc.get("tests", {})
@@ -412,12 +580,23 @@ def evaluate(doc: Dict[str, Any], collected: Optional[set] = None,
             v.n_skip += 1
         if st != "skip" and row.get("last_skipped_at"):
             v.skipped_since.append(nodeid)
+        if st != "skip" and not (row.get("base") and row.get("test_blob")):
+            v.unstamped.append(nodeid)
+        reasons: List[str] = []
+        if test_blob_now is not None and row.get("test_blob"):
+            now = test_blob_now(file_of(nodeid))
+            if now is None:
+                reasons.append(f"{file_of(nodeid)} is not a readable file now")
+            elif now != row["test_blob"]:
+                reasons.append(f"{file_of(nodeid)} changed since it was measured ({row['test_blob'][:8]} -> {now[:8]})")
         if commit_distance is not None:
-            d = commit_distance(row.get("commit", ""))
+            d = commit_distance(position(row))
             if d is None:
-                v.stale.append((nodeid, "commit unknown or not an ancestor of HEAD"))
+                reasons.append("commit unknown or not an ancestor of HEAD")
             elif d > STALE_COMMITS:
-                v.stale.append((nodeid, f"{d} commits behind HEAD"))
+                reasons.append(f"{d} commits behind HEAD")
+        if reasons:
+            v.stale.append((nodeid, "; ".join(reasons)))
     if collected:
         v.unrecorded = sorted(n for n in collected if n not in tests)
     # A row that has only ever SKIPPED holds no measurement: it is reported with the unrecorded, so a
