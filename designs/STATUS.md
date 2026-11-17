@@ -198,7 +198,12 @@ its GO.
   only; no fourth seed); the continuing cell's three runs go on in 50M legs, each stopping at `python -m
   main.plateau`'s `TIER1_PLATEAU`, at most 300M; the candidates are then read against P\* on Kakuna by the
   registered rule, a WEAK read (a true +4 pp reads POSITIVE about one time in five); and every resume must show
-  the run's own torch, 2.8.0+cu126. ≈ 309 GPU-h to the decision (≈ 281
+  the run's own torch, 2.8.0+cu126. **AMENDED 2026-11-17, before any look** (Amendment 7: the twelve runs'
+  retention and a disclosure of two scratch rehearsals, no term changes; Amendment 8, written with no game result
+  but not blind to the training curves): `python -m main.b1.lr_report` REPORTS beside each look the rate each
+  run trained at. On the nine runs at 50M the wide arms' rate is ×0.48 the narrow arms' at an equal summed KL
+  (×1.03), and the layers the lever did not widen moved ×0.31 to ×0.59 as far, so the width factor is width with
+  every unwidened layer at about half its step; no statistic moves. ≈ 309 GPU-h to the decision (≈ 281
   of training, 210–281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch; the
   launch was 2026-11-12, after CE-3d's forks. Width is decided on the in-house cross over all four
   panels,

@@ -12,7 +12,9 @@ and 2026-11-16 (Amendment 6, §18: a DEFAULT with an owner veto for every outcom
 plateau continuation's order, stop rule and bound, the candidates' read against P\*, and a torch precondition on
 every resume), during phase 1 and before any look or game; and 2026-11-17 (Amendment 7, §18: the twelve runs'
 retention after §9 closes, and a disclosure that two rehearsals played BOUNDARY-1 runs head-to-head into scratch
-ledgers only; no term changes), during phase 1 and before any look.
+ledgers only; no term changes) and again 2026-11-17 (Amendment 8, §18: a learning-rate report beside each look,
+produced by `python -m main.b1.lr_report`, REPORTED; no statistic moves; written with no game result but not
+blind to the training curves, its item 3), both during phase 1 and before any look.
 LAUNCHED 2026-11-12 17:18 PST** ([1] `rb_b1c_s5101`; that first attempt was stopped
 by a kit bug at its early check and is discarded whole, Amendment 4). **The LAUNCH pin is
 `15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
@@ -343,6 +345,11 @@ agree?". Whether another 72 teams would agree is reported beside every full look
   the M4 overlap and are labelled so.
 - **The control against X26's snapshot at the matched step**, for continuity with the previous lineage (different
   observation: E13 and the mechanics rounds landed since; a difference is not attributable).
+- **The learning-rate report** (Amendment 8, §18), beside the 50M and the 100M outcome: `python -m
+  main.b1.lr_report` on all twelve runs. Per run, the geometric-mean learning rate over the second half of the
+  steps, the rung held at the look's step, the summed `train/approx_kl` and the median of `train/approx_kl` /
+  LR²; per factor, the ON / OFF ratio of each with its 90 % interval; and once, at 50M, the weights'
+  root-mean-square displacement from 30M to 50M by module group. No class.
 
 ## 8. The looks
 
@@ -931,6 +938,13 @@ own tests.)
   recipe of its own. **And the factor is "width plus the learning-rate controller's response to it"** (Amendment
   6 item 7, REPORTED): at 50M the adaptive controller's median rate is 1.005e-4 on all four wide runs read and
   1.74e-4 to 2.5e-4 on the four narrow ones, so no class separates the trunk's width from the step size.
+  **The controller held the policy change per update equal across widths to within a few percent** (Amendment 8,
+  REPORTED; the nine runs complete at 50M on 2026-11-17, wide / narrow with 90 % intervals: summed
+  `train/approx_kl` ×1.03 [1.00, 1.05] over 25M to 50M and ×1.06 [1.03, 1.09] over 0 to 50M); the wide arms'
+  learning rate was ×0.48 [0.45, 0.51] the narrow arms', and the layers the lever did not widen moved ×0.31 (the
+  policy tower, [0.28, 0.34]) to ×0.59 (the trunk's same-shape tensors, [0.55, 0.64]) as far between 30M and
+  50M. The factor is width with every unwidened layer at about half its step. The twelve runs' figures are in
+  each look's record (Amendment 8 item 1).
 - Nothing about other corpora or shares than `n1_proc_v1` at 0.5 on both sides.
 - No pp against Kakuna from a pp in-house: the mapping is unmeasured.
 - **Kakuna cannot confirm a breadth gain much below +4 pp** (it finds a true +2 pp on forum72 one time in four,
@@ -1765,6 +1779,97 @@ slot S8 below.
    - **UNVERIFIED:** everything in this item beyond the record's own words. The games' counts, the checkpoints
      and "no number reached the orchestrator" are the orchestrator's statement and were not checked against the
      scratch outputs, by design.
+
+### Amendment 8 (2026-11-17): the learning-rate report beside each look. REPORTED; no statistic moves
+
+Written during phase 1 (nine of the twelve runs complete at 50M; [10] `rb_b1w_s5111` training, its last
+TensorBoard row at 49,767,440 steps when the report's tool was run on 2026-11-17 at about 13:30 PST; [11]
+`rb_b1br_s5112` and [12] `rb_b1wb_s5113` with no run directory; the 50M look needs all twelve), before the 50M
+look and every other look is played, on the orchestrator's instruction, from the learning-rate handoff
+(`~/.cache/gen3ai/handoffs/b1_lr_confound_plan_2026-11-17.md`, its §3, §4 and the first draft block of its §7;
+outside the repository). **It touches §7 and §16 only. It moves no bar, class, view, panel, pair count, seed, run
+name, argv, pin or kit commit, and adds no look, cell or game**: the +4 pp bar, the −2 pp harm stop, the 1.76 pp
+floor, the 90 % level, the 0.005 pp band, the views, the classes and their order, the net rule, the panels, the
+pairs a cell, the seeds, the run names, the argvs, the budget, the Kakuna rule, the K9(b) ceilings and reader,
+§10's guards as worded and its two replacement causes are as they were; §5, §6, §8 and §9 are untouched, and so
+are every default of Amendment 6 and the retention of Amendment 7. Nothing it reports enters a statistic, a
+class, a guard or a plan: `main.b1.look` reads none of it. **What was read to write it is item 3; it is written
+with no game result, and not without the training curves.**
+
+1. **The record, beside the 50M and the 100M outcome and beside Amendment 6 item 7's medians.** It is produced
+   by `python -m main.b1.lr_report --look 50M --displacement` and `python -m main.b1.lr_report --look 100M`
+   (`src/main/b1/lr_report.py`) on all twelve runs. The tool REFUSES, naming the run, when a registered run is
+   missing or has not reached the look's step; it never drops one. It reads each run's own TensorBoard files
+   (`train/learning_rate` and `train/approx_kl`, one row an update) and, for the displacement, checkpoint zips;
+   it writes nothing in a run directory and refuses an output path inside a models directory.
+   - **Per run**, on the rows up to the run's first row at or after the look's step (within one checkpoint
+     interval of it, the look's own checkpoint rule), "the second half" being those at or after half the look's
+     step: the geometric-mean learning rate over the second half; the rate at the look's step and its rung, the
+     integer k in 3e-4 × 1.2^k (a rate within float error of a rung is on it, one clearly off the ladder is
+     reported as off it, and one that is neither is refused, never rounded); the summed `train/approx_kl`, over
+     the second half and over every row up to the look; and the median over the second half's updates of
+     `train/approx_kl` / LR².
+   - **Per factor** (width; breadth beside it, for symmetry), the ON / OFF ratio of each of those with its 90 %
+     interval over the twelve runs, the other factor matched: least squares on the log of the per-run value with
+     an intercept and an additive term for each factor, the interval from Student's t on runs − 3 degrees of
+     freedom (9 at twelve runs). **The interval is run-to-run spread and nothing else**: the rate is quantized
+     on the ladder and no effect of a restart on the controller is modelled.
+   - **Once, at 50M** (`--displacement`): the root-mean-square displacement per weight between each run's 30M
+     and 50M checkpoints (each the first at or after its step), by module group: the trunk's tensors the width
+     lever resized, the projection's weight, the policy tower, the critic head and the embeddings, and beside
+     them the trunk's same-shape tensors and the pointer head (resized, same shape). The groups come from the
+     checkpoints' own parameter names, and "resized" is read off the runs. It is the NET displacement, not a
+     path length, and a per-weight mean hides which weights moved.
+   - **The tool is not the kit.** It is on main from the commit that adds this amendment and is run from main.
+     It plans nothing, plays nothing, and nothing the look checks reads it; the kit commit `1d592e6cd` and the
+     launch pin do not move.
+   - **Checked by executing it on the nine complete runs, 2026-11-17** (five narrow, four wide; 6 degrees of
+     freedom), against the handoff's §3, which computed the same figures with scratch scripts. Width, wide /
+     narrow:
+
+     | quantity | the handoff | `main.b1.lr_report` |
+     |---|---|---|
+     | geometric-mean rate, 25M to 50M | ×0.48 [0.45, 0.51] | ×0.477 [0.448, 0.509] |
+     | summed `train/approx_kl`, 25M to 50M | ×1.03 [1.00, 1.05] | ×1.025 [1.000, 1.050] |
+     | summed `train/approx_kl`, 0 to 50M | ×1.06 [1.03, 1.09] | ×1.059 [1.033, 1.086] |
+     | median `train/approx_kl` / LR², 25M to 50M | ×4.4 [3.9, 4.9] | ×4.359 [3.913, 4.856] |
+     | displacement 30M to 50M, policy tower | ×0.31 [0.28, 0.34] | ×0.309 [0.280, 0.341] |
+     | displacement, trunk's resized tensors | ×0.44 [0.42, 0.46] | ×0.442 [0.423, 0.462] |
+     | displacement, trunk's same-shape tensors | ×0.59 [0.55, 0.64] | ×0.591 [0.548, 0.637] |
+
+     The rung at 50M is −3 on all five narrow runs, −8 on `rb_b1w_s5103` and `rb_b1w_s5104`, and −7 on
+     `rb_b1wb_s5107` and `rb_b1wb_s5108`. **UNVERIFIED:** the three runs not yet at 50M are unread, and the
+     twelve-run figures (9 degrees of freedom) will differ from these. The tool has read no real 100M row: its
+     rule for a resumed run's event files (a later file supersedes an earlier file's rows at or after its own
+     first step) is tested on synthetic files only, and superseded no row on the nine runs.
+2. **§16's width bullet gains the draft's sentence, its three blanks filled from item 1's nine-run figures and
+   labelled so there.** The controller held the policy change per update equal across widths to within a few
+   percent (summed `train/approx_kl` ×1.03 [1.00, 1.05] over 25M to 50M, ×1.06 [1.03, 1.09] over 0 to 50M); the
+   wide arms' learning rate was ×0.48 [0.45, 0.51] the narrow arms'; the layers the lever did not widen moved
+   ×0.31 to ×0.59 as far between 30M and 50M; and the factor is width with every unwidened layer at about half
+   its step. The twelve runs' figures are item 1's record at each look and do not edit that sentence.
+3. **DISCLOSURE: what was read to write this, and what was not.**
+   - **The writer of the handoff** read, on 2026-11-17, of the nine runs complete at 50M (`rb_b1c_s5101`,
+     `rb_b1c_s5102`, `rb_b1c_s5110`, `rb_b1br_s5105`, `rb_b1br_s5106`, `rb_b1w_s5103`, `rb_b1w_s5104`,
+     `rb_b1wb_s5107`, `rb_b1wb_s5108`): the learning-rate, KL, clip, gradient-norm, entropy-loss, value-loss and
+     explained-variance series, and checkpoint weights. Its provenance section also lists the per-epoch KL and
+     `train/dose_rate` series and the checkpoints' optimizer state.
+   - **The builder of the tool** read, the same day: the handoff, its scratch scripts and the series files they
+     extracted; through the tool, the learning-rate and KL series and the 30M and 50M weights of the same nine
+     runs (the tool's reader passes over every tag of an event file and keeps those two); the learning-rate
+     fields of `rb_b1c_s5101`'s `metadata.json`; and the run directories' file listings. The tool's twelve-run
+     default also opened `rb_b1w_s5111`'s two series and refused; it printed that run's last step and nothing
+     else.
+   - **Neither read** a game outcome, `eval/*`, `signal/outcome_*`, `rollout/ep_rew_mean`, a snapshot ladder, a
+     ledger or a rehearsal's output.
+   - **What that leaves.** The entropy-loss, value-loss and explained-variance series are training diagnostics
+     that differ by arm, so this amendment is not written blind to how the arms trained. No registered look has
+     been planned or played, and no game result of any kind was read.
+4. **The registrar's choices, flagged for the orchestrator** (here, since §17 is not touched): the summed KL is
+   reported on BOTH windows, because the draft's sentence reads either way and the two differ (×1.03 and
+   ×1.06); breadth's ratios and three module groups beyond the draft's five are reported beside the rest; item
+   2's sentence carries nine-run figures now rather than blanks filled after a look; and it says "equal to
+   within a few percent" where the draft said "equal", because the 0-to-50M interval excludes 1.
 
 ### Pre-launch and launch records
 
