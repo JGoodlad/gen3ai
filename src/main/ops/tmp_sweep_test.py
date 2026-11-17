@@ -21,6 +21,7 @@ from typing import Iterator, List
 import pytest
 
 from utils.paths import repo_path
+from utils.proc_argv_testing import wait_argv
 
 pytestmark = pytest.mark.integration
 
@@ -79,9 +80,9 @@ def hold_fd(procs: List[subprocess.Popen], f: Path) -> None:
 
 
 def hold_cmdline(procs: List[subprocess.Popen], d: Path) -> None:
-    procs.append(subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)", str(d)],
-                                  cwd="/"))
-    time.sleep(0.2)                    # the argv is in /proc once exec has happened
+    p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)", str(d)], cwd="/")
+    procs.append(p)
+    wait_argv(p, contains=str(d))      # /proc/<pid>/cmdline reads '' for an instant after exec, never a clock's guess
 
 
 def run(root: Path, *extra: str, capsys=None) -> str:

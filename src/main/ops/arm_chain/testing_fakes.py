@@ -3,7 +3,8 @@
 * :data:`FAKE_LAUNCH_SH` — a bash stand-in for ``launch_x35.sh`` with the same argv, the same files (describe,
   launcher dry-run transcript, pid file, launcher log) and the same status lines (``<arm> s<seed>: START …``,
   ``post-spawn pool-seed check PASS``, ``END <run> launcher_rc=N``). Its "launcher" is a real ``sleep`` whose argv
-  reads ``python -m main.launcher …`` so ``/proc`` identity checks see a launcher. Per-run knobs come from
+  reads ``python -m main.launcher …`` so ``/proc`` identity checks see a launcher (its pid file appears only once ``/proc`` shows
+  that argv). Per-run knobs come from
   ``<job>/fake/<run>.env`` (``FAKE_RC``, ``FAKE_LAST``, ``FAKE_FINAL``, ``FAKE_BANNER``, ``FAKE_RUN_S``,
   ``FAKE_DRY_FAIL``, ``FAKE_NO_PASS``, ``FAKE_GO_HOLD`` (the GO's own pre-checks HOLD before START), ``FAKE_DIRTY_MAIN``:
   the dry run writes a stray record into main's stage, as the unfixed kit's ``k9b-batch`` did); every call appends ``<mode> <arm> <seed> <pin> CVD=<state>`` to
@@ -61,7 +62,14 @@ if [ "$FAKE_GO_HOLD" = 1 ]; then log "HOLD: fake GO-time pre-check refusal (kit 
 log "START $RUN: --model $P/checkpoints/checkpoint_1000_steps.zip (pin ${PIN:0:8}, restart 24 h)"
 R=$M/$RUN; mkdir -p "$R/checkpoints"
 bash -c "exec -a 'python -m main.launcher --run-name $RUN' sleep $FAKE_RUN_S" &
-LP=$!; echo "$LP" > "$J/$RUN.pid"
+LP=$!
+# the pid file is the launcher's "up" marker: written only once /proc shows the exec'd argv (until then the cmdline is bash's,
+# or '' for an instant, and a reader's identity match flakes), and the FIXTURE fails loudly if that never happens
+WANT="python -m main.launcher --run-name $RUN $FAKE_RUN_S"; n=0
+until [ "$(tr '\0' ' ' < /proc/$LP/cmdline 2>/dev/null | sed 's/ $//')" = "$WANT" ]; do
+  n=$((n + 1)); [ $n -gt 4000 ] && { kill "$LP" 2>/dev/null; log "FIXTURE ERROR: the fake launcher pid $LP never showed argv '$WANT'"; exit 9; }
+  sleep 0.005; done
+echo "$LP" > "$J/$RUN.pid"
 [ -n "$FAKE_BANNER" ] && echo "$FAKE_BANNER" >> "$J/$RUN.launcher.log"
 echo "  launching with --pin-commit $PIN" >> "$J/$RUN.launcher.log"
 [ "$FAKE_NO_PASS" = 1 ] || log "post-spawn pool-seed check PASS: fake"

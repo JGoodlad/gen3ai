@@ -15,6 +15,7 @@ from main.ops.arm_chain.launch import Describe, Hold
 from main.ops.arm_chain.procwatch import ProcRef, ref_of
 from main.ops.arm_chain.statuslog import StatusLog, end_body, launch_tag
 from main.ops.arm_chain.testing_fakes import FakeRunner, World, k9b_handler, make_world, planner_handler
+from utils.proc_argv_testing import spawn_sleeper
 
 pytestmark = pytest.mark.integration
 
@@ -130,7 +131,7 @@ def test_a_thin_held_by_an_open_run_dir_names_each_holders_command_line(w):
     """10-27 03:14: the HOLD named only "pid(s) 2621969", and that was the alert monitor; the reason now carries each
     holder's /proc cmdline, read at the HOLD."""
     spec, it = _thin_world(w)
-    holder = subprocess.Popen(["sleep", "37"])
+    holder = spawn_sleeper(37)         # its argv is in /proc before the thin reads it (utils.proc_argv_testing)
     try:
         runner = FakeRunner().on(*planner_handler(w.models, refuse_open_times=99, holder_pids=[holder.pid, 999999999]))
         with pytest.raises(Hold, match=rf"held open after 3 tries by pid {holder.pid} \[sleep 37\]; "
@@ -200,15 +201,11 @@ def test_dose_refuses_a_run_with_no_segment(w):
 
 # --- the END wait (CB-17, CB-26) -------------------------------------------------------------------------------------
 
-def _sleep_named(name: str, secs: float) -> subprocess.Popen:
-    return subprocess.Popen(["bash", "-c", f"exec -a '{name}' sleep {secs}"])
-
-
 def test_a_dead_wrapper_with_a_live_launcher_keeps_the_wait_going(tmp_path):
     """CB-17: the END writer died with its parent; the run was still live and must not read as ended."""
     log = StatusLog(str(tmp_path / "status.txt"), "ARMCHAIN[t]")
     end = log.arm("END", launch_tag("a", 1), end_body("rb_a_s1"))
-    lp = _sleep_named("python -m main.launcher --run-name rb_a_s1", 30)
+    lp = spawn_sleeper(30, name="python -m main.launcher --run-name rb_a_s1")   # no bash stage; argv is in /proc
     try:
         lref = ref_of(lp.pid)
         assert lref is not None

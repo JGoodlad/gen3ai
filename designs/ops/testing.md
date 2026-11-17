@@ -138,6 +138,20 @@ child writes to a pipe the dead launcher no longer reads (`PYTHONUNBUFFERED=1`),
 `BrokenPipeError` and killed the watchdog thread first (measured: alive 12 s after the parent's death); the exit now
 runs in a `finally` (`watchdog_test.py`, the pipe case).
 
+### A stand-in process whose ARGV a test reads: wait for the argv, never for a clock (`utils.proc_argv_testing`, 2026-11-16)
+
+`Popen` returns an instant before the kernel publishes the new argv: `/proc/<pid>/cmdline` reads `''` right after
+`Popen(["sleep", ...])` on 4-5 % of calls (measured on the agent cores), and shows `bash`'s argv for longer after a
+`bash -c "exec -a NAME sleep"`. Every reader that matches a cmdline (`procfs.cmdline`, `procwatch.signal_if`,
+`armend.wait_end`'s `main.launcher` identity check) reads that as an identity MISMATCH, so `armend_test`'s
+`test_a_dead_wrapper_with_a_live_launcher_keeps_the_wait_going` failed 36 of 400 in-process calls (2 of 20 file runs)
+and `procwatch_test`'s identity test had the same red on 2026-11-10. A test that reads the argv of a process it just
+spawned spawns it with **`spawn_sleeper(secs, name=None)`** (`argv[0]` set through `Popen(executable=...)`, no shell
+stage) or waits with **`wait_argv(p, equals=, contains=)`**: both poll the observable condition, bounded, and their
+expiry raises `FixtureError` (a broken fixture, not the code under test's verdict). A bash fixture does the same before
+it publishes a pid (`testing_fakes.FAKE_LAUNCH_SH`). A `time.sleep(0.2)` "until the exec has happened" is the same flake
+with a longer window; never add one.
+
 ### Test tiers — TWO AXES, and keeping them apart is the point
 
 A marker says **what a test NEEDS** (capability). A separate marker says **what it COSTS** (`slow`).
