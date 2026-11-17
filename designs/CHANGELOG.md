@@ -15943,3 +15943,12 @@ was downloaded or written under `data/`.
   necessary, not a guarantee: the kernel generated at the fix compiles at every `XBLOCK` 16 / 32 / 64 config, but the
   pin's cut-down kernel, which keeps the pre-fix kernel's stored partial, still fails at 32 and 64 with it. Detail: `training/compile_flags.md` "Triton
   RemoveLayoutConversions", `research_state/measurements/triton_xblock16_cat_read_2026-11-11/`.
+
+## 2026-11-17 — the total noise scale writes its estimator state too (`gen3_noise_total_keys_v1`; no config / `ARCH_SIGNATURE` / floor / `OBS_SEMANTICS` change, training arithmetic untouched)
+
+- **Why.** `gen3_noise_term_keys_v1` made every per-term group write its smoothed `|G|²` and `tr(Σ)`, but the TOTAL's
+  `train/noise_scale` / `train/noise_scale_ratio` kept the same value gate with no state beside it, so a withheld total
+  and a dead estimator still looked alike.
+- **What.** Every update that folds a total sample writes `train/noise_scale_g2` and `train/noise_scale_trsigma`
+  (`noise_scale_terms.TOTAL_STATE_TAGS`), whatever their values; the two derived tags keep their gate
+  (`training/telemetry_scalars.md` "The per-term noise key set"). No existing tag changes value.

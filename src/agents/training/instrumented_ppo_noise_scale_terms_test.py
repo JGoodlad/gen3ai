@@ -31,6 +31,7 @@ from agents.training.instrumented_ppo.noise_scale_terms import (
     PerTermNoiseSampler,
     derived_tags,
     per_term_enabled,
+    TOTAL_STATE_TAGS,
     state_tags,
 )
 from agents.training.instrumented_ppo_test import _build_tiny_ppo, _train_from_init
@@ -147,8 +148,9 @@ def test_every_folded_group_writes_its_state_tags_and_the_key_set_is_a_function_
 def test_the_state_and_derived_tags_are_five_distinct_keys_per_group_and_collide_with_nothing():
     from agents.training import train_logger as TL
     keys = [t for g in NOISE_TERM_GROUPS for t in (*state_tags(g), *derived_tags(g))]
-    keys += ["train/noise_scale", "train/noise_scale_ratio", "train/noise_per_term_ms", GROUPS_SAMPLED_TAG]
-    assert len(set(keys)) == 5 * len(NOISE_TERM_GROUPS) + 4
+    keys += ["train/noise_scale", "train/noise_scale_ratio", *TOTAL_STATE_TAGS, "train/noise_per_term_ms",
+             GROUPS_SAMPLED_TAG]
+    assert len(set(keys)) == 5 * len(NOISE_TERM_GROUPS) + 6
     TL.check_metric_keys(keys, where="the per-term noise key set")
 
 
@@ -604,6 +606,11 @@ def test_a_negative_first_sample_no_longer_suppresses_the_total_for_hundreds_of_
         _train_from_init(model, init_sd, init_opt, batch_size=4, accum=2)
         assert "train/noise_scale" not in model.logger.vals, "a negative tr(Σ) must withhold"
         assert model._noise_ema_s == pytest.approx(-10.0)
+        # …and the withheld reading is EXPLAINED by the same dump: the total's estimator state is always written
+        # (gen3_noise_total_keys_v1), so a gated `train/noise_scale` and a dead estimator no longer look alike.
+        g2_tag, trsigma_tag = TOTAL_STATE_TAGS
+        assert model.logger.vals[g2_tag] == pytest.approx(1.0)
+        assert model.logger.vals[trsigma_tag] == pytest.approx(-10.0)
 
         model._logger = _Rec()
         _train_from_init(model, init_sd, init_opt, batch_size=4, accum=2)
@@ -611,6 +618,8 @@ def test_a_negative_first_sample_no_longer_suppresses_the_total_for_hundreds_of_
         assert model._noise_ema_g2 == pytest.approx(2.0)
         assert model.logger.vals["train/noise_scale"] == pytest.approx(5.0)
         assert model.logger.vals["train/noise_scale_ratio"] == pytest.approx(5.0 / 8.0)
+        assert (model.logger.vals[g2_tag], model.logger.vals[trsigma_tag]) == (pytest.approx(2.0),
+                                                                                  pytest.approx(10.0))
     finally:
         os.environ.pop("GEN3AI_NOISE_SCALE_PER_TERM", None)
 

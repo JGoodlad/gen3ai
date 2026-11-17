@@ -67,6 +67,13 @@ NOISE_TERM_GROUPS: Tuple[str, ...] = ("policy", "value", "entropy", "aux")
 GROUPS_SAMPLED_TAG = "train/noise_per_term_groups"
 
 
+#: The TOTAL gradient's estimator state, `(|G|², tr(Σ))` smoothed: written on EVERY update that folds a total
+#: sample (accumulating, both norms captured), whatever the values, so a withheld `train/noise_scale` /
+#: `train/noise_scale_ratio` (the same both-positive value gate) is explained by the same dump
+#: (gen3_noise_total_keys_v1; the per-group twin is `state_tags`).
+TOTAL_STATE_TAGS: Tuple[str, str] = ("train/noise_scale_g2", "train/noise_scale_trsigma")
+
+
 def state_tags(group: str) -> Tuple[str, str]:
     """The two tags a sampled update ALWAYS writes for a group it measured: the smoothed `|G_g|²` and
     `tr(Σ_g)` the three derived tags are computed from. They are the group's whole estimator state, so

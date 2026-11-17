@@ -17,7 +17,7 @@ from agents.training.instrumented_ppo.calibration import (
 )
 from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
 from agents.training.instrumented_ppo.noise_scale import debiased_ema
-from agents.training.instrumented_ppo.noise_scale_terms import GROUPS_SAMPLED_TAG
+from agents.training.instrumented_ppo.noise_scale_terms import GROUPS_SAMPLED_TAG, TOTAL_STATE_TAGS
 
 
 class TrainMetricsExport:
@@ -84,6 +84,10 @@ class TrainMetricsExport:
             self._noise_ema_g2 = debiased_ema(self._noise_ema_g2, self._noise_ema_n,
                                               g2, _NOISE_SCALE_EMA_DECAY)
             self._noise_ema_n += 1
+            # The estimator's whole state, ALWAYS (gen3_noise_total_keys_v1): the two scalars below are
+            # value-gated, and a withheld one must be explained by this dump, never by silence.
+            self.logger.record(TOTAL_STATE_TAGS[0], float(self._noise_ema_g2))
+            self.logger.record(TOTAL_STATE_TAGS[1], float(self._noise_ema_s))
             if self._noise_ema_g2 > 1e-12 and self._noise_ema_s > 0.0:
                 b_simple = self._noise_ema_s / self._noise_ema_g2
                 self.logger.record("train/noise_scale", float(b_simple))

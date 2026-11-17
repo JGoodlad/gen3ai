@@ -536,14 +536,19 @@ and its gradient vanishes: `rb_b1val_w_s9103`'s first update logged `train/noise
 `\|G\|²` far under the 1e-12 floor. The same holds for the first update of X67's own fresh ancestor (share 6.6e-19,
 no `train/noise_scale_entropy` until the second sample); a fork's dry update runs on a trained policy, whose entropy
 gradient is real. The gate and its code are unchanged since `f4b25238`; what was missing was any trace of it, so a
-gated key and a dead probe looked alike. The total's `train/noise_scale` / `train/noise_scale_ratio` carry the same
-gate (both smoothed estimates positive) and no state tags: X67 wrote them on 2,847 of 2,852 updates.
+gated key and a dead probe looked alike.
+
+**The total has the same pair (`gen3_noise_total_keys_v1`).** `train/noise_scale` / `train/noise_scale_ratio` carry
+the same gate (both smoothed estimates positive; X67 wrote them on 2,847 of 2,852 updates). Every update that folds a
+total sample (`--grad-accum-steps` ≥ 2 and both norms captured, not cadence-gated) also writes
+`train/noise_scale_g2` and `train/noise_scale_trsigma` (`noise_scale_terms.TOTAL_STATE_TAGS`), whatever their values,
+so a withheld total is explained by the same dump.
 
 Tests: `instrumented_ppo_noise_scale_terms_test.py`
 (`test_every_folded_group_writes_its_state_tags_and_the_key_set_is_a_function_of_them`, every gate state incl. the
 fresh policy's `\|G\|²` = 1e-20) and `diagnostics_cadence_test.py`
 (`test_an_UNWARMED_production_learner_writes_every_folded_groups_state`, the production surface with no primed
-estimates).
+estimates); the total's pair: `test_a_negative_first_sample_no_longer_suppresses_the_total_for_hundreds_of_calls`.
 
 ### ERA RELEVANCE — a tag whose SOURCE is absent is not emitted (`gen3_tb_relevance_v1`)
 
