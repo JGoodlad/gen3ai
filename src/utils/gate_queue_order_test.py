@@ -155,6 +155,15 @@ def _free(fd: int) -> bool:
     return True
 
 
+def test_the_gate_line_carries_the_static_precheck_seconds_the_ship_gate_handed_down(world, monkeypatch) -> None:
+    monkeypatch.setenv(GL.PRECHECK_ENV, "41.37")
+    _gate({}).join(scale_timeout(30))
+    (g,) = [json.loads(x) for x in (world["heavy"] / HS.EVENTS_FILE).read_text().splitlines() if '"gate"' in x]
+    assert g["precheck_s"] == 41.4, g
+    monkeypatch.setenv(GL.PRECHECK_ENV, "soon")
+    assert GL.precheck_s() == 0.0
+
+
 def test_a_gate_that_finds_everything_free_takes_its_slot_at_once_and_leaves_no_place_behind(world) -> None:
     ran: dict = {}
     _gate(ran).join(scale_timeout(30))

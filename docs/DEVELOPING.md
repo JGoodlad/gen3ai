@@ -120,7 +120,7 @@ marker `slow` says what it **costs**. Cut on cost, never on capability:
 |---|---|---|
 | Inner loop: fastest true/false | `pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` | ~1.5 min |
 | **The routine gate: before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.3 min quiet (2026-10-01, before the 2026-10-19 re-tier; one at a time) |
-| **The ship gate: before `/gen3ai-ship`** | `scripts/ops/ship_gate.sh run` — the routine gate in the shape the box affords (rule 5b beside a live run), through the gate lock | ~15 min beside a live training run (2026-10-19) |
+| **The ship gate: before `/gen3ai-ship`** | `scripts/ops/ship_gate.sh run` — the routine gate in the shape the box affords (rule 5b beside a live run), through the gate lock, after a ~50 s static pre-check that fails fast | ~15 min beside a live training run (2026-10-19) |
 | Everything: before a release | `pytest src/ -q` | ~47 min |
 
 The routine gate's ~4.3 min at `-n 6` was measured on a quiet box on 2026-10-01
@@ -269,11 +269,13 @@ by hand, guard each link with `[ -e ]` and run it only in a worktree: in the mai
 pointing at its own parent and `node build` dies with `ELOOP`. Never symlink the whole
 `deps/pokemon-showdown` directory either; git then treats the submodule path as a symlink.
 
-**An un-bootstrapped worktree fails fast, not after the queue.** `scripts/ops/ship_gate.sh run` first checks (milliseconds, no
+**A broken checkout fails fast, not after the queue.** `scripts/ops/ship_gate.sh run` first checks (milliseconds, no
 network) that `dist/sim/index.js` and `node_modules/` exist, and refuses with exit 4 naming the bootstrap command before it takes
 the gate lock or a heavy slot; every pytest session, the static tier included, refuses the same way at its start. One definition:
 `src/utils/checkout_deps.py`. In a worktree the command is `scripts/bootstrap.sh --skip-env --no-rust --no-check` (it never
-touches the shared conda env and builds no Rust). `GEN3AI_SKIP_DEPS_GUARD=1` opts out for a pure-unit CI.
+touches the shared conda env and builds no Rust). `GEN3AI_SKIP_DEPS_GUARD=1` opts out for a pure-unit CI. It then runs the **static tier**
+(`python -m utils.static_gates --paths`, ~50 s at `-n 2`, short lane, no gate lock) and exits at once if a static gate is red: it never queues
+for a ~15-min exclusive turn to learn what the static tier says in a minute. The full gate then skips those files (they ran once).
 
 Long training runs use `python -m main.launcher`, which creates its own git worktree pinned to the
 launch commit, so pushing to `main` never disturbs a run in flight.

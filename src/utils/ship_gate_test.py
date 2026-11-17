@@ -15,10 +15,19 @@ from utils import ship_gate as SG
 _ONLINE, _TRAINER, _AGENTS = FP.ONLINE, FP.TRAINER, FP.AGENTS
 
 
+_REAL_PRECHECK = SG.static_precheck
+
+
 @pytest.fixture(autouse=True)
 def _no_lease(monkeypatch: pytest.MonkeyPatch) -> None:
     """The box's real GPU lease must not decide a unit test's shape."""
     monkeypatch.setattr(HS, "lease_reason", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _static_precheck_green(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These tests are about the gate's own argv and exit; the static pre-check has its own tests below (``_REAL_PRECHECK``)."""
+    monkeypatch.setattr(SG, "static_precheck", lambda shape, python, env: (0, 0.0))
 
 
 def test_quiet_box_runs_the_quiet_policy_unpinned_at_normal_priority() -> None:
@@ -185,7 +194,7 @@ def test_max_run_s_goes_to_mem_cap_the_innermost_wrapper_so_no_queue_wait_counts
     monkeypatch.setattr(SG.subprocess, "call", lambda cmd, cwd, env: seen.update(cmd=cmd) or SG.mem_cap.EXIT_RUN_TIMEOUT)
     assert SG.main(["run", "--max-run-s", "2700", "--", "-x"]) == 89
     assert seen["cmd"] == SG.build_argv(shape, SG.os.environ.get("GEN3AI_PYTHON") or SG.sys.executable, ["-x"],
-                                        max_run_s=2700.0)
+                                        max_run_s=2700.0, ignore=SG.static_gate_files())
     assert "STOPPED by --max-run-s 2700" in capsys.readouterr().err
     monkeypatch.setattr(SG.subprocess, "call", lambda *a, **k: pytest.fail("a refused or dry invocation ran the gate"))
     assert SG.main(["--dry-run", "--max-run-s", "60"]) == 0 and "--max-run-s 60" in capsys.readouterr().err
@@ -299,3 +308,79 @@ def test_the_argv_declares_the_cap_of_the_workers_it_really_runs() -> None:
     assert declared(["-n", "2", "-n", "6"]) == 21.0, "pytest takes the last -n"
     assert declared(["--durations=20"]) == 16.0
     assert SG.effective_workers(3, ["-n", "auto"]) == len(os.sched_getaffinity(0))
+
+
+# --- the static pre-check (2026-11-17: 6 of 16 gates on the night of 11-16/17 failed after a ~15-min exclusive turn) ---------
+
+class _Box:
+    """A fake box: every ``subprocess.call`` is recorded, the pre-check's (no gate lock in its argv) returns ``static_rc``, the
+    gate's returns 0; a gate lock directory in ``tmp_path`` is the fake lock / slot state, which only a gate takes."""
+
+    def __init__(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, static_rc: int) -> None:
+        from utils import gate_lock as GL
+        self.calls: list = []
+        self.lock_dir = tmp_path / "gate_slots"
+        monkeypatch.setenv(GL.DIR_ENV, str(self.lock_dir))
+        monkeypatch.setattr(SG, "static_precheck", _REAL_PRECHECK)
+        monkeypatch.setattr(SG, "resolve_shape", lambda: SG.Shape({}, None, 0, 6))
+        monkeypatch.setattr(SG.subprocess, "call", self.call)
+        self.static_rc = static_rc
+
+    def call(self, cmd, cwd, env):
+        self.calls.append((list(cmd), dict(env)))
+        if any(a.endswith("gate_lock.sh") for a in cmd):
+            self.lock_dir.mkdir(parents=True, exist_ok=True)          # what taking the gate lock leaves behind
+            (self.lock_dir / "slot0.lock").write_text("")
+            return 0
+        return self.static_rc
+
+    def gate_calls(self) -> list:
+        return [c for c in self.calls if any(a.endswith("gate_lock.sh") for a in c[0])]
+
+
+def test_a_failing_static_tier_exits_before_the_gate_ever_queues(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    """THE INCIDENT (night of 11-16/17): a static gate red cost a ~15-min exclusive gate-lock turn. Now it costs the pre-check:
+    the exit is the pre-check's, and neither the gate lock nor a heavy slot is ever asked for (fake lock state stays empty).
+    Fails on a revert: the gate argv would be called and the lock dir written."""
+    box = _Box(tmp_path, monkeypatch, static_rc=1)
+    assert SG.main(["run"]) == 1
+    assert len(box.calls) == 1 and not box.gate_calls() and not box.lock_dir.exists()
+    assert "REFUSING before queueing: a static gate FAILED" in capsys.readouterr().err
+
+
+def test_a_static_precheck_that_overran_is_incomplete_not_a_red_and_still_never_queues(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    box = _Box(tmp_path, monkeypatch, static_rc=SG.mem_cap.EXIT_SHORT_OVERRUN)
+    assert SG.main(["run"]) == 88 and not box.gate_calls()
+    assert "OVERRAN its short-lane bound" in capsys.readouterr().err
+
+
+def test_a_passing_static_tier_proceeds_to_the_gate_which_skips_exactly_what_it_ran(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Green pre-check: the gate runs as before (lock, cap, marker expression), with the pre-check's files ``--ignore``d (run once)
+    and its seconds in the environment for the gate's event line. Fails on a revert of either the order or the dedupe."""
+    from utils import gate_lock as GL
+    from utils import static_gates
+    box = _Box(tmp_path, monkeypatch, static_rc=0)
+    assert SG.main(["run"]) == 0
+    (pre, _), (gate, genv) = box.calls
+    assert not any(a.endswith("gate_lock.sh") for a in pre) and any(a.endswith("mem_cap.sh") for a in pre)
+    files = static_gates.static_gate_files()
+    assert files and [a for a in pre if a.endswith("_test.py")] == files        # the static tier's ONE inventory
+    assert pre[pre.index("--max-s") + 1] == f"{SG.STATIC_MAX_S:g}" and pre[pre.index("-n") + 1] == "2"
+    marker = lambda argv: argv[len(argv) - 1 - argv[::-1].index("-m") + 1]   # the LAST "-m" (python -m pytest has one before)
+    assert marker(pre[:pre.index("-q")]) == marker(gate[:gate.index("-q")]) == SG.MARKERS  # the same -m: skipped == ran
+    assert [a[len("--ignore="):] for a in gate if a.startswith("--ignore=")] == files
+    assert float(genv[GL.PRECHECK_ENV]) >= 0.0
+
+
+def test_the_precheck_follows_rule_5b_beside_a_live_run_and_a_dry_run_runs_nothing(
+        monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    live = SG.resolve_shape({"/m/rb_x": 42}, online=_ONLINE, trainer_cpus=_TRAINER)
+    argv = SG.static_argv(live, "py", ["src/a_test.py"])
+    assert argv[:5] == ["nice", "-n", "19", "taskset", "-c"] and argv[5] == core_split.DEFAULT.agent_list
+    assert SG.static_argv(SG.Shape({}, None, 0, 6), "py", ["src/a_test.py"])[0].endswith("mem_cap.sh")
+    monkeypatch.setattr(SG, "resolve_shape", lambda: SG.Shape({}, None, 0, 6))
+    monkeypatch.setattr(SG, "static_precheck", lambda *a: pytest.fail("a dry run ran the pre-check"))
+    assert SG.main(["--dry-run"]) == 0 and "static pre-check, before any queue" in capsys.readouterr().err

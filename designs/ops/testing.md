@@ -617,7 +617,7 @@ knob. Tests: `src/utils/heavy_slots_lane_test.py` (ordering, the bound, real wai
 on it (never an outer `timeout`: § "A queued job: three rules"), extra pytest options go after `--`, no argument refuses). It RUNS
 EVERYTHING the routine gate runs — `-m "not slow and not e2e"` over every root `pytest.ini` names in `testpaths` (`src/`, `tools/`,
 the measurement records' own tests; `src/uncollected_tests_gate_test.py` fails on a test file outside them), the static gates included
-(they deselect nothing) — and chooses only the SHAPE from the box: a live training run
+(run first, once: the pre-check below) — and chooses only the SHAPE from the box: a live training run
 (`utils.procfs.live_training_runs`) ⇒ rule 5b, `nice -n 19`, pinned to every cpu in neither the trainer's affinity
 nor the active trainer list (`utils.core_split`, the ONE owner of both lists: [`core_split.md`](core_split.md)),
 `-n` = 0.5 x those cpus (3 on the default split); no live run ⇒ `-n 6`, normal priority. **A live run that is AGENT
@@ -629,13 +629,21 @@ started with `CUDA_VISIBLE_DEVICES` empty or `-1`. An agent's CPU smoke on the a
 (one gate at a time) and `mem_cap.sh <cap>` (the measured cap, next paragraph), always with `CUDA_VISIBLE_DEVICES=""`. It never selects tests by the
 change (owner, 2026-09-30); it is fast because the routine set was RE-TIERED by measured cost.
 
-**A preflight runs FIRST, before the gate lock or a heavy slot** (2026-11-16): a checkout that was never bootstrapped (a fresh
-worktree: no Showdown `dist/` or `node_modules/`) is refused in milliseconds, exit 4, naming the command
+**Two checks run FIRST, before the gate lock or any slot of the gate's own.** (1) The bootstrap preflight (2026-11-16): a checkout that was never
+bootstrapped (a fresh worktree: no Showdown `dist/` or `node_modules/`) is refused in milliseconds, exit 4, naming the command
 (`scripts/bootstrap.sh --skip-env --no-rust --no-check` in a linked worktree: ~40 s, no env change, no Rust build; `./scripts/bootstrap.sh`
 in the main checkout). It never runs bootstrap itself (that can build Rust). Before it, such a gate queued 20-40 min and failed only when pytest
 started. The probe is `utils.checkout_deps`, the ONE definition the pytest session's own guard (root `conftest.py`, so the static tier
 too) reads: file existence only, no network, no subprocess; `GEN3AI_SKIP_DEPS_GUARD=1` opts out of both; `--dry-run` does not check.
-Pinned by `src/utils/ship_gate_test.py` and `src/deps_guard_test.py`.
+(2) **The static pre-check** (2026-11-17): the static tier (`python -m utils.static_gates --paths`: 30 gates, 2,284 tests) runs at `-n 2`
+under the gate's own `-m` and rule 5b's shape, through `mem_cap.sh --max-s 300 3` (the short lane; no gate lock, the static tier takes none), and
+**a red exits at once with its own output, never queued** (exit 1; exit 88 = it overran the short lane: incomplete, re-run). WHY: on the night of
+11-16/17, 6 of 16 full gates exited 1 and re-queued, each after a ~15-min EXCLUSIVE turn at the gate lock, several on a failure this tier
+catches in under a minute. **Measured: 50 s wall, peak 1.04 GB (cap 3)** at `-n 2` beside a live run (agent cores, nice 19). A green pre-check
+lets the gate queue as before, and **the gate then skips exactly those files by path** (same `-m`, so what it skips is what just ran): the static
+tests run ONCE, no duplication; the gate's pytest count falls by 2,284. The pre-check's seconds go to the gate lock in
+`GEN3AI_SHIP_PRECHECK_S` and land in the gate's `events.jsonl` line as `precheck_s`, beside its two waits. Pinned by
+`src/utils/ship_gate_test.py` (fake lock and slot state: a red never reaches the lock; a green does, with the ignores) and `src/deps_guard_test.py`.
 
 **The gate's memory cap is MEASURED, not a habit** (2026-11-17). The heavy slots admit by the SUM OF DECLARED CAPS, and the gate declared
 24 GB while it peaked at 5-10: 14 GB of promise nobody used, kept from the next job. `ship_gate.mem_cap_gb(n)` is 1.5 x the
@@ -665,7 +673,7 @@ gate that waited 30 min for the lock then queued for a slot BEHIND every long jo
 second from the back). It now parks its ticket AT ARRIVAL (`heavy_slots.park_ticket`): the ticket's age is the arrival order and its mtime is
 backdated, so the queue reads it as NOT polling and skips it: nobody behind a gate blocked on the lock is held back (no counted slot, no
 memory reserved), and the gate keeps its place for when it polls. Each gate now appends a `gate` line to `events.jsonl`
-(`waited_gate_s`, `waited_heavy_s`, `cycles`, `cap_gb`, `bound_s`); before it NOTHING logged a gate's heavy wait (its `slot` line says
+(`waited_gate_s`, `waited_heavy_s`, `cycles`, `cap_gb`, `bound_s`, `precheck_s`); before it NOTHING logged a gate's heavy wait (its `slot` line says
 `waited_s` 0 by construction). **What it does not change:** on the night of 11-16/17 the gate lock ran back to back (8 of the 15 gaps
 between 16 consecutive gates were under 2 min, 6 of them 0.0; each held 13-18 min, `gate_slots/history.jsonl`): most of a 23-53 min queue
 is the one-gate-at-a-time policy itself (N gates ahead x 15 min), which is the measured policy (above) and stays. `src/utils/gate_queue_order_test.py` (real holders, fake slot state; fails on a revert).

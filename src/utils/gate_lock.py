@@ -75,6 +75,9 @@ GATE_SLOTS = 1
 SLOTS_ENV = "GEN3AI_GATE_SLOTS"
 DIR_ENV = "GEN3AI_GATE_LOCK_DIR"
 HELD_ENV = "GEN3AI_GATE_LOCK_HELD"
+#: Seconds the ship gate's static pre-check took (``utils.ship_gate``), which ran BEFORE this lock was asked for; the
+#: gate's ``events.jsonl`` line carries it as ``precheck_s`` beside the two waits. Absent/malformed = 0.
+PRECHECK_ENV = "GEN3AI_SHIP_PRECHECK_S"
 REPORT_EVERY_S = 60.0
 POLL_S = 0.5
 
@@ -292,7 +295,7 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                 if cmd:                            # the next tuning of the queue reads this, not stderr that happened to be saved
                     HS.log_event(HS.lock_dir(), "gate", slot=slot, waited_gate_s=round(gate_wait_s, 1),
                                  waited_heavy_s=round(heavy_wait_s, 1), cycles=cycles, cap_gb=float(cap or 0.0),
-                                 bound_s=float(bound or 0.0))
+                                 bound_s=float(bound or 0.0), precheck_s=precheck_s())
                 rec = GS.SlotRecord.mine(slot, cmd)
                 try:
                     GS.write_record(d, rec)
@@ -321,6 +324,14 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
         HS.drop_ticket()                          # a gate that leaves without a heavy slot leaves the FIFO queue
         for fd in fds:
             os.close(fd)
+
+
+def precheck_s() -> float:
+    """The static pre-check's duration the ship gate handed down (:data:`PRECHECK_ENV`), else 0.0."""
+    try:
+        return max(0.0, round(float(os.environ.get(PRECHECK_ENV, "0")), 1))
+    except ValueError:
+        return 0.0
 
 
 #: The routine gate's xdist workers per LOGICAL cpu of its affinity while a training run is live

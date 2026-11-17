@@ -41,11 +41,19 @@ that wait, and firing there it kills the gate and loses its place (2026-11-09). 
 it goes to ``mem_cap.sh`` (``utils.mem_cap``, THE RUN-TIME BOUND), whose clock starts when pytest starts, after every
 queue; past it the gate is stopped and exits 89.
 
+THE STATIC PRE-CHECK runs FIRST, before the gate lock or any slot of the gate's own (2026-11-17): the static tier
+(``python -m utils.static_gates --paths``, ``-n`` :data:`STATIC_WORKERS`, the same marker expression, rule 5b's shape, ``mem_cap.sh --max-s``:
+the short lane) is ~40-60 s, and a red there exits at once with its own output, never queued: on the night of 11-16/17 six of
+sixteen full gates failed, each after a ~15-min exclusive turn at the gate lock, several on things this tier catches. A green one
+lets the gate queue as before; the gate then ``--ignore``s those files (it just ran them: nothing runs twice) and hands the
+pre-check's seconds down (``GEN3AI_SHIP_PRECHECK_S``) for the gate's ``events.jsonl`` line (``precheck_s``).
+
 No argument REFUSES (exit 2), like every scripts/ops/ entry point: a gate is never started by accident.
 An UN-BOOTSTRAPPED checkout (no Showdown ``dist/`` / ``node_modules``: a fresh worktree) is refused BEFORE any queue, exit 4, naming
 the command (``scripts/bootstrap.sh --skip-env --no-rust --no-check`` in a worktree): ``utils.checkout_deps``, also the pytest
 session's guard. ``--dry-run`` does not check.
-Exit status: the gate's own; 89 = ``--max-run-s`` stopped it; 2 = usage; 4 = not bootstrapped.
+Exit status: the gate's own, or the pre-check's (1 = a static gate failed; 88 = the pre-check overran its short-lane bound: INCOMPLETE,
+re-run); 89 = ``--max-run-s`` stopped it; 2 = usage; 4 = not bootstrapped.
 """
 from __future__ import annotations
 
@@ -61,11 +69,13 @@ from typing import Callable, Dict, List, Optional, Sequence
 
 from utils import checkout_deps
 from utils import core_split
+from utils import gate_lock
 from utils import heavy_slots as HS
 from utils import mem_cap
 from utils import procfs
 from utils.gate_lock_status import affinity_of, cpu_list
 from utils.paths import repo_path
+from utils.static_gates import static_gate_files
 
 #: The marker expression — THE routine gate's, verbatim. The ship gate never narrows it.
 MARKERS = "not slow and not e2e"
@@ -87,6 +97,12 @@ LIVE_WORKERS_PER_CPU = 0.5
 PEAK_AT_3_GB = 10.2
 PEAK_AT_6_GB = 13.6
 CAP_MARGIN = 1.5
+#: The static pre-check's xdist workers (designs/ops/testing.md: ``-n 2`` is the static tier's own shape, ~42 s quiet).
+STATIC_WORKERS = 2
+#: Its short-lane declaration (``mem_cap.sh --max-s``; <= 600): ~4x the measured wall beside a live run, killed past S + 30 s (exit 88).
+STATIC_MAX_S = 300
+#: Its declared memory cap (GB), the heavy slots' admission currency: MEASURED, see designs/ops/testing.md "The SHIP GATE".
+STATIC_CAP_GB = 3
 #: Where the last ship gate's 8 s-bar rows land (``utils.ship_bar``; per user, like the test-cost table).
 BAR_REPORT = os.path.join(os.path.expanduser("~"), ".cache", "gen3ai", "ship_bar_last.json")
 
@@ -174,18 +190,42 @@ def collected_roots() -> List[str]:
     return [r.rstrip("/") + "/" for r in roots]
 
 
-def build_argv(shape: Shape, python: str, extra: Sequence[str] = (), *, max_run_s: Optional[float] = None) -> List[str]:
-    """``max_run_s``: mem_cap's run-time bound, on the INNERMOST wrapper so that neither queue (gate lock, heavy slot) counts."""
-    bound = [] if max_run_s is None else ["--max-run-s", f"{max_run_s:g}"]
+def _prefix(shape: Shape) -> List[str]:
     pre: List[str] = []
     if shape.nice:
         pre += ["nice", "-n", str(shape.nice)]
     if shape.cpus is not None:
         pre += ["taskset", "-c", cpu_list(shape.cpus)]
+    return pre
+
+
+def static_argv(shape: Shape, python: str, files: Optional[Sequence[str]] = None) -> List[str]:
+    """The static pre-check: the static tier's files (``utils.static_gates``, THE inventory) at ``-n`` :data:`STATIC_WORKERS`
+    under the gate's own ``-m`` (so what it runs is exactly what the gate then skips), in rule 5b's shape, in the short lane.
+    NOT under ``gate_lock.sh``: the static tier takes no gate lock (root CLAUDE.md)."""
+    files = static_gate_files() if files is None else list(files)
+    return _prefix(shape) + [str(repo_path("scripts", "ops", "mem_cap.sh")), "--max-s", f"{STATIC_MAX_S:g}", str(STATIC_CAP_GB),
+                             python, "-m", "pytest", *files, "-m", MARKERS, "-q", "-n", str(STATIC_WORKERS)]
+
+
+def static_precheck(shape: Shape, python: str, env: Dict[str, str]) -> "tuple[int, float]":
+    """Run the static tier BEFORE the gate queues: ``(exit code, seconds)``. Its output is the caller's stdout/stderr."""
+    t0 = time.monotonic()
+    rc = subprocess.call(static_argv(shape, python), cwd=str(repo_path()), env=env)
+    return rc, time.monotonic() - t0
+
+
+def build_argv(shape: Shape, python: str, extra: Sequence[str] = (), *, max_run_s: Optional[float] = None,
+               ignore: Sequence[str] = ()) -> List[str]:
+    """``max_run_s``: mem_cap's run-time bound, on the INNERMOST wrapper so that neither queue (gate lock, heavy slot) counts.
+    ``ignore``: files the static pre-check already ran (``--ignore``), so they run once."""
+    bound = [] if max_run_s is None else ["--max-run-s", f"{max_run_s:g}"]
+    pre = _prefix(shape)
     return pre + [str(repo_path("scripts", "ops", "gate_lock.sh")),
                   str(repo_path("scripts", "ops", "mem_cap.sh")), *bound,
                   str(mem_cap_gb(effective_workers(shape.workers, extra))),
-                  python, "-m", "pytest", *collected_roots(), "-m", MARKERS, "-q", "-n", str(shape.workers), *extra]
+                  python, "-m", "pytest", *collected_roots(), "-m", MARKERS, "-q", "-n", str(shape.workers),
+                  *[f"--ignore={f}" for f in ignore], *extra]
 
 
 #: pytest's UsageError code, which the same refusal returns when pytest itself starts (``conftest.py``).
@@ -227,14 +267,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(refused, file=sys.stderr)
             return EXIT_UNBOOTSTRAPPED
     shape = resolve_shape()
-    cmd = build_argv(shape, os.environ.get("GEN3AI_PYTHON") or sys.executable, extra, max_run_s=max_run_s)
+    python = os.environ.get("GEN3AI_PYTHON") or sys.executable
+    files = static_gate_files()
+    cmd = build_argv(shape, python, extra, max_run_s=max_run_s, ignore=files)
     print(f"[ship_gate] {shape.describe()}", file=sys.stderr)
+    print(f"[ship_gate] static pre-check, before any queue: CUDA_VISIBLE_DEVICES='' {shlex.join(static_argv(shape, python, files))}",
+          file=sys.stderr)
     print(f"[ship_gate] CUDA_VISIBLE_DEVICES='' {shlex.join(cmd)}", file=sys.stderr)
     if dry:
         return 0
     os.makedirs(os.path.dirname(BAR_REPORT), exist_ok=True)
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES="", GEN3AI_SHIP_BAR="1", GEN3AI_SHIP_BAR_REPORT=BAR_REPORT,
-               GEN3AI_SHIP_WARM="1")
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES="")
+    rc, pre_s = static_precheck(shape, python, env)
+    if rc != 0:
+        why = ("the pre-check OVERRAN its short-lane bound (INCOMPLETE, never a red: re-run)" if rc == mem_cap.EXIT_SHORT_OVERRUN
+               else "a static gate FAILED")
+        print(f"[ship_gate] REFUSING before queueing: {why} (exit {rc}, {pre_s:.0f} s). The full gate was not queued: fix it "
+              "and re-run (the static tier alone: pytest $(python -m utils.static_gates --paths) -q -n 2).", file=sys.stderr)
+        return rc
+    print(f"[ship_gate] static pre-check green in {pre_s:.0f} s; queueing the gate", file=sys.stderr)
+    env.update(GEN3AI_SHIP_BAR="1", GEN3AI_SHIP_BAR_REPORT=BAR_REPORT, GEN3AI_SHIP_WARM="1",
+               **{gate_lock.PRECHECK_ENV: f"{pre_s:.1f}"})
     t0 = time.time()
     rc = subprocess.call(cmd, cwd=str(repo_path()), env=env)
     if rc == mem_cap.EXIT_RUN_TIMEOUT and max_run_s is not None:
