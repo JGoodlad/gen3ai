@@ -1,0 +1,66 @@
+# CPU --debug smokes at the pin 15136b61634b667bb9da5ccc6647ff9265238829 (a clean detached checkout, its rust_env built), 2026-11-17. Each: scripts/ops/mem_cap.sh --max-run-s 3300 8 nice -n 19 taskset -c 5-7,13-15 python src/main/train_rl_agent.py --debug --steps 10000 --arch production --ent-coef 0.0125 --behaviour-check warn <lever> --seed <s> --run-name smoke_<arm>, CUDA_VISIBLE_DEVICES="", OMP/MKL/OPENBLAS threads 1, GEN3AI_MODELS_DIR=<scratch>; two at a time beside a live GPU run. Excerpts: the marker lines, the last update's table rows, mem_cap's peak.
+Q6N exit 0 wall 2330s
+Q5N exit 0 wall 2356s
+Q6W exit 0 wall 2406s
+Q5W exit 0 wall 2514s
+ALLDONE
+
+=== smoke_Q5N: lever --n-epochs 5 --lr 6e-4, seed 5201 (width 128)
+🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS that head's BCE against the terminal outcome, weighted by --vf-coef 0.5. Reward = the TERMINAL WIN INDICATOR alone; gamm
+🦀 [ENV CORE] rust — 1 envs x 8 threads, proc/release, complete-game buffer, update at >= 2,304 completed-game rows (quantum 384), T2 eager buckets (8,)
+[ModelVersion] Round-trip smoke test PASSED (pi shape: (1, 512), vf shape: (1, 128))
+🧊 [LEARNER FREEZE] released — learn() returned; 10 checks passed.
+Training complete. Model saved to <scratch>/smoke_models/smoke_Q5N/final_model
+[mem_cap] done: gen3ai-capped-taskset-210725.scope exit 0 · peak 3.29 GB of cap 8.00 GB (41%) · not OOM-killed
+|    learning_rate                  | 0.0006       |
+|    n_updates                      | 20           |
+|    approx_kl                      | 0.00011123258 |
+|    clip_fraction                  | 0.0013        |
+|    entropy_loss                   | -1.7          |
+|    learning_rate                  | 0.0006        |
+|    n_updates                      | 25            |
+
+=== smoke_Q6N: lever --policy-readout trunk --allow-nonproduction-arch, seed 5211 (width 128)
+🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS that head's BCE against the terminal outcome, weighted by --vf-coef 0.5. Reward = the TERMINAL WIN INDICATOR alone; gamm
+🦀 [ENV CORE] rust — 1 envs x 8 threads, proc/release, complete-game buffer, update at >= 2,304 completed-game rows (quantum 384), T2 eager buckets (8,)
+[ModelVersion] Round-trip smoke test PASSED (pi shape: (1, 128), vf shape: (1, 128))
+🧊 [LEARNER FREEZE] released — learn() returned; 10 checks passed.
+Training complete. Model saved to <scratch>/smoke_models/smoke_Q6N/final_model
+[mem_cap] done: gen3ai-capped-taskset-210726.scope exit 0 · peak 3.31 GB of cap 8.00 GB (41%) · not OOM-killed
+|    learning_rate                  | 0.0003       |
+|    n_updates                      | 4            |
+|    approx_kl                      | 4.6630802e-07 |
+|    clip_fraction                  | 0             |
+|    entropy_loss                   | -1.71         |
+|    learning_rate                  | 0.0003        |
+|    n_updates                      | 5             |
+
+=== smoke_Q5W: --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch, lever --n-epochs 5 --lr 6e-4, seed 5204
+🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS that head's BCE against the terminal outcome, weighted by --vf-coef 0.5. Reward = the TERMINAL WIN INDICATOR alone; gamm
+🦀 [ENV CORE] rust — 1 envs x 8 threads, proc/release, complete-game buffer, update at >= 2,304 completed-game rows (quantum 384), T2 eager buckets (8,)
+[ModelVersion] Round-trip smoke test PASSED (pi shape: (1, 512), vf shape: (1, 256))
+🧊 [LEARNER FREEZE] released — learn() returned; 10 checks passed.
+Training complete. Model saved to <scratch>/smoke_models/smoke_Q5W/final_model
+[mem_cap] done: gen3ai-capped-taskset-283956.scope exit 0 · peak 5.41 GB of cap 8.00 GB (68%) · not OOM-killed
+|    learning_rate                  | 0.0006       |
+|    n_updates                      | 20           |
+|    approx_kl                      | 3.4770976e-05 |
+|    clip_fraction                  | 0             |
+|    entropy_loss                   | -1.66         |
+|    learning_rate                  | 0.0006        |
+|    n_updates                      | 25            |
+
+=== smoke_Q6W: --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch, lever --policy-readout trunk, seed 5214
+🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS that head's BCE against the terminal outcome, weighted by --vf-coef 0.5. Reward = the TERMINAL WIN INDICATOR alone; gamm
+🦀 [ENV CORE] rust — 1 envs x 8 threads, proc/release, complete-game buffer, update at >= 2,304 completed-game rows (quantum 384), T2 eager buckets (8,)
+[ModelVersion] Round-trip smoke test PASSED (pi shape: (1, 256), vf shape: (1, 256))
+🧊 [LEARNER FREEZE] released — learn() returned; 10 checks passed.
+Training complete. Model saved to <scratch>/smoke_models/smoke_Q6W/final_model
+[mem_cap] done: gen3ai-capped-taskset-283955.scope exit 0 · peak 4.99 GB of cap 8.00 GB (62%) · not OOM-killed
+|    learning_rate                  | 0.0003        |
+|    n_updates                      | 4             |
+|    approx_kl                      | 1.8360248e-06 |
+|    clip_fraction                  | 0             |
+|    entropy_loss                   | -1.65         |
+|    learning_rate                  | 0.0003        |
+|    n_updates                      | 5             |
