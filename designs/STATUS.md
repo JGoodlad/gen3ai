@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-11-13.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-16.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -46,17 +46,17 @@ X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side'
 The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
 [`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
-## 2. Running now (as of 2026-11-13)
+## 2. Running now (as of 2026-11-16)
 
-Read at 00:10 PST on 2026-11-13 from the orchestrator's log (`~/.claude/jobs/x35/status.txt`), the process table and
-`models/rb_b1c_s5101/latest.txt`.
+Read at 21:11 PST on 2026-11-16 from the orchestrator's log (`~/.cache/gen3ai/handoffs/p10-review-2026-10-04.md`, its last
+entries 11-13 to 11-16), the process table and `models/rb_b1c_s5110/latest.txt`.
 
 | where | job | what decision it drives |
 |---|---|---|
 | GPU 11-11 17:18 to 18:57 (ended) | **The R9 human clone train** (`hclone_r2_s5901`, seed 5901, 45-minute chunks), started by the orchestrator's R9C driver when X69's last fork ended (17:18; X69 is in the landed rows below). It CONVERGED and the clone is registered (`d79f08ec2`). This row is a pointer, and the R9 unit owns its detail. | The clone that the R9 kit's `--human-data init:` / `opp:` take (`d0e2715d8`). |
 | GPU 11-12 00:19 to 17:17 PST (ended); its two crosses on the CPU, 17:21 to 23:40 PST | **CE-3d, the trailing-magnet screen: all three forks trained and both crosses are READ (11-12 21:58 and 23:40 PST): PASS** ([PREREG §16](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)). Seeds 7321, 7322 and 7323 each ran P\* + 20M at the re-pin (tag `ce3d-pin-9e97cad5`) on the chain `x35-ce3d-nov12`, launcher exit 0, no restart, arm-end K9(b) PASS (`31b0b402c`, `4662ebb53`, `60efef08c`); 12.75 GPU-h. The crosses were played on the agent cores at the play pin (tag `ce3d-pin-333a73dd`) and hold no lane now. This row is a pointer: the result is the first landed row below. | Nothing further: the PASS licenses registering a follow-up only; that follow-up, X70, is registered and NOT launched (§3). It moves no recipe and never held BOUNDARY-1. |
-| GPU since 2026-11-12 19:26 PST (CE-3d's forks ended 17:17) | **BOUNDARY-1 phase 1 is RUNNING: run [1] `rb_b1c_s5101` was relaunched 2026-11-12 19:26:24 PST, and its early check PASSED at 19:41:28.** The runs go one after another: twelve runs to 50M, about 6 days for phase 1 (§12: ≈ 136 GPU-h and ≈ 10 of starts), under the Training session's driver v4 (`~/gen3ai_archive/b1_phase1_driver_v4.sh`). At the read, `latest.txt` named `checkpoint_25000420_steps.zip`. The first launch (2026-11-12 17:18) was STOPPED at 17:32 by a bug in the look kit's early check, not by anything in the run; the kit is fixed at `1d592e6cd`, and the stopped attempt was discarded whole. Amendment 4 (2026-11-12, blind: no look, no game): the early check and every look are read from the kit at `1d592e6cd`, every run still trains and every game plays at the launch pin `15136b616`; that attempt spent no resume and no spare seed. Amendment 5 (`cf9258ab6`, 2026-11-12, blind, no re-pin): at the launch pin a stop signal that lands inside a compiled update kills the child with no save (fixed on main at `207aa0ae3`, not in the pin; main's launcher reports it as an UNSAVED stop, exit 9); it is no FATAL, VOID or replacement cause, and a run stopped that way resumes on the same pin from `latest.txt`'s checkpoint. §13's GPU items 1 to 7 were GREEN at the launch pin (2026-11-12, 04:54 to 08:51 PST, ≈ 3.95 h of the lease). Measured there: the wide arm costs ρ = 1.392 times the narrow one (734.59 against 527.67 s per 1M steps, pilots to 4M), so the EQ look is at 71,000,000; the width-256 update fits with 1,398.5 MiB of headroom against the 1,024 bar; the 32 CUDA-only slow tests pass; the cross-width cell passes; both pilots read K9(b) PASS. §12 is rewritten from ρ: ≈ 309 GPU-h to the decision (≈ 281 of training, 210 to 281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch. Amendment 3 (2026-11-12, blind, before any launch): a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint on the same pin; a repeat on an empty card holds that run. Amendment 2 (2026-11-12) set the base every run types: `--ent-coef 0.0125` (the owner's yes of 2026-11-11 to X67's PASS) and `--behaviour-check warn`, with K9(b) judged by the look. The records are the PREREG's §18 (slots S1 to S7; S8, written at and after the launch, holds [1]'s two launches and the warm start's cost: 251 s from the restart to the first rollout at [1]'s first six-hour restart, against ≈ 1,192 s for a cold start). | MF-5 (§3). |
-| CPU: the play lanes are FREE | **X60-T look 2 READ 11-11 16:52 PST: NO-TRANSFER** (the landed row below). Its two lanes held the agent cores from 11-09 03:36 to 11-11 16:45; no registered read holds them now. | The next CPU read is the orchestrator's pick from §3 (X67's conditional Kakuna read and the searched player's cost read both waited on these lanes). |
+| GPU since 2026-11-12 19:26 PST (CE-3d's forks ended 17:17) | **BOUNDARY-1 phase 1 is RUNNING: 8 of 12 runs are complete at 50M, and run [9] `rb_b1c_s5110` is live** (launched 2026-11-16 14:05 PST; early check PASSED 14:19; first restart WARM, 249 s; `latest.txt` named `checkpoint_38000064_steps.zip` at 21:11; **ending ≈ 23:35 on 11-16**). Then [10] `rb_b1w_s5111`, then the last two; **phase 1 ends ≈ 11-18**; then the 50M look and phase 2 to 100M. **X70 is slotted (the orchestrator's option A, 2026-11-13) after B1's phase 2 and its looks, ≈ 2026-11-25**; its hand-off carries no GO (§3). The twelve runs go one after another, under the Training session's driver v4 (`~/gen3ai_archive/b1_phase1_driver_v4.sh`); each run so far ended rc 0 with its early check PASS (K9(b) max 4.77e-07) and its restarts warm (about 4 to 5 minutes, against ≈ 1,192 s cold). Plan at launch: about 6 days for phase 1 (§12: ≈ 136 GPU-h and ≈ 10 of starts). Run [1]'s first launch (2026-11-12 17:18) was STOPPED at 17:32 by a bug in the look kit's early check, not by anything in the run; the kit is fixed at `1d592e6cd`, and the stopped attempt was discarded whole. Amendment 4 (2026-11-12, blind: no look, no game): the early check and every look are read from the kit at `1d592e6cd`, every run still trains and every game plays at the launch pin `15136b616`; that attempt spent no resume and no spare seed. Amendment 5 (`cf9258ab6`, 2026-11-12, blind, no re-pin): at the launch pin a stop signal that lands inside a compiled update kills the child with no save (fixed on main at `207aa0ae3`, not in the pin; main's launcher reports it as an UNSAVED stop, exit 9); it is no FATAL, VOID or replacement cause, and a run stopped that way resumes on the same pin from `latest.txt`'s checkpoint. §13's GPU items 1 to 7 were GREEN at the launch pin (2026-11-12, 04:54 to 08:51 PST, ≈ 3.95 h of the lease). Measured there: the wide arm costs ρ = 1.392 times the narrow one (734.59 against 527.67 s per 1M steps, pilots to 4M), so the EQ look is at 71,000,000; the width-256 update fits with 1,398.5 MiB of headroom against the 1,024 bar; the 32 CUDA-only slow tests pass; the cross-width cell passes; both pilots read K9(b) PASS. §12 is rewritten from ρ: ≈ 309 GPU-h to the decision (≈ 281 of training, 210 to 281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch. Amendment 3 (2026-11-12, blind, before any launch): a startup fit refusal at any start of a run is a start failure, retried from the same checkpoint on the same pin; a repeat on an empty card holds that run. Amendment 2 (2026-11-12) set the base every run types: `--ent-coef 0.0125` (the owner's yes of 2026-11-11 to X67's PASS) and `--behaviour-check warn`, with K9(b) judged by the look. The records are the PREREG's §18 (slots S1 to S7; S8, written at and after the launch, holds [1]'s two launches and the warm start's cost: 251 s from the restart to the first rollout at [1]'s first six-hour restart, against ≈ 1,192 s for a cold start). | MF-5 (§3). |
+| CPU: the play lanes are FREE | **X60-T look 2 READ 11-11 16:52 PST: NO-TRANSFER** (the landed row below). Its two lanes held the agent cores from 11-09 03:36 to 11-11 16:45; no registered read holds them at the 11-16 read (no Kakuna game in the process table). | The next CPU read is the orchestrator's pick from §3 (X67's conditional Kakuna read and the searched player's cost read both waited on these lanes). |
 
 ### Landed since 2026-11-01
 
@@ -125,7 +125,7 @@ its GO.
   effect with probability 0.87–0.99 and a +1 pp effect with 0.83 / 0.70 / 0.58 at a fork-seed spread of 0.3 / 0.4 /
   0.5 pp; the limit is the three banked swap forks. The first fork is also the first learner with no regulariser at
   this pin on the card. **Cost** ≈ 16.4–17 GPU-h, plus ≈ 53 CPU lane-h or ≈ 1.3 GPU-h for the crosses. **Slot
-  (proposed; the orchestrator places it):** after BOUNDARY-1's phase 2 and its looks (≈ 2026-11-25), while its Kakuna
+  (placed by the orchestrator, 2026-11-13, option A):** after BOUNDARY-1's phase 2 and its looks (≈ 2026-11-25), while its Kakuna
   read holds the CPU lanes; no BOUNDARY-1 run is paused for it. Every class licenses registering a next step only;
   nothing moves a recipe without the owner. The hand-off (`chain_items_x70.json`) carries no GO.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
@@ -160,7 +160,7 @@ its GO.
   2026-11-12 (Amendment 3, blind):** a startup fit refusal at any start of a run is a start failure, retried from
   the same checkpoint on the same pin; a repeat on an empty card holds that run. ≈ 309 GPU-h to the decision (≈ 281
   of training, 210–281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch; the
-  the launch was 2026-11-12, after CE-3d's forks. Width is decided on the in-house cross over all four
+  launch was 2026-11-12, after CE-3d's forks. Width is decided on the in-house cross over all four
   panels,
   breadth on forum72 alone and kept only if home72 pays no more than forum72 gains; Kakuna clustered by team
   confirms either. Honest power: a true +4 pp reads WIN 19 times in 20 if the seed spread at 100M is the 1.76 pp
@@ -189,8 +189,7 @@ its GO.
    +1.0 pp screen; σ̂_CC = 0. Stage B does not fire, and s6302 is a speculative replicate not read for any decision.
    Its REPORTED groups (the 400M / 430M nodes, H / P72 / rc72b, P\*) were never played (AM-X63-SPEC FINDING 11).
 3. **PR-1′**, the precision read re-scoped by REVIEW_2: D3 and N1-P against C0 on F (D1 reported only), 30,000–38,000
-   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. X48's read has landed (10-30), but the agent cores are on the dlive raw lane and X59-S's follow-up cells (§2), so it can run only after them,
-   or at once on a rented CPU box (§6).
+   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. X48's read has landed (10-30) and the agent cores are free (§2: the dlive and X59-S lanes ended, 11-01 and 11-03), so it can run on them; the orchestrator places it.
 
 **Gated.** **X62**, P\*-forks on 12,000 recombined teams (REVISED DRAFT, `58cb02dc6`): its first gate, H-CTX, read
 SUPPORTED, so its corpus `x62_recomb_v1` is built (2026-10-29, as X63's largest component); then PR-1′ KILL retires the fork (N1-P read NULL, so it does not make X62 redundant). Per
@@ -266,16 +265,10 @@ With the leak-honest search S′h on every eligible decision it scores 0.5145 on
 
 Every open owner question, in one place.
 
-1. **A cloud GPU, our second card (vast.ai).** The approval asked: top up the credit by $15, spend at most $20 in
-   total, one instance at a time, and upload P\* and its pool snapshots (about 170 MB, never human data or
-   credentials). Each cloud fork frees 12–13 local GPU-h for about $5. The question is verbatim in
-   [`ops/cloud_gpu_plan.md`](ops/cloud_gpu_plan.md) §6 (`37de8515f`); its first workload named D3's look-1 seeds, which
-   have since trained locally, so part (c) needs a new workload. X53-N1 would need a wider approval (about $50–85, a
-   longer deadman, possibly two instances at once: `endstate/design_x53_n1_fresh_breadth.md` §9). Recommendation: yes.
-2. **A rented CPU box.** The Kakuna lane, not the GPU, sets when anything is read: PR-1′ alone is 30,000–38,000
-   games, weeks on the three agent cores. A 32-vCPU box would play them in about 8–24 box-hours for about $5–25
-   (UNVERIFIED: no rented CPU has played a Kakuna game yet). The same approval would serve X62's, X63's and S-U's
-   reads (S′-LIVE itself played locally in 102 h, ≈ 315 CPU-h) (`endstate/strategy_if_levers_null_2026-10-26.md` §3.1; REVIEW_2 `69c7cd34d`).
+1–2. **Rented compute (a cloud GPU, a rented CPU box): DECLINED by the owner, 2026-11-09** ("No need to rent. I barely have any time for this
+   project, so latency isn't urgent", said twice that day: for the S′-HONEST read and for the review's compute ask). Nothing is
+   asked here and no rental is planned; longer wall times are accepted. The rental runbooks (`ops/cloud_gpu_plan.md`,
+   `ops/cloud_gpu_benchmark.md`) are history. The numbering stays so that other docs' citations of §6.4 and §6.5 still resolve.
 3. **The history rewrite.** It replaces human account names with salted codes in every past version of every file,
    then replaces `main`'s history on GitHub. It is built as a dry-run kit (`39c60355c`,
    [`ops/history_rewrite.md`](ops/history_rewrite.md)) and **not run**. The owner's part: the go; four rulings from its
@@ -303,14 +296,14 @@ Every open owner question, in one place.
    **amended 2026-11-10, before any launch, to three seeds a cell**: ≈ 309 GPU-h to the decision (≈ 15.4 days of
    our card; re-priced 2026-11-12 from the measured ρ = 1.392), launched at a new pin taken once, after the `ent_coef` decision. Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
-   yes, staged, launched once the boundary's fixes are in (X60-T's verdict is in: NO-TRANSFER, 11-11, so its HOLD
-   does not fire), so the owner's answer is needed before then.
+   yes, staged: LAUNCHED 2026-11-12 (§2; X60-T's verdict was NO-TRANSFER, 11-11, so its HOLD did not fire), so nothing is asked here any more.
 6. **`ent_coef` 0.0125 for BOUNDARY-1: ANSWERED YES, 2026-11-11** (asked 2026-11-10; X67 read PASS 2026-11-11,
    §3). The screen passed, D +1.97 pp [+1.35, +2.59] head to head, with every fork LR-MOVED (rate 8.372e-05
    against C0's 1.0047e-04); the owner said yes in writing to the orchestrator. BOUNDARY-1's Amendment 2
    (2026-11-12) types 0.0125 on every arm, for that experiment only. Nothing is asked here any more.
 7. **The quota hook** (2026-11-10). It blocked every session from 10:28 to 12:59 when the Fable weekly window hit
-   100 %. A fix scoped to the model that is out of quota is proposed; it waits on the owner's yes.
+   100 %. A fix scoped to the model that is out of quota was proposed; the owner said yes on 2026-11-11 ("Yes to both. In
+   general your call."). Nothing is asked here any more.
 
 ## 7. The biggest risks and unknowns
 
