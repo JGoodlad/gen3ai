@@ -185,6 +185,24 @@ def test_x26_and_x34_runs_are_refused(tmp_path, name):
         check(make_fork(str(tmp_path), name), tmp_path)
 
 
+BANKED = ["rb_b1c_s5101", "rb_b1w_s5103", "rb_b1br_s5106", "rb_b1wb_s5113"]
+
+
+@pytest.mark.parametrize("name", BANKED)
+def test_boundary1_banked_cells_are_refused(tmp_path, name):
+    """The retention rule (models_retention_policy.md): C, W, Br and WB are the controls of every fresh-cell arm."""
+    with pytest.raises(ag.ThinRefused, match="BOUNDARY-1 banked cell"):
+        check(make_fork(str(tmp_path), name), tmp_path)
+
+
+def test_the_banked_prefixes_name_all_twelve_runs_and_nothing_else():
+    from main.b1.arms import SEEDS
+    names = [f"rb_b1{arm}_s{seed}" for arm, seeds in SEEDS.items() for seed in seeds]
+    assert len(names) == 12 and all(n.startswith(ag.tiers.BANKED_B1_PREFIXES) for n in names)
+    assert not "rb_b1_other_s1".startswith(ag.tiers.BANKED_B1_PREFIXES)
+    assert not "rb_q6n_s5211".startswith(ag.tiers.BANKED_B1_PREFIXES)
+
+
 def test_a_baseline_run_is_refused(tmp_path):
     run = make_fork(str(tmp_path))
     with pytest.raises(ag.ThinRefused, match="baselines.json"):

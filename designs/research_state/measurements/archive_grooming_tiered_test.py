@@ -470,6 +470,22 @@ def test_a_review_hold_suppresses_the_plan_entirely(tmp_path, run):
     assert r["review_hold"]
 
 
+def test_boundary1_banked_cells_get_no_plan_and_a_neighbour_does(tmp_path):
+    """Retention rule: C/W/Br/WB are held whole; a same-shaped run outside the prefixes is still planned."""
+    models = tmp_path / "models"
+    models.mkdir()
+    for run in ("rb_b1c_s5101", "rb_b1wb_s5107", "rb_q6n_s5211"):
+        make_run(str(models), run, latest_step=25000)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _stamp_old(str(models))
+    c = census(str(models), str(repo))
+    for run in ("rb_b1c_s5101", "rb_b1wb_s5107"):
+        r = c["runs"][run]
+        assert r["plan"]["delete"] == [] and "REVIEW HOLD" in r["plan"]["skipped"] and r["tier"] == 1
+    assert c["runs"]["rb_q6n_s5211"]["plan"]["delete"]          # the control: the plan is not vacuous
+
+
 def test_the_two_RELEASED_review_runs_are_not_held(tmp_path):
     """``ai_v5_11`` and ``ai_v5_12`` were read and RELEASED — and tier 4 keeps the
     two things their ledger lines rest on anyway (`tb/` and the sidecars)."""

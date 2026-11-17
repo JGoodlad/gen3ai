@@ -237,6 +237,22 @@ def test_recent_activity_protects_a_run(archive):
         assert r["mtime_source"] in ag._ACTIVITY_SUBDIRS
 
 
+def test_boundary1_banked_cells_are_never_closed_by_the_standing_policy(tmp_path):
+    models = tmp_path / "models"
+    models.mkdir()
+    for run in ("rb_b1w_s5104", "rb_b1br_s5105", "rb_q6w_s5214"):
+        make_run(str(models), run, latest_step=25000)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for root, _d, files in os.walk(models):
+        for f in files:
+            os.utime(os.path.join(root, f), (1.0, 1.0))
+    c = ag.build_census(str(models), str(repo), recent_days=0)
+    for run in ("rb_b1w_s5104", "rb_b1br_s5105"):
+        assert c["runs"][run]["status"] == "REFERENCED" and not c["runs"][run]["plan"]["delete"]
+    assert c["runs"]["rb_q6w_s5214"]["status"] == "CLOSED" and c["runs"]["rb_q6w_s5214"]["plan"]["delete"]
+
+
 def test_a_metadata_backfill_does_not_read_as_activity(archive):
     """The 2026-09-01 defect, pinned.
 

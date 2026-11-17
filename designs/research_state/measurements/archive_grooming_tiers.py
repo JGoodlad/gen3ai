@@ -171,6 +171,15 @@ def baseline_protected() -> "dict[str, list[str]]":
 #: claim rests on; grooming "only" its ``eval_traces`` while that is unresolved is
 #: the same bet with a smaller stake.  A hold is released by BANKING the artifact,
 #: not by re-reading the ledger.
+#: THE RETENTION RULE for BOUNDARY-1's banked cells (`models_retention_policy.md` § B1): these run-name prefixes
+#: (C, W, Br, WB: `rb_b1c_`, `rb_b1w_`, `rb_b1br_`, `rb_b1wb_`; the trailing `_` keeps `rb_b1w_` from matching
+#: `rb_b1wb_`) are never planned for any deletion, by the standing policy, the tiered policy or `--thin-run`, until
+#: a WRITTEN owner decision releases them (then this tuple is edited in that commit).  The one source; the thinner
+#: and the standing census import it.
+BANKED_B1_PREFIXES = ("rb_b1c_", "rb_b1w_", "rb_b1br_", "rb_b1wb_")
+BANKED_B1_REASON = ("BOUNDARY-1 banked cell: the control of every later fresh-cell arm; never thinned until a "
+                    "written owner decision releases it (models_retention_policy.md)")
+
 REVIEW_HOLDS: "dict[str, str]" = {
     "ai_v9_48_G1_action_0826":
         "REVIEW HOLD — the program's first POSITIVE distill arm (pooled +0.0398 "
@@ -431,6 +440,11 @@ def assign_tiers(runs: dict, live: dict, refs: dict, graph: dict,
                 f"NAMED in {BASELINE_REGISTRY_REL} (gen3_baselines_registry_v1): "
                 + ", ".join(protected[n])
                 + " — a baseline name must still resolve a year from now"]
+            continue
+        if n.startswith(BANKED_B1_PREFIXES):
+            r["review_hold"] = BANKED_B1_REASON      # a hold = NO plan at all (a tier-1 run is still planned)
+            r["tier"], r["tier_name"] = 1, "REFERENCED"
+            r["tier_reasons"] = [BANKED_B1_REASON]
             continue
         if n in REVIEW_HOLDS:
             r["review_hold"] = REVIEW_HOLDS[n]
