@@ -319,9 +319,10 @@ def test_the_recorded_kit_checks_and_plan_say_what_the_prereg_says():
     assert "PLAN REFUSED (3 problem(s))" in plan and "the kit agrees — FORK of" not in plan[plan.index("PHASE-2"):]
 
 
-def test_the_plans_refusal_of_phase_2_is_the_kits_describe_without_a_record():
-    """PREREG §11.2 (a kit gap, reported): ``arm_chain plan --describe`` asks ``kit describe`` with no ``--phase1``,
-    and ``describe`` has no default; this pins the behaviour the recorded plan shows, so a fix updates both."""
+def test_the_launch_describe_still_refuses_phase_2_without_a_record():
+    """PREREG §11.2's gap (``arm_chain plan --describe`` refused every phase-2 item) is closed in ``describe_for_plan``
+    (``phase1_test.py``); the LAUNCH path's ``describe`` stays strict, so a launch never runs on a guessed record. The
+    recorded plan (``arm_chain_plan_a3.txt``) is the registration-time transcript of the refusal."""
     with pytest.raises(K.KitError, match="arm a3 is phase 2: it needs the a3_mx phase-1 record"):
         K.describe(A3, 3501, _real_call())
 

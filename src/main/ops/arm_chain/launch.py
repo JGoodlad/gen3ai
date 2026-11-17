@@ -43,6 +43,9 @@ class Describe:
     delta_text: str
     steps: int
     argv: List[str]
+    #: ``plan``'s phase-1 note for a phase-2 arm (``PLACEHOLDER`` before phase 1 has finished, ``RECORD`` once the
+    #: record verifies; ``""`` for every other arm): what the argv was built from.
+    phase1: str = ""
 
     @staticmethod
     def load(path: str) -> "Describe":
@@ -57,8 +60,10 @@ class Describe:
         a = list(d.get("argv") or [])
         if "--steps" not in a or a.index("--steps") + 1 >= len(a):
             raise Hold(f"the describe {path} carries no --steps")
+        p1 = d.get("phase1")
         return Describe(run_name=str(d.get("run_name")), parent_run_dir=str(d.get("parent_run_dir")),
-                        delta_text=str(d.get("delta_text")), steps=int(a[a.index("--steps") + 1]), argv=a)
+                        delta_text=str(d.get("delta_text")), steps=int(a[a.index("--steps") + 1]), argv=a,
+                        phase1=str(p1.get("mode", "")) if isinstance(p1, dict) else "")
 
 
 def describe_path(spec: ChainSpec, it: ArmItem) -> str:
@@ -190,12 +195,16 @@ class X35Launcher:
     def describe_offline(self, it: ArmItem) -> Describe:
         """The kit's describe for the arm, computed now on CPU (read-only; nothing launched): the chain file's arm
         name, seed and run are checked when the chain is PLANNED, not at the hand-off (10-20: ``x47`` was handed to
-        the GO, the kit knows only ``toy_x47``, and the GPU idled until a hand relaunch)."""
+        the GO, the kit knows only ``toy_x47``, and the GPU idled until a hand relaunch). ``--plan`` is the kit's
+        planning mode: a phase-2 arm's describe needs the phase-1 record, which does not exist until phase 1 has run,
+        so before then the kit builds it from declared placeholders (shape only); from the phase boundary on it
+        reads the stage's record and judges it in full (``kit.describe_for_plan``)."""
         side = "toy" if it.arm.startswith("toy_") else "production"
-        call = os.path.join(self.spec.repo, self.spec.backend.stage, f"reference_population_{side}.json")
+        stage = os.path.join(self.spec.repo, self.spec.backend.stage)
+        call = os.path.join(stage, f"reference_population_{side}.json")
         out = os.path.join(self.spec.work_dir, f"plan_describe.{it.arm}.{it.seed}.json")
         argv = [self.spec.python, "-m", "main.x35.kit", "describe", "--arm", it.arm, "--seed", str(it.seed),
-                "--call", call]
+                "--call", call, "--plan", "--stage", stage, "--models-dir", self.spec.models_dir]
         rc = self.runner.run(argv, cwd=self.spec.repo, env=cpu_env(self.base_env, self.spec.repo), timeout_s=600,
                              out_path=out)
         if rc != 0:

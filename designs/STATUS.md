@@ -158,9 +158,10 @@ its GO.
   4 pp is seen with probability 0.90 and of 3 pp with 0.70 if reader units differ by 1 pp (UNVERIFIED; no pair of
   readers has run); a fall of 1–2 pp is not visible. **Cost** ≈ 22 GPU-h (3.15 + 12.7 + 6.3 for the readers; the
   queue proposal's 15–18 did not count the readers) and ≈ 34–41 CPU lane-h. Phase 1 is launch-ready (stage check,
-  `checkargs` at the pin, the kit's dry run with the card hidden, the arm chain's plan); phase 2 waits for the
-  record only phase 1 can produce. OWED before the read: six reader kit arms and the read's driver. Every class
-  licenses at most a proposal to the owner.
+  `checkargs` at the pin, the kit's dry run with the card hidden, the arm chain's plan); phase 2 plans on declared
+  placeholders until then and waits for the record only phase 1 can produce (`kit verify-phase1` judges it in full:
+  the registered runs, lineage, pin, argv, dose). OWED before the read: six reader kit arms and the read's driver.
+  Every class licenses at most a proposal to the owner.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

@@ -4,7 +4,9 @@
                                                     validate the chain file; --check-pins judges each arm's OWN pin
                                                     (a commit, on R = origin/main or allowed off it, and the pinned
                                                     parser accepts the kit's argv: main.checkargs --pin); --describe
-                                                    asks the kit for each arm's run
+                                                    asks the kit for each arm's run (a phase-2 arm: from declared
+                                                    placeholders until phase 1 has finished, then from its record,
+                                                    judged in full)
     run         CHAIN                               the SUPERVISOR: walk the items from the saved state (nohup setsid)
     status      CHAIN                               supervisor ALIVE / STALE / DEAD, then each item's phase and hold
     clear-hold  CHAIN --item KEY --by WHO --why WHY [--resolution retry|relaunch|accept]
@@ -66,7 +68,10 @@ def _plan(a: argparse.Namespace, runner: Optional[Runner] = None) -> int:
                 bad.append(f"{h}" + (" (its pin was NOT judged: no argv)" if a.check_pins else ""))
                 continue
             if a.describe:
-                print(f"    {it.key}: the kit agrees — FORK of {d.parent_run_dir}, {d.delta_text}, --steps {d.steps:,}")
+                note = {"": "", "RECORD": "; phase-1 record VERIFIED in full",
+                        "PLACEHOLDER": "; phase 1 not finished: its finals are PLACEHOLDERS, judged for shape only "
+                                       "(the phase boundary judges the record in full)"}.get(d.phase1, f"; phase-1 {d.phase1}")
+                print(f"    {it.key}: the kit agrees — FORK of {d.parent_run_dir}, {d.delta_text}, --steps {d.steps:,}{note}")
             if a.check_pins and pins.is_commit(s.repo, it.pin):   # an unresolvable pin is already a problem above
                 bad += pins.check_argv_at_pin(s, it, d, lau.runner, lau.base_env)
     for b in bad:

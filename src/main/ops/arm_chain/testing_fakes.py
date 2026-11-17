@@ -245,9 +245,10 @@ def planner_handler(models: str, refuse_open_times: int = 0, keep_extra: Sequenc
     return pred, fn
 
 
-def describe_handler(refuse: Optional[str] = None) -> Handler:
+def describe_handler(refuse: Optional[str] = None, phase1: Optional[str] = None) -> Handler:
     """``main.x35.kit describe``: the argv a fork of ``<arm> <seed>`` would get (run name ``rb_<arm>_s<seed>``, as
-    :meth:`World.arm` names it); ``refuse`` makes the kit refuse every arm with that message."""
+    :meth:`World.arm` names it); ``refuse`` makes the kit refuse every arm with that message; ``phase1`` names the
+    phase-1 basis a phase-2 describe reports (``PLACEHOLDER`` / ``RECORD``)."""
     def pred(argv: Sequence[str]) -> bool:
         return "main.x35.kit" in argv and "describe" in argv
 
@@ -257,10 +258,13 @@ def describe_handler(refuse: Optional[str] = None) -> Handler:
             return 2
         arm, seed = _arg(argv, "--arm"), _arg(argv, "--seed")
         run = f"rb_{arm}_s{seed}"
+        doc: Dict[str, Any] = {"run_name": run, "parent_run_dir": "/p/parent", "delta_text": "+1,000 steps",
+                               "argv": ["--model", "/p/parent/checkpoints/ck_1000_steps.zip", "--steps", "2000",
+                                        "--seed", seed, "--run-name", run]}
+        if phase1 is not None:
+            doc["phase1"] = {"mode": phase1}
         with open(out, "w") as f:
-            json.dump({"run_name": run, "parent_run_dir": "/p/parent", "delta_text": "+1,000 steps",
-                       "argv": ["--model", "/p/parent/checkpoints/ck_1000_steps.zip", "--steps", "2000",
-                                "--seed", seed, "--run-name", run]}, f)
+            json.dump(doc, f)
         return 0
     return pred, fn
 

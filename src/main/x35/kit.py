@@ -20,7 +20,9 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   exploiter finals (path, step, sha256), refusing a missing or short final; ``verify-phase1`` judges that record in
   full (the registered runs, each one's final, recorded lineage, pin, argv and dose: :func:`verify_phase1`). Phase 2
   (+20M): ``a3`` / ``a6`` carry those finals as ``--stable-opponents`` at share 0.4 with ``--stable-opponent-pfsp``
-  (the registered round-1 B recipe), seeds 3501-3505, b-OFF = C0;
+  (the registered round-1 B recipe), seeds 3501-3505, b-OFF = C0. ``describe --plan`` is ``arm_chain plan``'s: before
+  phase 1 has finished a phase-2 arm is built from declared PLACEHOLDERS (shape only), at the boundary from the
+  record, judged in full (:func:`describe_for_plan`);
 * the G-E READERS (``main.x35.ge``, F27 closed for the readers, 2026-10-20; +5M): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` /
   ``ge_d3`` / ``ge_n1p`` / ``ge_x60t`` (AM-X60T-2) / ``ge_c0`` -- one fresh best responder of the arm's seed-3501 FINAL (``--model F --exploiter F --no-self-play``, the
   pinned offense 5-team archetype, ``--fork-lr 5.6e-05 --fork-lr-freeze``), launched only when the arm's primary reads
@@ -92,6 +94,7 @@ canonical flag order (the order carries no meaning to the trainer's parser):
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
     python -m main.x35.kit phase1-record --arm a3 --call <R_production.json> --out <stage>/phase1_a3.json
     python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json   # the REGISTERED exploiters, each run judged (T55)
+    python -m main.x35.kit describe --arm a3 --seed 3501 --call <R_production.json> --plan --stage <stage>   # as arm_chain plan
     python -m main.x35.kit live                    # exit 1 while any TRAINING run is live (pre-check 1; an agent's CPU smoke is not one)
     python -m main.x35.kit disk --required-gib 20.68 [--thinning]   # pre-check 8 (F22)
     python -m main.x35.kit validate-run --arm toy_x47 --seed 3601 --call <R_toy.json> --dryrun F --checkargs F \\
@@ -139,6 +142,8 @@ CKPT_EVERY = "1000000"
 #: F22: the launcher's REQUIRED headroom for one 20M production fork (dry-run, 2026-10-17).
 FORK_GIB = 20.68
 PHASE1_SCHEMA = "x35_phase1_exploiters_v1"
+#: What the planner's placeholder record carries where a finished run's final would have its sha256 (never a hash).
+PHASE1_PLACEHOLDER_SHA = "<sha256 of the final, declared by phase1-record when the exploiter ends>"
 #: The DOSE a registered phase-1 arm's exploiters trained at, ``(dose rate, relative tolerance)``: the main exploiter
 #: types no recipe knob, so it inherits P*'s recipe as C0's forks did, and the registration states C0's dose, 2.044e-08
 #: (``python -m main.dose``, eight C0 forks), within 10 % (X35-A3 PREREG §3 and §4: R0's 0.53x is why it is not an
@@ -472,9 +477,10 @@ def verify_start_node(arm: str, call: Mapping[str, Any]) -> None:
 
 
 def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Mapping[str, Any]] = None,
-               target: Optional[Mapping[str, Any]] = None) -> List[str]:
+               target: Optional[Mapping[str, Any]] = None, *, plan: bool = False) -> List[str]:
     """The trainer argv (the launcher's own flags excluded) of one arm × seed. A G-E reader needs its ``target``
-    (:func:`reader_target`)."""
+    (:func:`reader_target`). ``plan`` lets a phase-2 arm take the planner's PLACEHOLDER record
+    (:func:`phase1_placeholder_record`), which is otherwise refused: an argv built from it is never a launch."""
     a = _arm(arm, seed)
     if call.get("side") != a.side:
         raise KitError(f"arm {arm} reads the {a.side} call record, got side {call.get('side')!r}")
@@ -534,6 +540,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
     elif a.phase == 2:
         if phase1 is None:
             raise KitError(f"arm {arm} is phase 2: it needs the {a.phase1_of} phase-1 record")
+        if phase1.get("placeholder") and not plan:
+            raise KitError(f"arm {arm}: a PLACEHOLDER phase-1 record is for planning only, never a launch argv")
         if phase1.get("arm") != a.phase1_of or phase1.get("pstar_sha256") != p["sha256"]:
             raise KitError(f"the phase-1 record is for {phase1.get('arm')} from P* "
                            f"{str(phase1.get('pstar_sha256'))[:12]}, not {a.phase1_of} from {str(p['sha256'])[:12]}")
@@ -572,10 +580,10 @@ def reader_target(arm: str, seed: int, call: Mapping[str, Any], *, models_dir: O
         raise KitError(str(exc)) from exc
 
 
-def describe(arm: str, seed: int, call: Mapping[str, Any],
-             phase1: Optional[Mapping[str, Any]] = None, target: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+def describe(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Mapping[str, Any]] = None,
+             target: Optional[Mapping[str, Any]] = None, *, plan: bool = False) -> Dict[str, Any]:
     a = _arm(arm, seed)
-    argv = build_argv(arm, seed, call, phase1, target)
+    argv = build_argv(arm, seed, call, phase1, target, plan=plan)
     verify_start_node(arm, call)
     parent = _run_dir_of(str(target["path"])) if a.phase == _GE.READER_PHASE and target else parent_run_dir(call, arm)
     return {"arm": a.name, "seed": seed, "side": a.side, "phase": a.phase, "run_name": run_name(arm, seed),
@@ -601,7 +609,7 @@ def _final_step(zip_path: str) -> int:
 def _phase1_expected(arm: str, call: Mapping[str, Any], models_dir: str) -> List[Dict[str, Any]]:
     """The exploiters a phase-1 arm REGISTERS, one per registered seed: its run, the label the record and the banner
     carry, the path its FINAL lands at (``<models_dir>/<run>/final_model.zip``) and the step floor (P* + the arm's
-    length). ``phase1_record`` writes them and ``verify_phase1`` judges a record against them."""
+    length). ``phase1_record`` writes them, ``verify_phase1`` and the planner's placeholders are judged against them."""
     a, p = ARMS[arm], call["pstar"]
     out = []
     for s in a.seeds:
@@ -640,6 +648,11 @@ def phase1_record(arm: str, call: Mapping[str, Any], models_dir: str, out: str,
     return doc
 
 
+def phase1_record_path(stage: str, phase2_arm: str) -> str:
+    """Where a phase-2 arm reads its phase-1 record: ``<stage>/phase1_<arm>.json`` (``launch_x35.sh``'s default)."""
+    return os.path.join(stage, f"phase1_{canonical_arm(phase2_arm)}.json")
+
+
 def side_pin(stage: str, side: str) -> str:
     """The side's registered pin (``x35_pin_batch1_<side>.txt`` in the stage folder), the one every phase-1 exploiter
     must have trained at."""
@@ -650,10 +663,12 @@ def side_pin(stage: str, side: str) -> str:
     return str(rec["sha"])
 
 
-def phase1_shape_problems(doc: Mapping[str, Any], arm: str, call: Mapping[str, Any], models_dir: str) -> List[str]:
+def phase1_shape_problems(doc: Mapping[str, Any], arm: str, call: Mapping[str, Any], models_dir: str,
+                          *, placeholder: bool = False) -> List[str]:
     """The problems with a phase-1 record's SHAPE, which touch no run and no checkpoint: its schema and arm, P*, and
-    exactly the registered exploiters (run, label, final path, step floor, a sha256 field).
-    :func:`verify_phase1` judges a record by this and then by the runs."""
+    exactly the registered exploiters (run, label, final path, step floor, a sha256 field). The planner's
+    PLACEHOLDER record is judged by this alone (``placeholder``: its sha256 is the declared marker, not a hash);
+    :func:`verify_phase1` judges a real record by this and then by the runs."""
     a, p = ARMS[arm], call["pstar"]
     probs: List[str] = []
     if doc.get("schema") != PHASE1_SCHEMA:
@@ -679,9 +694,23 @@ def phase1_shape_problems(doc: Mapping[str, Any], arm: str, call: Mapping[str, A
         if not isinstance(step, int) or isinstance(step, bool) or step < w["step"]:
             probs.append(f"{w['run']}: step {step!r} < the registered {w['step']:,} (P* + {a.length:,})")
         sha = e.get("sha256")
-        if not (isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{64}", sha)):
+        if placeholder:
+            if sha != PHASE1_PLACEHOLDER_SHA:
+                probs.append(f"{w['run']}: a placeholder carries the declared sha256 marker, not {sha!r}")
+        elif not (isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{64}", sha)):
             probs.append(f"{w['run']}: sha256 {sha!r} is not a sha256")
     return probs
+
+
+def phase1_placeholder_record(arm: str, call: Mapping[str, Any], models_dir: str) -> Dict[str, Any]:
+    """The record phase 1 WILL write, with every value known before it runs filled in (P*, the three runs, labels and
+    final paths, the step floor) and the two that only a finished run has (the final's sha256 and its exact step)
+    DECLARED as placeholders. For ``plan`` only: :func:`build_argv` refuses it unless ``plan`` is set."""
+    p = call["pstar"]
+    return {"schema": PHASE1_SCHEMA, "arm": arm, "pstar_sha256": p["sha256"], "pstar_step": int(p["step"]),
+            "placeholder": True,
+            "exploiters": [{"label": w["label"], "run": w["run"], "path": w["path"], "step": w["step"],
+                            "sha256": PHASE1_PLACEHOLDER_SHA} for w in _phase1_expected(arm, call, models_dir)]}
 
 
 def _trainer_argv(command: str) -> Tuple[List[str], Optional[str]]:
@@ -719,10 +748,10 @@ def _exploiter_run_problems(arm: str, w: Mapping[str, Any], e: Mapping[str, Any]
     z = Path(str(e["path"]))
     probs: List[str] = []
     if not z.is_file():
-        probs.append(f"{run}: {z} is missing")
+        probs.append(f"{run}: its final_model.zip is missing")
     else:
         if sha256_file(z) != e["sha256"]:
-            probs.append(f"{run}: {z} sha256 changed since the record")
+            probs.append(f"{run}: its final_model.zip sha256 changed since the record")
         try:
             got = _final_step(str(z))
         except KitError as exc:
@@ -788,7 +817,7 @@ def verify_phase1(path: str, *, call: Mapping[str, Any], models_dir: str, pin: s
     """Every problem with a phase-1 record (empty = it is the REGISTERED phase 1). Not "do three files hash": the
     record must name exactly the registered exploiters of its arm (:func:`phase1_shape_problems`), and each must be a
     trained exploiter of P* as registered (:func:`_exploiter_run_problems`: the final's hash and step, the run's
-    recorded lineage, pin, argv and dose)."""
+    recorded lineage, pin, argv and dose). A placeholder record never verifies."""
     try:
         doc = json.loads(Path(path).read_text())
     except (OSError, ValueError) as exc:
@@ -796,12 +825,55 @@ def verify_phase1(path: str, *, call: Mapping[str, Any], models_dir: str, pin: s
     arm = doc.get("arm") if isinstance(doc, dict) else None
     if not isinstance(arm, str) or arm not in ARMS or ARMS[arm].phase != 1:
         return [f"{path}: arm {arm!r} is not a phase-1 arm ({[n for n, x in ARMS.items() if x.phase == 1]})"]
+    if doc.get("placeholder"):
+        return [f"{path}: a PLACEHOLDER record is for planning only, never a phase-1 record"]
     probs = phase1_shape_problems(doc, arm, call, models_dir)
     if probs:
         return probs
     for w, e in zip(_phase1_expected(arm, call, models_dir), doc["exploiters"]):
         probs += _exploiter_run_problems(arm, w, e, call, models_dir, pin)
     return probs
+
+
+def describe_for_plan(arm: str, seed: int, call: Mapping[str, Any], *, stage: str, models_dir: str,
+                      target: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+    """``describe`` as ``arm_chain plan`` asks it, offline, before the arm can launch. A phase-2 arm needs its phase-1
+    record, and BEFORE phase 1 has run there is none, so:
+
+    * no record, and phase 1 not finished (some exploiter has no final): the argv is built from the PLACEHOLDER record
+      (:func:`phase1_placeholder_record`: every value known now filled in, the finals' hashes declared), judged for
+      SHAPE only, and the result says so (``phase1.mode`` ``PLACEHOLDER``);
+    * the three finals exist and there is no record: the phase boundary has passed and the record is the step it is
+      waiting for, so the plan is REFUSED;
+    * a record: it is judged in full by :func:`verify_phase1`, exactly as the launch judges it; a problem refuses the
+      plan, none gives the argv the launch will run (``phase1.mode`` ``RECORD``).
+
+    Any other arm is ``describe`` unchanged. Never a launch path: ``launch_x35.sh`` passes the real record."""
+    a = _arm(arm, seed)
+    if a.phase != 2:
+        return describe(arm, seed, call, None, target)
+    rec = phase1_record_path(stage, a.name)
+    if os.path.exists(rec):
+        probs = verify_phase1(rec, call=call, models_dir=models_dir, pin=side_pin(stage, a.side))
+        if probs:
+            more = f" (+{len(probs) - 1} more)" if len(probs) > 1 else ""
+            raise KitError(f"arm {arm}: the phase-1 record does not verify: {probs[0]}{more} (kit verify-phase1 {rec})")
+        doc = describe(arm, seed, call, _load(rec), target)
+        doc["phase1"] = {"mode": "RECORD", "file": rec}
+        return doc
+    done = [w["run"] for w in _phase1_expected(str(a.phase1_of), call, models_dir) if os.path.isfile(w["path"])]
+    if len(done) == len(ARMS[str(a.phase1_of)].seeds):
+        raise KitError(f"arm {arm}: phase 1 ({a.phase1_of}) has finished and its record is NOT written: phase1-record, "
+                       f"verify-phase1, ship it ({rec})")
+    ph = phase1_placeholder_record(str(a.phase1_of), call, models_dir)
+    probs = phase1_shape_problems(ph, str(a.phase1_of), call, models_dir, placeholder=True)
+    if probs:
+        raise KitError(f"arm {arm}: the phase-1 placeholder record is malformed: {probs[0]}")
+    doc = describe(arm, seed, call, ph, target, plan=True)
+    doc["phase1"] = {"mode": "PLACEHOLDER", "finals_present": done,
+                     "note": "the exploiter finals do not exist yet: their paths are the registered ones, judged for "
+                             "shape only; the phase boundary judges the record in full (verify-phase1)"}
+    return doc
 
 
 # ------------------------------------------------------------------------------ validating one argv's transcripts
@@ -1167,7 +1239,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     d.add_argument("--seed", required=True, type=int)
     d.add_argument("--call", required=True, help="the frozen R file of the arm's side (main.x35.refpop)")
     d.add_argument("--phase1", default=None, help="the phase-1 record (phase-2 arms)")
-    d.add_argument("--models-dir", default=None, help="G-E readers: where the target's final is (default: main's)")
+    d.add_argument("--plan", action="store_true",
+                   help="as `arm_chain plan` asks it (needs --stage): a phase-2 arm reads <stage>/phase1_<arm>.json and "
+                        "judges it in full, or, before phase 1 has finished, is built from declared PLACEHOLDERS")
+    d.add_argument("--stage", default=None, help="--plan: the stage folder (the phase-1 record and the side's pin)")
+    d.add_argument("--models-dir", default=None, help="G-E readers: where the target's final is; --plan: where the "
+                                                      "phase-1 finals are (default: main's)")
     d.add_argument("--target-standin", default=None,
                    help="G-E readers, VALIDATION ONLY: a stand-in target model file (never a launch value)")
     d.add_argument("--field", default=None, help="print one field (argv = one token per line, argv_shell, "
@@ -1264,7 +1341,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             probs = verify_call(a.call)
             if probs:
                 raise KitError(f"the call record {a.call} does not verify: {probs}")
-            doc = describe(a.arm, a.seed, call, _load(a.phase1) if a.phase1 else None, _cli_target(a, call))
+            if a.plan:
+                if not a.stage or a.phase1:
+                    raise KitError("describe --plan reads the phase-1 record from --stage, and takes no --phase1")
+                from utils.paths import main_models_dir
+
+                doc = describe_for_plan(a.arm, a.seed, call, stage=a.stage,
+                                        models_dir=a.models_dir or str(main_models_dir() or ""),
+                                        target=_cli_target(a, call))
+            else:
+                doc = describe(a.arm, a.seed, call, _load(a.phase1) if a.phase1 else None, _cli_target(a, call))
             if a.field == "argv":
                 print("\n".join(doc["argv"]))  # one token per line: the launch script's mapfile
             else:

@@ -253,6 +253,39 @@ def test_plan_describe_alone_does_not_judge_pins(world, capsys):
     assert "the kit agrees" in capsys.readouterr().out and checkargs_calls(r) == []
 
 
+def test_plan_describe_asks_the_kit_in_plan_mode_with_the_stage_and_the_models_dir(world, capsys):
+    """A phase-2 arm's describe needs the phase-1 record, which the stage has only after phase 1: the kit reads it (or
+    declares placeholders before) only when asked ``--plan --stage <the chain's stage> --models-dir <the chain's>``."""
+    p = write_chain(world, [world.arm("a1", 1, world.pin_a)])
+    r = FakeRunner().on(*describe_handler())
+    assert plan(p, r, "--describe") == 0
+    argv = next(a for a, _ in r.calls if "describe" in a)
+    assert "--plan" in argv
+    assert argv[argv.index("--stage") + 1] == os.path.join(world.repo, "stage")
+    assert argv[argv.index("--models-dir") + 1] == world.models
+    assert argv[argv.index("--call") + 1] == os.path.join(world.repo, "stage", "reference_population_production.json")
+
+
+@pytest.mark.parametrize("mode,note", [("PLACEHOLDER", "its finals are PLACEHOLDERS, judged for shape only"),
+                                       ("RECORD", "phase-1 record VERIFIED in full"), (None, None)])
+def test_plan_says_what_a_phase_2_argv_was_built_from(world, capsys, mode, note):
+    p = write_chain(world, [world.arm("a1", 1, world.pin_a)])
+    r = FakeRunner().on(*describe_handler(phase1=mode))
+    assert plan(p, r, "--describe") == 0
+    line = next(ln for ln in capsys.readouterr().out.splitlines() if "the kit agrees" in ln)
+    assert line.endswith("--steps 2,000") if note is None else note in line
+    assert Describe.load(_describe_file(world, mode)).phase1 == (mode or "")
+
+
+def _describe_file(world: World, mode) -> str:
+    import json
+    path = os.path.join(world.root, f"describe_{mode}.json")
+    with open(path, "w") as f:
+        json.dump({"run_name": "r", "parent_run_dir": "/p", "delta_text": "+1", "argv": ["--steps", "5"],
+                   **({"phase1": {"mode": mode}} if mode else {})}, f)
+    return path
+
+
 def test_an_off_main_allowance_never_enters_an_items_saved_snapshot(world):
     """``chain._load_state`` refuses a STARTED item whose ``as_dict`` changed: a live supervisor restarted after this
     change must still load its chain, so the allowance lives on the chain, not on the arm."""

@@ -8,7 +8,9 @@ inputs), read back through the real ``main.lineage`` / ``main.sidecar_audit`` / 
 (which lives inside an SB3 zip) is replaced. Nothing launches; nothing is read from the real ``models/``."""
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import io
 import json
 import shlex
 from pathlib import Path
@@ -38,10 +40,11 @@ def _sha(b: bytes) -> str:
 class World:
     """P*, the call record, the stage folder and the three exploiter runs, every piece mutable before it is judged."""
 
-    def __init__(self, tmp: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        self.md = tmp / "models"
-        self.stage = tmp / "stage"
-        self.stage.mkdir()
+    def __init__(self, tmp: Path, monkeypatch: pytest.MonkeyPatch, *, md: Optional[Path] = None,
+                 stage: Optional[Path] = None) -> None:
+        self.md = md or tmp / "models"
+        self.stage = stage or tmp / "stage"
+        self.stage.mkdir(exist_ok=True)
         pdir = self.md / "rb_x26_s2601"
         (pdir / "checkpoints").mkdir(parents=True)
         self.pstar = pdir / "checkpoints" / f"checkpoint_{PSTAR_STEP}_steps.zip"
@@ -225,7 +228,7 @@ def test_a_phase_1_arm_with_no_registered_dose_is_never_verified(w: World, monke
     assert any("no registered dose" in p for p in w.verify(rec))
 
 
-def test_a_record_of_another_p_star_or_another_arm_is_refused(w: World) -> None:
+def test_a_record_of_another_p_star_another_arm_or_a_placeholder_is_refused(w: World) -> None:
     w.make_runs()
     rec = w.record()
     _edit(rec, lambda d: d.update(pstar_sha256="f" * 64))
@@ -234,6 +237,9 @@ def test_a_record_of_another_p_star_or_another_arm_is_refused(w: World) -> None:
     assert any("registered exploiters" in p or "is for arm" in p for p in w.verify(rec))
     _edit(rec, lambda d: d.update(arm="a3"))
     assert any("not a phase-1 arm" in p for p in w.verify(rec))
+    ph = w.stage / "ph.json"
+    ph.write_text(json.dumps(K.phase1_placeholder_record(ARM, w.call, str(w.md))))
+    assert any("PLACEHOLDER record is for planning only" in p for p in w.verify(ph))
     assert any("unreadable" in p for p in w.verify(w.stage / "absent.json"))
 
 
@@ -246,3 +252,162 @@ def test_the_verify_command_defaults_to_the_stage_folder_and_exits_by_the_verdic
     w.run_dir(3512).joinpath("final_model.zip").write_bytes(b"swapped")
     assert K.main(["verify-phase1", str(rec), "--models-dir", str(w.md)]) == 1
     assert "sha256 changed since the record" in capsys.readouterr().err
+
+
+# ------------------------------------------------------------------------------------- gap 1: plan / describe
+def _plan(w: World, seed: int = 3501) -> Dict[str, Any]:
+    return K.describe_for_plan("a3", seed, w.call, stage=str(w.stage), models_dir=str(w.md))
+
+
+def _stable(doc: Dict[str, Any]) -> List[str]:
+    argv = doc["argv"]
+    return argv[argv.index("--stable-opponents") + 1].split(",")
+
+
+def test_a_phase_2_item_plans_on_placeholders_before_phase_1_has_run(w: World) -> None:
+    """Before phase 1 there is no record and no exploiter run; plan used to refuse every phase-2 item ("arm a3 is phase
+    2: it needs the a3_mx phase-1 record"). Now the argv is built from the registered paths and says so."""
+    doc = _plan(w)
+    assert doc["phase1"]["mode"] == "PLACEHOLDER" and doc["phase1"]["finals_present"] == []
+    assert doc["run_name"] == "rb_x35_a3mx_s3501" and doc["delta_steps"] == 20_000_000
+    assert _stable(doc) == [f"{w.md}/rb_x35_mx_s{s}/final_model.zip:mx_s{s}" for s in (3511, 3512, 3513)]
+    f = doc["argv"]
+    assert f[f.index("--stable-opponent-selfplay-share") + 1] == "0.4" and "--stable-opponent-pfsp" in f
+    assert f[f.index("--steps") + 1] == str(PSTAR_STEP + 20_000_000)
+    assert _plan(w) == doc                                      # deterministic: the same filesystem, the same answer
+    # a phase-1 arm and every other arm are plain describe: no phase-1 basis to declare
+    assert "phase1" not in K.describe_for_plan("a3_mx", 3511, w.call, stage=str(w.stage), models_dir=str(w.md))
+    assert "phase1" not in K.describe_for_plan("c0", 3501, w.call, stage=str(w.stage), models_dir=str(w.md))
+
+
+def test_the_placeholder_argv_is_the_argv_the_record_will_give(w: World) -> None:
+    """The placeholders are every value known before phase 1 runs, so once phase 1 has run and its record verifies
+    the planned argv is exactly the launch's: nothing the plan judged moves."""
+    planned = _plan(w)["argv"]
+    w.make_runs()
+    w.record()
+    after = _plan(w)
+    assert after["phase1"]["mode"] == "RECORD" and after["argv"] == planned
+
+
+def test_phase_1_still_running_keeps_the_placeholders(w: World) -> None:
+    """The boundary is all three finals (or the record), not the first run to appear: a planner run mid-phase-1 (one
+    exploiter ended, one running, one not started) is still before the boundary."""
+    w.make_run(3511)
+    w.run_dir(3512).mkdir(parents=True)                          # running: a run dir, no final yet
+    doc = _plan(w)
+    assert doc["phase1"]["mode"] == "PLACEHOLDER" and doc["phase1"]["finals_present"] == ["rb_x35_mx_s3511"]
+
+
+def test_at_the_boundary_a_missing_record_refuses_the_plan(w: World) -> None:
+    """All three finals exist and nothing is written: placeholders would hide that the step phase 2 waits for was not
+    taken."""
+    w.make_runs()
+    with pytest.raises(K.KitError, match=r"phase 1 \(a3_mx\) has finished and its record is NOT written.*phase1_a3.json"):
+        _plan(w)
+
+
+def test_at_the_boundary_a_wrong_record_refuses_the_plan_and_the_right_one_is_judged_in_full(w: World) -> None:
+    """Once the record exists the plan is as strict as the launch: the same ``verify_phase1``, so a wrong record never
+    plans OK, and a right one gives the real argv."""
+    w.make_runs()
+    rec = w.record()
+    good = _plan(w)
+    assert good["phase1"] == {"mode": "RECORD", "file": str(rec)}
+    assert _stable(good) == [f"{e['path']}:{e['label']}" for e in json.loads(rec.read_text())["exploiters"]]
+    w.run_dir(3512).joinpath("final_model.zip").write_bytes(b"swapped")
+    with pytest.raises(K.KitError, match=r"does not verify: rb_x35_mx_s3512.*sha256 changed since the record"):
+        _plan(w)
+    w.run_dir(3512).joinpath("final_model.zip").write_bytes(b"final 3512")
+    w.run_dir(3513).joinpath("metadata.json").unlink()
+    with pytest.raises(K.KitError, match=r"does not verify.*rb_x35_mx_s3513"):
+        _plan(w)
+
+
+def test_a_stand_in_record_at_the_stage_never_plans(w: World, tmp_path: Path) -> None:
+    """The A3 registration's STAND-IN (three banked R0 checkpoints, which hash) at the default path is refused in
+    plan exactly as in verify-phase1."""
+    stand_in = [{"label": f"STANDIN_{i}", "run": "STANDIN (rb_x35_r0_s3531, validation only)",
+                 "path": str(w.pstar), "step": FINAL_STEP, "sha256": _sha(b"P*")} for i in range(3)]
+    (w.stage / "phase1_a3.json").write_text(json.dumps(
+        {"schema": K.PHASE1_SCHEMA, "arm": ARM, "pstar_sha256": _sha(b"P*"), "pstar_step": PSTAR_STEP,
+         "exploiters": stand_in}))
+    with pytest.raises(K.KitError, match="does not verify: .*not the 3 registered exploiters"):
+        _plan(w)
+
+
+def test_a_placeholder_record_is_never_a_launch_argv_nor_a_record(w: World) -> None:
+    ph = K.phase1_placeholder_record(ARM, w.call, str(w.md))
+    assert K.phase1_shape_problems(ph, ARM, w.call, str(w.md), placeholder=True) == []
+    with pytest.raises(K.KitError, match="PLACEHOLDER phase-1 record is for planning only"):
+        K.build_argv("a3", 3501, w.call, ph)
+    with pytest.raises(K.KitError, match="PLACEHOLDER phase-1 record is for planning only"):
+        K.describe("a3", 3501, w.call, ph)
+    f = w.stage / "phase1_a3.json"
+    f.write_text(json.dumps(ph))
+    assert any("PLACEHOLDER record is for planning only" in p for p in w.verify(f))
+    # its shape is judged: a wrong run, label, path, step or a real-looking hash is a problem, never accepted
+    bad = json.loads(json.dumps(ph))
+    bad["exploiters"][0].update(label="x", path="/elsewhere/final_model.zip", step=1, sha256="0" * 64)
+    probs = K.phase1_shape_problems(bad, ARM, w.call, str(w.md), placeholder=True)
+    assert len(probs) == 4, probs
+    bad["exploiters"][1]["run"] = "rb_x35_other_s1"
+    assert "not the 3 registered exploiters" in K.phase1_shape_problems(bad, ARM, w.call, str(w.md), placeholder=True)[-1]
+
+
+def test_the_describe_command_plans_a_phase_2_item_before_and_after_the_boundary(w: World, capsys: Any) -> None:
+    """``kit describe --plan --stage S`` is the form ``arm_chain plan`` runs; --plan takes the record from the stage."""
+    base = ["describe", "--arm", "a3", "--seed", "3501", "--call", str(w.call_file), "--models-dir", str(w.md)]
+    assert K.main([*base, "--plan", "--stage", str(w.stage)]) == 0
+    assert json.loads(capsys.readouterr().out)["phase1"]["mode"] == "PLACEHOLDER"
+    assert K.main(base) == 2                                     # no --plan: describe stays strict (a launch is not a plan)
+    assert "needs the a3_mx phase-1 record" in capsys.readouterr().err
+    assert K.main([*base, "--plan"]) == 2 and K.main([*base, "--plan", "--stage", str(w.stage), "--phase1", "x"]) == 2
+    capsys.readouterr()
+    w.make_runs()
+    assert K.main([*base, "--plan", "--stage", str(w.stage)]) == 2          # the boundary, no record
+    assert "has finished" in capsys.readouterr().err
+    w.record()
+    assert K.main([*base, "--plan", "--stage", str(w.stage)]) == 0
+    assert json.loads(capsys.readouterr().out)["phase1"]["mode"] == "RECORD"
+
+
+def test_arm_chain_plan_takes_a_phase_2_item_through_the_real_kit_before_and_after_the_boundary(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any) -> None:
+    """The contract end to end: ``arm_chain plan --describe`` runs the REAL kit's parser on the argv ``describe_offline``
+    builds. Before phase 1 the phase-2 item plans OK on placeholders; once the record is on the stage it is judged in
+    full; a swapped final or a missing record refuses the plan (it used to refuse BEFORE phase 1 and never judge after)."""
+    from main.ops.arm_chain import cli
+    from main.ops.arm_chain.testing_fakes import FakeRunner, make_world
+
+    cw = make_world(str(tmp_path / "chain"))
+    w = World(tmp_path, monkeypatch, md=Path(cw.models), stage=Path(cw.repo) / "stage")
+    item = cw.arm("a3", 3501, cw.pin_a, run="rb_x35_a3mx_s3501")
+    chain = tmp_path / "chain.json"
+    chain.write_text(json.dumps(cw.chain_dict([item])))
+
+    def real_kit(argv: Any, out: str) -> int:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = K.main(list(argv)[list(argv).index("main.x35.kit") + 1:])
+        Path(out).write_text(buf.getvalue())
+        return rc
+
+    def plan() -> str:
+        runner = FakeRunner().on(lambda a: "main.x35.kit" in a and "describe" in a, real_kit)
+        rc = cli.main(["plan", str(chain), "--describe"], runner=runner)
+        out = capsys.readouterr().out
+        assert (rc == 0) == out.rstrip().endswith("PLAN OK"), out
+        return out
+
+    out = plan()
+    assert "PLAN OK" in out and "its finals are PLACEHOLDERS, judged for shape only" in out
+    w.make_runs()
+    out = plan()
+    assert "PLAN REFUSED" in out and "phase 1 (a3_mx) has finished and its record is NOT written" in out
+    w.record()
+    out = plan()
+    assert "PLAN OK" in out and "phase-1 record VERIFIED in full" in out and "PLACEHOLDERS" not in out
+    w.run_dir(3512).joinpath("final_model.zip").write_bytes(b"swapped")
+    out = plan()
+    assert "PLAN REFUSED" in out and "does not verify" in out and "sha256 changed since the record" in out
