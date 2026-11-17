@@ -25,7 +25,7 @@ runs at once, says so on stderr and in ``--status``. A job that already holds th
 (it runs under ``gpu_lock`` - ``utils.gpu_lock.gpu_job``: the flock holder or the lease owner's pass-through)
 bypasses them too, whatever the wrapper order: ``gpu_lock.sh mem_cap.sh …`` would otherwise hold the GPU idle
 while it queued for a CPU slot (D-3). The routine gate (``utils.gate_lock``) holds ONE
-slot itself for its whole run, taken AFTER its gate slot.
+slot itself for its whole run, taken AFTER its gate slot (its place in the queue is parked at arrival: :func:`park_ticket`).
 
 ADMISSION IS BY MEMORY (2026-11-09; ``utils.heavy_admission`` has the rule, its measurements and the switch back). A job
 that DECLARES its memory cap (``mem_cap.sh <GB>`` does; ``cap_gb`` here) is admitted while the caps of the running jobs
@@ -879,6 +879,36 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
             _drop(wait_rec, os.getpid())
         if not done:
             drop_ticket(d)
+
+
+def park_ticket(*, force: bool = False, runs: Optional[dict] = None) -> bool:
+    """Take this job's FIFO place NOW, without polling for it: the gate's place at ARRIVAL (2026-11-17).
+
+    ``utils.gate_lock`` queues for the gate lock first and for a heavy slot second, and took its heavy ticket only after it
+    won the gate lock - so a gate that waited 30 min for the gate lock then queued for a slot BEHIND every long job that
+    arrived meanwhile (two waits in a row, the second from the back). It now parks a ticket on arrival: the ticket's
+    age (its ``seq``) is the arrival order, and its mtime is backdated past :data:`TICKET_STALE_S`, so the queue reads it as
+    NOT polling and skips it (:func:`_lanes`): a job behind a gate that is blocked on the gate lock is never held back
+    for it - no reserved memory, no counted slot - while the gate keeps its place for when it polls
+    (:func:`heavy_slot` / :func:`await_free_slot` beat it). A ticket this process already holds is left as it is.
+
+    Returns ``True`` when a ticket is parked (or was), ``False`` when this job takes no slot at all (re-entrant, not
+    wanted, BLOCKING or a GPU job: the same exits as :func:`heavy_slot`). Best effort: a read-only slot directory is
+    ``False``, never an error (a place in a queue is not worth a gate)."""
+    d = lock_dir()
+    if verified_holder(d) is not None or wanted(force=force, runs=runs) is None:
+        return False
+    if blocking_reason() is not None or GL.gpu_job() is not None:
+        return False
+    try:
+        had = has_ticket(d)
+        ticket = take_ticket(d)
+        if not had:
+            past = time.time() - TICKET_STALE_S - 1.0
+            os.utime(ticket, (past, past))
+        return True
+    except OSError:
+        return False
 
 
 def _alive(pid: int) -> bool:

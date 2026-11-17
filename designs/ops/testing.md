@@ -636,6 +636,19 @@ binds first), and with fewer than four held a 24 GB gate did not fit by memory 2
 declared 3,320 GB of caps for 659 GB of peaks (5x), the gate's share being the part this fixes. The first gate at the new cap
 (`-n 3`): 17,536 passed, **peak 6.25 of 16 GB (39 %)**, 290 s at the gate lock, 0 s at the heavy slots.
 
+**The gate's place in the queue** (2026-11-17). A gate waits for two things in a fixed order: the gate lock (one gate at a
+time), then a heavy slot. It never HOLDS one while it waits for the other: it takes its slot non-blocking once it has the lock, and
+a gate that finds none releases the lock and waits holding nothing (the convoy of 2026-10-19/20,
+`heavy_slots_test.py`). What the order still cost was the AGE of its place: the heavy ticket was taken only after the lock was won, so a
+gate that waited 30 min for the lock then queued for a slot BEHIND every long job that arrived meanwhile (two waits in a row, the
+second from the back). It now parks its ticket AT ARRIVAL (`heavy_slots.park_ticket`): the ticket's age is the arrival order and its mtime is
+backdated, so the queue reads it as NOT polling and skips it: nobody behind a gate blocked on the lock is held back (no counted slot, no
+memory reserved), and the gate keeps its place for when it polls. Each gate now appends a `gate` line to `events.jsonl`
+(`waited_gate_s`, `waited_heavy_s`, `cycles`, `cap_gb`); before it NOTHING logged a gate's heavy wait (its `slot` line says
+`waited_s` 0 by construction). **What it does not change:** on the night of 11-16/17 the gate lock ran back to back (8 of the 15 gaps
+between 16 consecutive gates were under 2 min, 6 of them 0.0; each held 13-18 min, `gate_slots/history.jsonl`): most of a 23-53 min queue
+is the one-gate-at-a-time policy itself (N gates ahead x 15 min), which is the measured policy (above) and stays. `src/utils/gate_queue_order_test.py` (real holders, fake slot state; fails on a revert).
+
 **Measured beside a live training run** (rule 5b shape, `nice 19 taskset -c <the 5+3 agent cores> -n 3`, trainer on
 <the 5+3 trainer cores>, other agents' nice-19 jobs and the maturity queue's SCHED_IDLE slots on the same agent cores; walls
 are the gate-lock HELD time, queue wait excluded):

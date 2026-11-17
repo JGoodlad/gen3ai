@@ -34,13 +34,15 @@ skip a live holder, so nothing here reads "held" or "stale" from one). A stale m
 stderr. A taker all of whose slots are held by its own ancestors (a bare ``flock`` around it) raises
 :class:`GateLockSelfDeadlock` at once.
 
-Every take LOGS its wait and when it acquired; every release logs how long it held. TIMEOUTS, as for
+Every take LOGS its wait and when it acquired; every release logs how long it held; a gate appends a ``gate`` line to the heavy
+slots' ``events.jsonl`` (``waited_gate_s``, ``waited_heavy_s``, ``cycles``, ``cap_gb``): the measurement of its two queues. TIMEOUTS, as for
 the GPU lock: ``--timeout-s`` bounds the WAIT for a slot (exit 4); a WALL timeout on the gate goes
 INSIDE — ``gate_lock.sh timeout 3000 <cmd>`` — never around it (``timeout 3000 gate_lock.sh <cmd>``
 counts queue time and kills a gate that never ran).
 HEAVY SLOTS (2026-10-19, ``utils.heavy_slots``): while a training run is live a gate also holds ONE of
-the box's heavy-job slots for its whole run, taken AFTER its gate slot (so a queued gate holds none) and
-NON-BLOCKING: no process waits for a heavy slot while holding the gate lock (the convoy of 2026-10-19/20: one
+the box's heavy-job slots for its whole run, taken AFTER its gate slot (so a queued gate holds none; but its PLACE in the
+heavy queue is parked at ARRIVAL, ``heavy_slots.park_ticket``: not polling, so nobody is held back for a gate blocked on the
+lock, and the age of its place is its arrival order, 2026-11-17) and NON-BLOCKING: no process waits for a heavy slot while holding the gate lock (the convoy of 2026-10-19/20: one
 gate idle on a 28 h research job's slot blocked every gate for over an hour). A gate that finds no free heavy
 slot RELEASES the gate slot, waits for a heavy slot holding no lock (``heavy_slots.await_free_slot``), and queues
 for the gate again, keeping its place in the heavy-slot FIFO queue (its ticket);
@@ -250,13 +252,20 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
     paths = [slot_path(i, d) for i in range(n)]
     fds = [os.open(str(p), os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o666) for p in paths]
     what = f" ({what})" if what else ""
-    cap = mem_cap.declared_cap_gb(cmd)         # the gate's own cap (`mem_cap.sh 24 …`) admits its heavy slot by memory
+    cap = mem_cap.declared_cap_gb(cmd)         # the gate's own cap (`mem_cap.sh 16 …`) admits its heavy slot by memory
+    gate_wait_s = heavy_wait_s = 0.0           # what this gate waited, per queue: `events.jsonl` kind "gate" (the measurement)
+    cycles = 0
     try:
         t_start = time.monotonic()
+        # take the heavy queue's place NOW, at arrival, parked (not polling): the age of a gate's place in the heavy queue
+        # is its arrival order, not the moment it won the gate lock, and nobody behind it is held back meanwhile
+        HS.park_ticket()
         while True:
             left = None if timeout_s is None else max(0.0, timeout_s - (time.monotonic() - t_start))
             slot, waited = _acquire(fds, paths, report_every_s=report_every_s, poll_s=poll_s,
                                     timeout_s=left, log=log, may_wait=HS.verified_holder() is None)
+            gate_wait_s += waited
+            cycles += 1
             with contextlib.ExitStack() as heavy:
                 try:
                     # rule 5b: the gate holds one heavy slot itself - taken NON-BLOCKING: a gate must never wait
@@ -267,13 +276,20 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                     log(f"[gate_lock] no heavy slot is free: released gate slot {slot} of {n}{what}, waiting for a "
                         f"heavy slot holding NO lock (the queue behind this gate keeps moving)")
                     left = None if timeout_s is None else max(0.0, timeout_s - (time.monotonic() - t_start))
-                    HS.await_free_slot(cmd, log=log, timeout_s=left, poll_s=poll_s, report_every_s=report_every_s,
-                                       cap_gb=cap)
+                    t_heavy = time.monotonic()
+                    try:
+                        HS.await_free_slot(cmd, log=log, timeout_s=left, poll_s=poll_s, report_every_s=report_every_s,
+                                           cap_gb=cap)
+                    finally:
+                        heavy_wait_s += time.monotonic() - t_heavy
                     continue
                 t_acq = time.time()
                 log(f"[gate_lock] acquired slot {slot} of {n}{what} at "
                     f"{time.strftime('%H:%M:%S', time.localtime(t_acq))} after waiting "
                     f"{time.monotonic() - t_start:.1f} s")
+                if cmd:                            # the next tuning of the queue reads this, not stderr that happened to be saved
+                    HS.log_event(HS.lock_dir(), "gate", slot=slot, waited_gate_s=round(gate_wait_s, 1),
+                                 waited_heavy_s=round(heavy_wait_s, 1), cycles=cycles, cap_gb=float(cap or 0.0))
                 rec = GS.SlotRecord.mine(slot, cmd)
                 try:
                     GS.write_record(d, rec)
