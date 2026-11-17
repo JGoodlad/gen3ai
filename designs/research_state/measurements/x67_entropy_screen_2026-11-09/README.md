@@ -6,7 +6,8 @@
 learning-rate controller cut the rate one step further than C0's (8.372e-05 against 1.0047e-04). **ENT-UNMOVED does
 not apply**: the lever moved the policy's entropy from 1.01 to 0.68 nats.
 
-Registration: [`PREREG.md`](PREREG.md) (`1bab9e87a`, unamended). The verdict is
+Registration: [`PREREG.md`](PREREG.md) (`1bab9e87a`; §1 to §12 unamended. Its §13, a NOTE of 2026-11-16, registers
+§9's Kakuna read of the finals, which this page does not read). The verdict is
 [`cross/read_cross.py`](cross/read_cross.py)'s [`record/verdict.json`](record/verdict.json), written by
 [`screen_rule.py`](screen_rule.py) `decide`. Nothing in `PREREG.md`, `screen_rule.py` or `cross/` was edited.
 Abbreviations: pp = percentage points; P\* = `pstar_plateau` (`rb_x26_s2601` @280,000,170); C0 = P\* + 20M with no
@@ -117,7 +118,8 @@ attempt logged past the resume step are dropped (s6701: 5). Script and output:
   against 0.0179–0.0183), so the KL controller cut the rate a second time in every fork, at 286–287M. Over the
   20M, X67 learned at 0.83× C0's dose rate.
 - **Greedy minus sampled** and **Kakuna on U** were NOT run: both are conditional in §9 ("only if Kakuna lanes are
-  free" / "only if CPU allows"), and X60-T's look-2 play lanes held the agent cores for the whole read.
+  free" / "only if CPU allows"), and X60-T's look-2 play lanes held the agent cores for the whole read. The Kakuna
+  read was REGISTERED on 2026-11-16 (PREREG §13, with CE-3d's finals; it confirms or contradicts, it never decides).
 
 ## 6. What the PASS licenses (PREREG §10)
 
@@ -147,7 +149,7 @@ stands until the owner lifts it there.
   so the interval is already the widest the binomial floor allows at this shape.
 - **X67-R2 (the dose differs).** LR-MOVED on all three forks; see §6.
 - **X67-R3 (no outside evidence).** §9's Kakuna and greedy-minus-sampled reads were not run. Whether the gain
-  survives against Kakuna is unmeasured.
+  survives against Kakuna is unmeasured until PREREG §13's read (registered 2026-11-16) is recorded.
 - **X67-R4 (the slim child log has no hyperparameter table).** Each run's `launcher_child.log` no longer holds the
   `ent_coef` table line; `launcher_child.full.log` does (s6701 twice, at launch and at the resume; the others once;
   never 0.05). The banner guard read the slim log live and logged "banner OK" for every launch. The VOID check above

@@ -1,0 +1,29 @@
+design: unit seeds 0-59, 600 deals x 2 games = 1200 games a run a panel; teams piloted 72 of 72 (uses 3-15); seed 20261116
+
+PART 1: C0's banked forum72 games (E3): 8 runs, 4925 / 9600 = 0.5130; 72 teams in either role
+  per run: c0_s3501 607/1200 = 0.5058, c0_s3502 625/1200 = 0.5208, c0_s3503 598/1200 = 0.4983, c0_s3504 610/1200 = 0.5083, c0_s3505 583/1200 = 0.4858, c0_s3506 620/1200 = 0.5167, c0_s3507 626/1200 = 0.5217, c0_s3508 656/1200 = 0.5467
+  SD of the eight run rates 1.82 pp; the binomial SD of one run's rate at 1,200 games 1.44 pp
+  our-team SD of the win rate, net of game noise: 9.8 pp over 72 teams (48-240 games a team)
+  their-team SD of the win rate, net of game noise: 10.5 pp over 72 teams (48-240 games a team)
+  the 56 placebo contrasts (3 runs - 5 runs, forum72 alone, level 0.9): half-width median 2.69 pp (min 2.48, max 2.82); |psi| median 0.91 pp, max 2.67 pp; SD of psi 1.34 pp
+  called POSITIVE 1 / 56, NEGATIVE 1 / 56; dyadic decides in 3 / 56; medians V_S 1.92 V_T 0.99 V_TS 1.70 pp^2, df 6.0
+
+PART 2 (BOUNDARY-1's ASSUMED team model): our-team SD 10 pp, their-team SD 9 pp, team-by-arm interaction SD 5 pp; 3 runs against 8, 1200 games a run a panel, level 0.9; 2000 experiments a cell (a rate's Monte-Carlo SE at most 0.011)
+  U seed SD 0.0 pp | at 0: false POSITIVE 0.018 false NEGATIVE 0.015 coverage 0.965 | median half-width 1.94 pp | P(POSITIVE) +1: 0.15 +2: 0.53 +3: 0.88 +4: 0.99 +5: 1.00
+  U seed SD 0.5 pp | at 0: false POSITIVE 0.024 false NEGATIVE 0.022 coverage 0.953 | median half-width 1.93 pp | P(POSITIVE) +1: 0.17 +2: 0.54 +3: 0.86 +4: 0.99 +5: 1.00
+  U seed SD 1.0 pp | at 0: false POSITIVE 0.038 false NEGATIVE 0.035 coverage 0.926 | median half-width 1.98 pp | P(POSITIVE) +1: 0.18 +2: 0.48 +3: 0.80 +4: 0.96 +5: 1.00
+  U seed SD 1.5 pp | at 0: false POSITIVE 0.057 false NEGATIVE 0.056 coverage 0.886 | median half-width 2.15 pp | P(POSITIVE) +1: 0.18 +2: 0.43 +3: 0.71 +4: 0.89 +5: 0.98
+  F seed SD 0.0 pp | at 0: false POSITIVE 0.022 false NEGATIVE 0.015 coverage 0.963 | median half-width 2.75 pp | P(POSITIVE) +1: 0.10 +2: 0.28 +3: 0.56 +4: 0.83 +5: 0.96
+  F seed SD 0.5 pp | at 0: false POSITIVE 0.021 false NEGATIVE 0.021 coverage 0.959 | median half-width 2.73 pp | P(POSITIVE) +1: 0.10 +2: 0.31 +3: 0.58 +4: 0.83 +5: 0.95
+  F seed SD 1.0 pp | at 0: false POSITIVE 0.029 false NEGATIVE 0.024 coverage 0.948 | median half-width 2.76 pp | P(POSITIVE) +1: 0.12 +2: 0.29 +3: 0.54 +4: 0.80 +5: 0.93
+  F seed SD 1.5 pp | at 0: false POSITIVE 0.044 false NEGATIVE 0.040 coverage 0.915 | median half-width 2.84 pp | P(POSITIVE) +1: 0.12 +2: 0.32 +3: 0.54 +4: 0.75 +5: 0.90
+
+PART 2 (no team-by-arm interaction): our-team SD 10 pp, their-team SD 9 pp, team-by-arm interaction SD 0 pp; 3 runs against 8, 1200 games a run a panel, level 0.9; 2000 experiments a cell (a rate's Monte-Carlo SE at most 0.011)
+  U seed SD 0.0 pp | at 0: false POSITIVE 0.002 false NEGATIVE 0.004 coverage 0.995 | median half-width 1.86 pp | P(POSITIVE) +1: 0.10 +2: 0.59 +3: 0.95 +4: 1.00 +5: 1.00
+  U seed SD 0.5 pp | at 0: false POSITIVE 0.008 false NEGATIVE 0.006 coverage 0.986 | median half-width 1.87 pp | P(POSITIVE) +1: 0.13 +2: 0.55 +3: 0.93 +4: 1.00 +5: 1.00
+  U seed SD 1.0 pp | at 0: false POSITIVE 0.022 false NEGATIVE 0.015 coverage 0.962 | median half-width 1.91 pp | P(POSITIVE) +1: 0.15 +2: 0.50 +3: 0.86 +4: 0.98 +5: 1.00
+  U seed SD 1.5 pp | at 0: false POSITIVE 0.039 false NEGATIVE 0.035 coverage 0.925 | median half-width 2.16 pp | P(POSITIVE) +1: 0.16 +2: 0.44 +3: 0.74 +4: 0.91 +5: 0.98
+  F seed SD 0.0 pp | at 0: false POSITIVE 0.004 false NEGATIVE 0.005 coverage 0.991 | median half-width 2.62 pp | P(POSITIVE) +1: 0.04 +2: 0.25 +3: 0.64 +4: 0.92 +5: 0.99
+  F seed SD 0.5 pp | at 0: false POSITIVE 0.004 false NEGATIVE 0.004 coverage 0.992 | median half-width 2.63 pp | P(POSITIVE) +1: 0.05 +2: 0.25 +3: 0.64 +4: 0.90 +5: 0.99
+  F seed SD 1.0 pp | at 0: false POSITIVE 0.010 false NEGATIVE 0.013 coverage 0.978 | median half-width 2.66 pp | P(POSITIVE) +1: 0.08 +2: 0.27 +3: 0.60 +4: 0.87 +5: 0.98
+  F seed SD 1.5 pp | at 0: false POSITIVE 0.025 false NEGATIVE 0.024 coverage 0.951 | median half-width 2.75 pp | P(POSITIVE) +1: 0.10 +2: 0.30 +3: 0.57 +4: 0.80 +5: 0.94

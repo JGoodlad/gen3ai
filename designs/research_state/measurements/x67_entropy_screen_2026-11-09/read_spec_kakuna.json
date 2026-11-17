@@ -1,0 +1,251 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "kakuna_entropy_2026-11-16",
+ "prereg": "designs/research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "note": "The Kakuna read of the banked entropy finals (X67 PREREG section 13, the NOTE of 2026-11-16; its twin is CE-3d PREREG section 17): X67's three finals (--ent-coef 0.0125) and CE-3d's three (the trailing magnet in place of the entropy bonus) against the eight C0 finals, every one P* + 20M, each against metamon:Kakuna on F (forum72) and H (heldout72_hpfix), unit seeds 0-59 = 1,200 games a run a panel = 2,400 a final, 33,600 games, ALL played at this spec's pin in one group (the rule imports nothing, so C0's banked forum72 cells are not reused). CONFIRMING contrasts: x67_U and ce3d_U (the arm's mean minus C0's, F and H at equal weight). REPORTED: each on F and on H alone, and ce3d_minus_x67_U. Rule b1_kakuna classifies each contrast POSITIVE / NEGATIVE / SPANS-ZERO by its analytic two-way (seed and team) interval at `level`. It confirms or contradicts the two in-house PASS verdicts and never decides them. A read cut at the lane's registered stop is recorded INCOMPLETE_BY_STOP; a run under min_games_frac on a panel makes it INCONCLUSIVE.",
+ "models": {
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3501/final_model.zip",
+    "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303"
+   }
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3502/final_model.zip",
+    "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec"
+   }
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3503/final_model.zip",
+    "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26"
+   }
+  },
+  "c0_s3504": {
+   "arm": "c0",
+   "seed": 3504,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3504/final_model.zip",
+    "sha256": "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae"
+   }
+  },
+  "c0_s3505": {
+   "arm": "c0",
+   "seed": 3505,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3505/final_model.zip",
+    "sha256": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0"
+   }
+  },
+  "c0_s3506": {
+   "arm": "c0",
+   "seed": 3506,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3506/final_model.zip",
+    "sha256": "21409eee22839b3c6040c43b7b58d7886c49569d6dd288353beb36ec7976b560"
+   }
+  },
+  "c0_s3507": {
+   "arm": "c0",
+   "seed": 3507,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3507/final_model.zip",
+    "sha256": "455f73c8d2bd570bf3eca176e3e3953a9b9ac5c059ec35a9a40169a4da1687af"
+   }
+  },
+  "c0_s3508": {
+   "arm": "c0",
+   "seed": 3508,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3508/final_model.zip",
+    "sha256": "8db0a96e55b751fdfac18bc7fe2cbabf5dd5ce7eddd7560f04bea3fa41fb262e"
+   }
+  },
+  "x67_s6701": {
+   "arm": "x67",
+   "seed": 6701,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_x67ent_s6701/final_model.zip",
+    "sha256": "94f173f943d4a930ea5a523f6874d6cec7cb90d88c7646b923c7829c2d79f128"
+   }
+  },
+  "x67_s6702": {
+   "arm": "x67",
+   "seed": 6702,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_x67ent_s6702/final_model.zip",
+    "sha256": "0b6bd3ffb3f6fe0198887466c432bba3480bb06b3129711581cf3d5aed257a4d"
+   }
+  },
+  "x67_s6703": {
+   "arm": "x67",
+   "seed": 6703,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_x67ent_s6703/final_model.zip",
+    "sha256": "510182547f4e530a9f78d5201ffc7b623e5063776c423159e94b892895cdbbb3"
+   }
+  },
+  "ce3d_s7321": {
+   "arm": "ce3d",
+   "seed": 7321,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_ce3dswap_s7321/final_model.zip",
+    "sha256": "c068bb1a0df29afe3ebdaba4e15452c42df76020f02e1d48871ba68216100cb7"
+   }
+  },
+  "ce3d_s7322": {
+   "arm": "ce3d",
+   "seed": 7322,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_ce3dswap_s7322/final_model.zip",
+    "sha256": "f1306f8dc3c62a4660db1fccc1e2ab9c96a08bc7895304160cb989329fc8aaff"
+   }
+  },
+  "ce3d_s7323": {
+   "arm": "ce3d",
+   "seed": 7323,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_ce3dswap_s7323/final_model.zip",
+    "sha256": "7eee05c7cc06502284f8373001d47975c0f2c2cd0430e224a2b590ecf7c647dd"
+   }
+  }
+ },
+ "anchor": {
+  "kakuna": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72",
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "0-59",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "c0_s3504",
+    "c0_s3505",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508",
+    "x67_s6701",
+    "x67_s6702",
+    "x67_s6703",
+    "ce3d_s7321",
+    "ce3d_s7322",
+    "ce3d_s7323"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "b1_kakuna",
+  "allow_partial_at_stop": true,
+  "params": {
+   "group": "kakuna",
+   "contrasts": {
+    "x67_U": {
+     "arms": {
+      "x67": 1,
+      "c0": -1
+     },
+     "panels": [
+      "forum72",
+      "heldout72_hpfix"
+     ]
+    },
+    "ce3d_U": {
+     "arms": {
+      "ce3d": 1,
+      "c0": -1
+     },
+     "panels": [
+      "forum72",
+      "heldout72_hpfix"
+     ]
+    },
+    "x67_F": {
+     "arms": {
+      "x67": 1,
+      "c0": -1
+     },
+     "panels": [
+      "forum72"
+     ]
+    },
+    "x67_H": {
+     "arms": {
+      "x67": 1,
+      "c0": -1
+     },
+     "panels": [
+      "heldout72_hpfix"
+     ]
+    },
+    "ce3d_F": {
+     "arms": {
+      "ce3d": 1,
+      "c0": -1
+     },
+     "panels": [
+      "forum72"
+     ]
+    },
+    "ce3d_H": {
+     "arms": {
+      "ce3d": 1,
+      "c0": -1
+     },
+     "panels": [
+      "heldout72_hpfix"
+     ]
+    },
+    "ce3d_minus_x67_U": {
+     "arms": {
+      "ce3d": 1,
+      "x67": -1
+     },
+     "panels": [
+      "forum72",
+      "heldout72_hpfix"
+     ]
+    }
+   },
+   "reported_contrasts": [
+    "x67_F",
+    "x67_H",
+    "ce3d_F",
+    "ce3d_H",
+    "ce3d_minus_x67_U"
+   ],
+   "nets": {},
+   "level": 0.9,
+   "games_per_panel": 1200,
+   "min_games_frac": 0.95,
+   "bootstrap": {
+    "draws": 10000,
+    "seed": 20261116
+   }
+  }
+ }
+}

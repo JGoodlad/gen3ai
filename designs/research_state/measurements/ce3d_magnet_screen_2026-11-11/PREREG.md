@@ -895,3 +895,35 @@ end entropy between X67's 0.68 and C0's 1.01 nats: **missed**, the swap ended be
   `main.sidecar_audit`, the kit). They read the runs' own files; no number of the rule depends on them.
 - **CE3D-R7 — s7322's late learning-rate cut** (to 8.372e-5 at step 297,996,939, the last 2M steps). Its median is
   unmoved, so the label does not fire; it is reported because X67's forks sat at that rate for most of their run.
+
+## 17. NOTE (2026-11-16, before any Kakuna game): the Kakuna read of the banked entropy finals
+
+**Blind.** Written with no game of a CE-3d or X67 final against Kakuna played, planned or read. This is the dated
+NOTE §9 pre-commits ("One that is played later carries its team-clustered interval and a dated NOTE here, written
+before any game, naming the finals, the panel and the count"). §12's "no Kakuna game" described the registration of
+11-11; §1 to §16 are unchanged. It is the TWIN of X67's
+[§13](../x67_entropy_screen_2026-11-09/PREREG.md), which holds the full terms: the two register ONE read with ONE
+spec, [`../x67_entropy_screen_2026-11-09/read_spec_kakuna.json`](../x67_entropy_screen_2026-11-09/read_spec_kakuna.json)
+(`python -m main.reads`, sha256 `5ff5dcc97f41…`), full tier. Where this NOTE and X67's §13 differ, X67's §13 holds.
+
+**It confirms or contradicts the PASS of §16; it never decides it and it licenses nothing.** D = +3.97 pp
+[+3.31, +4.63] and §16.4's licence stand as read whatever this returns.
+
+- **The finals:** the three swap forks `rb_x35_ce3dswap_s7321..s7323` (`final_model.zip`, sha256
+  `c068bb1a0df2…`, `f1306f8dc3c6…`, `7eee05c7cc06…`), X67's three and all eight C0 finals `rb_x35_c0_s3501..s3508`,
+  each against Kakuna (Metamon's strongest agent), both sides greedy.
+- **The panels and the count:** F (`forum72`) and H (`heldout72_hpfix`), unit seeds 0–59: 1,200 games a final a
+  panel, 2,400 a final, 33,600 games in all, every one at the pin `15136b61634b…` on engine E6 (X67 §13.2 holds the
+  regime). C0 is replayed: its banked forum72 cells are on another engine, at a commit that cannot load these forks.
+- **The team-clustered interval:** rule `b1_kakuna`, level 0.90 (X67 §13.3). CONFIRMING for this screen:
+  **`ce3d_U`** = the swap's mean win rate minus C0's on F and H at equal weight. REPORTED: `ce3d_F`, `ce3d_H`, and
+  `ce3d_minus_x67_U` (the swap minus X67's forks; it sits beside §5.4's cross and, like it, carries no class that
+  licenses anything).
+- **The label beside the PASS:** POSITIVE ⇒ KAKUNA-CONFIRMED, SPANS-ZERO ⇒ UNCONFIRMED, NEGATIVE ⇒ CONTRADICTED (to
+  the owner, as an in-house-only gain), INCONCLUSIVE ⇒ UNREAD.
+- **What it can see** (X67 §13.4): half-width ≈ 1.9 to 2.2 pp; a +4 pp gain against Kakuna is called POSITIVE with
+  probability 0.89 to 1.00, a +3 pp one 0.71 to 0.95, a +2 pp one about half the time.
+- **The limits** are X67 §13.5's. The one that bears hardest here: every final plays on the pin's observation
+  (semantics 168), not the one it trained on (151). §16.5's limit 6 (no outside anchor) is the one this read
+  addresses; it does not address the other five.
+- **One look, the stop (2026-11-23 12:00 PST) and the record** are X67 §13.6's.

@@ -31593,3 +31593,53 @@ clone starts from a fresh initialisation (`init_sha256` `a8df95673c29…`). Huma
 `endstate/human_data_architecture.md` (§5.1).
 
 Tag: **BUILD · R9 step 1 · human-replay clone, width 128, seed 5901 · CONVERGED 11.5 epochs · held-out REPORT half NLL 1.1078, top-1 0.5556 (15,471 rows) · offline fit, one seed, no game played · moves no recipe**
+
+### 2026-11-16 · REGISTRATION · **The Kakuna read of the banked entropy finals REGISTERED (full tier, blind, before any game): X67's three finals and CE-3d's three against the eight C0 finals, each against Kakuna on `forum72` and `heldout72_hpfix`, 1,200 games a final a panel (33,600 games) at one pin; rule `b1_kakuna`; it CONFIRMS or CONTRADICTS the two in-house PASS verdicts and decides neither**
+
+**Why.** The only two training changes this programme has detected are measured in-house only: X67 (a quarter of the
+entropy bonus) +1.97 pp [+1.35, +2.59], and CE-3d (a trailing self-anchor in place of the bonus) +3.97 pp
+[+3.31, +4.63], both head to head against C0's finals. Neither has met Kakuna (Metamon's strongest agent) on
+unfamiliar teams; each PREREG's §9 left that read conditional on free play lanes and pre-committed a dated NOTE
+before any game. The lanes are free until BOUNDARY-1's own Kakuna read (≈ 11-24).
+
+**Registered** (X67 PREREG §13, the full terms; CE-3d PREREG §17, its twin; ONE spec,
+`measurements/x67_entropy_screen_2026-11-09/read_spec_kakuna.json`, sha256 `5ff5dcc97f41…`, `python -m main.reads`):
+
+- **Finals:** `rb_x35_x67ent_s6701..s6703`, `rb_x35_ce3dswap_s7321..s7323`, `rb_x35_c0_s3501..s3508`
+  (`final_model.zip`, each sha256 in the spec), against `metamon:Kakuna`, both sides greedy.
+- **Panels and count:** `forum72` (F) and `heldout72_hpfix` (H), unit seeds 0–59: 1,200 games a final a panel, 33,600
+  games, one anchor group, the panels interleaved by unit seed.
+- **Regime:** pin `15136b61634b667bb9da5ccc6647ff9265238829` (BOUNDARY-1's launch pin and its Kakuna spec's pin),
+  engine E6 (`port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`), Kakuna's pack post-H22, our pack post-H24, policy
+  mode `eval`, loader `bare`.
+- **Statistic:** rule `b1_kakuna` (`src/main/b1/kakuna_rule.py`): a difference of arm means, its analytic two-way
+  interval at level 0.90 (seed variance pooled within the two arms, a team-cluster sandwich by our team and dyadic,
+  the wider deciding). CONFIRMING: `x67_U` and `ce3d_U` (the arm minus C0 on F and H at equal weight), each classified
+  alone. REPORTED: the four per-panel contrasts and `ce3d_minus_x67_U`.
+- **Labels, beside each PASS, which they never change:** POSITIVE ⇒ KAKUNA-CONFIRMED; SPANS-ZERO ⇒ UNCONFIRMED;
+  NEGATIVE ⇒ CONTRADICTED (to the owner, as an in-house-only gain); INCONCLUSIVE ⇒ UNREAD.
+- **One look; registered stop 2026-11-23 12:00 PST** (epoch 1795464000). A read cut there is `INCOMPLETE_BY_STOP` and
+  the rule's 95 % floor decides.
+
+**Power, through the rule's own code** (`kakuna_power.py`, `kakuna_power.log` in X67's folder). C0's eight banked
+forum72 finals (engine E3, 4,925 / 9,600 = 0.5130): SD of the run rates 1.82 pp against a binomial 1.44 pp (p = 0.13
+that it is game noise alone); the 56 placebo splits of three against five have a median half-width of 2.69 pp and
+are called POSITIVE 1 / 56, NEGATIVE 1 / 56. The registered design, simulated at seed SD 0 to 1.5 pp: half-width 1.9
+to 2.2 pp on U; a true +4 pp is called POSITIVE 0.89 to 1.00, +3 pp 0.71 to 0.95, +2 pp 0.43 to 0.59, +1 pp 0.10 to
+0.18; a true 0 is called POSITIVE 0.2 to 5.7 %. **So the read can see a CE-3d-sized gain and is a coin flip for an
+X67-sized one:** UNCONFIRMED for X67 is not CONTRADICTED.
+
+**Limits, registered.** (1) Every final plays on the pin's observation (semantics 168), not the one it trained on
+(151); equal for all fourteen, but an arm that tolerates the shift better would read better. (2) C0's banked
+forum72 cells (engine E3, a commit that cannot load CE-3d's finals) are NOT reused: the rule imports no cell, so C0
+is replayed, and the read costs ≈ 233 lane-h (≈ 78 h on three lanes), not the ≈ 100 a reuse would have cost.
+(3) Three forks an arm, one parent, one dose, one opponent. That an in-house gain is the same size against Kakuna
+is a GUESS.
+
+**Licences.** None. No recipe, no baseline and no verdict moves on any outcome.
+
+**Record:** `measurements/x67_entropy_screen_2026-11-09/` (`PREREG.md` §13, `read_spec_kakuna.json`,
+`kakuna_power.py`, `kakuna_power.log`); `measurements/ce3d_magnet_screen_2026-11-11/PREREG.md` §17. State, when
+played: `~/gen3ai_archive/kakuna_entropy_2026-11-16/state`. View: `STATUS.md` (§2).
+
+Tag: **REGISTRATION · Kakuna read of the entropy finals · X67 ×3, CE-3d ×3 v C0 ×8 · forum72 + heldout72_hpfix @ 1,200 games a final a panel · rule `b1_kakuna`, level 0.90 · KAKUNA-CONFIRMED / UNCONFIRMED / CONTRADICTED / UNREAD · +4 pp seen 0.89–1.00, +2 pp 0.43–0.59 · pin `15136b616`, E6 · stop 11-23 12:00 PST · decides nothing**

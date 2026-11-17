@@ -293,3 +293,121 @@ It registers no fresh-run entropy arm, no schedule, no second coefficient, no La
 not amend BOUNDARY-1's draft, whose §9.1 says "the ten C0 finals": five are banked and eight are registered. It
 changes no baseline and no production recipe. X67 has no `main.reads` rule or `reads/` record: its verdict is
 `cross/read_cross.py`'s `verdict.json`, written by `screen_rule.decide`.
+
+## 13. NOTE (2026-11-16, before any Kakuna game): the Kakuna read of the banked entropy finals
+
+**Blind.** Written with no game of an X67 or CE-3d final against Kakuna played, planned or read: no state directory of
+this read exists and no earlier read names those finals. This is the dated NOTE §9 pre-commits ("Kakuna on U,
+clustered by team ... a dated NOTE names the rule and the games before any game"). §12's "no Kakuna game" described
+the registration of 11-09; §1 to §12 are unchanged. The twin NOTE is CE-3d's
+[§17](../ce3d_magnet_screen_2026-11-11/PREREG.md); the two register ONE read with ONE spec,
+[`read_spec_kakuna.json`](read_spec_kakuna.json) (`python -m main.reads`, sha256 `5ff5dcc97f41…`). Tier: FULL
+(`../../README.md` § Registration tiers: none was named, and ≈ 233 lane-h is past a light screen's 50).
+
+**It confirms or contradicts the two in-house PASS verdicts; it never decides them and it licenses nothing.** X67's
+PASS (+1.97 pp [+1.35, +2.59]) and CE-3d's (+3.97 pp [+3.31, +4.63]) stand as read whatever this returns; no recipe
+and no baseline moves on it.
+
+Abbreviations added here: Kakuna = Metamon's strongest agent (`metamon:Kakuna`), the outside meter. F = the panel
+`forum72`; H = `heldout72_hpfix`, the held-out set of record; U = F and H at equal weight (unfamiliar teams). A unit =
+20 games of one final on one panel at one unit seed. Lane-h = one play lane for one hour.
+
+### 13.1 What is played
+
+| | |
+|---|---|
+| finals (frozen files, each sha256 in the spec) | X67 × 3: `rb_x35_x67ent_s6701..s6703`. CE-3d × 3: `rb_x35_ce3dswap_s7321..s7323`. C0 × 8: `rb_x35_c0_s3501..s3508`. Each is P\* + 20M, its `final_model.zip` (step 300,021,355 to 300,062,191) |
+| opponent | Kakuna, both sides greedy |
+| panels | F and H, unit seeds 0–59: 1,200 games a final a panel, 2,400 a final, **33,600 games** |
+| where | ONE anchor group, every game at ONE pin; the queue runs unit seed outermost, so F and H interleave and a stopped read stays balanced |
+| cost | ≈ 233 lane-h at 144 games a lane-hour (§9's rate): ≈ 78 h on three lanes |
+
+**Why C0 is replayed.** C0's eight finals are banked on F (4,925 / 9,600 = 0.5130, X60-T look 2) on engine E3 at
+`f564c333f`. That commit predates the magnet's config, and code without it refuses the swap forks' configs (CE-3d
+PREREG, "the play pin"); the rule below imports no cell; and cells pool only on one engine (`designs/tools/reads.md`
+§3). So all fourteen finals play here; the banked number is REPORTED beside C0's rate here as a description of the
+regime change, never pooled.
+
+### 13.2 The regime (anchors SOP §0: a number never leaves without it)
+
+- **Pin** `15136b61634b667bb9da5ccc6647ff9265238829`: BOUNDARY-1's launch pin and the pin of its own Kakuna spec, so
+  these cells are played by the code that will play BOUNDARY-1's. Engine **E6**
+  (`port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`).
+- Kakuna's team pack post-H22. OUR pack from `d8d674b99` on (H24: forum72's `sft431` plays Frustration at 102), for
+  every arm. Policy mode `eval`.
+- Loader `bare` for all three arms: one final of each (s3501, s6701, s7321) was loaded at the pin on the CPU with
+  `main.anchors.core_side.load_policy` before this NOTE (5,624,179 parameters each; no game played).
+
+### 13.3 The statistic and the classes
+
+Rule **`b1_kakuna`** (`src/main/b1/kakuna_rule.py`; BOUNDARY-1 PREREG §6). It landed on 11-09, so §9's "not landed
+today" no longer holds. A contrast is a difference of ARM MEANS: the mean over an arm's runs of each run's win rate
+on a panel, panels at equal weight. Its interval is the rule's analytic two-way one at level 0.90: the seed variance
+pooled within the two arms the contrast names, a team-cluster sandwich (by the team we pilot, and dyadic by both
+teams), the wider scheme deciding, Satterthwaite df. **POSITIVE** iff the lower end > 0, **NEGATIVE** iff the upper
+end < 0, else **SPANS-ZERO**; an end within 0.005 pp of 0 crosses nothing (rule 8). **INCONCLUSIVE** when a final
+has under 95 % of its 1,200 games on a panel, or over a quarter of them ended at our turn cap.
+
+| contrast | arms | panels | role |
+|---|---|---|---|
+| `x67_U` | X67 − C0 | F, H | CONFIRMING, for X67's PASS |
+| `ce3d_U` | CE-3d − C0 | F, H | CONFIRMING, for CE-3d's PASS |
+| `x67_F`, `x67_H`, `ce3d_F`, `ce3d_H` | as above | one panel | REPORTED |
+| `ce3d_minus_x67_U` | CE-3d − X67 | F, H | REPORTED |
+
+Each confirming contrast is classified alone, with no correction for there being two: each answers its own verdict.
+The label written beside the in-house PASS, which it never changes:
+
+| class | label | what it says |
+|---|---|---|
+| POSITIVE | **KAKUNA-CONFIRMED** | the gain shows against the outside meter on unfamiliar teams |
+| SPANS-ZERO | **UNCONFIRMED** | neither; see the power below before reading it as a miss |
+| NEGATIVE | **CONTRADICTED** | the in-house gain costs against Kakuna: it goes to the owner as an in-house-only gain |
+| INCONCLUSIVE | **UNREAD** | nothing is quoted |
+
+### 13.4 What it can see ([`kakuna_power.log`](kakuna_power.log), [`kakuna_power.py`](kakuna_power.py): the rule's own code)
+
+- **The banked spread.** C0's eight finals on F (1,200 games each, engine E3): run rates 0.4858 to 0.5467, SD
+  1.82 pp against a binomial 1.44 pp. At face value that is a seed SD of ≈ 1.1 pp; eight runs cannot tell it from 0
+  (variance ratio 1.60 on 7 df, p = 0.13). Team SD net of game noise: 9.8 pp by our team, 10.5 pp by Kakuna's
+  (BOUNDARY-1 assumed 10 and 9).
+- **A placebo on real games.** All 56 ways to call three C0 finals "the arm" and five "the control", F alone: the
+  rule's half-width is 2.69 pp (median; 2.48 to 2.82), and it calls 1 of 56 POSITIVE and 1 NEGATIVE (the splits share
+  games; at level 0.90 a tenth would be nominal).
+- **The registered design, simulated** (3 finals against 8, two panels, 2,000 experiments a cell, seed SD 0 to
+  1.5 pp, with and without a 5 pp team-by-arm interaction). `x67_U` / `ce3d_U`: median half-width **1.9 to 2.2 pp**.
+
+  | true gain against Kakuna on U | +1 pp | +2 pp | +3 pp | +4 pp | +5 pp |
+  |---|---|---|---|---|---|
+  | P(POSITIVE) | 0.10–0.18 | 0.43–0.59 | 0.71–0.95 | 0.89–1.00 | ≥ 0.98 |
+
+  At no gain it calls POSITIVE 0.2 to 5.7 % of the time (5 % is nominal for one side; the 5.7 % is at seed SD
+  1.5 pp, where coverage is 0.886). One panel alone is weaker: F half-width 2.6 to 2.8 pp, +4 pp seen 0.75–0.92.
+- **The reading.** A gain the size of CE-3d's in-house one is seen nine times in ten or better. One the size of
+  X67's is seen about half the time, so **for X67, SPANS-ZERO is as likely as POSITIVE even if the whole in-house
+  gain transfers**: UNCONFIRMED is not CONTRADICTED. That an in-house gain is the same size against Kakuna is a
+  GUESS; X67 §10 names the opposite ("a sharper policy may beat its own lineage and gain nothing against Kakuna").
+  UNVERIFIED: how much more games a final would buy (three fork seeds and the team clusters bind; not simulated).
+
+### 13.5 LIMITS, registered
+
+1. **The observation the finals see is not the one they trained on.** They trained at observation semantics 151
+   (pins `f4b25238` and `9e97cad5`); the pin encodes at 168 (the `warn` rows 162, 163 and 165 to 168 of
+   `OBS_SEMANTICS_HISTORY`; §4: main's fixes "move P\*'s inputs on 96 % of rows"). It is the same for all fourteen,
+   and C0's banked Kakuna cells were played past row 162 too, but an arm that tolerates the shift better would read
+   better here and this read cannot separate that. No commit holds `f4b25238`'s game paths, the magnet's config
+   loader and this rule together; building one is a code unit, not this NOTE.
+2. **Three forks an arm** (2 df), one parent (P\*), one dose (+20M), F and H only (no `p72`, no home panel).
+3. **Kakuna is one opponent.** A label here is about Kakuna on unfamiliar teams, not strength in general.
+
+### 13.6 Stop, looks, record
+
+- **One look.** The record is written once, when every unit is counted, by `python -m main.reads record` into
+  `record/kakuna_read.json`. Until then only `status` (unit counts, guards, voids) is read; no win rate of an X67 or
+  CE-3d final is read early.
+- **Registered stop: 2026-11-23 12:00 PST** (epoch 1795464000). BOUNDARY-1's Kakuna read needs the lanes from
+  ≈ 11-24. A read cut there is recorded `INCOMPLETE_BY_STOP` (`allow_partial_at_stop`) and the rule's 95 % floor
+  decides: at or above it the classes stand; below it the read is UNREAD and the lane resumes after BOUNDARY-1's
+  read (a counted unit is never replayed).
+- **Where.** State `~/gen3ai_archive/kakuna_entropy_2026-11-16/state`; a clean detached checkout at the pin; at most
+  three units at once, nice 19 on the agent cores, each unit under `mem_cap.sh`.
