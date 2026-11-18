@@ -1,0 +1,509 @@
+{
+ "what": "team-cluster bootstrap of each factor's statistic",
+ "status": "REPORTED",
+ "decides": null,
+ "look": "50M",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "draws": 10000,
+ "seed": 20261110,
+ "n_per_arm": 3,
+ "teams": {
+  "home72": 71,
+  "heldout72_hpfix": 72,
+  "forum72": 72,
+  "p72": 72
+ },
+ "shared_team_ids": {},
+ "factors": {
+  "width": {
+   "read_on": "N",
+   "outcome_registered": "CONTINUE",
+   "class_before_net_rule": "CONTINUE",
+   "class_with_team_variance": "CONTINUE",
+   "class_moves": false,
+   "estimate_pp": -0.37210648148148096,
+   "registered": {
+    "se_pp": 1.5840641975519425,
+    "df": 8,
+    "interval_pp": [
+     -3.3177499513621513,
+     2.5735369883991894
+    ],
+    "class": "CONTINUE"
+   },
+   "team": {
+    "se_pp": 0.1160982964931492,
+    "bias_pp": 9.602439580902455e-05,
+    "percentile_interval_pp": [
+     -0.5602608016208002,
+     -0.1769317371729901
+    ]
+   },
+   "combined": {
+    "se_pp": 1.5883130032882344,
+    "interval_pp": [
+     -3.3256508097309228,
+     2.581437846767961
+    ],
+    "class": "CONTINUE",
+    "team_share_of_variance": 0.005342930339647732
+   },
+   "views": {
+    "N": {
+     "estimate_pp": -0.37210648148148096,
+     "registered": {
+      "se_pp": 1.5840641975519425,
+      "df": 8,
+      "interval_pp": [
+       -3.3177499513621513,
+       2.5735369883991894
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.1160982964931492,
+      "bias_pp": 9.602439580902455e-05,
+      "percentile_interval_pp": [
+       -0.5602608016208002,
+       -0.1769317371729901
+      ]
+     },
+     "combined": {
+      "se_pp": 1.5883130032882344,
+      "interval_pp": [
+       -3.3256508097309228,
+       2.581437846767961
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.005342930339647732
+     }
+    },
+    "home72": {
+     "estimate_pp": 0.33263888888888715,
+     "registered": {
+      "se_pp": 1.615681908219989,
+      "df": 8,
+      "interval_pp": [
+       -2.6717992328157685,
+       3.337077010593543
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.19874796189485733,
+      "bias_pp": 0.001338510331908238,
+      "percentile_interval_pp": [
+       0.007812182844635683,
+       0.6667416069355504
+      ]
+     },
+     "combined": {
+      "se_pp": 1.6278601846923906,
+      "interval_pp": [
+       -2.6944453229305316,
+       3.359723100708306
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.014906344895745998
+     }
+    },
+    "U": {
+     "estimate_pp": -1.076851851851849,
+     "registered": {
+      "se_pp": 1.5680912745114375,
+      "df": 8,
+      "interval_pp": [
+       -3.9927929040389163,
+       1.8390892003352182
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.12510579426080512,
+      "bias_pp": -0.001146461540290078,
+      "percentile_interval_pp": [
+       -1.2856875860378099,
+       -0.87290184947788
+      ]
+     },
+     "combined": {
+      "se_pp": 1.5730739667785907,
+      "interval_pp": [
+       -4.002058459665921,
+       1.848354755962223
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.006324942201391514
+     }
+    },
+    "heldout72_hpfix": {
+     "estimate_pp": -1.4763888888888914,
+     "registered": {
+      "se_pp": 1.5880798979729196,
+      "df": 8,
+      "interval_pp": [
+       -4.429499746606702,
+       1.4767219688289188
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.22095502564874223,
+      "bias_pp": 0.0008365352668791015,
+      "percentile_interval_pp": [
+       -1.8378594918741045,
+       -1.1130703534095325
+      ]
+     },
+     "combined": {
+      "se_pp": 1.6033773372806273,
+      "interval_pp": [
+       -4.457946069850598,
+       1.5051682920728147
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.01899049506400598
+     }
+    },
+    "forum72": {
+     "estimate_pp": -0.7611111111111128,
+     "registered": {
+      "se_pp": 1.6433458933860032,
+      "df": 8,
+      "interval_pp": [
+       -3.8169917421415143,
+       2.2947695199192886
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.21173187357182008,
+      "bias_pp": -0.0023784274574533137,
+      "percentile_interval_pp": [
+       -1.11774117292162,
+       -0.4206821518058818
+      ]
+     },
+     "combined": {
+      "se_pp": 1.6569297243983747,
+      "interval_pp": [
+       -3.842251528442721,
+       2.3200293062204955
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.016329177240891987
+     }
+    },
+    "p72": {
+     "estimate_pp": -0.9930555555555571,
+     "registered": {
+      "se_pp": 1.570722169168071,
+      "df": 8,
+      "interval_pp": [
+       -3.9138888827383176,
+       1.9277777716272033
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.2148834410410654,
+      "bias_pp": -0.0018974924302821439,
+      "percentile_interval_pp": [
+       -1.342042578161273,
+       -0.640802944709575
+      ]
+     },
+     "combined": {
+      "se_pp": 1.5853526503430395,
+      "interval_pp": [
+       -3.941094965295363,
+       1.9549838541842486
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.01837190258428861
+     }
+    },
+    "HF": {
+     "estimate_pp": -0.21423611111111285,
+     "registered": {
+      "se_pp": 1.6184231237844793,
+      "df": 8,
+      "interval_pp": [
+       -3.2237716548391657,
+       2.79529943261694
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.14383880804884056,
+      "bias_pp": -0.0005199585627725378,
+      "percentile_interval_pp": [
+       -0.45242068163919336,
+       0.02137626651128234
+      ]
+     },
+     "combined": {
+      "se_pp": 1.6248024527003964,
+      "interval_pp": [
+       -3.2356343234055234,
+       2.8071621011832977
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.007837021155128762
+     }
+    }
+   }
+  },
+  "breadth": {
+   "read_on": "HF",
+   "outcome_registered": "STOP-HARM",
+   "class_before_net_rule": "STOP-HARM",
+   "class_with_team_variance": "CONTINUE",
+   "class_moves": true,
+   "estimate_pp": -5.183680555555554,
+   "registered": {
+    "se_pp": 1.7046261449873352,
+    "df": 8,
+    "interval_pp": [
+     -8.353514758190613,
+     -2.0138463529204964
+    ],
+    "class": "STOP-HARM"
+   },
+   "team": {
+    "se_pp": 0.18706319195451804,
+    "bias_pp": 0.001871735851914913,
+    "percentile_interval_pp": [
+     -5.48854250058928,
+     -4.872596929170238
+    ]
+   },
+   "combined": {
+    "se_pp": 1.7148594496222123,
+    "interval_pp": [
+     -8.372544079741854,
+     -1.994817031369255
+    ],
+    "class": "CONTINUE",
+    "team_share_of_variance": 0.0118992508334984
+   },
+   "views": {
+    "N": {
+     "estimate_pp": -3.660532407407409,
+     "registered": {
+      "se_pp": 1.6736509681937584,
+      "df": 8,
+      "interval_pp": [
+       -6.772766780823798,
+       -0.5482980339910197
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.1506940629816847,
+      "bias_pp": 0.0024667680959495897,
+      "percentile_interval_pp": [
+       -3.9073094094361474,
+       -3.4158214817523316
+      ]
+     },
+     "combined": {
+      "se_pp": 1.6804214542649212,
+      "interval_pp": [
+       -6.78535682491056,
+       -0.5357079899042585
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.008041847802849552
+     }
+    },
+    "home72": {
+     "estimate_pp": -7.97013888888889,
+     "registered": {
+      "se_pp": 1.6846096589216446,
+      "df": 8,
+      "interval_pp": [
+       -11.102751474142227,
+       -4.837526303635552
+      ],
+      "class": "STOP-HARM"
+     },
+     "team": {
+      "se_pp": 0.2499242188969941,
+      "bias_pp": 0.00429200306032218,
+      "percentile_interval_pp": [
+       -8.387254059445507,
+       -7.561402906870123
+      ]
+     },
+     "combined": {
+      "se_pp": 1.7030478026536344,
+      "interval_pp": [
+       -11.137038088134762,
+       -4.803239689643018
+      ],
+      "class": "STOP-HARM",
+      "team_share_of_variance": 0.021535899225392237
+     }
+    },
+    "U": {
+     "estimate_pp": 0.6490740740740719,
+     "registered": {
+      "se_pp": 1.666429365822543,
+      "df": 8,
+      "interval_pp": [
+       -2.449731382825096,
+       3.74787953097324
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.16369905719230488,
+      "bias_pp": 0.0006415331315758888,
+      "percentile_interval_pp": [
+       0.378661797432956,
+       0.9241316134787743
+      ]
+     },
+     "combined": {
+      "se_pp": 1.6744504210639897,
+      "interval_pp": [
+       -2.4646469203582546,
+       3.7627950685063984
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.009557576223309527
+     }
+    },
+    "heldout72_hpfix": {
+     "estimate_pp": 0.62361111111111,
+     "registered": {
+      "se_pp": 1.624617500091926,
+      "df": 8,
+      "interval_pp": [
+       -2.3974431729231833,
+       3.6446653951454033
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.2903466179498479,
+      "bias_pp": 0.0010456327441936697,
+      "percentile_interval_pp": [
+       0.14619352923574805,
+       1.101118730605614
+      ]
+     },
+     "combined": {
+      "se_pp": 1.650358500496136,
+      "interval_pp": [
+       -2.445309799708914,
+       3.692532021931134
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.030951161709625585
+     }
+    },
+    "forum72": {
+     "estimate_pp": -2.3972222222222186,
+     "registered": {
+      "se_pp": 1.734101414580295,
+      "df": 8,
+      "interval_pp": [
+       -5.62186710458456,
+       0.827422660140122
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.274882128151015,
+      "bias_pp": -0.0005485313564919103,
+      "percentile_interval_pp": [
+       -2.8501694362428536,
+       -1.9389730199318767
+      ]
+     },
+     "combined": {
+      "se_pp": 1.7557528016284671,
+      "interval_pp": [
+       -5.662128898879809,
+       0.8676844544353721
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.024511295675536122
+     }
+    },
+    "p72": {
+     "estimate_pp": 3.7208333333333314,
+     "registered": {
+      "se_pp": 1.66123921839714,
+      "df": 8,
+      "interval_pp": [
+       0.631679204893568,
+       6.809987461773095
+      ],
+      "class": "CONTINUE"
+     },
+     "team": {
+      "se_pp": 0.2828762677514676,
+      "bias_pp": 0.0014274980070183574,
+      "percentile_interval_pp": [
+       3.2576302332566796,
+       4.185275966109094
+      ]
+     },
+     "combined": {
+      "se_pp": 1.6851512465051144,
+      "interval_pp": [
+       0.5872136399520005,
+       6.854453026714662
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.02817833024755977
+     }
+    },
+    "HF": {
+     "estimate_pp": -5.183680555555554,
+     "registered": {
+      "se_pp": 1.7046261449873352,
+      "df": 8,
+      "interval_pp": [
+       -8.353514758190613,
+       -2.0138463529204964
+      ],
+      "class": "STOP-HARM"
+     },
+     "team": {
+      "se_pp": 0.18706319195451804,
+      "bias_pp": 0.001871735851914913,
+      "percentile_interval_pp": [
+       -5.48854250058928,
+       -4.872596929170238
+      ]
+     },
+     "combined": {
+      "se_pp": 1.7148594496222123,
+      "interval_pp": [
+       -8.372544079741854,
+       -1.994817031369255
+      ],
+      "class": "CONTINUE",
+      "team_share_of_variance": 0.0118992508334984
+     }
+    }
+   },
+   "net": {
+    "cost_view": "home72",
+    "gain_view": "forum72",
+    "net_pp": -10.367361111111109,
+    "team_se_pp": 0.3741263839090361,
+    "share_of_resamples_above_zero": 0.0
+   }
+  }
+ },
+ "notes": [
+  "REPORTED: no class is read from this file; the look's verdict is result/verdict.json",
+  "the combined interval adds the team variance to the registered one at the registered df; both hold the game noise, so it is an upper bound on resampling seeds and teams together",
+  "one-way clusters (the winning pilot's team); the panels are resampled independently; the runs are fixed"
+ ]
+}

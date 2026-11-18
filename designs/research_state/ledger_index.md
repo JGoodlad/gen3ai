@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-31,926-line file. **The ledger itself is append-only and is never edited by this**;
+32,026-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1016 headings · 961 dated · 2026-08-01 → 2026-11-18 · ledger 31,926 lines.**
+**1017 headings · 962 dated · 2026-08-01 → 2026-11-18 · ledger 32,026 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1036,3 +1036,4 @@ rename.
   - `L31698` · `2026-11-16` · REGISTRATION · **X71, the exploitability probe of the entropy arms (full tier; blind: before any X71 training step or game): two fresh 5M best responders against one final each of C0, X67, the CE-3d swap and later X70; the class compares the gap the responders LEARNED against an arm's final with C0's; NOT LAUNCHED**
   - `L31751` · `2026-11-16` · REGISTRATION · **X35-A3 (LG-1 / CE-3c), the league's first arm with main exploiters folded back in (full tier; blind: before any A3 training step, game or read): three 5M exploiters of P\*, then P\* + 20M with them as 40 % of its opponents, hardest first; DECIDED by the change in a fresh responder's gap against C0; NOT LAUNCHED**
   - `L31808` · `2026-11-18` · READ · **The Kakuna read of the banked entropy finals, RECORDED (one look, COMPLETE, 33,600 games): CE-3d's trailing-magnet PASS is KAKUNA-CONFIRMED, `ce3d_U` +2.61 pp [+0.95, +4.28]; X67's quarter-entropy PASS is UNCONFIRMED, `x67_U` +1.75 pp [−0.12, +3.63] (90 %, rule `b1_kakuna`, U = forum72 and heldout72_hpfix at equal weight); nothing CONTRADICTED; C0 itself reads 0.5026 against Kakuna on U; it decides neither PASS and moves nothing**
+  - `L31927` · `2026-11-18` · READ · **BOUNDARY-1's 50M look, PLAYED (one look, 270,000 games, exit 0): breadth STOP-HARM on HF, −5.18 pp [−8.35, −2.01]; width CONTINUE on N, −0.37 pp [−3.32, +2.57] (90 %, 8 df, twelve from-scratch runs at 50M). Breadth is STOPPED-FOR-HARM at 50M, which is not a LOSS at 100M and claims nothing about 100M; no class is read at 100M for either factor; the survivor (width: W against C) alone trains on to 100M. The stop is 0.0138 pp past the bar, and the team bootstrap reads `class_moves: true`**

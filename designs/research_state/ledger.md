@@ -31923,3 +31923,103 @@ the eight voided attempts): `~/gen3ai_archive/kakuna_entropy_2026-11-16/state`. 
 `UNDERSTANDING.md` (TL;DR item 5, §4.15, §4.16), `EXPERIMENT_BACKLOG.md` (the CE-3d row).
 
 Tag: **READ · Kakuna read of the entropy finals · X67 ×3, CE-3d ×3 v C0 ×8 · forum72 + heldout72_hpfix @ 1,200 games a final a panel · rule `b1_kakuna`, level 0.90 · `ce3d_U` +2.61 pp [+0.95, +4.28] KAKUNA-CONFIRMED · `x67_U` +1.75 pp [−0.12, +3.63] UNCONFIRMED · CE-3d − X67 +0.86 [−1.98, +3.71] · C0 vs Kakuna U 0.5026, F 0.5165, H 0.4887 · pin `15136b616`, E6 · decides nothing**
+
+### 2026-11-18 · READ · **BOUNDARY-1's 50M look, PLAYED (one look, 270,000 games, exit 0): breadth STOP-HARM on HF, −5.18 pp [−8.35, −2.01]; width CONTINUE on N, −0.37 pp [−3.32, +2.57] (90 %, 8 df, twelve from-scratch runs at 50M). Breadth is STOPPED-FOR-HARM at 50M, which is not a LOSS at 100M and claims nothing about 100M; no class is read at 100M for either factor; the survivor (width: W against C) alone trains on to 100M. The stop is 0.0138 pp past the bar, and the team bootstrap reads `class_moves: true`**
+
+**Question** (registered in `measurements/boundary1_scratch_2026-11-09/PREREG.md`, §8's 50M row; the launch pin
+`15136b61634b667bb9da5ccc6647ff9265238829`, the kit commit `1d592e6cd5ff2b6b9f634e67573a98e3cdaede44`; the PREREG is
+the registration of record and is through Amendment 8, `524ae8490`). BOUNDARY-1 is the from-scratch 2 × 2 of the
+scale bet: width (`d_model` 128 against 256) × team breadth (the pool against half `n1_proc_v1` procedural teams),
+three runs a cell, every run at `ent_coef` 0.0125: C `rb_b1c_s5101/s5102/s5110`, W `rb_b1w_s5103/s5104/s5111`, Br
+`rb_b1br_s5105/s5106/s5112`, WB `rb_b1wb_s5107/s5108/s5113`. The 50M look asks ONE thing of each factor: is it
+behind by more than 2 pp on its own HARM view (width's is N, breadth's is HF, half home72 and half forum72)?
+STOP-HARM iff the 90 % interval's upper end is below −2.0, else CONTINUE. It reads no gain, and a CONTINUE is no
+class.
+
+**Result** (`looks/drive_look.sh 50M cuda` at the look's pin checkout, under the Training session's GPU lease,
+2026-11-18 13:35:16 to 15:19:51 PST, 6,275 s, exit 0; one device and backend for every row; 54 cells a panel;
+home72 at 1,000 pairs a cell, `heldout72_hpfix`, forum72 and p72 at 500; each run's first checkpoint at or after
+50,000,000, steps 50,000,005 to 50,000,412). `at_boundary` is empty for both factors. Each row is the factor's ON
+arms minus its OFF arms, pp, 90 %, 8 df, floor 1.76 pp; **only the harm view decides; every other row is
+REPORTED.**
+
+| view | width (W, WB against C, Br) | breadth (Br, WB against C, W) |
+|---|---|---|
+| N | **−0.37 [−3.32, +2.57]: CONTINUE** | −3.66 [−6.77, −0.55] |
+| HF | −0.21 [−3.22, +2.80] | **−5.18 [−8.35, −2.01]: STOP-HARM** |
+| home72 | +0.33 [−2.67, +3.34] | −7.97 [−11.10, −4.84] |
+| forum72 | −0.76 [−3.82, +2.29] | −2.40 [−5.62, +0.83] |
+| `heldout72_hpfix` | −1.48 [−4.43, +1.48] | +0.62 [−2.40, +3.64] |
+| p72 | −0.99 [−3.91, +1.93] | +3.72 [+0.63, +6.81] |
+| U | −1.08 [−3.99, +1.84] | +0.65 [−2.45, +3.75] |
+
+REPORTED beside it: the interaction is NOT-SHOWN (N −4.61 pp [−10.85, +1.63]; forum72 −5.91 pp [−12.58, +0.77]);
+breadth's net block reads cost −7.97 (home72), gain −2.40 (forum72), net −10.37, with no net rule read at 50M; the
+simple effect W against C is +1.71 pp [−1.48, +4.90] on N and +1.71 pp [−1.35, +4.77] on forum72 (4 df); WB against
+C is −3.82 pp [−9.58, +1.95] on N. Draws: 1.15 % (home72), 0.79 %, 1.34 %, 1.31 %, worst cell 5.3 %, against §10's
+quarter.
+
+**What §8 does with it** (applied by the orchestrator at about 15:23 PST; "a CODED STOP-HARM. It stands; no
+amendment, no re-read"). Breadth is recorded STOPPED-FOR-HARM at 50M; Br and WB get no phase 2 and their run
+directories are left as they are. No class is read at 100M for either factor. The survivor is width: C's and W's
+six runs train to 100M (the first, `rb_b1c_s5101`, resumed 15:25:18 PST), and the 75M and 100M survivor looks
+report the simple effect at 4 df under `NO-CLASS`. No Kakuna read is registered for this case. The outcome is an
+*owner* row; its default (Amendment 6 item 1) is that the control's three runs are the candidates, no factor is
+adopted or carried forward, and W is not retired and not continued past 100M.
+
+**Limits (PREREG §16; they travel with every quote of this entry).**
+- **A STOP-HARM at 50M is not a LOSS at 100M and claims nothing about 100M.** Breadth was behind at 50M on the
+  mix of the teams the pool arms train on and the forum's teams. A factor that starts slowly and would have led
+  at 100M is stopped and never read. Nothing is retired, and nothing is said about a corpus other than
+  `n1_proc_v1` or a share other than 0.5.
+- **Breadth's rows on `heldout72_hpfix`, p72, U and N are contaminated by its own training teams** (the
+  procedural corpus) and are never quoted as generalisation. Its positive p72 row is that contamination's
+  direction, not a gain.
+- **Width's CONTINUE is no class.** It says "not stopped" and nothing about a gain or a loss; the factor is
+  width plus the learning-rate controller's response to it (next paragraph). The NOT-SHOWN interaction is not
+  additivity.
+- **The survivor carries no class**, at 75M or 100M: nothing will be claimed from three runs against three
+  beyond the printed interval, and the default that follows is not a finding.
+
+**The learning-rate record** (Amendment 8; `python -m main.b1.lr_report --look 50M --displacement`, twelve runs,
+9 df, 90 %; REPORTED, it enters no statistic). The wide arms trained at under half the narrow arms' rate: the
+controller's rung at 50M is −7 or −8 on every W and WB run against −3 (one −2) on every C and Br run; width's ON /
+OFF ratio of the geometric-mean rate over 25M to 50M is ×0.473 [0.451, 0.495], of the summed `train/approx_kl`
+over the same half ×1.015 [0.995, 1.035], and of the per-weight displacement of the trunk's resized tensors
+between 30M and 50M ×0.443 [0.428, 0.458]. Breadth's ratios are ×1.119 [1.068, 1.172], ×1.011 [0.991, 1.031] and
+×1.061 [1.025, 1.097].
+
+**Checks.** The twelve K9(b) reads at the end of phase 1 all PASS (`check-run --step 50000000` and the same with
+`--arm-end`, exit 0; judged maximum 7.46e-05 to 1.55e-04 against 1e-3, 99th percentile 1.48e-05 to 1.82e-05 against
+1e-4, no fire). All twelve runs are COMPLETE at 50M with every early check PASS; phase 1 ran 2026-11-12 19:26 to
+2026-11-18 13:33 PST. The record files are byte copies (sha256 in PREREG §18). The recorder re-read every figure
+above from `verdict.json`, `team_bootstrap.json` and `lr_report.json` on CPU; it replayed no game and re-ran no
+tool.
+
+**FINDINGs.**
+1. **The team-cluster bootstrap (§5.5; REPORTED, 10,000 draws) reads `class_moves: true` for breadth.** With the
+   team variance added (team standard error 0.19 pp, 1.2 % of the combined variance) the interval on HF is
+   [−8.37, −1.99]: its upper end, −1.9948, would read CONTINUE. By §5.5 this goes to the owner beside the
+   outcome and acts on nothing; the registered STOP-HARM stands. The combined interval counts the game noise
+   twice and is an upper bound. For width `class_moves` is false.
+2. **The stop is 0.0138 pp past the bar** (upper end −2.0138 against −2.0, outside the 0.005 pp band), and the
+   interval's width comes from one arm: on HF the within-arm variances are 0.27 (Br) and 0.26 (C), both raised
+   to the floor's 3.10, 6.38 (W) and 22.30 (WB), whose runs read 44.59, 38.16 and 47.37. `rb_b1wb_s5108` is the
+   low run on every view. §5.2's one shared seed variance is the registered model and is not changed; the
+   spread it pools is visibly unequal here.
+3. **No owner notification is on record** (PREREG §18, slot S9): UNVERIFIED whether one was sent. The 72-hour
+   window is ruled to start at the 100M survivor look's verdict.
+4. Not in the record yet (S8): the quit-save probe's record, GPU-hours as a card reading, C's and W's arm-end
+   K9(b) reads at 100M. Runs [10] to [12] started and paced slower than their arm-mates (≈ 3 to 8 % a step) while
+   a registered CPU read held the agent cores; the cause is the Training session's reading, UNVERIFIED here.
+
+**What it licenses.** The stop of the breadth arms at 50M and the survivor's phase 2, both already §8's. Nothing
+else: no recipe, baseline or production config moves; no width is adopted or retired; procedural teams as a
+training-distribution lever are not retired by this look.
+
+**Record:** `measurements/boundary1_scratch_2026-11-09/record/look_50M/` (`verdict.json`, sha256 `9a2c55091d19…`;
+`team_bootstrap.json`, `ce2d3def61aa…`; `look_record.txt`; `lr_report.json`, `e2cef06d516b…`); the PREREG's §18
+("The 50M look's record", slots S8 and S9). The games' rows are in the eval ledger under requests `b1_50m_<panel>`.
+View: `STATUS.md` (§2, §3, §6), `UNDERSTANDING.md` (§4.17, §6).
+
+Tag: **READ · BOUNDARY-1 50M look · C, W, Br, WB ×3 from scratch at 50M · home72 @ 1,000 pairs a cell, heldout72_hpfix, forum72, p72 @ 500 · 270,000 games · 90 %, 8 df, floor 1.76 pp · breadth HF −5.18 pp [−8.35, −2.01] STOP-HARM (0.0138 pp past the bar; `class_moves` true) · width N −0.37 pp [−3.32, +2.57] CONTINUE · interaction NOT-SHOWN · STOPPED-FOR-HARM at 50M is not a LOSS at 100M · survivor W v C to 100M, NO-CLASS · pin `15136b616`**

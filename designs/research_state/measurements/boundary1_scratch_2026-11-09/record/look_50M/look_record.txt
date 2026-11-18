@@ -1,0 +1,14 @@
+50M look record 2026-11-18T15:19:51-08:00: drive_look exit 0 after 6275s; work /home/goodlad/.cache/gen3ai/b1_aside/look50_20261118T133516; inductor cache /home/goodlad/.cache/gen3ai/b1_aside/look50_inductor_cache_20261118T133516 (2.5G)
+-- engine up lines:
+[h2h] engine up in 1360.7s: rb_b1w_s5103@50000086 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 2), ('eval_b', 2)], 4 eval core(s); regime d4de0fd7c16a2658
+[h2h] engine up in 64.3s: rb_b1w_s5103@50000086 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 2), ('eval_b', 2)], 4 eval core(s); regime 04c74bb478c5f351
+[h2h] engine up in 65.0s: rb_b1w_s5103@50000086 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 2), ('eval_b', 2)], 4 eval core(s); regime 0c972bc06eab468f
+[h2h] engine up in 64.5s: rb_b1w_s5103@50000086 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 2), ('eval_b', 2)], 4 eval core(s); regime 88f0de6fbb7e15a9
+-- panel / DONE / HOLD lines:
+[2026-11-18T13:35:36-08:00] plan: 54 cells at look 50M (); four panels on cuda
+[2026-11-18T13:35:53-08:00] panel home72: 1000 pairs a cell, family b1_scratch_h2h_home72, request b1_50m_home72
+[2026-11-18T14:28:51-08:00] panel heldout72_hpfix: 500 pairs a cell, family b1_scratch_h2h_heldout72_hpfix, request b1_50m_heldout72_hpfix
+[2026-11-18T14:44:51-08:00] panel forum72: 500 pairs a cell, family b1_scratch_h2h_forum72, request b1_50m_forum72
+[2026-11-18T15:03:05-08:00] panel p72: 500 pairs a cell, family b1_scratch_h2h_p72, request b1_50m_p72
+[2026-11-18T15:19:51-08:00] DONE: {"look": "50M", "pin": "15136b61634b667bb9da5ccc6647ff9265238829", "steps": {"C": 50000000, "W": 50000000, "Br": 50000000, "WB
+classification: NOTCLEAN 12 checkpoints; width CONTINUE on N [-3.32, +2.57] pp; breadth STOP-HARM on HF [-8.35, -2.01] pp

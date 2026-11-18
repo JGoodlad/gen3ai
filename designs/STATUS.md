@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-11-16.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-18.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -48,17 +48,19 @@ The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-
 
 ## 2. Running now (as of 2026-11-18)
 
-Read at 08:29 PST on 2026-11-18 from the Training session's status file (`~/.claude/jobs/x35/status.txt`), the process
-table, `models/rb_b1*` and the PREREG's §18. One training run is live, and nothing else holds the GPU or a play lane.
+Read at 15:42 PST on 2026-11-18 from the Training session's status file (`~/.claude/jobs/x35/status.txt`), the process
+table, the phase-2 driver's record and the PREREG's §18. One training run is live, and nothing else holds the GPU or
+a play lane.
 
 | where | job | what decision it drives |
 |---|---|---|
-| GPU since 2026-11-12 19:26 PST | **BOUNDARY-1 phase 1: 11 of 12 runs are COMPLETE at 50M, and the last, run [12] `rb_b1wb_s5113` (wide, half procedural teams, seed 5113), is training** (launched 2026-11-18 00:03 PST, the moment [11] `rb_b1br_s5112` completed; early check PASS 00:23; `latest.txt` named `checkpoint_32000231_steps.zip` at 08:29; **ending ≈ 13:00 to 14:00 on 11-18**). Runs [1] to [11] each ended launcher rc 0 with a 50M checkpoint and an early-check PASS (the status file; [1] to [10] are recorded in the PREREG's §18 slot S8, `de3a70419`). **Next, armed and waiting (the Training session's chain, since 11-17 14:18):** when the phase-1 driver exits with all twelve COMPLETE, it runs the kit's per-run guards, then **the 50M look on CUDA** (kit `1d592e6cd`, games at the launch pin `15136b616`), and starts **phase 2 to 100M only on a clean CONTINUE of both factors** (width and breadth, no end at a boundary); anything else HOLDs and launches nothing. **The PREREG is through Amendment 8** (7 at `de3a70419`, 8 at `524ae8490`; 6 at `3abdcf118`), each written with no game result; their terms are in §3 (MF-5). Two operating amendments are not there: Amendment 4 (the early check and every look are read from the kit at `1d592e6cd`, while every run trains and every game plays at the launch pin) and Amendment 5 (`cf9258ab6`: at the launch pin a stop signal inside a compiled update saves nothing; it is no FATAL, VOID or replacement cause, and the run resumes on the same pin from `latest.txt`'s checkpoint). **X70 is slotted after B1's phase 2 and its looks** (the orchestrator's option A, 2026-11-13); its hand-off carries no GO (§3). | MF-5 (§3). |
+| GPU since 2026-11-18 15:25 PST | **BOUNDARY-1, the survivor's phase 2: C's and W's six runs train from 50M to 100M, one at a time; the first, `rb_b1c_s5101` (narrow, pool, seed 5101), is training** (resumed 15:25:18 from its 50,000,412 checkpoint on the launch pin `15136b616`; a warm start, 255 s to the learner's first update; early check PASS 15:41 at checkpoint 51,000,096). Order: `rb_b1c_s5101`, `rb_b1w_s5103`, `rb_b1c_s5102`, `rb_b1w_s5104`, `rb_b1c_s5110`, `rb_b1w_s5111`; **≈ 72 GPU-h, ending ≈ 2026-11-21** (a GUESS from phase 1's hours). **Why six and not twelve:** the 50M look (below) read breadth STOP-HARM, so by the PREREG's §8 the six breadth runs (Br, WB) get no phase 2 and stay as they are on disk, and no class is read at 100M for either factor. **Next, armed and waiting (the Training session's chain, since 15:27):** when the driver exits it plays **the 75M and the 100M survivor looks on CUDA** (W against C, 9 cells a panel), each expected to read `NO-CLASS` with the simple effect REPORTED at 4 df; anything else HOLDs. Phase 1 (twelve runs to 50M) ran 2026-11-12 19:26 to 2026-11-18 13:33 PST, every run launcher rc 0 with an early-check PASS and a K9(b) PASS at 50M (the PREREG's §18, slot S8). **The PREREG is through Amendment 8** (7 at `de3a70419`, 8 at `524ae8490`; 6 at `3abdcf118`), each written before any look; their terms are in §3 (MF-5), and from the 50M look on its §5, §6, §8 and §9 change only by the owner. Two operating amendments are not there: Amendment 4 (the early check and every look are read from the kit at `1d592e6cd`, while every run trains and every game plays at the launch pin) and Amendment 5 (`cf9258ab6`: at the launch pin a stop signal inside a compiled update saves nothing; it is no FATAL, VOID or replacement cause, and the run resumes on the same pin from `latest.txt`'s checkpoint). **X70 is slotted after B1's phase 2 and its looks** (the orchestrator's option A, 2026-11-13); its hand-off carries no GO (§3). | MF-5 (§3): nothing by class. The survivor's comparison goes to the owner with its interval (§6 item 8). |
 
 ### Landed since 2026-11-01
 
 | when | job | result | what it decided |
 |---|---|---|---|
+| GPU 11-18 13:35 to 15:19 PST | **BOUNDARY-1's 50M look: breadth STOP-HARM, width CONTINUE** ([PREREG §8 and §18](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md), "The 50M look's record"; kit `1d592e6cd`, games at the launch pin `15136b616`; record files in [`record/look_50M/`](research_state/measurements/boundary1_scratch_2026-11-09/record/look_50M/)). The twelve from-scratch runs' 50M checkpoints played each other: 54 cells a panel, home72 at 1,000 pairs a cell and `heldout72_hpfix`, forum72 and p72 at 500, 270,000 games on CUDA in 6,275 s, exit 0. The look asks one thing of each factor: is it behind by more than 2 pp on its harm view (STOP-HARM iff the 90 % interval's upper end is below −2.0)? | ON arms minus OFF arms, 90 %, 8 df. **Breadth (half procedural teams) on HF (half home72, half forum72): −5.18 pp [−8.35, −2.01], STOP-HARM**; home72 −7.97 [−11.10, −4.84], forum72 −2.40 [−5.62, +0.83]. **Width (256 against 128) on N: −0.37 pp [−3.32, +2.57], CONTINUE**; W against C alone +1.71 [−1.48, +4.90] (4 df). Interaction NOT-SHOWN (N −4.61 [−10.85, +1.63]). **How thin the stop is:** the upper end is 0.0138 pp past the bar (outside the 0.005 pp band, so it is a coded STOP-HARM); the team bootstrap (REPORTED) reads `class_moves: true`, its upper end −1.99, which would read CONTINUE; and the interval's width comes from WB, whose three runs read 44.59, 38.16 and 47.37 (`rb_b1wb_s5108` is low on every view). Breadth's rows on `heldout72_hpfix`, p72, U and N hold its own training teams (p72 +3.72 [+0.63, +6.81]) and are never generalisation. The learning-rate record (REPORTED, twelve runs): the wide arms trained at ×0.473 [0.451, 0.495] of the narrow arms' rate at an equal summed KL (×1.015). Draws 0.8 to 1.3 % a panel. | By §8: breadth is recorded STOPPED-FOR-HARM at 50M, which is not a LOSS at 100M and claims nothing about 100M; Br and WB get no phase 2; **no class is read at 100M for either factor**; the survivor (W against C) trains to 100M and is REPORTED under `NO-CLASS` (§2). The outcome is an *owner* row with a registered default (§6 item 8). No recipe, baseline or production config moves, and procedural teams as a training lever are not retired by it. |
 | CPU 11-16 22:18 to 11-18 07:28 PST; recorded 11-18 08:11 | **The Kakuna read of the banked entropy finals: CE-3d KAKUNA-CONFIRMED, X67 UNCONFIRMED** (registered `79ccaaa97`, before any game: [X67 PREREG §13](research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md), its twin CE-3d §17; rule `b1_kakuna`, one look, COMPLETE). X67's three finals, CE-3d's three and all eight C0 finals, each against Kakuna (Metamon's strongest agent) on `forum72` (F) and `heldout72_hpfix` (H), both sides greedy, 1,200 games a final a panel, 33,600 games at the pin `15136b616` (engine E6). U = F and H at equal weight; arm minus C0, 90 %: **CE-3d +2.61 pp [+0.95, +4.28]**, POSITIVE (0.5287 against 0.5026); **X67 +1.75 pp [−0.12, +3.63]**, SPANS-ZERO (0.5201). REPORTED: CE-3d F +3.99 [+1.73, +6.26], H +1.24 [−1.18, +3.65]; X67 F +1.35 [−0.97, +3.67], H +2.15 [−0.29, +4.59]; CE-3d minus X67 **+0.86 pp [−1.98, +3.71]**. **C0 itself against Kakuna** (by hand, 90 %, seed variance and a team sandwich; not a registered statistic): F **0.5165** [0.4951, 0.5378], H **0.4887** [0.4636, 0.5139], U **0.5026** [0.4861, 0.5191]. Every integrity field matched the registration before an outcome was read; the hand check equals the tool on all seven contrasts. 141 games (0.42 %) ended at our turn cap and are losses by the rule; eight attempts hit Kakuna's long-tail fault and were replayed by the tool ([README §8](research_state/measurements/x67_entropy_screen_2026-11-09/README.md)). | The trailing-magnet gain shows against the outside meter on unfamiliar teams, at about two thirds of its in-house size (+3.97 pp), on F more than on H. The quarter-entropy gain is neither shown nor shown missing: its point is near the in-house +1.97 pp, and the read sees a true +2 pp only about half the time (0.43 to 0.59), so "UNCONFIRMED is not CONTRADICTED". The two arms are not separated from each other. P\* + 20M of plain training is level with Kakuna on F and H. Limits, registered: every final plays on the pin's observation (semantics 168), not the one it trained on (151); three forks an arm, one parent, one dose, F and H only; Kakuna is one opponent. | Nothing, by registration: it labels the two PASS verdicts and decides neither. No recipe, baseline or BOUNDARY-1 arm moves; nothing was CONTRADICTED, so nothing goes to the owner. Whether the anchor adds anything beyond removing the bonus is still X70's question (§3). |
 | GPU 11-12 00:19–17:17; CPU crosses read 21:58 and 23:40 PST | **CE-3d, the trailing-magnet screen: PASS** (PREREG `08b998d12`, Amendments 1 to 3, the last `e9f55e723`; full tier). Three P\* + 20M forks with the entropy bonus replaced, at the same weight, by a pull toward a copy of the policy refreshed every 2M steps (`--ent-coef 0 --magnet-kl-coef 0.05`, seeds 7321–7323, tag `ce3d-pin-9e97cad5`) against all eight C0 finals (`ent_coef` 0.05, pin `f4b25238`), head to head with X67's cross and rule, 48,000 games: **D +3.97 pp [+3.31, +4.63]** (90 %; the row floor bound; all 24 cells above 50; the fresh-run-floor reading [+1.35, +6.58]; banked columns +4.14, top-up +3.68). No VOID (every §8 guard executed per fork). Label ENT-LOW: end entropy 0.49 nats against C0's 1.01 and X67's 0.68, still falling at +20M; no fork LR-MOVED (0.0001005). REPORTED, deciding nothing: against X67's three finals (18,000 games) **+1.01 pp [−0.12, +2.13]**; beside X67's own +1.97 pp the swap's D is +2.00 pp higher, with no interval. The magnet's pass costs ≈ 3.5 s a rollout (≈ 4.9 %). No Kakuna game in this read; the Kakuna read of 11-18 (the row above) labels it KAKUNA-CONFIRMED ([PREREG §16](research_state/measurements/ce3d_magnet_screen_2026-11-11/PREREG.md)). | The swap forks beat the unchanged recipe's forks by twice X67's margin, and ended sharper than X67's. The registered reading of the cross against X67's finals: "the swap's gain over C0 is plausibly the lower uniform push alone"; with ENT-LOW, "the swap won and ended sharper; not separable from X67's effect here". C0 trained at another pin on earlier days (CPU-only evidence that this does not matter); siblings are not Kakuna; exploitability and cycling were not measured. | It licenses REGISTERING a follow-up on new seeds with the control that separates the anchor from the missing push (an `--ent-coef 0` arm with no magnet at the CE-3d pin), and nothing else. None is registered. No recipe, no production config and no BOUNDARY-1 arm moves. |
 | GPU 11-11 17:18 to 18:57 PST | **The R9 human clone, TRAINED and REGISTERED** (`hclone_hr_spec_v1_r2_s5901`, seed 5901, width 128; `d79f08ec2`). CONVERGED at 11.5 epochs on `hr_spec_v1.r2`; held-out REPORT half: NLL 1.1078 (uniform 1.8388), top-1 0.5556. | An offline fit of a behaviour clone to human replays; no game was played. | It is the clone that the R9 kit's `--human-data init:` / `opp:` take (`d0e2715d8`); the R9 unit owns the rest. |
@@ -132,7 +134,8 @@ its GO.
   rate check is a written command that has not been run), one device and backend a cross (the driver holds and the
   reader refuses a mix), with the CPU (≈ 53 lane-h) as the fallback for a whole cross; the GO conditions are its
   §14.1. **Slot (placed by the orchestrator, 2026-11-13, option A):** after BOUNDARY-1's phase 2 and its looks
-  (≈ 2026-11-25), while its Kakuna read holds the CPU lanes; no BOUNDARY-1 run is paused for it. Every class
+  (since the 50M look: the survivor's six runs and two looks, ≈ 2026-11-21, a GUESS; no BOUNDARY-1 Kakuna read
+  follows a STOP-HARM); no BOUNDARY-1 run is paused for it. Every class
   licenses registering a next step only; nothing moves a recipe without the owner. The hand-off
   (`chain_items_x70.json`) carries no GO; it names the training pin in `off_main_pins`, which the arm chain's plan
   requires for a pin kept off main.
@@ -184,7 +187,8 @@ its GO.
 - **MF-5: BOUNDARY-1's from-scratch 2 × 2**, width (128 against 2× `D_MODEL`, `--d-model`, `0220f8408`, config
   v169) × team breadth (the pool against half procedural teams): REGISTERED 2026-11-09 at pin `507d0c119`,
   **AMENDED 2026-11-10 to three seeds a cell, twelve fresh runs to 100M** (Amendment 1, after an independent
-  pre-launch review), LAUNCHED 2026-11-12 (phase 1 running, §2)
+  pre-launch review), LAUNCHED 2026-11-12, **READ AT 50M on 2026-11-18: breadth STOP-HARM, width CONTINUE (§2), so
+  no class is read at 100M for either factor and only the survivor (W against C, six runs) trains on to 100M**
   ([`research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`](research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md));
   the orchestrator adopted the 2 × 2 over the draft's bundle and width-alone options. **AMENDED 2026-11-12
   (Amendment 2, blind):** every run types `--ent-coef 0.0125 --behaviour-check warn` (the owner's yes to X67's
@@ -204,17 +208,17 @@ its GO.
   the run's own torch, 2.8.0+cu126. **AMENDED 2026-11-17, before any look** (Amendment 7: the twelve runs'
   retention and a disclosure of two scratch rehearsals, no term changes; Amendment 8, written with no game result
   but not blind to the training curves): `python -m main.b1.lr_report` REPORTS beside each look the rate each
-  run trained at. On the nine runs at 50M the wide arms' rate is ×0.48 the narrow arms' at an equal summed KL
-  (×1.03), and the layers the lever did not widen moved ×0.31 to ×0.59 as far, so the width factor is width with
-  every unwidened layer at about half its step; no statistic moves. ≈ 309 GPU-h to the decision (≈ 281
-  of training, 210–281 by which narrow rate holds; ≈ 20 of starts; ≈ 8 of looks), ≈ 15.4 days from launch; the
-  launch was 2026-11-12, after CE-3d's forks. Width is decided on the in-house cross over all four
-  panels,
-  breadth on forum72 alone and kept only if home72 pays no more than forum72 gains; Kakuna clustered by team
-  confirms either. Honest power: a true +4 pp reads WIN 19 times in 20 if the seed spread at 100M is the 1.76 pp
-  measured at 15M, 4 in 5 at 2.5 pp, 5 in 8 at 3.1; a true zero reads "not shown at this size" 93 % of the time and
-  UNDECIDED 3 % (27 % at two seeds, which is why the third seed is bought up front and the extension withdrawn); the
-  seed spread on forum72 alone is unmeasured.
+  run trained at. On the twelve runs at 50M the wide arms' rate is ×0.47 the narrow arms' at an equal summed KL
+  (×1.02), and the layers the lever did not widen moved ×0.30 to ×0.59 as far, so the width factor is width with
+  every unwidened layer at about half its step; no statistic moves. **Cost so far and left:** phase 1 took 137.85 h
+  of run wall (twelve runs to 50M, 2026-11-12 to 11-18) and the 50M look 1.7 h; the survivor's phase 2 is ≈ 72
+  GPU-h and two short looks, ≈ 2026-11-21 (the registered plan was ≈ 309 GPU-h to a decision). **What is left to
+  read:** nothing by class. The registered decision rules (width on the in-house cross over all four panels,
+  breadth on forum72 with the net rule, Kakuna clustered by team confirming either) are not read after a
+  STOP-HARM, and no Kakuna read is registered for this case. The survivor's simple effect at 75M and 100M is
+  REPORTED with a 4-df interval (at 50M: +1.71 pp [−1.48, +4.90] on N), and nothing is claimed from three runs
+  against three beyond that interval. The default (Amendment 6): the control's three runs are the candidates, no
+  factor is adopted or carried forward, W is not retired and not continued past 100M (§6 item 8).
 - X60-T read NO-TRANSFER (11-11, §2), not ADOPT-CANDIDATE: BOUNDARY-1's §10 HOLD on human teams does not fire, and its team recipe stays the pool's.
 
 **Search engineering for goal (b): UN-PAUSED by S′-HONEST's GO-HONEST (2026-11-09), CPU-side and lower priority**
@@ -228,7 +232,7 @@ its GO.
 
 **X60-T (H-TEAMS): READ 11-11, NO-TRANSFER** (look 2, final: Δ_F −0.23 pp [−1.95, +1.49] on forum72 vs Kakuna; the corpus's own teams +1.69 pp in-house; look 1 CONTINUE, `af57d4fd3`; §2). Human ladder teams in the pool stop at the plateau for this slice of the corpus; with X63 (item 2) this closes the breadth family's plateau members.
 
-1. **Capacity at the plateau: CLOSED for growth.** X48 (production, per-kind FFN experts) READ 10-30, **NO-GO** (weak, `b01dc048b`); the N4 toy (FFN width 4×) READ 11-04, **NO-GO** ("used, buys nothing", §2). No N4-P on toy evidence; `D_MODEL` and from-scratch width (the scale bet) stay open, unqueued.
+1. **Capacity at the plateau: CLOSED for growth.** X48 (production, per-kind FFN experts) READ 10-30, **NO-GO** (weak, `b01dc048b`); the N4 toy (FFN width 4×) READ 11-04, **NO-GO** ("used, buys nothing", §2). No N4-P on toy evidence; `D_MODEL` stays open and unqueued, and from-scratch width (the scale bet) is BOUNDARY-1's (MF-5 above), not read by class.
 2. **X63**, a long union continuation: **Stage A read NOT PURSUED (10-31)**, so X63 stops at Stage A
    ([`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md), PREREG
    [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md), read
@@ -344,7 +348,7 @@ Every open owner question, in one place.
    **amended 2026-11-10, before any launch, to three seeds a cell**: ≈ 309 GPU-h to the decision (≈ 15.4 days of
    our card; re-priced 2026-11-12 from the measured ρ = 1.392), launched at a new pin taken once, after the `ent_coef` decision. Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
-   yes, staged: LAUNCHED 2026-11-12 (§2; X60-T's verdict was NO-TRANSFER, 11-11, so its HOLD did not fire), so nothing is asked here any more.
+   yes, staged: LAUNCHED 2026-11-12 (§2; X60-T's verdict was NO-TRANSFER, 11-11, so its HOLD did not fire), so nothing is asked here any more; what its 50M look leaves with the owner is item 8.
 6. **`ent_coef` 0.0125 for BOUNDARY-1: ANSWERED YES, 2026-11-11** (asked 2026-11-10; X67 read PASS 2026-11-11,
    §3). The screen passed, D +1.97 pp [+1.35, +2.59] head to head, with every fork LR-MOVED (rate 8.372e-05
    against C0's 1.0047e-04); the owner said yes in writing to the orchestrator. BOUNDARY-1's Amendment 2
@@ -352,6 +356,17 @@ Every open owner question, in one place.
 7. **The quota hook** (2026-11-10). It blocked every session from 10:28 to 12:59 when the Fable weekly window hit
    100 %. A fix scoped to the model that is out of quota was proposed; the owner said yes on 2026-11-11 ("Yes to both. In
    general your call."). Nothing is asked here any more.
+8. **BOUNDARY-1 after its 50M look: an *owner* row, OPEN, with a default** (2026-11-18; §2, §3 MF-5; the PREREG's
+   §9, Amendment 6 item 1 and §18 slot S9). Breadth read STOP-HARM at 50M (HF −5.18 pp [−8.35, −2.01], 90 %) and
+   width CONTINUE, so no class will exist at 100M for either factor; the survivor's W-against-C effect at 100M
+   comes with an interval and no class. **The default, unless the owner rules otherwise:** the control's three
+   runs (width 128, the pool) are the candidates; no factor is adopted or carried forward; the wide arm is not
+   retired and not continued past 100M. It acts 72 hours after the owner is notified, and by the orchestrator's
+   ruling that window starts when the 100M survivor look's verdict exists (≈ 2026-11-21). **Beside it, a
+   notification that acts on nothing:** the team bootstrap reads `class_moves: true` for breadth (with the
+   variance between teams added, the interval's upper end is −1.99 against the −2.0 bar, which would read
+   CONTINUE; the registered class is the STOP-HARM and it stands). **UNVERIFIED:** whether the owner has been
+   notified; slot S9 holds no notification yet.
 
 ## 7. The biggest risks and unknowns
 

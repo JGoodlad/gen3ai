@@ -103,7 +103,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); human-built ladder teams in half the pool (X60-T, final) read NO-TRANSFER: F −0.23 [−1.95, +1.49] at −2.12 pp in-pool, with the corpus's own teams +1.69 pp in-house (§3.1); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) and against Kakuna on F and H reads +1.75 pp [−0.12, +3.63] (90 %), UNCONFIRMED, in a read that sees a +2 pp gain only about half the time; replacing the bonus with a pull toward a trailing copy of the policy beats the same siblings by more (CE-3d, +3.97 pp [+3.31, +4.63], §4.16), ends sharper still, and against Kakuna reads **+2.61 pp [+0.95, +4.28]** (90 %), KAKUNA-CONFIRMED: the only lever in this item whose interval against its control excludes 0 on Kakuna, on forks whose control C0 is level there (0.5026 on F and H). It is not separated from X67 against Kakuna (+0.86 pp [−1.98, +3.71]) or from simply removing the bonus, and the read is no goal-(b) read (no P72, three forks, +20M, one opponent); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); human-built ladder teams in half the pool (X60-T, final) read NO-TRANSFER: F −0.23 [−1.95, +1.49] at −2.12 pp in-pool, with the corpus's own teams +1.69 pp in-house (§3.1); from scratch, procedural teams in half the pool are behind the pool arms in-house at 50M (BOUNDARY-1: HF −5.18 pp [−8.35, −2.01], 90 %; stopped at 50M and never read at 100M; forum72, the one unfamiliar panel those arms did not train on, −2.40 pp [−5.62, +0.83]; §4.17); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) and against Kakuna on F and H reads +1.75 pp [−0.12, +3.63] (90 %), UNCONFIRMED, in a read that sees a +2 pp gain only about half the time; replacing the bonus with a pull toward a trailing copy of the policy beats the same siblings by more (CE-3d, +3.97 pp [+3.31, +4.63], §4.16), ends sharper still, and against Kakuna reads **+2.61 pp [+0.95, +4.28]** (90 %), KAKUNA-CONFIRMED: the only lever in this item whose interval against its control excludes 0 on Kakuna, on forks whose control C0 is level there (0.5026 on F and H). It is not separated from X67 against Kakuna (+0.86 pp [−1.98, +3.71]) or from simply removing the bonus, and the read is no goal-(b) read (no P72, three forks, +20M, one opponent); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -777,7 +777,7 @@ state), then trained 20M steps against C0, re-played on one engine (E1). **NO-GO
   0.24–0.43× as far as the shared FFN, because the copied second moments throttled them, as its review predicted.
 - The learning rate matched C0's (×1.01).
 - It closes per-kind untying at the same width within 20M, nothing wider. FFN width has since read NO-GO on the toy
-  (N4, §4.14); `D_MODEL` and from-scratch capacity stay open.
+  (N4, §4.14); `D_MODEL` and from-scratch capacity stay open (§4.17).
 
 [MEASURED · S on E1 + Kakuna F (post-H22 pack) · `efe8ea1fa`; ledger 2026-10-30 · *X48 LOOK 1*]
 
@@ -793,8 +793,8 @@ state) and trained 70M steps against a same-pin control C0′, 3 + 3 seeds, ever
   as far (scaled null 0.18–0.23) and its 70M drift moves the policy more (KL 0.12–0.14). The battery shows no relief:
   `team_tokens` rank and the policy head's tanh saturation are at C0′'s level.
 - With X47 (depth) it closes growth at the plateau on the toy within 70M. It is weak evidence about production's width
-  (the toy asks less of the same width), and it does not touch from-scratch width (the scale bet), `D_MODEL` or a
-  longer dose.
+  (the toy asks less of the same width), and it does not touch from-scratch width (the scale bet, unread at 50M:
+  §4.17), `D_MODEL` or a longer dose.
 
 [MEASURED · S + Kakuna F (post-H22 pack) on `31bd9ced9`'s engine · `8ed8164ea`; ledger 2026-11-04 · *N4 (the toy capacity screen) LOOK 1*]
 
@@ -864,6 +864,34 @@ all 24 cells above 50). Under the fresh-run seed floor the interval is [+1.35, +
 [MEASURED · in-house head to head, forks at tag `ce3d-pin-9e97cad5` vs C0 at pin `f4b25238`, played at tag `ce3d-pin-333a73dd`, CPU · ledger 2026-11-12 · *CE-3d the trailing-magnet screen: PASS*]
 [MEASURED · Kakuna on F and H, engine E6 at pin `15136b616`, rule `b1_kakuna` at 0.90; C0's level DESCRIPTIVE · ledger 2026-11-18 · *The Kakuna read of the banked entropy finals, RECORDED*]
 
+### 4.17 From scratch at 50M: procedural teams in half the pool are behind in-house and stopped; width 256 is not stopped and not read (BOUNDARY-1, 2026-11-18)
+
+BOUNDARY-1 trains twelve fresh runs in a 2 × 2: width (`d_model` 128 against 256) × team breadth (the pool against
+half `n1_proc_v1` procedural teams), three seeds a cell, every run at `ent_coef` 0.0125, registered to 100M. Its 50M
+look plays the twelve against each other and asks one thing of each factor: is it behind by more than 2 pp on its
+harm view? It reads no gain.
+- **Breadth: STOP-HARM, HF −5.18 pp [−8.35, −2.01]** (90 %, 8 df; HF is half home72, half forum72; 270,000 games).
+  The breadth arms lose to the pool arms on the pool's teams (home72 −7.97 pp [−11.10, −4.84]) and do not make it
+  back on the forum's (forum72 −2.40 pp [−5.62, +0.83]). The breadth arms end at 50M.
+- **The stop is a 50M fact and a thin one.** STOPPED-FOR-HARM at 50M is not a LOSS at 100M and says nothing about
+  100M: a factor that starts slowly is stopped and never read. The interval's upper end is 0.0138 pp past the bar;
+  with the team variance added it is −1.99, which would read CONTINUE (REPORTED; it acts on nothing). The
+  interval's width comes from one arm, WB, whose three runs read 44.59, 38.16 and 47.37 where the other arms'
+  spreads sit at the floor.
+- **Breadth's rows on P72, H, U and N hold its own training teams** (P72 +3.72 pp [+0.63, +6.81]) and are not
+  generalisation; forum72 is the one unfamiliar panel those arms have not seen.
+- **Width: CONTINUE, which is no class.** N −0.37 pp [−3.32, +2.57]; W against C alone +1.71 pp [−1.48, +4.90]
+  (4 df, REPORTED). The interaction is NOT-SHOWN (N −4.61 pp [−10.85, +1.63]), which is not additivity.
+- **The width factor is width plus half the learning rate.** The KL-adaptive controller holds the wide arms at
+  ×0.473 [0.451, 0.495] of the narrow arms' rate over 25M to 50M at an equal summed KL (×1.015 [0.995, 1.035]);
+  their resized trunk tensors moved ×0.443 as far per weight between 30M and 50M (REPORTED, 9 df).
+- **What it moves.** C and W train on to 100M as the survivor; no class is read at 100M for either factor, and
+  their three-against-three comparison is REPORTED with its interval and nothing more. The outcome goes to the
+  owner; the registered default is that the control's three runs are the candidates and no factor is adopted. No
+  recipe, baseline or production config moves, and procedural teams as a training lever are not retired by it.
+
+[MEASURED · in-house head to head among the twelve runs' 50M checkpoints, at pin `15136b616`, CUDA · ledger 2026-11-18 · *BOUNDARY-1's 50M look, PLAYED*; [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md) §18]
+
 ---
 
 ## 5. Retired hypotheses
@@ -896,8 +924,8 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 **In flight** (what runs now, and its progress: [`../STATUS.md`](../STATUS.md) §2)
 
-No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16). The GPU's
-current screen is STATUS §2's row.
+No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16). The GPU
+trains BOUNDARY-1's survivor, C's and W's six runs from 50M to 100M (§4.17; STATUS §2's row).
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)
 
