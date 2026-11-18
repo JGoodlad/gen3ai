@@ -195,54 +195,54 @@
    "test_blob": "ff6dbc697c15d80ac5babd4e48878ff45a100fe2"
   },
   "src/agents/inference/service/parity_tie_test.py::test_a_drift_on_a_row_at_NO_tie_still_fails": {
-   "status": "fail",
-   "commit": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "at": "2026-11-18T19:59:10Z",
-   "duration_s": 10.84,
+   "status": "pass",
+   "commit": "fce4ef69dfef617ab5a402ef2fca85958fa0cb0b",
+   "at": "2026-11-18T20:57:18Z",
+   "duration_s": 0.6,
    "contention": 1.0,
-   "detail": "Failed: no perturbed fresh policy of ((1, 0.3), (0, 0.3), (2, 0.3), (3, 0.3)) holds a flippable row at a margin <= 0.005 whose flip moves its legal log-probs by >= 0.01",
+   "detail": "",
    "base": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "test_blob": "86d60e7886f9ed72162dbfb7dce0c92ee794c2e4"
+   "test_blob": "dfb635c309ee9917edbe7f4b24af9fd9849eb332"
   },
   "src/agents/inference/service/parity_tie_test.py::test_a_row_at_the_OTHER_resolution_of_a_selection_tie_PASSES_and_is_counted": {
-   "status": "fail",
-   "commit": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "at": "2026-11-18T17:19:33Z",
-   "duration_s": 0.0,
+   "status": "pass",
+   "commit": "fce4ef69dfef617ab5a402ef2fca85958fa0cb0b",
+   "at": "2026-11-18T20:57:18Z",
+   "duration_s": 6.23,
    "contention": 1.0,
-   "detail": "Failed: no perturbed fresh policy of ((1, 0.3), (0, 0.3), (2, 0.3), (3, 0.3)) holds a flippable row at a margin <= 0.005 whose flip moves its legal log-probs by >= 0.01",
+   "detail": "",
    "base": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "test_blob": "86d60e7886f9ed72162dbfb7dce0c92ee794c2e4"
+   "test_blob": "dfb635c309ee9917edbe7f4b24af9fd9849eb332"
   },
   "src/agents/inference/service/parity_tie_test.py::test_a_tied_row_matching_NEITHER_resolution_fails": {
-   "status": "fail",
-   "commit": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "at": "2026-11-18T17:19:33Z",
-   "duration_s": 0.0,
+   "status": "pass",
+   "commit": "fce4ef69dfef617ab5a402ef2fca85958fa0cb0b",
+   "at": "2026-11-18T20:57:18Z",
+   "duration_s": 0.6,
    "contention": 1.0,
-   "detail": "Failed: no perturbed fresh policy of ((1, 0.3), (0, 0.3), (2, 0.3), (3, 0.3)) holds a flippable row at a margin <= 0.005 whose flip moves its legal log-probs by >= 0.01",
+   "detail": "",
    "base": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "test_blob": "86d60e7886f9ed72162dbfb7dce0c92ee794c2e4"
+   "test_blob": "dfb635c309ee9917edbe7f4b24af9fd9849eb332"
   },
   "src/agents/inference/service/parity_tie_test.py::test_the_OPPONENT_gate_shares_the_rule": {
-   "status": "fail",
-   "commit": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "at": "2026-11-18T17:19:33Z",
-   "duration_s": 0.0,
+   "status": "pass",
+   "commit": "fce4ef69dfef617ab5a402ef2fca85958fa0cb0b",
+   "at": "2026-11-18T20:57:18Z",
+   "duration_s": 6.21,
    "contention": 1.0,
-   "detail": "Failed: no perturbed fresh policy of ((1, 0.3), (0, 0.3), (2, 0.3), (3, 0.3)) holds a flippable row at a margin <= 0.005 whose flip moves its legal log-probs by >= 0.01",
+   "detail": "",
    "base": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "test_blob": "86d60e7886f9ed72162dbfb7dce0c92ee794c2e4"
+   "test_blob": "dfb635c309ee9917edbe7f4b24af9fd9849eb332"
   },
   "src/agents/inference/service/parity_tie_test.py::test_the_tie_rule_reads_K9bs_epsilon_at_call_time": {
-   "status": "fail",
-   "commit": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "at": "2026-11-18T17:19:33Z",
-   "duration_s": 0.0,
+   "status": "pass",
+   "commit": "fce4ef69dfef617ab5a402ef2fca85958fa0cb0b",
+   "at": "2026-11-18T20:57:18Z",
+   "duration_s": 0.38,
    "contention": 1.0,
-   "detail": "Failed: no perturbed fresh policy of ((1, 0.3), (0, 0.3), (2, 0.3), (3, 0.3)) holds a flippable row at a margin <= 0.005 whose flip moves its legal log-probs by >= 0.01",
+   "detail": "",
    "base": "ee884a9c1a923bf92a1bc9372d29b894a836f336",
-   "test_blob": "86d60e7886f9ed72162dbfb7dce0c92ee794c2e4"
+   "test_blob": "dfb635c309ee9917edbe7f4b24af9fd9849eb332"
   },
   "src/agents/inference/service/precision_band_test.py::test_a_service_started_at_a_non_fp32_precision_is_refused_at_startup": {
    "status": "pass",
@@ -7388,5 +7388,5 @@
    "test_blob": "a12174582e21d714e50c596dbc7b678f1a56faf8"
   }
  },
- "last_written": "2026-11-18T20:32:51Z"
+ "last_written": "2026-11-18T20:57:18Z"
 }
