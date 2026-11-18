@@ -927,3 +927,26 @@ spec, [`../x67_entropy_screen_2026-11-09/read_spec_kakuna.json`](../x67_entropy_
   (semantics 168), not the one it trained on (151). §16.5's limit 6 (no outside anchor) is the one this read
   addresses; it does not address the other five.
 - **One look, the stop (2026-11-23 12:00 PST) and the record** are X67 §13.6's.
+
+## 18. The Kakuna read, RECORDED (2026-11-18): KAKUNA-CONFIRMED
+
+§17's read was recorded in one look on 2026-11-18, COMPLETE (1,680 units, 33,600 games; every integrity field
+matched the registration before an outcome was read). §1 to §17 are unchanged.
+
+**`ce3d_U` = +2.61 pp, 90 % interval [+0.95, +4.28], POSITIVE ⇒ the label beside §16's PASS is KAKUNA-CONFIRMED.**
+The swap's finals 0.5287 against Kakuna on F and H at equal weight (3,807 / 7,200), C0's 0.5026 (9,650 / 19,200).
+REPORTED: `ce3d_F` +3.99 pp [+1.73, +6.26] (POSITIVE), `ce3d_H` +1.24 pp [−1.18, +3.65] (SPANS-ZERO),
+`ce3d_minus_x67_U` +0.86 pp [−1.98, +3.71] (SPANS-ZERO; X67's own label is UNCONFIRMED, +1.75 pp [−0.12, +3.63]).
+
+- **It decides nothing.** D = +3.97 pp [+3.31, +4.63] and §16.4's licence stand as read; the label adds no licence.
+- **The gain against Kakuna is smaller than in-house** (the in-house interval does not hold +2.61), sits on F, and
+  is not resolved on H, the held-out set of record.
+- **Not separated from X67** against Kakuna either, as in §5.4's cross: whether the anchor adds anything beyond
+  removing the bonus is still X70's question.
+- **The limits** are X67 §13.5's (the finals play on semantics 168 and trained on 151; three forks, one parent, one
+  dose, F and H only; Kakuna is one opponent). §16.5's limit 6 is the one addressed; the other five stand.
+
+The table of all seven contrasts, C0's own rate against Kakuna, the checks and the FINDINGs:
+[`../x67_entropy_screen_2026-11-09/README.md`](../x67_entropy_screen_2026-11-09/README.md) §8; the record:
+[`../x67_entropy_screen_2026-11-09/record/kakuna_read.json`](../x67_entropy_screen_2026-11-09/record/kakuna_read.json);
+the ledger entry of 2026-11-18 (*The Kakuna read of the banked entropy finals, RECORDED*).

@@ -7,7 +7,8 @@ learning-rate controller cut the rate one step further than C0's (8.372e-05 agai
 not apply**: the lever moved the policy's entropy from 1.01 to 0.68 nats.
 
 Registration: [`PREREG.md`](PREREG.md) (`1bab9e87a`; §1 to §12 unamended. Its §13, a NOTE of 2026-11-16, registers
-§9's Kakuna read of the finals, which this page does not read). The verdict is
+§9's Kakuna read of the finals; that read was recorded on 2026-11-18 and is §8 below: **UNCONFIRMED**, which
+changes nothing in §1 to §7's verdict). The verdict is
 [`cross/read_cross.py`](cross/read_cross.py)'s [`record/verdict.json`](record/verdict.json), written by
 [`screen_rule.py`](screen_rule.py) `decide`. Nothing in `PREREG.md`, `screen_rule.py` or `cross/` was edited.
 Abbreviations: pp = percentage points; P\* = `pstar_plateau` (`rb_x26_s2601` @280,000,170); C0 = P\* + 20M with no
@@ -119,7 +120,8 @@ attempt logged past the resume step are dropped (s6701: 5). Script and output:
   20M, X67 learned at 0.83× C0's dose rate.
 - **Greedy minus sampled** and **Kakuna on U** were NOT run: both are conditional in §9 ("only if Kakuna lanes are
   free" / "only if CPU allows"), and X60-T's look-2 play lanes held the agent cores for the whole read. The Kakuna
-  read was REGISTERED on 2026-11-16 (PREREG §13, with CE-3d's finals; it confirms or contradicts, it never decides).
+  read was REGISTERED on 2026-11-16 (PREREG §13, with CE-3d's finals; it confirms or contradicts, it never decides)
+  and recorded on 2026-11-18 (§8). Greedy minus sampled is still not run.
 
 ## 6. What the PASS licenses (PREREG §10)
 
@@ -139,7 +141,8 @@ stands until the owner lifts it there.
 1. **A late fork is not a fresh run.** The bonus changed at step 280M of a policy shaped by 0.05; the licence puts
    0.0125 in from step 0, where early exploration is a different regime.
 2. **Head to head against siblings is not strength against others.** A sharper greedy policy may beat its own
-   lineage and gain nothing against Kakuna; §9's Kakuna read, the only outside evidence, was not run.
+   lineage and gain nothing against Kakuna; §9's Kakuna read, the only outside evidence, was not run with this read.
+   Recorded since (§8): +1.75 pp [−0.12, +3.63], UNCONFIRMED, so the limit stands.
 3. **One dose.** +20M at one coefficient; nothing about 0.025, 0.005 or a schedule.
 
 ## 7. FINDINGs
@@ -148,8 +151,8 @@ stands until the owner lifts it there.
   PASS rests on the cross's own seed spread, which the registration chose deliberately (§5.3); both floors bound,
   so the interval is already the widest the binomial floor allows at this shape.
 - **X67-R2 (the dose differs).** LR-MOVED on all three forks; see §6.
-- **X67-R3 (no outside evidence).** §9's Kakuna and greedy-minus-sampled reads were not run. Whether the gain
-  survives against Kakuna is unmeasured until PREREG §13's read (registered 2026-11-16) is recorded.
+- **X67-R3 (no outside evidence in this read).** §9's Kakuna and greedy-minus-sampled reads were not run with it.
+  The Kakuna read is §8 (UNCONFIRMED: neither shown nor shown missing); greedy minus sampled is unmeasured.
 - **X67-R4 (the slim child log has no hyperparameter table).** Each run's `launcher_child.log` no longer holds the
   `ent_coef` table line; `launcher_child.full.log` does (s6701 twice, at launch and at the resume; the others once;
   never 0.05). The banner guard read the slim log live and logged "banner OK" for every launch. The VOID check above
@@ -157,3 +160,56 @@ stands until the owner lifts it there.
 - **X67-R5 (the recipe doc is now stale on one line).** `designs/endstate/design_learner_recipe.md` §3.9 still says
   the screen is "REGISTERED, not run". The read operator's brief forbids editing that doc. It moves with BOUNDARY-1's
   registration (the orchestrator's step).
+
+## 8. The Kakuna read (2026-11-18): UNCONFIRMED for X67, KAKUNA-CONFIRMED for CE-3d
+
+Registered in [`PREREG.md`](PREREG.md) §13 (`79ccaaa97`, before any game; its twin is CE-3d's PREREG §17), one spec
+[`read_spec_kakuna.json`](read_spec_kakuna.json), one look, run by `python -m main.reads`
+([`designs/tools/reads.md`](../../../tools/reads.md)). The record is
+[`record/kakuna_read.json`](record/kakuna_read.json); the ledger entry of 2026-11-18 (*The Kakuna read of the banked
+entropy finals, RECORDED*) is the account of record, with the checks and the FINDINGs in full. **It labels the PASS
+and never decides it: §1 to §7 stand as read.**
+
+**What was played.** X67's three finals, CE-3d's three (`rb_ce3d_s7321..s7323`) and all eight C0 finals, each
+against Kakuna (Metamon's strongest agent) on F (`forum72`) and H (`heldout72_hpfix`), both sides greedy, 1,200
+games a final a panel: 1,680 units, 33,600 games, at the play pin `15136b616` on engine E6. U = F and H at equal
+weight. Rule `b1_kakuna` at level 0.90: an arm's mean over its runs minus C0's, the seed variance pooled within the
+two arms composed with a team-cluster sandwich, the wider of two clusterings deciding; ties are non-wins and a game
+at our turn cap is a loss.
+
+| contrast | role | arm | C0 | arm minus C0, 90 % | class | label |
+|---|---|---|---|---|---|---|
+| **`x67_U`** | CONFIRMING | 0.5201 (3,745 / 7,200) | 0.5026 (9,650 / 19,200) | **+1.75 pp [−0.12, +3.63]** | SPANS-ZERO | **UNCONFIRMED** |
+| **`ce3d_U`** | CONFIRMING | 0.5287 (3,807 / 7,200) | 0.5026 | **+2.61 pp [+0.95, +4.28]** | POSITIVE | **KAKUNA-CONFIRMED** |
+| `x67_F` | REPORTED | 0.5300 | 0.5165 | +1.35 pp [−0.97, +3.67] | SPANS-ZERO | |
+| `x67_H` | REPORTED | 0.5103 | 0.4887 | +2.15 pp [−0.29, +4.59] | SPANS-ZERO | |
+| `ce3d_F` | REPORTED | 0.5564 | 0.5165 | +3.99 pp [+1.73, +6.26] | POSITIVE | |
+| `ce3d_H` | REPORTED | 0.5011 | 0.4887 | +1.24 pp [−1.18, +3.65] | SPANS-ZERO | |
+| `ce3d_minus_x67_U` | REPORTED | CE-3d 0.5287 | X67 0.5201 | +0.86 pp [−1.98, +3.71] | SPANS-ZERO | |
+
+**Reading X67's UNCONFIRMED** (the registered power and limits, §13.4 and §13.5, written before any game). The
+point, +1.75 pp, is close to the in-house +1.97 pp and the interval holds 0: the read neither shows the gain against
+Kakuna nor shows it missing. The design's half-width is 1.9 to 2.2 pp (1.88 here); a true +2 pp is called POSITIVE
+0.43 to 0.59 of the time, +1 pp 0.10 to 0.18, +3 pp 0.71 to 0.95, +4 pp 0.89 to 1.00. "For X67, SPANS-ZERO is as
+likely as POSITIVE even if the whole in-house gain transfers: UNCONFIRMED is not CONTRADICTED." Limits: (1) every
+final plays on the pin's observation (semantics 168), not the one it trained on (151), equally for all fourteen;
+(2) three forks an arm, one parent, one dose, F and H only; (3) Kakuna is one opponent. The two arms are not
+separated from each other, so the differing labels are not evidence that the swap beats the quarter bonus.
+
+**C0 itself against Kakuna** (by hand, [`record/kakuna_read_by_hand.json`](record/kakuna_read_by_hand.json); 90 %,
+the rule's composition applied to the arm mean; NOT a registered statistic): F **0.5165** [0.4951, 0.5378], H
+**0.4887** [0.4636, 0.5139], U **0.5026** [0.4861, 0.5191]. P\* + 20M of plain training is level with Kakuna on
+these two panels.
+
+**Checks.** Every integrity field matched the registration before an outcome was read: the spec's hash, the pin
+(clean, no re-pin), engine E6 and one regime on all 1,680 units, the fourteen model hashes, 1,200 counted games in
+each of the 28 run-panels, no default, re-decide, non-battle ending or skipped unit.
+[`record/kakuna_read_by_hand.py`](record/kakuna_read_by_hand.py) recomputes the seven contrasts from the record's
+rows without the rule's code and equals the tool (largest difference 1.2e-14 pp).
+
+**FINDINGs** (the ledger entry lists eight). 141 counted games (0.42 %; C0 0.41 %, X67 0.47 %, CE-3d 0.40 %) ended
+at our turn cap and are losses by the rule; left out, the two contrasts read +1.80 and +2.62 pp. Eight attempts hit
+Kakuna's long-tail fault, were voided by the tool's guard and replayed at their registered seeds; none of their
+games is in a cell. The two confirming contrasts are each read alone at 0.90, as registered.
+
+**What it licenses.** Nothing. No recipe, baseline or BOUNDARY-1 arm moves.

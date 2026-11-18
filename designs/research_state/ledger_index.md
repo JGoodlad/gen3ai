@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-31,808-line file. **The ledger itself is append-only and is never edited by this**;
+31,926-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1015 headings · 960 dated · 2026-08-01 → 2026-11-16 · ledger 31,808 lines.**
+**1016 headings · 961 dated · 2026-08-01 → 2026-11-18 · ledger 31,926 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1035,3 +1035,4 @@ rename.
   - `L31646` · `2026-11-16` · AMENDMENT · **X70 PREREG Amendment 1 (blind: before any X70 fork, game or read): the GO conditions are written down, and the three crosses move to the GPU card under a one-venue-a-cross rule that the driver and the reader enforce; the statistic, rule, pairs and power are unchanged; the on-card rate and engine start stay UNVERIFIED (the ≤ 10 GPU-min check is a written command, NOT run)**
   - `L31698` · `2026-11-16` · REGISTRATION · **X71, the exploitability probe of the entropy arms (full tier; blind: before any X71 training step or game): two fresh 5M best responders against one final each of C0, X67, the CE-3d swap and later X70; the class compares the gap the responders LEARNED against an arm's final with C0's; NOT LAUNCHED**
   - `L31751` · `2026-11-16` · REGISTRATION · **X35-A3 (LG-1 / CE-3c), the league's first arm with main exploiters folded back in (full tier; blind: before any A3 training step, game or read): three 5M exploiters of P\*, then P\* + 20M with them as 40 % of its opponents, hardest first; DECIDED by the change in a fresh responder's gap against C0; NOT LAUNCHED**
+  - `L31808` · `2026-11-18` · READ · **The Kakuna read of the banked entropy finals, RECORDED (one look, COMPLETE, 33,600 games): CE-3d's trailing-magnet PASS is KAKUNA-CONFIRMED, `ce3d_U` +2.61 pp [+0.95, +4.28]; X67's quarter-entropy PASS is UNCONFIRMED, `x67_U` +1.75 pp [−0.12, +3.63] (90 %, rule `b1_kakuna`, U = forum72 and heldout72_hpfix at equal weight); nothing CONTRADICTED; C0 itself reads 0.5026 against Kakuna on U; it decides neither PASS and moves nothing**

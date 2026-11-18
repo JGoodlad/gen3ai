@@ -98,12 +98,12 @@ under `measurements/`. A number with no pointer is not a measurement.
    all six mons' identity embeddings costs familiar and unfamiliar teams alike (1.07 [0.91, 1.25]). Lever N2 is
    dropped. [MEASURED · CPU, P\* vs P\* rows, one checkpoint · PREREG `98bcb1146`, `fd4160d76`;
    `measurements/n2_identity_test_2026-10-26/`]
-5. **No lever measured so far closes goal (b).** Against its own control each reads +1 to +3 pp with intervals
+5. **No lever has closed goal (b); one training change now shows against Kakuna (CE-3d, below).** Against its own control each of the others reads +1 to +3 pp with intervals
    ±3–4 pp wide: practice on 36 teams (X52) +1.3 pp on the unpractised half, UNDECIDED; a wider pool (D1) +2.10
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); human-built ladder teams in half the pool (X60-T, final) read NO-TRANSFER: F −0.23 [−1.95, +1.49] at −2.12 pp in-pool, with the corpus's own teams +1.69 pp in-house (§3.1); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) but has no Kakuna number; replacing the bonus with a pull toward a trailing copy of the policy beats the same siblings by more (CE-3d, +3.97 pp [+3.31, +4.63], §4.16), ends sharper still, is not separated from simply removing the bonus, and has no Kakuna number either; H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); human-built ladder teams in half the pool (X60-T, final) read NO-TRANSFER: F −0.23 [−1.95, +1.49] at −2.12 pp in-pool, with the corpus's own teams +1.69 pp in-house (§3.1); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) and against Kakuna on F and H reads +1.75 pp [−0.12, +3.63] (90 %), UNCONFIRMED, in a read that sees a +2 pp gain only about half the time; replacing the bonus with a pull toward a trailing copy of the policy beats the same siblings by more (CE-3d, +3.97 pp [+3.31, +4.63], §4.16), ends sharper still, and against Kakuna reads **+2.61 pp [+0.95, +4.28]** (90 %), KAKUNA-CONFIRMED: the only lever in this item whose interval against its control excludes 0 on Kakuna, on forks whose control C0 is level there (0.5026 on F and H). It is not separated from X67 against Kakuna (+0.86 pp [−1.98, +3.71]) or from simply removing the bonus, and the read is no goal-(b) read (no P72, three forks, +20M, one opponent); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -798,7 +798,7 @@ state) and trained 70M steps against a same-pin control C0′, 3 + 3 seeds, ever
 
 [MEASURED · S + Kakuna F (post-H22 pack) on `31bd9ced9`'s engine · `8ed8164ea`; ledger 2026-11-04 · *N4 (the toy capacity screen) LOOK 1*]
 
-### 4.15 A quarter of the entropy bonus at the plateau: the sharper forks beat their siblings (X67, 2026-11-11)
+### 4.15 A quarter of the entropy bonus at the plateau: the sharper forks beat their siblings; against Kakuna UNCONFIRMED (X67, 2026-11-11; Kakuna read 2026-11-18)
 
 X67 continued P\* 20M with `ent_coef` 0.0125 instead of 0.05 (three seeds), at the production side pin. It played
 every fork against all eight C0 finals head to head, both sides greedy (3 × 8 cells, 48,000 games). **PASS: D +1.97 pp
@@ -809,8 +809,15 @@ would be [−0.65, +4.58].
 - **The dose differs (LR-MOVED).** The per-update policy change ran slightly higher (approx KL 0.0185–0.0188 vs
   0.0179–0.0183), so the KL controller cut the rate once more (8.372e-05 vs 1.0047e-04; dose rate 0.83×). That is
   the lever's own effect, but the forks did not learn at C0's rate.
-- **What it does not show.** A late fork is not a fresh run, and siblings are not Kakuna: no outside game was
-  played. One coefficient, one dose.
+- **Against Kakuna: UNCONFIRMED.** The three finals against C0's eight, each against Kakuna on F (`forum72`) and H
+  (`heldout72_hpfix`), 1,200 games a final a panel, U = F and H at equal weight: **+1.75 pp [−0.12, +3.63]** (90 %;
+  X67 0.5201, C0 0.5026; F +1.35, H +2.15, both spanning 0). The point is close to the in-house one and the
+  interval holds 0: neither shown nor shown missing. The read sees a true +2 pp about half the time (0.43 to 0.59)
+  and +1 pp 0.10 to 0.18, so "for X67, SPANS-ZERO is as likely as POSITIVE even if the whole in-house gain
+  transfers: UNCONFIRMED is not CONTRADICTED". Its limits: every final plays on the play pin's observation
+  (semantics 168), not the one it trained on (151); three forks an arm, one parent, one dose, F and H only; Kakuna
+  is one opponent. The label never changes the PASS.
+- **What it does not show.** A late fork is not a fresh run. One coefficient, one dose.
 - **What it moves.** By its registration a PASS names 0.0125 for the base of every BOUNDARY-1 arm. The owner said
   yes on 2026-11-11 (in writing, to the orchestrator), and BOUNDARY-1's Amendment 2 (2026-11-12) types
   `--ent-coef 0.0125` on all twelve runs. The owner's 2026-09-29 ruling ("no direct adoption of a lower bonus") is lifted for that
@@ -818,8 +825,9 @@ would be [−0.65, +4.58].
   BOUNDARY-1's runs exist.
 
 [MEASURED · in-house head to head at pin `f4b25238`, CPU · ledger 2026-11-11 · *X67 the entropy screen: PASS*]
+[MEASURED · Kakuna on F and H, engine E6 at pin `15136b616`, rule `b1_kakuna` at 0.90 · ledger 2026-11-18 · *The Kakuna read of the banked entropy finals, RECORDED*]
 
-### 4.16 A trailing anchor in place of the entropy bonus: the forks win by more, and end sharper still (CE-3d, 2026-11-12)
+### 4.16 A trailing anchor in place of the entropy bonus: the forks win by more, end sharper still, and the gain shows against Kakuna (CE-3d, 2026-11-12; Kakuna read 2026-11-18)
 
 CE-3d continued P\* 20M with no entropy bonus and, at the bonus's weight, a pull toward a trailing copy of the policy
 (a "magnet", refreshed every 2M steps: `--ent-coef 0 --magnet-kl-coef 0.05`, three seeds). It played every fork
@@ -834,9 +842,19 @@ all 24 cells above 50). Under the fresh-run seed floor the interval is [+1.35, +
   gain over C0 is plausibly the lower uniform push alone". That cross is weak (it misses a true +1 pp three times
   in four), and X67 keeps a quarter of the bonus. Through C0 the swap's lead over X67's is +2.00 pp, with no
   interval.
+- **Against Kakuna: KAKUNA-CONFIRMED.** In the same read as X67's (§4.15), the three swap finals against C0's
+  eight on U: **+2.61 pp [+0.95, +4.28]** (90 %; CE-3d 0.5287, C0 0.5026). It is smaller than the in-house number,
+  whose interval does not hold it. By panel (REPORTED): F +3.99 pp [+1.73, +6.26]; H, the held-out set of record,
+  +1.24 pp [−1.18, +3.65], not resolved. Against X67's finals **+0.86 pp [−1.98, +3.71]**: not separated there
+  either, so CONFIRMED beside X67's UNCONFIRMED is not evidence that the swap is the better of the two. §4.15's
+  three limits apply. The label changes neither the PASS nor what it licenses.
+- **The control's level: C0 against Kakuna on these panels** (by hand, REPORTED; 90 %, seed variance and a team
+  sandwich): F **0.5165** [0.4951, 0.5378], H **0.4887** [0.4636, 0.5139], U **0.5026** [0.4861, 0.5191], 9,600
+  games a panel over eight finals. P\* + 20M of plain training is level with Kakuna on F and H. On F the banked
+  cells of another engine read 0.5130 (§3.1's X60-T bullet), +0.34 pp apart, never pooled.
 - **What it does not show.** The C0 finals trained at another pin and on other days (the evidence that this does
-  not matter is CPU only). A late fork with nine refreshes is not a fresh run, siblings are not Kakuna, and nothing
-  here measures exploitability or cycling, which is what the lever was proposed for. One weight, one cadence.
+  not matter is CPU only). A late fork with nine refreshes is not a fresh run, and nothing here measures
+  exploitability or cycling, which is what the lever was proposed for. One weight, one cadence.
 - **What it moves: nothing.** The PASS licenses REGISTERING a follow-up on new seeds, and its reading names the
   control that follow-up most needs: an `--ent-coef 0` arm with no magnet at the CE-3d pin (§6). It is
   REGISTERED 2026-11-13 as X70 and not launched
@@ -844,6 +862,7 @@ all 24 cells above 50). Under the fresh-run seed floor the interval is [+1.35, +
   production recipe and BOUNDARY-1's arms are untouched.
 
 [MEASURED · in-house head to head, forks at tag `ce3d-pin-9e97cad5` vs C0 at pin `f4b25238`, played at tag `ce3d-pin-333a73dd`, CPU · ledger 2026-11-12 · *CE-3d the trailing-magnet screen: PASS*]
+[MEASURED · Kakuna on F and H, engine E6 at pin `15136b616`, rule `b1_kakuna` at 0.90; C0's level DESCRIPTIVE · ledger 2026-11-18 · *The Kakuna read of the banked entropy finals, RECORDED*]
 
 ---
 
@@ -877,7 +896,7 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 **In flight** (what runs now, and its progress: [`../STATUS.md`](../STATUS.md) §2)
 
-No read is on the CPU play lanes: X60-T, the human-TEAMS read, finished 2026-11-11 (NO-TRANSFER, §3.1). The GPU's
+No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16). The GPU's
 current screen is STATUS §2's row.
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)

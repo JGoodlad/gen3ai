@@ -31805,3 +31805,121 @@ View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row X35-A3, the CE-3c and 
 `design_alphastar_league_path.md` (the status line, §6 row 2, §8).
 
 Tag: **REGISTRATION · X35-A3 main exploiters folded in · 3 exploiters @ 5M → 3 forks @ 20M at share 0.4, PFSP · gate EXPLOITS · E = change in a fresh reader's gap vs C0 · ROBUSTNESS-GAIN / TRADE / NO-FALL / INCONCLUSIVE · 4 pp fall seen 0.90 at a 1 pp unit spread (UNVERIFIED) · pin `f4b25238` · ≈ 22 GPU-h · not launched · moves no recipe**
+### 2026-11-18 · READ · **The Kakuna read of the banked entropy finals, RECORDED (one look, COMPLETE, 33,600 games): CE-3d's trailing-magnet PASS is KAKUNA-CONFIRMED, `ce3d_U` +2.61 pp [+0.95, +4.28]; X67's quarter-entropy PASS is UNCONFIRMED, `x67_U` +1.75 pp [−0.12, +3.63] (90 %, rule `b1_kakuna`, U = forum72 and heldout72_hpfix at equal weight); nothing CONTRADICTED; C0 itself reads 0.5026 against Kakuna on U; it decides neither PASS and moves nothing**
+
+**Question** (registered 2026-11-16, `79ccaaa97`, before any game: X67 PREREG §13, its twin CE-3d PREREG §17; ONE
+spec, `measurements/x67_entropy_screen_2026-11-09/read_spec_kakuna.json`, sha256 `5ff5dcc97f41…`). The only two
+training changes this programme has detected are in-house numbers: X67 (a quarter of the entropy bonus) +1.97 pp
+[+1.35, +2.59] and CE-3d (a trailing self-anchor in place of the bonus) +3.97 pp [+3.31, +4.63], each head to head
+against C0's finals. Do they show against Kakuna (Metamon's strongest agent) on teams our policy has not practised?
+X67's three finals, CE-3d's three and all eight C0 finals each played Kakuna on F (`forum72`) and H
+(`heldout72_hpfix`), both sides greedy, 1,200 games a final a panel. U = F and H at equal weight; a contrast is the
+arm's mean over its runs minus C0's. The read CONFIRMS or CONTRADICTS a PASS and never decides one.
+
+**Result** (`python -m main.reads record`, run ONCE on 2026-11-18 08:11 PST; exit 0; `COMPLETE`; decision class
+`CLASSIFIED`, no reason; the tool's line: "x67_U SPANS-ZERO; ce3d_U POSITIVE").
+
+| contrast | role | arm | C0 | arm − C0 (90 %) | class | label beside the PASS |
+|---|---|---|---|---|---|---|
+| **`ce3d_U`** | CONFIRMING | 0.5287 (3,807 / 7,200) | 0.5026 (9,650 / 19,200) | **+2.61 pp [+0.95, +4.28]** | POSITIVE | **KAKUNA-CONFIRMED** |
+| **`x67_U`** | CONFIRMING | 0.5201 (3,745 / 7,200) | 0.5026 | **+1.75 pp [−0.12, +3.63]** | SPANS-ZERO | **UNCONFIRMED** |
+| `ce3d_F` | REPORTED | 0.5564 (2,003 / 3,600) | 0.5165 (4,958 / 9,600) | +3.99 pp [+1.73, +6.26] | POSITIVE | |
+| `ce3d_H` | REPORTED | 0.5011 (1,804 / 3,600) | 0.4887 (4,692 / 9,600) | +1.24 pp [−1.18, +3.65] | SPANS-ZERO | |
+| `x67_F` | REPORTED | 0.5300 (1,908 / 3,600) | 0.5165 | +1.35 pp [−0.97, +3.67] | SPANS-ZERO | |
+| `x67_H` | REPORTED | 0.5103 (1,837 / 3,600) | 0.4887 | +2.15 pp [−0.29, +4.59] | SPANS-ZERO | |
+| `ce3d_minus_x67_U` | REPORTED | CE-3d 0.5287 | X67 0.5201 | +0.86 pp [−1.98, +3.71] | SPANS-ZERO | |
+
+Both confirming intervals are set by the SEED variance (pooled within the two arms, 9 df; the team sandwich is
+smaller in both schemes, so the two schemes give one interval): standard error 1.02 pp for `x67_U` and 0.91 pp for
+`ce3d_U`, half-widths 1.88 and 1.66 pp (registered expectation 1.9 to 2.2). No end is within 0.005 pp of 0. The
+rule's two REPORTED bootstraps (10,000 draws) agree in class: `x67_U` [−0.35, +3.90] and [−0.66, +4.29]; `ce3d_U`
+[+0.83, +4.45] and [+0.54, +4.63].
+
+Per final on U (the mean of its F and H rates): C0 s3501–s3508 0.5021 / 0.5075 / 0.4896 / 0.5029 / 0.4833 / 0.4975 /
+0.5096 / 0.5283; X67 s6701–s6703 0.5425 / 0.5104 / 0.5075; CE-3d s7321–s7323 0.5258 / 0.5179 / 0.5425. Wins of 1,200
+(F / H): C0 610/595, 636/582, 587/588, 616/591, 604/556, 615/579, 651/572, 639/629; X67 662/640, 638/587, 608/610;
+CE-3d 647/615, 668/575, 688/614.
+
+**X67's UNCONFIRMED, with its registered power and limits (§13.4, §13.5; written before any game).** The design's
+half-width is 1.9 to 2.2 pp. A true gain of +2 pp against Kakuna is called POSITIVE 0.43 to 0.59 of the time, +1 pp
+0.10 to 0.18, +3 pp 0.71 to 0.95, +4 pp 0.89 to 1.00; no gain is called POSITIVE 0.2 to 5.7 % of the time. "For X67,
+SPANS-ZERO is as likely as POSITIVE even if the whole in-house gain transfers: UNCONFIRMED is not CONTRADICTED."
+The point, +1.75 pp, is close to the in-house +1.97 pp, and the interval holds both 0 and +3.6: this read neither
+shows the gain against Kakuna nor shows it missing. Limits: (1) every final plays on the pin's observation
+(semantics 168), not the one it trained on (151); that is equal for all fourteen, but an arm that tolerates the
+shift better would read better and this read cannot separate it. (2) Three forks an arm (2 df), one parent (P\*),
+one dose (+20M), F and H only. (3) Kakuna is one opponent: a label is about Kakuna on unfamiliar teams, not strength
+in general. The same three limits bear on CE-3d's KAKUNA-CONFIRMED.
+
+**What KAKUNA-CONFIRMED does and does not say.** The swap forks' gain shows against the outside meter on unfamiliar
+teams: +2.61 pp, the lower end +0.95. It is smaller than the in-house +3.97 pp, whose interval [+3.31, +4.63] does
+not hold +2.61; "the same size against Kakuna" was a GUESS (§13.4) and is not what was read. On the REPORTED panels
+the gain sits on F (+3.99 pp) and is not resolved on H (+1.24 pp [−1.18, +3.65]), the held-out set of record. The
+swap is NOT separated from X67 here (+0.86 pp [−1.98, +3.71]), as in-house (+1.01 pp [−0.12, +2.13]); whether the
+anchor adds anything beyond removing the bonus is still X70's question. CE-3d §16.5's other five limits (not a
+fresh run, C0 at another pin, exploitability and cycling unmeasured, one weight, one cadence) are untouched.
+
+**Where we are: C0 against Kakuna at this regime** (REPORTED by hand, NOT a registered statistic;
+`record/kakuna_read_by_hand.json`). C0 = P\* + 20M of plain training, eight finals, 1,200 games a final a panel,
+90 % intervals, the rule's two-way composition applied to the arm mean (seed variance and a team sandwich by our
+team, the 72 teams read as a sample of teams):
+
+| panel | C0 | 90 % two-way | 90 % seed-only (the panel's teams held fixed) |
+|---|---|---|---|
+| F `forum72` | **0.5165** (4,958 / 9,600) | [0.4951, 0.5378] | [0.5048, 0.5281] |
+| H `heldout72_hpfix` | **0.4887** (4,692 / 9,600) | [0.4636, 0.5139] | [0.4770, 0.5005] |
+| U (F, H) | **0.5026** (9,650 / 19,200) | [0.4861, 0.5191] | [0.4935, 0.5117] |
+
+C0 is level with Kakuna on these two unfamiliar panels; the run rates span 0.4833 to 0.5283 on U (SD 1.36 pp).
+C0's banked F cells on engine E3 at `f564c333f` read 0.5130 (4,925 / 9,600); here, on engine E6 with our pack
+post-H24 and the pin's observation, 0.5165: +0.34 pp across the regime change, a description, never pooled. This
+is not goal 2b's number: that is P\* on H, F and P72 under another regime.
+
+**Checks, made before any outcome was read: every one matches the registration.** Spec sha256 `5ff5dcc97f41…` in
+the committed file, the state's copy, the cells and the record. Code: commit = pin =
+`15136b61634b667bb9da5ccc6647ff9265238829`, clean, no re-pin, no import, no void. Engine E6
+(`port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`) on all 1,680 units; group regime id `3d2804703dbd1260`; policy
+mode `eval`, loader `bare`, both sides greedy with argmax match rate 1.0; opponent `metamon:Kakuna` at one peer
+code and weights. Fourteen models: the record's sha256 = the spec's = `status`'s = a re-hash of the state's copies
+(steps 300,021,355 to 300,062,191). 1,680 units, 60 a final a panel at unit seeds 0–59, 20 games each, every one
+counted with status OK and no reason: 28 run-panels of 1,200, 33,600 games, 72 teams a side a panel. Defaults 0;
+re-decides 0; non-battle endings 0; skipped units 0; cells inconclusive: none. Re-derived guards: 1,680 units, 0
+hits, 0 unavailable. Supervisor: `start` 11-16 22:18 PST, `done` 11-18 07:28 PST with nothing uncounted, five days
+before the registered stop (11-23 12:00 PST); 33.2 h at three units at once against ≈ 78 h planned.
+**By hand** (`record/kakuna_read_by_hand.py`, from the record's rows, none of the rule's code; the dyadic sandwich
+as the literal pair sum): all seven contrasts' estimates, both schemes' variances and df, the intervals, the
+deciding scheme and the classes equal the tool's (largest difference 1.2e-14 pp).
+
+**FINDINGs.**
+1. **141 of the 33,600 counted games (0.42 %) ended at OUR turn cap** (turn 250, our forfeit) and are booked as
+   losses, as the rule registers. C0 78 / 19,200 (0.41 %), X67 34 / 7,200 (0.47 %), CE-3d 29 / 7,200 (0.40 %); at
+   most 9 in a run-panel, against the INCONCLUSIVE bar of 300. Left out of both wins and games the contrasts read
+   +1.80 and +2.62 pp (descriptive). The hand-off's "none at the turn cap" described the first four units only.
+2. **Eight attempts were voided and replayed** (1,688 attempts for 1,680 units): each by guard G2 on Kakuna's
+   long-tail fault ("Force resetting due to long-tail error", SOP H5), C0 3, X67 3, CE-3d 2. The tool set each
+   aside as `<unit>.partial.<epoch>` and replayed the unit at its registered seed; each counted first time
+   afterwards, and no game of a voided attempt is in a cell. The supervisor did this unattended.
+3. **C0's absolute rate and its intervals are by hand**, not a registered statistic of this read; the registered
+   outputs are the seven contrasts.
+4. **The record was assembled by main's `main.reads` at `524ae8490`** (as the hand-off directs), from games played
+   at the pin; the record's `code` block names the playing checkout at the pin, clean.
+5. **28 ties** (C0 13, CE-3d 8, X67 7) are non-wins, as the rule registers.
+6. **Two CONFIRMING contrasts, each read alone at 0.90**, with no correction for there being two (registered,
+   §13.3). The REPORTED per-panel classes carry no label.
+7. **The two labels differ while the two arms do not** (+0.86 pp [−1.98, +3.71]): CONFIRMED beside UNCONFIRMED is
+   not evidence that the swap beats the quarter bonus against Kakuna.
+8. UNVERIFIED, as registered: how much more games a final would buy (three fork seeds bind; the seed variance set
+   both intervals here), and whether either gain holds for a fresh run from step 0.
+
+**What it licenses.** Nothing (§13: "it never decides them and it licenses nothing"). X67's PASS and CE-3d's PASS
+stand as read. No recipe, no baseline, no production config and no BOUNDARY-1 arm moves; BOUNDARY-1's base
+(`--ent-coef 0.0125`, Amendment 2) rests on X67's in-house PASS and the owner's yes of 2026-11-11, neither of which
+this changes. No CONTRADICTED, so nothing goes to the owner as an in-house-only gain.
+
+**Record:** `measurements/x67_entropy_screen_2026-11-09/record/kakuna_read.json` (schema `gen3_read_record_v1`,
+sha256 `abd32a1f9d2c…`; it carries the inputs' per-team rows and the decision), `kakuna_read_by_hand.py` and
+`kakuna_read_by_hand.json` beside it; the X67 folder's `README.md` §8; CE-3d PREREG §18. State (games, captures,
+the eight voided attempts): `~/gen3ai_archive/kakuna_entropy_2026-11-16/state`. View: `STATUS.md` (§2, §3),
+`UNDERSTANDING.md` (TL;DR item 5, §4.15, §4.16), `EXPERIMENT_BACKLOG.md` (the CE-3d row).
+
+Tag: **READ · Kakuna read of the entropy finals · X67 ×3, CE-3d ×3 v C0 ×8 · forum72 + heldout72_hpfix @ 1,200 games a final a panel · rule `b1_kakuna`, level 0.90 · `ce3d_U` +2.61 pp [+0.95, +4.28] KAKUNA-CONFIRMED · `x67_U` +1.75 pp [−0.12, +3.63] UNCONFIRMED · CE-3d − X67 +0.86 [−1.98, +3.71] · C0 vs Kakuna U 0.5026, F 0.5165, H 0.4887 · pin `15136b616`, E6 · decides nothing**
