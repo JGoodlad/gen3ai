@@ -1,0 +1,118 @@
+{
+ "corpus": {
+  "corpus": "n1_proc_v1",
+  "tier": "ALL",
+  "n": 12000,
+  "tier_sha256": "d59f44f0b33bd3532a2434b4b9cc4d77da6b871e4a642dd71a9b38d3d875314f",
+  "data_sha256": "99e3425aa687e7d0663525e4ab1df2a3cb52c8d6bf162df35da0bccf7c20bad6",
+  "manifest_sha256": "4db822ba1e0cf2e21d3ab7780ab42017ae3b02b15b3687661961b1c8e191e067",
+  "schema": "gen3_team_corpus_v1"
+ },
+ "n_corpus": 12000,
+ "home72": {
+  "held_out_from": [],
+  "content_digest": "e7f90019ed48029aa811a410c1993cc3288c03e0018c7c1ee2b35e787afa10d2",
+  "overlap": {
+   "n_read_teams": 72,
+   "n_reference_teams": 12000,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 20,
+   "n_read_mons": 432,
+   "mons_seen": 397,
+   "mons_seen_strict": 183,
+   "max_shared_mons_hist": {
+    "0": 0,
+    "1": 13,
+    "2": 49,
+    "3": 10,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  }
+ },
+ "heldout72_hpfix": {
+  "held_out_from": [
+   "training"
+  ],
+  "content_digest": "f7604f01a330b48821fa5bb4f3d5c07dd773b1b6f5fdf11f1ae99713abd5c36a",
+  "overlap": {
+   "n_read_teams": 72,
+   "n_reference_teams": 12000,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 16,
+   "n_read_mons": 432,
+   "mons_seen": 410,
+   "mons_seen_strict": 269,
+   "max_shared_mons_hist": {
+    "0": 0,
+    "1": 14,
+    "2": 58,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  }
+ },
+ "forum72": {
+  "held_out_from": [
+   "training"
+  ],
+  "content_digest": "efa72e52ce56bedb94e1281290c0e398e657bdab396647a99586168be9011159",
+  "overlap": {
+   "n_read_teams": 72,
+   "n_reference_teams": 12000,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 18,
+   "n_read_mons": 432,
+   "mons_seen": 359,
+   "mons_seen_strict": 84,
+   "max_shared_mons_hist": {
+    "0": 0,
+    "1": 15,
+    "2": 57,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  }
+ },
+ "p72": {
+  "held_out_from": [
+   "training"
+  ],
+  "content_digest": "e59d2f4843c01659112f3edd1c2c33baa340604b622a44c5500baedd9e974795",
+  "overlap": {
+   "n_read_teams": 72,
+   "n_reference_teams": 12000,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 6,
+   "n_read_mons": 432,
+   "mons_seen": 370,
+   "mons_seen_strict": 244,
+   "max_shared_mons_hist": {
+    "0": 0,
+    "1": 17,
+    "2": 55,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  }
+ }
+}

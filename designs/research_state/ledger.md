@@ -32023,3 +32023,54 @@ training-distribution lever are not retired by this look.
 View: `STATUS.md` (§2, §3, §6), `UNDERSTANDING.md` (§4.17, §6).
 
 Tag: **READ · BOUNDARY-1 50M look · C, W, Br, WB ×3 from scratch at 50M · home72 @ 1,000 pairs a cell, heldout72_hpfix, forum72, p72 @ 500 · 270,000 games · 90 %, 8 df, floor 1.76 pp · breadth HF −5.18 pp [−8.35, −2.01] STOP-HARM (0.0138 pp past the bar; `class_moves` true) · width N −0.37 pp [−3.32, +2.57] CONTINUE · interaction NOT-SHOWN · STOPPED-FOR-HARM at 50M is not a LOSS at 100M · survivor W v C to 100M, NO-CLASS · pin `15136b616`**
+
+### 2026-11-18 · MEASUREMENT (DESCRIPTIVE) · **BOUNDARY-1 OFF-POOL BELIEF AT 50M (REPORTED, no verdict): at 50M breadth brings the unseen-species belief on forum72 from 1.56 nats below the Smogon prior to the prior (+1.32 [+0.93, +1.78] breadth ON minus OFF), and costs 0.40 nats of the in-pool advantage; width alone moves it +0.16; the move leg (`moves_ll`) gains from both; no arm is detected above the prior off the pool; it explains nothing about the game meter's breadth STOP-HARM**
+
+**Question.** The queue's P7 meter item: does the breadth lever (half of each side's team draws from `n1_proc_v1`) improve the network's belief about
+the unseen species, a revealed mon's unshown moves and its unstated item on teams no run trained on, although breadth was STOPPED-FOR-HARM on the
+game meter at 50M (ledger 2026-11-18 READ; PREREG §8, §16)? And width? Measured with `python -m main.offpool_belief` (`designs/tools/offpool_belief.md`),
+CPU only. No pre-registration; no verdict; no class; nothing here is a claim about 100M or about strength.
+
+**Method.** The twelve runs' FIRST checkpoint at or after 50,000,000 steps (the files and sha256 of the 50M look's `verdict.json`; read from main's
+`models/`, written nowhere), scored with the meter's documented form on the baseline's own four banks (2026-11-09: home72, heldout72_hpfix = H,
+forum72 = F, p72 = P72; 6,475 to 6,785 rows a panel; the pilot is P\*'s greedy self-play states, not these runs' own) at `d9d7a7d61`, `--mix 0.25`, no
+`obs_gap` rows. Interval: the meter's team-clustered bootstrap (10,000 draws, 95 %, paired on teams); a breadth or width contrast pools two cells
+against two (the other factor balanced), and a supplement computes a seed-level t interval on the twelve per-run panel numbers (95 %, 8 df, variance
+pooled over the 2 x 2's four cells), which holds the run-to-run spread the team interval does not.
+
+**Result (belief − prior, nats a unit, F = forum72; team-clustered 95 %).** *Species:* C −1.56 [−2.12, −1.06], W −1.27 [−1.74, −0.86], Br −0.11
+[−0.23, +0.00], WB −0.07 [−0.16, +0.02] (the prior's level −2.25); in the pool (home72) C +0.98, W +0.99, Br +0.61, WB +0.55. Breadth ON − OFF
+**+1.32 [+0.93, +1.78]** on F (seed t [+1.18, +1.46]), **−0.40 [−0.46, −0.35]** in the pool; width ON − OFF **+0.16 [+0.06, +0.28]** on F (seed t
+[+0.03, +0.30]). *Unshown moves, `moves_ll`:* C −0.92 [−1.10, −0.74], W −0.21 [−0.34, −0.07], Br −0.28 [−0.40, −0.17], WB +0.08 [−0.01, +0.19]; breadth ON − OFF
++0.46 [+0.37, +0.56] (seed t [+0.33, +0.60]), width ON − OFF +0.54 [+0.46, +0.62] (seed t [+0.41, +0.68]). *Unstated item:* C +0.08 [−0.05, +0.21], W +0.07,
+Br +0.11 [+0.03, +0.21], WB +0.11 [+0.02, +0.20]; breadth ON − OFF +0.03 [−0.04, +0.12], width −0.01: not detected on F. The seed spread inside a cell is
+small next to the team interval on species and items (species F, C: runs −1.65 to −1.37), and wider than it on `moves_ll`. H and P72 read the same way
+for the breadth arms (species Br −0.01 / +0.03) and are CONTAMINATED (below); width's contrasts on them (+0.09, +0.30 species) are not.
+
+**§16, exactly.** The meter's panels are the four registered ones; the breadth pool `n1_proc_v1` (12,000 teams, tier ALL) holds **62.3 % of H's and
+56.5 % of P72's full mon sets** (species, moves, item, ability, nature, EVs; the PREREG's own 62 % and 56.5 %, reproduced with
+`main.anchors.team_overlap`), 42.4 % of home72's and **19.4 % of F's** (84 of 432); no panel team is an exact copy of a corpus team and none shares four
+mon sets with one (the registry's rule held); 18 of F's 72 teams have the six species of some corpus team (H 16, P72 6, home72 20). So breadth's H and
+P72 reads are contaminated and never quoted as generalisation, F is the least overlapped panel and not a clean one, and a breadth-trained belief is
+expected to land on the prior regardless, the corpus being drawn from the Smogon tables the prior is built from. Width's contrast has a breadth arm on each
+side, so the overlap cancels in it.
+
+**What it licenses.** "At 50M, from scratch, the breadth arms' unseen-species belief on forum72 is at the Smogon prior and the pool-only arms' is 1.3
+to 1.6 nats below it; breadth ON − OFF is +1.32 [+0.93, +1.78] nats (team) and [+1.18, +1.46] (seed, 8 df); breadth costs 0.40 nats of the in-pool species
+advantage"; "no arm is detected above the prior off the pool on the species leg"; "the move leg's `moves_ll` rises with both width and breadth, WB at the
+prior on F". It does NOT license any strength claim (no game read has DETECTED an effect of belief quality, ledger 2026-10-26), an explanation of the
+STOP-HARM, any statement about 100M or the survivor's later checkpoints, a ranking against the 2026-11-09 baseline's arms (continuations of a 280M run; not
+comparators), or that F is uncontaminated.
+
+**FINDINGs.** (1) One checkpoint a run at 50M, three runs a cell; the rows are the plateau pilot's states. (2) No multiplicity control (3 verdict metrics
+× 4 panels × 6 contrasts computed); the meter's BETTER / WORSE words are interval-against-zero labels, not registered classes. (3) Two intervals, each
+missing the other's spread. (4) An earlier scoring of nine of these runs, from `final_model.zip` files (commit 81594609), sits unrecorded in
+`~/gen3ai_archive/b1_belief_meter_2026-11-17/`; it was neither used nor compared (UNVERIFIED which step each file is at). (5) Banks carry the baseline's dirty-tree
+stamp (`3b1733f50`); each `score` re-checked the rows' sha256 and the registry. (6) Cost: 3.5 to 4.0 CPU-min a checkpoint at width 128, 5.5 to 5.8 at width 256
+(mean 4.8, against the docs' ≈ 8), peak resident 1.17 / 1.23 GB, three jobs at once under 4 GB caps, ≈ 23 min wall in all, no GPU, no lease.
+
+**Record:** `measurements/boundary1_scratch_2026-11-09/record/offpool_belief_50M/` (`README.md`, the twelve score files with `scores.sha256`, the meter's tables, the
+seed-level supplement, the panel-overlap count, the scripts and cost logs); working copy `~/gen3ai_archive/b1_offpool_belief_50M_20261118/`.
+View: `designs/endstate/design_offpool_belief.md` (§5, the guard on BOUNDARY-1's finals), `EXPERIMENT_BACKLOG.md` (MF-3).
+
+Tag: **OFF-POOL BELIEF · BOUNDARY-1 50M · REPORTED · DESCRIPTIVE · PROVISIONAL · species belief − prior on F: C −1.56, W −1.27, Br −0.11, WB −0.07 · breadth ON − OFF +1.32 [+0.93, +1.78] (team), [+1.18, +1.46] (seed t, 8 df) · in pool −0.40 · width ON − OFF +0.16 · `moves_ll` breadth +0.46, width +0.54 · none above the prior off the pool · H and P72 contaminated for breadth (62.3 % / 56.5 % full mon sets in `n1_proc_v1`; F 19.4 %) · no verdict, no 100M claim**
