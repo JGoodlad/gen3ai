@@ -1,0 +1,107 @@
+{
+ "cpu_s_per_searched_position": {
+  "all": 217.3044150943397,
+  "branches_and_nulls": 184.68113207547177,
+  "shadow_arms": 32.62328301886792
+ },
+ "per_panel": {
+  "forum72": {
+   "attempts": 57,
+   "branches": 56,
+   "exclusion_rate": 0.2,
+   "g_branch_fail_units": 0,
+   "g_branch_peer_units": 0,
+   "legal_actions_mean": 8.0,
+   "referee_cpu_s_mean": 13.658125000000002,
+   "scored": 10,
+   "search_cpu_s_mean": 21.0502,
+   "searched": 8,
+   "selected": 197,
+   "status": {
+    "counted": 57,
+    "dropped": 0,
+    "pending": 0
+   },
+   "sum_qc2_mean": 0.06817677304344694,
+   "unit_cpu_s_mean": 31.928070175438595,
+   "unit_cpu_s_total": 1819.8999999999999,
+   "units": 57
+  },
+  "heldout72_hpfix": {
+   "attempts": 59,
+   "branches": 58,
+   "exclusion_rate": 0.0,
+   "g_branch_fail_units": 0,
+   "g_branch_peer_units": 0,
+   "legal_actions_mean": 6.8,
+   "referee_cpu_s_mean": 8.695799999999998,
+   "scored": 10,
+   "search_cpu_s_mean": 7.3224,
+   "searched": 10,
+   "selected": 194,
+   "status": {
+    "counted": 59,
+    "dropped": 0,
+    "pending": 0
+   },
+   "sum_qc2_mean": 0.027371984996272625,
+   "unit_cpu_s_mean": 30.013559322033895,
+   "unit_cpu_s_total": 1770.7999999999997,
+   "units": 59
+  },
+  "home72": {
+   "attempts": 173,
+   "branches": 170,
+   "exclusion_rate": 0.03571428571428571,
+   "g_branch_fail_units": 0,
+   "g_branch_peer_units": 0,
+   "legal_actions_mean": 7.296296296296297,
+   "referee_cpu_s_mean": 11.548629629629628,
+   "scored": 28,
+   "search_cpu_s_mean": 22.994821428571434,
+   "searched": 27,
+   "selected": 584,
+   "status": {
+    "counted": 173,
+    "dropped": 0,
+    "pending": 0
+   },
+   "sum_qc2_mean": 0.06124893852183474,
+   "unit_cpu_s_mean": 28.72196531791907,
+   "unit_cpu_s_total": 4968.9,
+   "units": 173
+  },
+  "p72": {
+   "attempts": 38,
+   "branches": 37,
+   "exclusion_rate": 0.1111111111111111,
+   "g_branch_fail_units": 0,
+   "g_branch_peer_units": 0,
+   "legal_actions_mean": 5.625,
+   "referee_cpu_s_mean": 10.18625,
+   "scored": 9,
+   "search_cpu_s_mean": 23.547444444444444,
+   "searched": 8,
+   "selected": 193,
+   "status": {
+    "counted": 38,
+    "dropped": 0,
+    "pending": 0
+   },
+   "sum_qc2_mean": 0.0407480449369744,
+   "unit_cpu_s_mean": 32.328947368421055,
+   "unit_cpu_s_total": 1228.5,
+   "units": 38
+  }
+ },
+ "reads_no_outcome": true,
+ "schema": "gen3_v_rank_stage0_v1",
+ "searched_positions": 53,
+ "sizing": {
+  "cap_binds": false,
+  "final_blocks": 200,
+  "rule": "200 x min(2, max(1, 0.03 / s\u0304)), up to a multiple of 20",
+  "s_bar": 0.05280829686595537
+ },
+ "teeth": []
+}
