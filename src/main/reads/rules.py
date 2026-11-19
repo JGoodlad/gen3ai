@@ -66,6 +66,10 @@ with its reasons (N1-P FINDING 7).
   within-panel unit bootstrap, GO / NULL / STOP by exact fractions; peer drops by AM-DL-PEER's classifier
   (:mod:`main.reads.peer_divergence`); VOID on G-PREFIX, engines, bytes, the search config, unpaired deals or the live
   identity guard (:mod:`main.value_search.live_identity`).
+* ``v_rank`` -- V-RANK (``design_v_rank_on_u.md``; :mod:`main.reads.rules_v_rank`): the within-position slope β of the
+  REAL outcome on the search's Q̂, every legal action of a drawn raw P* vs Kakuna state forced as a real game
+  (``main.value_search.v_rank``); β_U against β_home72 by a within-panel deal bootstrap; NULL / HOLDS / WORSE /
+  UNDECIDED, look 1 NULL-only; VOID on the raw arm, the draw, the shadow arms' records, the plan and the branch teeth.
 * ``distill_play`` -- X65 ExIt-0 (``x65_exit0_2026-11-05`` PREREG §1, §4, §6; :mod:`main.reads.rules_distill_play`): each
   distilled P* student against P* raw on its held-out panel, paired by deal; look 1's raw arm banked from S′-LIVE behind
   G-BANK (the banked deals re-played byte for byte); Ĝ by a within-panel unit-seed bootstrap SE; NOT-DELIVERED from the
@@ -1501,6 +1505,10 @@ from main.reads import rules_deviation_live as _DL  # noqa: E402  (it imports th
 
 RULES["deviation_live"] = Rule("deviation_live", _DL.RULE_DOCS["deviation_live"], _DL.check, _DL.inputs, _DL.decide,
                                False)
+
+from main.reads import rules_v_rank as _VR  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["v_rank"] = Rule("v_rank", _VR.RULE_DOCS["v_rank"], _VR.check, _VR.inputs, _VR.decide, False)
 
 from main.reads import rules_searched_play as _SP  # noqa: E402  (it imports this module lazily: no cycle at import)
 

@@ -151,11 +151,13 @@ one engine, paired by deal. Its co-primaries are the interaction G_U − G_home7
 ≈ 12–16 CPU-min a searched game on average (median ≈ 5) on the lean world screen, ≈ 560 CPU-h at 1,200 deals a set
 (ESTIMATE from one game, §6.4), so it is a rented-box read. It sees only large interactions (≥ ≈ 7 pp at 77 %). If registered, it replaces E4's registration. **Its live searched player is BUILT
 (2026-10-27, §6.4)**; its rule and PREREG are not.
-**Its filter (DRAFT, 2026-10-27, not registered):** [`design_v_rank_on_u.md`](design_v_rank_on_u.md), V-RANK. It
-measures the within-node ranking S-U assumes: every legal action at a position branched as a real P\* vs Kakuna game
-(deterministic replay, so the truth has no opponent model), Q̂'s slope on U against home72. A null or worse slope on U
-turns S-U OFF; an intact one only makes it eligible (on P\*'s own states the slope is 0.54 while search gains nothing).
-≈ 96 CPU-h central.
+**Its filter, now MF-4's meter (BUILT 2026-11-18, not registered):** [`design_v_rank_on_u.md`](design_v_rank_on_u.md),
+V-RANK. It measures the within-node ranking a one-ply argmax needs: every legal action at a position branched as a
+real P\* vs Kakuna game (deterministic replay, so the truth has no opponent model), the slope of the outcome on Q̂
+(`r0s4_honest@10`) on U against home72, the teams we pilot bootstrapped. S-U's question was answered in games
+(S′-LIVE, S′-HONEST), so its classes no longer gate S-U: a null or worse slope on U funds MF-4's leaf-value step, an
+intact one does not (on P\*'s own states the slope is 0.54 while search gains nothing). ≈ 120 CPU-h at its smoke's
+cost (the rule `v_rank`, `../tools/reads.md`).
 
 **Status (2026-10-26, latest): H-MID READ — P\*'s critic does not see its unfamiliar-team conversion deficit, but it
 still ORDERS unfamiliar-team positions as well as home ones** (`../research_state/measurements/h_mid_value_test_2026-10-26/`,
@@ -1116,3 +1118,4 @@ limits:
 | 2026-11-09 | **S′-HONEST's clustering addendum, REPORTED** (the statistics auditor, orchestrator brief, after an independent review; a recompute from the banked cells, no game, no new verdict) | the status line and its new "Clustered on teams" bullet; §1's first bullet; W13: the gain holds under every dependence model (LB ≥ +0.31 pp), the searched score's 0.50 clearance under none but independent deals ([0.4942, 0.5353] our team, [0.4954, 0.5337] Kakuna's, [0.4908, 0.5382] two-way), the gain detected on P72 alone | changing the registered verdict (it followed its rule and disclosed the fixed-panel reading); a naive two-way (pigeonhole) bootstrap as the interval (it triple-counts game noise: reported as the outer bracket only); reading the P72 concentration as a leak or as "the sampler guesses P72 better" (the sampled worlds match the truth no better there); reading H and F as "search does not work on human teams" (H + F cannot exclude +2.7 pp) | `../research_state/measurements/sprime_honest_play_2026-11-06/addendum_clustering/README.md`; ledger 2026-11-09 |
 | 2026-11-09 | **X66 ExIt-0H REGISTERED** (the MF-1 registrar, orchestrator brief) | the status block's distillation bullet (X66, S′h's key noise); Q18's row | X65's registered recipe (it never moved the network); re-running the probe's control and capacity arms (their results are properties of the recipe and the network, already measured); training at main (its v166 model is not the function S′-HONEST played) | `../research_state/measurements/x66_exit0h_2026-11-09/PREREG.md` |
 | 2026-11-10 | **X66 ExIt-0H: NOT-DELIVERED** (its read operator, orchestrator brief) | the Priority block's MF-1 clause; the status block's distillation bullet; Q18's row | reading it as evidence for the scale bet or about network size (the registration's pre-commitment: the labels are about a third reproducible and the source gain is P72's alone); planning ExIt-1 on it; reading it as a verdict on S′h (agreement with the search's picks, not their value, was measured) | `../research_state/measurements/x66_exit0h_2026-11-09/README.md`; ledger 2026-11-10 |
+| 2026-11-18 | **V-RANK's builds BUILT** (the V-RANK builder, orchestrator brief Q9 / MF-4; a smoke on unregistered seeds, no registered game, no result) | the S-U block's V-RANK paragraph (MF-4's meter; Q̂ from `r0s4_honest@10`; a team-clustered interval; ≈ 120 CPU-h) | the one-process deal unit; the deal bootstrap as the registered interval; a playable oracle preset | `design_v_rank_on_u.md` §6 "As built"; `../tools/reads.md` rule `v_rank` |

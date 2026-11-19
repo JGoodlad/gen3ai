@@ -37,8 +37,8 @@ Reading (cells, rules, the record):
   and peer logs (units of pre-guard pins too): a hit voids the unit, or HOLDS ``decide`` for a read registered before;
 * :mod:`main.reads.rules` (with :mod:`main.reads.rules_n4_screen`, :mod:`main.reads.rules_search_headroom`,
   :mod:`main.reads.rules_deviation_sign`, :mod:`main.reads.rules_deviation_live`, :mod:`main.reads.rules_searched_play`,
-  :mod:`main.reads.rules_distill_play`, :mod:`main.reads.rules_x63`, :mod:`main.reads.rules_x60` and
-  :mod:`main.reads.rules_x59s`) --
+  :mod:`main.reads.rules_distill_play`, :mod:`main.reads.rules_x63`, :mod:`main.reads.rules_x60`,
+  :mod:`main.reads.rules_v_rank` and :mod:`main.reads.rules_x59s`) --
   the registered interval and decision rules, by name (reusing ``main.x35.readout`` / ``main.x35.d1`` /
   ``main.anchors.results``), and the registered VOID gate; :mod:`main.reads.x60_guards` -- X60-T's GAIN-to-ADOPT
   guards artefact (G-F / G-E / G-C tied to the read's finals) and its re-decision spec (AM-X60T-3);

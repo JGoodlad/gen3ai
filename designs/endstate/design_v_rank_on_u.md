@@ -1,8 +1,9 @@
 # V-RANK — does the search's value rank the moves of ONE position as well on unfamiliar teams as on home72, against Kakuna?
 
-**Status: DRAFT (2026-10-27), explicit-only; NOT REGISTERED.** The PREREG is NOT READY: it needs the builds B-V1–B-V4
-(§6) and a pin. §3–§4 are the text it will register unchanged, with the pin, the engine and stage 0's measured cost
-added. This unit wrote this doc and ran one CPU probe on banked rows (§5.1; < 1 CPU-min, read-only, no game). It
+**Status: DRAFT (2026-10-27), explicit-only; its builds BUILT 2026-11-18 (§6 "As built"); NOT REGISTERED until its
+PREREG lands.** §3–§4 are the text the PREREG registers, with §6's deviations (the team-clustered interval, the honest
+Q̂ source, the pipeline's shape, the decision re-pointed to MF-4), the pin, the engine and the smoke's measured cost.
+The 2026-10-27 unit wrote this doc and ran one CPU probe on banked rows (§5.1; < 1 CPU-min, read-only, no game). It
 answers FINDING F5 of the literature survey (`5d554c23`,
 [`context_generalisation_2026-10-27.md`](../research_state/literature/context_generalisation_2026-10-27.md)) and
 gates S-U ([`design_search_u_headroom.md`](design_search_u_headroom.md)).
@@ -314,7 +315,7 @@ X59-S). At ≈ 1 effective lane, ≈ 96 CPU-h is ≈ 4–8 days of wall: X51's 8
 
 ---
 
-## 6. Builds (PROPOSED, each default OFF)
+## 6. Builds (the table is the 2026-10-27 proposal; "As built" below it is what exists)
 
 | # | build | size (MY JUDGEMENT) |
 |---|---|---|
@@ -324,6 +325,48 @@ X59-S). At ≈ 1 effective lane, ≈ 96 CPU-h is ≈ 4–8 days of wall: X51's 8
 | B-V4 | **The preset `oracle_leaf8`** beside `r0s4` in `src/main/anchors/search_presets.py`: `reveal="oracle"`, depth to the end, 8 worlds × 8, values only | ≈ 1 h |
 
 Then the PREREG (§3–§4 verbatim, the pin, the engine, the peer pack) and stage 0.
+
+### As built (2026-11-18; `../tools/reads.md` rule `v_rank`)
+
+The dlive read's pipeline with every legal action branched, not the proposal's one-process deal unit. Each deviation
+is a FINDING the PREREG repeats.
+
+- **The raw games** are a `main.reads` anchor read: whole 20-game units of pinned P\* (greedy, `load.input_log`
+  `"10-30"`) against Kakuna, so the engine stamp, the pin, the queue and resume are `main.reads`' at unit granularity.
+- **B-V2's draw**: `python -m main.value_search.v_rank select` (§3's hash, two strata a deal, from the kept input
+  logs of the counted units; each state stamped with the team we piloted; written once).
+- **B-V1's shadow arms run OFFLINE** on the kept honest log (`v_rank score`, resumable, `--part i/K`): Q̂ of every
+  legal action through the live searcher's own `_search` and root guards, with the per-world values (refused unless
+  each action's mean is the search's own Q̂), log π, the exclusion; then the self-referee. Every row carries the
+  zip's sha256. **Q̂'s source is `r0s4_honest@10`**, not `r0s4`: S carries the true-seed leak, the honest preset is
+  a function of the information state and is the search that reached goal (b) (MY JUDGEMENT, the 2026-10-28 row's
+  open choice).
+- **B-V1's forced branches**: `v_rank plan` writes one `main.anchors --our-force` ONE-GAME unit per legal action
+  other than π's, and one null control a raw unit (π's own action forced), over `--shards` `main.x35.kakuna` states;
+  the plan extends as more states are scored and never changes a planned unit. `v_rank classify` runs the
+  peer-divergence classifier per shard (the dlive read's AM-DL-PEER, registered from the start). The multi-force
+  deal unit (the model and the peer started once for ≈ 16 games) is NOT built: a one-game unit costs ≈ 25 CPU-s,
+  most of it start-up.
+- **B-V3**: the rule `v_rank` (`src/main/reads/rules_v_rank.py`; the estimator
+  `src/main/value_search/v_rank_stat.py`). **Its interval resamples the TEAMS we pilot within panel, not deals**:
+  the registration tiers (`../research_state/README.md`, 2026-11-09) require a team-clustered interval on every
+  Kakuna number, and a 20-game unit deals each of its 10 teams twice, so deals are not independent draws. §4.1's
+  deal bootstrap is REPORTED beside it (`beta_deal_clustered`). §5's power figures assume independent deals and
+  can only be optimistic. The opponent's team is not in the unit's records, so the cluster is one-way.
+- **B-V4**: `oracle_leaf8` is a REFEREE configuration inside `v_rank.py` (the true world, 8 seeds an action to the
+  end, P\* on both sides), deliberately not a `search_presets` entry: a playable preset that reads the true opponent
+  team would be a leak hazard.
+- **`v_rank stage0`** is §5.4's outcome-free look (s̄, the exclusion rate, the legal-action count, every part's CPU,
+  the teeth, the sizing rule's block count). Not built: the level-at-10 subgroup and the X51 cross-engine guard of
+  §4.4 (the read's deals are fresh unit seeds, so no X51 game pairs with them).
+- **§4.3's gate is obsolete** (S-U was answered by S′-LIVE and S′-HONEST). The classes now decide MF-4's funding
+  (`../research_state/EXPERIMENT_BACKLOG.md`): RANK-NULL-ON-U or RANK-WORSE-ON-U funds the leaf-critic fine-tune /
+  Q-head step; RANK-HOLDS-ON-U does not; UNDECIDED changes nothing (MY JUDGEMENT; the PREREG registers it).
+- **The smoke** (2026-11-18, unregistered unit seed 2900, one unit each of `heldout72_hpfix` and home72; never a
+  result): 40 raw games ≈ 10 CPU-s each; 8 states scored twice with identical Q̂, per-world values and referee
+  outcomes; 7 searched (one honest-world exclusion, 205–219 CPU-s), mean 7 legal actions; 44 one-game units all
+  counted, both null controls identical to their raw games; ≈ 3.0 CPU-min a selected position against §5's 2.4
+  (n = 8 positions).
 
 ---
 
@@ -417,14 +460,15 @@ searched or the raw one), never the siblings. Its stage 0 has the siblings' Q̂ 
   result about Kakuna or U.
 - **V-2.** Q̂'s within-node spread on the 31 banked Kakuna decisions (3 games, 2 deals) is 0.2–0.4× the probe's. Power may be ≈
   1.6× worse than §5.2's main rows. Stage 0 measures it, and the sizing rule acts on it.
-- **V-3.** The cost per branch game and the self-referee's cost are UNVERIFIED (X51's in-unit wall per game, and the
-  0.3 CPU-s a full playout from another read). Stage 0 measures both.
+- **V-3.** The cost per branch game and the self-referee's cost were UNVERIFIED (X51's in-unit wall per game, and the
+  0.3 CPU-s a full playout from another read). The 2026-11-18 smoke measured ≈ 25 CPU-s a one-game branch and
+  ≈ 7.5 CPU-s a position for the referee (§6 "As built"); stage 0 re-measures both.
 - **V-4.** B-V1's core is BUILT (2026-10-28) for the deviation-only live read: `main.anchors --our-force`
   (`main.anchors.forced_branch`) plays a named action at a named decision of a `--deal-game` replay after G-BRANCH (the
   honest-log digest, tokens, row and greedy action equal the raw decision's). In-process battles pass it, and a null
   branch replays its raw game whole (`forced_branch_integration_test`); its pre-play tooth on the gate's banked
-  Kakuna games is `../research_state/measurements/dlive_read_2026-10-28/` §5, §9. Its shadow arms (S and the
-  self-referee at the position, live) are not built: that read runs S′ offline on the kept log instead.
+  Kakuna games is `../research_state/measurements/dlive_read_2026-10-28/` §5, §9. Its shadow arms are BUILT
+  2026-11-18 as an offline scorer on the kept log (§6 "As built"), not live inside the branch player.
 - **V-5.** The probe's own π logits rank the referee's values NEGATIVELY within a node on average (Spearman −0.09),
   while π's top choice is good (α 1.6 pp). That is descriptive and pool-only. Reading the logits' ordering below the
   top as a ranking would be wrong.
@@ -442,3 +486,4 @@ searched or the raw one), never the siblings. Its stage 0 has the siblings' Q̂ 
 | 2026-10-28 | **The S-U gate read GO: V-RANK is next** (S-U gate operator; precommit memo §2.7) | on U, S's deviations are right 0.635 [0.578, 0.687] under the self-referee (home72 0.537), so V-RANK's live branches run before any live S-U read. Its self-referee arm (§4.4) is now measured on fresh U states; its deviation statistics may cite the gate's per-set rows | V-RANK skipped (only on STOP) | `../research_state/measurements/su_gate_2026-10-27/README.md` |
 | 2026-10-28 | **The S-U gate's GO SUPERSEDED by the leak-reduced re-gate, which also reads GO** (S-U re-gate operator, orchestrator brief; PREREG `3626ef6e5`) | the licence stands on S′ = `r0s4_rolls@10` (`dice="rolls"`): pooled-U sign accuracy 0.599 [0.543, 0.649] under the self-referee (home72 0.551; leak-exposed 0.632, leak-clean 0.564 [0.478, 0.639]). A V-RANK PREREG that cites the gate cites the re-gate and registers its engine (`e00a212a…/3d0d5c9c…`); taking Q̂ from S′ rather than S is MY JUDGEMENT (S carries the damage-roll leak a real server lacks), for the PREREG to decide. Whether V-RANK runs as drafted or a deviation-only live read sized for the contrast replaces its all-sibling slope first (the gate review's M3: V-RANK's deviation row reaches z ≈ 1.4) is the orchestrator's call; this doc's classes, bars and size are unchanged | quoting the gate's leak-exposed 0.635 as the licence | `../research_state/measurements/su_regate_rolls_2026-10-28/README.md`; `../research_state/measurements/su_headroom_2026-10-27/REVIEW_gate.md` M1, M3 |
 | 2026-10-28 | **The deviation-only live read REGISTERED in this read's place as S-U's next filter; B-V1's core BUILT** (its designer, orchestrator brief; the gate review's M3) | at ≈ 1,800 U deviations of S′ (`r0s4_rolls@10`), only S′'s pick is branched against Kakuna, π's branch being the raw game; GO iff LB(pooled-U mean of y(branch) − y(raw)) > 0. V-RANK as drafted (all siblings, the slope) is not run before S-U; its classes and size are unchanged and unregistered | this read first (its deviation statistic reaches z ≈ 1.4; ≈ 96 CPU-h) | `../research_state/measurements/dlive_read_2026-10-28/PREREG.md`; `../research_state/measurements/su_headroom_2026-10-27/REVIEW_gate.md` M3 |
+| 2026-11-18 | **B-V1–B-V4 BUILT, as the dlive pipeline with every legal action branched** (the V-RANK builder, orchestrator brief Q9 / MF-4; a smoke on unregistered seeds, no registered game) | §6 "As built": raw games through `main.reads`; `main.value_search.v_rank` (`select`, `score`, `plan`, `classify`, `stage0`, `read`); the rule `v_rank` with a TEAM-clustered bootstrap; Q̂ from `r0s4_honest@10`; `oracle_leaf8` as a referee configuration; the classes re-pointed from S-U's gate to MF-4's funding | the one-process deal unit and a new `main.reads` group kind (a Rust-free build on proven parts first; it would roughly halve the branch cost, a follow-up); the deal bootstrap as the registered interval (a unit deals each team twice); a playable `oracle_leaf8` preset (a leak hazard); Q̂ from the leaky `r0s4` | the smoke under §6; `src/main/value_search/v_rank_test.py`, `v_rank_stat_test.py`, `v_rank_integration_test.py`, `src/main/reads/rules_v_rank_test.py` |
