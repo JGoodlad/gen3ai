@@ -1,0 +1,41 @@
+{
+ "bootstrap": {
+  "B": 2000,
+  "seed": 20261027
+ },
+ "branch_states": [
+  "/home/goodlad/gen3ai_archive/v_rank_2026-11-18/live/branches1"
+ ],
+ "engine": "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130",
+ "home_groups": [
+  "home1"
+ ],
+ "home_panel": "home72",
+ "input_log": "10-30",
+ "label": "pstar",
+ "look": 1,
+ "margin": 0.25,
+ "max_drop_frac": 0.1,
+ "null_bar": 0.25,
+ "preset": "r0s4_honest",
+ "referee": {
+  "preset": "oracle_leaf8",
+  "seeds": 8
+ },
+ "rule8_eps": 0.0005,
+ "scored": [
+  "/home/goodlad/gen3ai_archive/v_rank_2026-11-18/live/scored1"
+ ],
+ "search": "r0s4_honest@10",
+ "selected": [
+  "/home/goodlad/gen3ai_archive/v_rank_2026-11-18/live/selected1.jsonl"
+ ],
+ "u_groups": [
+  "u1"
+ ],
+ "u_panels": [
+  "heldout72_hpfix",
+  "forum72",
+  "p72"
+ ]
+}

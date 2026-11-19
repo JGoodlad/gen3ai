@@ -1,0 +1,88 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "v_rank_2026-11-18",
+ "prereg": "designs/research_state/measurements/v_rank_2026-11-18/PREREG.md",
+ "pin": "c933afd5a",
+ "note": "V-RANK look 1 (100 blocks): the within-position slope of the REAL Kakuna outcome on r0s4_honest@10's Q, U (H, F, P72) against home72, at P*'s states. Look 1 reads RANK-NULL-ON-U only. FULL tier, blind.",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   },
+   "load": {
+    "input_log": "10-30"
+   }
+  }
+ },
+ "anchor": {
+  "u1": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "2000-2004",
+   "models": [
+    "pstar"
+   ]
+  },
+  "home1": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "home72"
+   ],
+   "unit_seeds": "2100-2114",
+   "models": [
+    "pstar"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "v_rank",
+  "params": {
+   "label": "pstar",
+   "u_groups": [
+    "u1"
+   ],
+   "home_groups": [
+    "home1"
+   ],
+   "u_panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "home_panel": "home72",
+   "look": 1,
+   "null_bar": 0.25,
+   "margin": 0.25,
+   "bootstrap": {
+    "B": 2000,
+    "seed": 20261027
+   },
+   "rule8_eps": 0.0005,
+   "input_log": "10-30",
+   "search": "r0s4_honest@10",
+   "referee": {
+    "preset": "oracle_leaf8",
+    "seeds": 8
+   },
+   "max_drop_frac": 0.1,
+   "selected": [
+    "/home/goodlad/gen3ai_archive/v_rank_2026-11-18/live/selected1.jsonl"
+   ],
+   "scored": [
+    "/home/goodlad/gen3ai_archive/v_rank_2026-11-18/live/scored1"
+   ],
+   "branch_states": [
+    "/home/goodlad/gen3ai_archive/v_rank_2026-11-18/live/branches1"
+   ],
+   "engine": "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130"
+  }
+ }
+}

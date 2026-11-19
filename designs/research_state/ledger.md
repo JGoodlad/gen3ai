@@ -32074,3 +32074,63 @@ seed-level supplement, the panel-overlap count, the scripts and cost logs); work
 View: `designs/endstate/design_offpool_belief.md` (§5, the guard on BOUNDARY-1's finals), `EXPERIMENT_BACKLOG.md` (MF-3).
 
 Tag: **OFF-POOL BELIEF · BOUNDARY-1 50M · REPORTED · DESCRIPTIVE · PROVISIONAL · species belief − prior on F: C −1.56, W −1.27, Br −0.11, WB −0.07 · breadth ON − OFF +1.32 [+0.93, +1.78] (team), [+1.18, +1.46] (seed t, 8 df) · in pool −0.40 · width ON − OFF +0.16 · `moves_ll` breadth +0.46, width +0.54 · none above the prior off the pool · H and P72 contaminated for breadth (62.3 % / 56.5 % full mon sets in `n1_proc_v1`; F 19.4 %) · no verdict, no 100M claim**
+
+### 2026-11-18 · REGISTRATION · **V-RANK REGISTERED (full tier; blind: before any game of the read): does the honest one-ply search's value rank the moves of ONE position worse on unfamiliar teams than on home72, judged by real games against Kakuna? It decides MF-4's funding. Built, smoked, NOT LAUNCHED**
+
+**Why.** MF-4 (the leaf-value step for one-ply search: a leaf critic fine-tuned on Kakuna outcomes, then the Q head)
+has had no meter. H-MID found P\*'s critic miscalibrated in LEVEL on unfamiliar teams, but a level bias common to
+every sibling cancels in an argmax; what a one-ply search needs is the RANKING of one position's moves. V-RANK
+(`designs/endstate/design_v_rank_on_u.md`, drafted 2026-10-27 as a gate on S-U) measures exactly that with a truth
+that holds no opponent model. Its S-U gate is obsolete (S′-LIVE and S′-HONEST answered S-U in games); it is
+re-pointed, as queue item Q9, at whether MF-4 is funded.
+
+**What is registered** (`measurements/v_rank_2026-11-18/PREREG.md`, spec `read_spec.json`, rule `v_rank`).
+
+- **Positions:** two outcome-blind hashed decisions a game (turns 10–19 and 20–30) of fresh raw P\* (greedy) vs
+  Kakuna games in whole 20-game units: 5 units on each of H, F and P72 (unit seeds 2000–2004) and 15 on home72
+  (2100–2114) at look 1; twice that at look 2 by default.
+- **Q̂:** `r0s4_honest@10`'s value of every legal action, run offline on the kept honest input log.
+- **Truth:** for every legal action, the REAL game against Kakuna that plays it at the position and P\* greedy
+  everywhere else (π's action: the raw game; every other: a forced one-game replay of the deal, checked live by
+  G-BRANCH, with the peer-divergence classifier and one null control a raw unit).
+- **The statistic:** β = the within-position slope of the outcome on Q̂ (both centred over the position's legal
+  actions); β_U = the mean of the three U panels'; Δβ = β_U − β_home. 95 % percentile bootstrap over the TEAMS WE
+  PILOT, within panel (B = 2,000, seed 20261027); the design's deal bootstrap is reported beside it.
+- **Classes:** `RANK-NULL-ON-U` iff UB(β_U) < 0.25 (dominates); `RANK-HOLDS-ON-U` iff LB(Δβ) > −0.25 and
+  LB(β_U) > 0; `RANK-WORSE-ON-U` iff UB(Δβ) < 0 and not HOLDS; else `UNDECIDED`. A deciding bound within 0.0005 of
+  its bar reads UNDECIDED (rule 8). Look 1 (100 blocks) reads NULL only; look 2 reads every class.
+- **The decision (MY JUDGEMENT of the builder, registered):** NULL or WORSE ⇒ MF-4's leaf-value step FUNDED;
+  HOLDS ⇒ not funded on this evidence (never "search pays"); UNDECIDED ⇒ unchanged.
+- **Stage 0 (outcome-free):** the first 5 blocks size look 2 from Q̂'s spread (final blocks = 200 × min(2, max(1,
+  0.030 / s̄)), cap 400), written to the record before look 1 is decided.
+
+**Power** (the design's §5.2: a normal approximation from the self-referee probe on banked pool states, deals
+independent). At 1,200 positions a set: SE β_U 0.070, SE Δβ 0.099; P(NULL) 0.95 at β_U = 0 and 0.57 at 0.10;
+P(WORSE) 0.78 at Δβ = −0.27; P(HOLDS) 0.71 at Δβ = 0; false WORSE 2.5 %, false HOLDS ≈ 1.5 %. At the Q̂ spread
+banked on Kakuna games (0.4× the probe's): 0.61 / 0.41 / 0.36, and 0.89 / 0.68 / 0.61 at the 400-block cap. **These
+are upper bounds:** the registered interval resamples teams (≈ 56 distinct a U panel at 200 blocks), and the team
+effect on the slope is UNVERIFIED; the read reports both intervals.
+
+**What was executed.** The whole pipeline on an unregistered seed (2900; one unit each of H and home72, 40 raw
+games): the draw, 8 states scored twice with identical records, 44 one-game forced units all counted, both null
+controls identical, the classifier, stage 0, and `main.reads` assemble / decide / record (rc 0; the degenerate
+2-team "verdict" is a pipeline check, never a result). A look-2 spec importing both groups from look 1's state
+reproduced the numbers. `check-spec` at the pin: green. Tests: the estimator, the driver, the rule (fast), one slow
+integration test (banked). **Not executed / UNVERIFIED:** any game on a registered seed; four shards and two scorers
+at once; the wall-clock estimate; the exclusion and drop rates at scale (the smoke's n is 8).
+
+**Limits written into the registration.** The slope is dominated by siblings π would never play, so HOLDS licenses
+nothing about search (reviews M6 / M3); the search-facing contrasts are REPORTED only. π's arm is a game inside a
+20-game unit while every other arm is a one-game replay (G-BRANCH, the capture prefix and the nulls are the check).
+A position with a dropped branch is excluded whole (cap 10 % a panel). One-way team cluster (the opponent's team is
+not recorded). P72 is weak and procedural. Q̂ is the honest preset's, not the design's leaky `r0s4`.
+
+**Cost** (ESTIMATE from the smoke: ≈ 3.0 CPU-min a selected position, against the design's 2.4; ≈ 25 CPU-s a
+one-game branch, start-up dominated). Stage 0 ≈ 3 CPU-h; look 1 ≈ 60 (50–70); the final ≈ 120 (100–140); the cap
+≈ 240. No GPU.
+
+**Record:** `measurements/v_rank_2026-11-18/` (`PREREG.md`, `read_spec.json` sha256 `d7342bc9…dc4f`, `stage0_params.json`, `README.md`);
+code `src/main/value_search/v_rank.py`, `v_rank_stat.py`, `src/main/reads/rules_v_rank.py` at `c933afd5a`.
+View: `designs/endstate/design_v_rank_on_u.md`, `designs/endstate/search_ledger.md`, `EXPERIMENT_BACKLOG.md` (MF-4).
+
+Tag: **REGISTRATION · V-RANK · within-position slope of the real Kakuna outcome on `r0s4_honest@10`'s Q̂, U vs home72 at P\* · RANK-NULL-ON-U / RANK-WORSE-ON-U / RANK-HOLDS-ON-U / UNDECIDED · two looks (100 / 200 blocks, cap 400) · team-clustered · NULL at β_U = 0 seen 0.95 (deal-independent, an upper bound) · ≈ 120 CPU-h · pin `c933afd5a` · not launched · funds or does not fund MF-4's leaf-value step · moves no recipe**

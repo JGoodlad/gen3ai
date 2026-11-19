@@ -183,7 +183,8 @@ its GO.
   12.55 GPU-h, `228dec074`) read DROP on 2026-11-11 (§2's landed row): the label-only forks gain +0.49 to +0.55
   nats a unit on H against a bar of +0.6 on the lower bound, so the lever is screened out at this dose (screen
   evidence, never a verdict).
-- **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
+- **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU; REGISTERED 2026-11-18, not launched:
+  `research_state/measurements/v_rank_2026-11-18/PREREG.md`).
 - **MF-5: BOUNDARY-1's from-scratch 2 × 2**, width (128 against 2× `D_MODEL`, `--d-model`, `0220f8408`, config
   v169) × team breadth (the pool against half procedural teams): REGISTERED 2026-11-09 at pin `507d0c119`,
   **AMENDED 2026-11-10 to three seeds a cell, twelve fresh runs to 100M** (Amendment 1, after an independent
