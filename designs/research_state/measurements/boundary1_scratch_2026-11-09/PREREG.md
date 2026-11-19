@@ -2359,8 +2359,11 @@ record was registered, so that folder is the recorder's choice.
     CONTINUE on N, −0.37 pp [−3.32, +2.57]; no class for either factor at 100M; the survivor's simple effect
     will be REPORTED under `NO-CLASS`. **Beside it, §5.5's notification: `class_moves` is true for breadth**
     (with the team variance the upper end is −1.99, which would read CONTINUE); it acts on nothing.
-  - **No owner notification, no owner ruling and no default that acted is on record here.** The orchestrator's
-    ruling of about 15:23 PST (the look record's item 9) is the orchestrator applying §8, not an owner ruling.
-    The notification's time and text are owed to this slot when it is sent; by that ruling the clock starts at
-    the 100M survivor look's verdict.
+  - **The owner notification, an operational record (not an amendment; it changes no rule or row).** The owner
+    was sent a heads-up on 2026-11-18 at about 15:24 PST (a push notification and the orchestrator's session
+    report) with the 50M outcome, the STOP-HARM row and its default; the team bootstrap's `class_moves: true`
+    was reported to the owner at about 16:10 PST the same day. Per the ruling the 72 h veto clock starts when
+    the 100M survivor look's verdict exists. **No owner ruling and no default that acted is on record here.**
+    The orchestrator's ruling of about 15:23 PST (the look record's item 9) is the orchestrator applying §8, not
+    an owner ruling.
   - **Still OPEN in S9:** every other record its row in the table names.

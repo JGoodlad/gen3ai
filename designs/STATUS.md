@@ -365,8 +365,9 @@ Every open owner question, in one place.
    ruling that window starts when the 100M survivor look's verdict exists (≈ 2026-11-21). **Beside it, a
    notification that acts on nothing:** the team bootstrap reads `class_moves: true` for breadth (with the
    variance between teams added, the interval's upper end is −1.99 against the −2.0 bar, which would read
-   CONTINUE; the registered class is the STOP-HARM and it stands). **UNVERIFIED:** whether the owner has been
-   notified; slot S9 holds no notification yet.
+   CONTINUE; the registered class is the STOP-HARM and it stands). The owner was notified on 2026-11-18 (a
+   heads-up at about 15:24 PST with the outcome, the row and its default; `class_moves` at about 16:10 PST;
+   slot S9); no ruling has come.
 
 ## 7. The biggest risks and unknowns
 
