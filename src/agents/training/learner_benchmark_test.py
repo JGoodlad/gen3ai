@@ -313,6 +313,23 @@ def test_buffer_state_round_trip_survives_in_place_edits():
     assert lb.buffer_fingerprint(st)["observations"] == {"obs": [[3, 2, 1], "float32"]}
 
 
+def test_scalar_read_meter_leaves_torch_tensor_namespace_unchanged():
+    """The meter patches names INHERITED from TensorBase; restoring by assignment would leave them
+    in `vars(torch.Tensor)`. A context manager must leave no global state behind."""
+    names = ("item", "__float__")
+    before = {n: n in vars(th.Tensor) for n in names}
+    acc = {"s": 0.0, "n": 0}
+    with lb._scalar_read_meter(acc):
+        assert th.zeros(()).item() == 0.0
+        assert float(th.zeros(())) == 0.0
+    assert acc["n"] == 2
+    assert {n: n in vars(th.Tensor) for n in names} == before
+    acc2 = {"s": 0.0, "n": 0}
+    with lb._scalar_read_meter(acc2):
+        th.zeros(()).item()
+    assert acc2["n"] == 1 and th.zeros(()).item() == 0.0     # restored, and not still counting
+
+
 def test_is_plain():
     assert lb._is_plain({"a": [1, 2.0, None], "b": np.float32(1)})
     assert not lb._is_plain({"a": th.zeros(1)})

@@ -490,6 +490,10 @@ def load_buffer(path: Path) -> Dict[str, Any]:
 def _scalar_read_meter(acc: Dict[str, float]):
     """Count + time host-blocking scalar reads (`Tensor.item`, `float(tensor)`) for the block."""
     import torch
+    names = ("item", "__float__")
+    # Both names are INHERITED from TensorBase: restoring by plain assignment would leave them
+    # in `vars(torch.Tensor)`, so record who owns each and delete what we added.
+    owned = {n: n in vars(torch.Tensor) for n in names}
     orig_item, orig_float = torch.Tensor.item, torch.Tensor.__float__
 
     def _item(self):
@@ -511,7 +515,11 @@ def _scalar_read_meter(acc: Dict[str, float]):
     try:
         yield
     finally:
-        torch.Tensor.item, torch.Tensor.__float__ = orig_item, orig_float
+        for n, orig in zip(names, (orig_item, orig_float)):
+            if owned[n]:
+                setattr(torch.Tensor, n, orig)
+            else:
+                delattr(torch.Tensor, n)
 
 
 @contextmanager
