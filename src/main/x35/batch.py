@@ -141,6 +141,13 @@ look; a record for another arm or look is a refusal.
   the PREREG is in the checkout, and holds a phase-2 fork PENDING until the write-once phase-1 record
   ``<stage>/phase1_a3.json`` exists (the operator writes it after the three exploiters END and pass the PREREG's
   phase-boundary rule), REFUSED if it names any run but the three registered exploiters.
+* **X71, THE EXPLOITABILITY PROBE'S RESPONDERS** (``x71_exploitability_probe_2026-11-16/PREREG.md``,
+  :data:`X71_PREREG`; ``main.x35.x71``): ``x71_c0`` / ``x71_x67`` / ``x71_swap`` / ``x71_x70`` (:data:`X71_ARMS`), a
+  fresh 5M best responder of one target final each, training seeds 7111 and 7112, ALL at :data:`CE3D_PIN`
+  (:func:`ce3d_pin_check`). Held by :data:`X71_STAGES`; ONE look: :func:`_x71_status` REFUSES every other seed and is
+  PENDING on the AM-8 side gate and until the PREREG is in the checkout. Like the G-E readers they are outside
+  :data:`SIDE_PINNED_ARMS` (pin judged, no K9(b) batch gate). Read by the PREREG's own ``read_x71.py``: no ``reads/``
+  record, no :data:`READ_LABEL`.
 * **X63-C, THE X63 CONTROL REPLICATE** (``reviews/x63_review_2026-10-27.md`` B1 fix 3; PREREG
   ``x63c_control_replicate_2026-10-28/PREREG.md``, :data:`X63C_PREREG`): ``x63c`` (:data:`X63C_ARMS`) is X26c's
   recorded argv with only the seed (6302) and run name changed, a +100M continuation from X26 @380M (not P*), with no
@@ -563,6 +570,25 @@ A3_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 )
 SIDE_PINNED_ARMS = SIDE_PINNED_ARMS + A3_ARMS       # judged by pin-check with the side's other runs
 # ---- end of the X35-A3 block ------------------------------------------------------------------------------------
+# ---- X71 (2026-11-19): its own block; nothing above is rewritten ------------------------------------------------
+#: X71, the exploitability probe (PREREG x71_exploitability_probe_2026-11-16 §2-§4): eight fresh 5M best responders,
+#: two (seeds 7111, 7112) per target final, the kit arm naming the target (``main.x35.x71``). Production arms, ALL at
+#: the CE-3d training pin (PREREG §3). Like the G-E readers they are NOT in SIDE_PINNED_ARMS: their recorded pins are
+#: judged by pin-check (:func:`side_pinned_run_names` with ``readers``), the batch's disk pre-check does not count
+#: them, and :func:`k9b_batch` does not gate a later launch on their K9(b) (the PREREG registers no such condition).
+X71_ARMS = ("x71_c0", "x71_x67", "x71_swap", "x71_x70")
+#: X71's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
+X71_PREREG = "designs/research_state/measurements/x71_exploitability_probe_2026-11-16/PREREG.md"
+#: X71's stages, in the PREREG's launch order (§4.1): the three banked targets at 7111, then at 7112; X70's two when
+#: its final exists (the kit's describe refuses them until then: G5). ONE look. Never merged into STAGES.
+X71_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X71", (("x71_c0", 7111), ("x71_x67", 7111), ("x71_swap", 7111),
+             ("x71_c0", 7112), ("x71_x67", 7112), ("x71_swap", 7112))),
+    ("X71_X70", (("x71_x70", 7111), ("x71_x70", 7112))),
+)
+ARM_PINS.update({a: CE3D_PIN for a in X71_ARMS})
+ARM_PIN_AMENDMENT.update({a: "X71 PREREG §3" for a in X71_ARMS})
+# ---- end of the X71 block ---------------------------------------------------------------------------------------
 #: X63-C's stage (2026-10-28, review B1 fix 3): one seed, on the orchestrator's GO once its PREREG exists. Its comparators
 #: are X26c (s2601) and X63's own continuation, not C0. Never merged into STAGES.
 X63C_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
@@ -616,11 +642,12 @@ def _now() -> str:
 
 def side_pinned_run_names(*, readers: bool = False) -> Dict[str, Tuple[str, int]]:
     """``{run name: (arm, seed)}`` of every side-pinned arm (:data:`SIDE_PINNED_ARMS`: batch 1 + batch 2) at every
-    registered seed; with ``readers`` the G-E readers' runs too (they share the side's pin, ``main.x35.ge``)."""
+    registered seed; with ``readers`` the G-E readers' runs too (they share the side's pin, ``main.x35.ge``) and
+    X71's responders (their own pin, :data:`ARM_PINS`; ``main.x35.x71``)."""
     from main.x35.ge import READER_ARMS
     from main.x35.kit import ARMS, run_name
 
-    arms = SIDE_PINNED_ARMS + (tuple(READER_ARMS) if readers else ())
+    arms = SIDE_PINNED_ARMS + ((tuple(READER_ARMS) + X71_ARMS) if readers else ())
     return {run_name(a, s): (a, s) for a in arms for s in ARMS[a].seeds}
 
 
@@ -915,6 +942,8 @@ def n4_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
 
 def arm_pin_check(arm: str, pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
     """The own-pin check of ``arm`` (:data:`ARM_PINS`)."""
+    if arm in X71_ARMS:   # X71's responders train at the swap's own pin (X71 PREREG §3): the same two-commit check
+        return ce3d_pin_check(pin, side_pin, repo, arm=arm)
     return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check, "x63u": x63u_pin_check,
             "toy_c0n4": n4_pin_check, "toy_n4ffn": n4_pin_check, "x60t": x60t_pin_check,
             "ge_x60t": _ge_x60t_pin_check, "ce3d_swap": ce3d_pin_check, "x70": _x70_pin_check}[arm](pin, side_pin, repo)
@@ -1346,6 +1375,26 @@ def _a3_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
     return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {name}, A3 PREREG present)"
 
 
+def _x71_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
+    """X71's stage-check (PREREG x71_exploitability_probe_2026-11-16 §3-§4): only the registered ``(arm, seed)``
+    pairs of :data:`X71_STAGES` (ONE look: any other seed is REFUSED); then the AM-8 side gate; then the PREREG in
+    this checkout. The target's final (its hash, G2; X70's existence and record, G5) is the kit's describe to judge:
+    it needs the models directory, which this check never reads."""
+    name = next((n for n, forks in X71_STAGES if (arm, seed) in forks), None)
+    if name is None:
+        registered = sorted(s for _, forks in X71_STAGES for a, s in forks if a == arm)
+        return REFUSED, (f"{arm} s{seed} is not registered by the X71 PREREG (its seeds for {arm}: {registered}): "
+                         "one look, no look 2")
+    filled, why = side_gate(stage, "production")
+    if not filled:
+        return PENDING, why
+    from utils.paths import repo_path
+
+    if not repo_path(X71_PREREG).is_file():
+        return PENDING, f"{arm} s{seed}: its PREREG {X71_PREREG} is not in this checkout yet"
+    return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {name}, X71 PREREG present)"
+
+
 def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
     """ALLOWED / PENDING / REFUSED for ``arm`` × ``seed`` now (module docs), with the reason. Production forks are
     PENDING until the side's FP32_ALT commit is named (AM-8); the toy side has no such condition."""
@@ -1354,6 +1403,8 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
 
     if arm in READER_ARMS:                   # a reader: its arm's GAIN, or A3's registration (main.x35.ge), after AM-8
         return trigger(stage, arm, seed)
+    if arm in X71_ARMS:
+        return _x71_status(stage, arm, seed)
     if arm in BATCH2_ARMS:                   # F-AS-8: the AM-8 side gate, then batch 2's registered conditions
         return _batch2_status(stage, arm, seed)
     if arm in R0_ARMS + X52_ARMS + X48_ARMS:  # AM-R0 / AM-X52 / X48: the side gate only (production: FP32_ALT, AM-8)

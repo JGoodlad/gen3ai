@@ -30,6 +30,10 @@
 #          · X70, the ent-0 control (PREREG x70_ent0_control_2026-11-13, +20M, the swap's argv MINUS the magnet = C0's
 #          argv + --ent-coef 0): x70 7331 7332 7333 7334 at the swap's pin batch.CE3D_PIN; one look, no look 2; read
 #          head to head against the three banked swap forks
+#          · X71, the exploitability probe's responders (PREREG x71_exploitability_probe_2026-11-16, +5M from ONE
+#          target final each, the G-E reader's argv + --ent-coef 0.05 --magnet-kl-coef 0 typed): x71_c0 x71_x67
+#          x71_swap x71_x70, seeds 7111 7112 (the responder's TRAINING seed), at batch.CE3D_PIN; x71_x70 is REFUSED
+#          until X70's first final exists; needs --thinning (pre-check 8); the read is drive_read_x71.sh's
 #          · X63-C, the X63 control replicate (PREREG x63c_control_replicate_2026-10-28, +100M, X26c's argv with seed and
 #          run changed, starting at X26 @380M, not P*; pool checked against X26c's seed): x63c 6302 (production pin)
 #          · X63-U, the X63 treatment (PREREG x63_2026-10-29, +100M, X26c's argv + --team-mix x63_union_v1@ALL:0.8

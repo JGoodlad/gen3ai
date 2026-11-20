@@ -151,7 +151,16 @@ its GO.
   between two responders is UNVERIFIED; at a spread of ≤ 1 pp the probe sees an extra +7.5 pp with probability 0.92,
   at 3 pp it sees +10 pp with 0.55. **Cost** ≈ 8.4 GPU-h (eight responders) and 64,000 CPU games (≈ 10.5 lane-h at
   an UNVERIFIED rate). The six argvs whose target exists pass `checkargs` at the pin; the launcher's dry run stops
-  only at this session's hidden card and nice 19. No kit arm or chain items exist for the responders (owed).
+  only at this session's hidden card and nice 19. **The launch kit is built (2026-11-19):** kit arms `x71_c0` /
+  `x71_x67` / `x71_swap` / `x71_x70` (seeds 7111, 7112; the kit's argv is the six banked ones token for token), the
+  draft hand-off `chain_items_x71.json` (eight items, no GO; the arm chain's plan passes for the six, and X70's two
+  plan from a declared placeholder until its first final exists), and the read's driver `drive_read_x71.sh` (one CPU
+  lane, one cell a heavy slot, the verdict written once outside the checkout). Open before a launch: the dry run
+  with the card visible (G3). **The read's rate is the open cost:** a stand-in on 2026-11-19 (not an X71 cell) played
+  17 games a minute at nice 19 beside a live run and three other heavy jobs, a sixth of the assumed rate; at it the
+  read is ≈ 62 lane-h and no cell fits the driver's 2 h bound, so the read needs quiet agent cores or a measured
+  rate first (`read_path_smoke_x71.txt`). The PREREG registers no playing commit for the
+  read: the driver holds one ledger to the commit of its first cell.
 - **X35-A3, the league's first arm with main exploiters folded back in: REGISTERED 2026-11-16, NOT LAUNCHED**
   ([`research_state/measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md`](research_state/measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md), full tier; the post-B1 queue's Q4; CE-3c / LG-1).
   Two phases at the production side pin `f4b25238`, which C0 shares. Phase 1: three main exploiters of P\* (kit arm

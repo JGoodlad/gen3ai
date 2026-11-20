@@ -359,6 +359,8 @@ def test_c3_the_toy_arms_run_k9b_warn_under_x34s_ceilings_and_production_is_unch
         if a.side == "production":
             tgt = ({"path": f"models/{K.run_name(n, a.seeds[0])}/final_model.zip", "step": 300000170}
                    if a.phase == 3 else None)   # a G-E reader (main.x35.ge) reads its target's final
+            if a.phase == 5:                    # an X71 responder (main.x35.x71) forks its target's final
+                tgt = {"run": K._X71.target_run(n), "path": "models/t/final_model.zip", "step": 300000170}
             d = K.describe(n, a.seeds[0], standin_call(), _p1(n), tgt)
             assert a.behaviour == "warn" and d["k9b_ceilings"] is None, n
 

@@ -66,6 +66,11 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   (:data:`X70_LEVER`: no entropy bonus and no magnet), seeds 7331-7334, at the swap's own training pin
   ``batch.CE3D_PIN``. One look, read head to head against the three banked swap forks (the deciding cross isolates
   ``--magnet-kl-coef 0.05`` at ``--ent-coef 0``);
+* X71, THE EXPLOITABILITY PROBE's RESPONDERS (``main.x35.x71``; PREREG ``x71_exploitability_probe_2026-11-16``):
+  ``x71_c0`` / ``x71_x67`` / ``x71_swap`` / ``x71_x70`` -- a fresh best responder of ONE target final (the target
+  arm's lowest seed), the G-E reader's argv at +5M with ``--ent-coef 0.05 --magnet-kl-coef 0`` TYPED; the kit seed is
+  the responder's TRAINING seed (7111, 7112), at ``batch.CE3D_PIN``. The target is judged in full (:func:`x71_target`);
+  X70's missing final is a declared placeholder under ``describe --plan`` only, never a launch argv;
 * X63-C, THE X63 CONTROL REPLICATE (``design_x63_long_breadth_continuation.md``; ``reviews/x63_review_2026-10-27.md``
   B1 fix 3; PREREG ``x63c_control_replicate_2026-10-28/PREREG.md``): ``x63c`` -- X26c's recorded argv token for token
   with only ``--seed`` (6302) and ``--run-name`` changed, +100M, side-pinned at the production pin. It has NO lever:
@@ -132,6 +137,7 @@ from main.x35 import batch as _B
 from main.x35 import ge as _GE
 from main.x35 import r0 as _R0
 from main.x35 import x52 as _X52
+from main.x35 import x71 as _X71
 from main.x35.batch import STAGES as BATCH_STAGES
 from main.x35.batch import BatchError
 from main.x35.refpop import RefPopError, sha256_file
@@ -286,6 +292,11 @@ ARM_TYPED_RECIPE: Dict[str, Tuple[Tuple[str, str, str], ...]] = {
     "ce3d_swap": (("ent_coef", "0.0", CE3D_SWAP_LEVER[0]), ("magnet_kl_coef", CE3D_SWAP_LEVER[3], CE3D_SWAP_LEVER[2])),
     "x70": (("ent_coef", "0.0", X70_LEVER[0]),),
 }
+#: The recipe flags an arm types AT PRODUCTION'S OWN VALUE (X71's responders: ``--ent-coef 0.05 --magnet-kl-coef 0``,
+#: so the learner does not follow its target's record). The recipe surface lists only what DIFFERS from production, so
+#: neither tool prints a ``(TYPED)`` line for them and none is asked for; a printed one fails the arm. That the typed
+#: value reaches the run is UNVERIFIED by either transcript (X71 PREREG §4.2): the run's own record is the check (G6).
+ARM_TYPED_AT_PRODUCTION: Dict[str, Tuple[str, ...]] = {r: (_X71.RECIPE[0], _X71.RECIPE[2]) for r in _X71.X71_ARMS}
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
 #: (``x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`` §7, c9516bac / 96c663d4). The mechanism is the flag plus
 #: ceilings READ BY HAND (``main.ops.tb_read``, at every restart and daily); the trainer enforces none: STOP the arm on
@@ -307,7 +318,8 @@ class Arm:
     length: int
     seeds: Tuple[int, ...]
     run: str             # run-name format
-    phase: int           # 0 single phase, 1 exploiters, 2 folded in, 3 a G-E reader (main.x35.ge), 4 R0 (main.x35.r0)
+    phase: int           # 0 single phase, 1 exploiters, 2 folded in, 3 a G-E reader (main.x35.ge), 4 R0 (main.x35.r0),
+    #                      5 an X71 responder (main.x35.x71)
     behaviour: str
     phase1_of: Optional[str] = None  # phase 2: the phase-1 arm whose record it reads
 
@@ -415,6 +427,9 @@ ARMS.update({r: Arm(r, side, _R0.L_R0, _R0.R0_SEEDS[r], "rb_x35t_r0_s{seed}" if 
 #: X52, the practice ceiling (``main.x35.x52``, AM-X52): a single-phase production fork, C0's argv at +5M + its lever.
 ARMS.update({r: Arm(r, side, _X52.L_X52, _X52.X52_SEEDS, "rb_x35_x52prac_s{seed}", 0, "warn")
              for r, side in _X52.X52_ARMS.items()})
+#: X71, the exploitability probe's responders (``main.x35.x71``, X71 PREREG §3): the kit seed is the training seed.
+ARMS.update({r: Arm(r, "production", _X71.L_RESP, _X71.SEEDS, _X71.run_format(r), _X71.X71_PHASE, "warn")
+             for r in _X71.X71_ARMS})
 assert all(v in ARMS for v in ARM_ALIASES.values()) and not set(ARM_ALIASES) & set(ARMS)
 #: Batch 1 + X47, in GPU order: AM-9 (orchestrator, 2026-10-20; it moved the toy block ahead of production, which waits
 #: for the FP32_ALT build), stage by stage in ``main.x35.batch.STAGES``: T1 toy C0 + X47 (C2's interleave, toy A1 out) ->
@@ -497,6 +512,14 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
     if a.phase == _R0.R0_PHASE:
         return _R0.build_r0_argv(arm, seed, call, run_name=run_name(arm, seed), behaviour=a.behaviour,
                                  ckpt_every=CKPT_EVERY, extras=TOY_EXTRAS if a.side == "toy" else ())
+    if a.phase == _X71.X71_PHASE:
+        if target is None:
+            raise KitError(f"arm {arm} is an X71 responder: it needs its target final (x71_target)")
+        try:
+            return _X71.build_x71_argv(a.name, seed, target, run_name=run_name(arm, seed), behaviour=a.behaviour,
+                                       ckpt_every=CKPT_EVERY, plan=plan)
+        except _X71.X71Error as exc:
+            raise KitError(str(exc)) from exc
     p = call["pstar"]
     s = start_node(arm, call)
     start, step = str(s["path"]), int(s["step"])
@@ -586,12 +609,27 @@ def reader_target(arm: str, seed: int, call: Mapping[str, Any], *, models_dir: O
         raise KitError(str(exc)) from exc
 
 
+def x71_target(arm: str, seed: int, call: Mapping[str, Any], *, models_dir: Optional[str] = None,
+               plan: bool = False) -> Dict[str, Any]:
+    """An X71 responder's target (``main.x35.x71.target``): the registered final under ``models_dir``, judged in
+    full; with ``plan``, X70's not-yet-existing final is its DECLARED PLACEHOLDER (never a launch value)."""
+    a = _arm(arm, seed)
+    if a.phase != _X71.X71_PHASE:
+        raise KitError(f"arm {arm} is not an X71 responder")
+    try:
+        return _X71.target(a.name, models_dir or "", plan=plan,
+                           floor=int(call["pstar"]["step"]) + ARMS[_X71.target_arm(a.name)].length)
+    except _X71.X71Error as exc:
+        raise KitError(str(exc)) from exc
+
+
 def describe(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Mapping[str, Any]] = None,
              target: Optional[Mapping[str, Any]] = None, *, plan: bool = False) -> Dict[str, Any]:
     a = _arm(arm, seed)
     argv = build_argv(arm, seed, call, phase1, target, plan=plan)
     verify_start_node(arm, call)
-    parent = _run_dir_of(str(target["path"])) if a.phase == _GE.READER_PHASE and target else parent_run_dir(call, arm)
+    parent = (_run_dir_of(str(target["path"])) if a.phase in (_GE.READER_PHASE, _X71.X71_PHASE) and target
+              else parent_run_dir(call, arm))
     return {"arm": a.name, "seed": seed, "side": a.side, "phase": a.phase, "run_name": run_name(arm, seed),
             "parent_run_dir": parent, "delta_steps": a.length, "delta_text": f"+{a.length:,} steps",
             "behaviour": a.behaviour, "k9b_ceilings": dict(K9B_TOY_CEILINGS) if a.side == "toy" else None,
@@ -865,8 +903,22 @@ def describe_for_plan(arm: str, seed: int, call: Mapping[str, Any], *, stage: st
     (``ge.placeholder_target``: the registered run and path, the step the arm's registered floor), judged for SHAPE
     only; the result says so (``phase1.mode`` ``TARGET-PLACEHOLDER``, the arm chain's plan note).
 
+    An X71 responder (``main.x35.x71``) follows the same pattern: with no ``target`` given it is
+    ``x71_target(..., plan=True)`` -- the registered final judged in full, or, for X70's while it has no final, its
+    DECLARED PLACEHOLDER, judged for shape only (``phase1.mode`` ``TARGET-PLACEHOLDER``).
+
     Any other arm is ``describe`` unchanged. Never a launch path: ``launch_x35.sh`` passes the real record."""
     a = _arm(arm, seed)
+    if a.phase == _X71.X71_PHASE:
+        if target is None:
+            target = x71_target(arm, seed, call, models_dir=models_dir, plan=True)
+        doc = describe(arm, seed, call, None, target, plan=True)
+        if target.get("placeholder"):
+            doc["phase1"] = {"mode": _X71.PLACEHOLDER_MODE,
+                             "note": f"the target {target['run']} has no final yet: its path is the registered one "
+                                     "and its step the floor, judged for shape only; the kit judges the real final "
+                                     "in full at the launch (X71 PREREG G5)"}
+        return doc
     if a.phase == _GE.READER_PHASE:
         if target is None:
             t_arm = ARMS[_GE.READER_ARMS[a.name]]
@@ -960,7 +1012,7 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
                 if got_typed != [typed_value[knob]]:
                     probs.append(f"{tool} typed {knob} {got_typed!r} != the arm's lever [{typed_value[knob]!r}]")
             continue
-        if flag in d["argv"]:
+        if flag in d["argv"] and flag not in ARM_TYPED_AT_PRODUCTION.get(d["arm"], ()):
             probs.append(f"{d['arm']}'s argv types {flag} but the arm declares no typed {knob} (ARM_TYPED_RECIPE)")
         if rx.search(checkargs):        # checkargs marks TYPED only what the ARGV typed (the dry run also what it restored)
             probs.append(f"checkargs shows a TYPED {knob}, but {d['arm']} declares none: another arm's transcript")
@@ -992,7 +1044,7 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
 
 # ---------------------------------------------------------------------------------- the post-spawn pool check
 #: Arms whose fork does NOT self-play, so nothing is seeded (F16: the main exploiter types --no-self-play).
-NO_POOL_ARMS = frozenset({"a3_mx", *_GE.READER_ARMS, *_R0.R0_ARMS})
+NO_POOL_ARMS = frozenset({"a3_mx", *_GE.READER_ARMS, *_R0.R0_ARMS, *_X71.X71_ARMS})
 POOL_SEED_SCHEMA = 2
 _FILTER_RE = re.compile(r"\[step filter <= (\d+): (?:DROPPED (\d+) later snapshot\(s\) at steps \[([0-9, ]*)\]"
                         r"|none later)")
@@ -1253,15 +1305,18 @@ def _load(path: str) -> Dict[str, Any]:
 
 
 def _cli_target(a: argparse.Namespace, call: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
-    """The target of a G-E reader arm on the CLI (None for every other arm, and for a reader under ``--plan`` with
-    no stand-in: :func:`describe_for_plan` resolves it, a PLACEHOLDER while its target has not finished)."""
-    if ARMS[a.arm].phase != _GE.READER_PHASE:
+    """The target of a G-E reader or an X71 responder arm on the CLI (None for every other arm, and for either under
+    ``--plan`` with no stand-in: :func:`describe_for_plan` resolves it, a PLACEHOLDER while its target has not
+    finished)."""
+    if ARMS[a.arm].phase not in (_GE.READER_PHASE, _X71.X71_PHASE):
         return None
     if getattr(a, "plan", False) and not a.target_standin:
         return None
     from utils.paths import main_models_dir
 
     md = a.models_dir or str(main_models_dir() or "")
+    if ARMS[a.arm].phase == _X71.X71_PHASE:
+        return x71_target(a.arm, a.seed, call, models_dir=md)       # a launch: never a placeholder
     return reader_target(a.arm, a.seed, call, models_dir=md, standin=a.target_standin)
 
 
