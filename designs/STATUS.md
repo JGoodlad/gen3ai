@@ -198,6 +198,18 @@ its GO.
   ratio. The window's first item is the registered card check (a 4.5M pilot, ≈ 1.0–1.3 GPU-h, bound 3).
   `checkargs` at the pin, the dry run (it stops only at the hidden card and nice 19) and the one-lever diff against
   C were re-run on main `66edebfff`: green, the pin does not move.
+- **Q5-N, five PPO epochs at matched dose, from scratch: REGISTERED 2026-11-20, NOT LAUNCHED**
+  ([`research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md`](research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md), full tier; the post-B1 queue's Q5).
+  After Q6-N. The same frame, rule and banked cell C; the arm (kit arm `q5n`, seeds 5201–5203) types
+  `--n-epochs 5 --lr 6e-4`: the control's starting dose under the SAME live KL controller. Deciding: matched steps on
+  view N. **A tie keeps ten epochs**; the cell cannot adopt five for speed alone, and it exists to find a large
+  harm (the one earlier fresh read saw −10.6 pp at an unmatched dose) or a gain of +4 pp and more. Reported, never
+  deciding: the realized dose, the controller's rungs, the last-epoch KL (labelled when outside the controller's
+  band) and a matched-GPU-time cross at 100M. **Power:** Q6-N's. **Cost** at a step-time ratio of 1: ≈ 30 / 61 /
+  45 GPU-h (stopped at 50M / a 100M class / expected with no effect); at the expected ratio 0.59–0.86 (UNVERIFIED)
+  ≈ 18–26 / 36–52 / 27–39. First item: a 2.5M card check (≈ 0.4–0.7 GPU-h, bound 3). Owed builds, neither
+  deciding: a KL report that accepts the new run names (before the 50M look) and the matched-GPU-time cross
+  (before the 100M look).
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

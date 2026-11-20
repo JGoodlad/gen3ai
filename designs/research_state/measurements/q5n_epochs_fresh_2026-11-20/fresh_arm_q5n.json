@@ -1,0 +1,32 @@
+{
+ "schema": "gen3_b1_fresh_arm_v1",
+ "card": "q5n",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "banked_arm": "C",
+ "lever": [
+  "--n-epochs",
+  "5",
+  "--lr",
+  "6e-4"
+ ],
+ "declared_keys": [
+  "lr",
+  "n_epochs"
+ ],
+ "fresh": [
+  {
+   "seed": 5201,
+   "run": "rb_q5n_s5201"
+  },
+  {
+   "seed": 5202,
+   "run": "rb_q5n_s5202"
+  },
+  {
+   "seed": 5203,
+   "run": "rb_q5n_s5203"
+  }
+ ],
+ "note": "REGISTERED 2026-11-20 by q5n_epochs_fresh_2026-11-20/PREREG.md: the arm file the kit reads for this card (python -m main.b1.fresh describe --arm <this file>). It is the draft fresh_cell_frame_2026-11-17/fresh_arm_q5n.json plus `prereg` and this note; a lost run's replacement amends THIS file by a dated amendment (PREREG section 4).",
+ "prereg": "designs/research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md"
+}

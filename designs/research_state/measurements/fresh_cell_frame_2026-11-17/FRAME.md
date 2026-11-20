@@ -1,9 +1,10 @@
 # One fresh cell against a banked BOUNDARY-1 cell: the frame (2026-11-17; ADOPTED 2026-11-20)
 
-**Status: ADOPTED 2026-11-20, rules unchanged since `52353b1b7`, by a FULL registration at width 128:
-[`../q6n_policy_readout_fresh_2026-11-20/PREREG.md`](../q6n_policy_readout_fresh_2026-11-20/PREREG.md). The 256 arm
-(Q6-W) was NOT registered (the orchestrator's ruling after B1's 50M look: width is not ahead). § 4's σ amendment is
-Q6-N's §5. From here this file changes only by a dated amendment that every registration adopting it cites. By itself it
+**Status: ADOPTED 2026-11-20, rules unchanged since `52353b1b7`, by two FULL registrations at width 128:
+[`../q6n_policy_readout_fresh_2026-11-20/PREREG.md`](../q6n_policy_readout_fresh_2026-11-20/PREREG.md) (first in the
+queue) and [`../q5n_epochs_fresh_2026-11-20/PREREG.md`](../q5n_epochs_fresh_2026-11-20/PREREG.md). The 256 arms (Q5-W,
+Q6-W) were NOT registered (the orchestrator's ruling after B1's 50M look: width is not ahead). § 4's σ amendment is
+Q6-N's §5. From here this file changes only by a dated amendment that both registrations cite. By itself it
 registers nothing and launches nothing.** It is the shared part of every later registration that
 reads ONE new three-seed fresh cell against ONE banked BOUNDARY-1 (B1) cell. Such a read can adopt a recipe or an
 architecture, so each lever is registered in the **FULL tier** (`../../README.md` § Registration tiers). Its

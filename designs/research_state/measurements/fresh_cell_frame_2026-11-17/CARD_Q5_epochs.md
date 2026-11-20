@@ -1,6 +1,9 @@
 # Lever card Q5: fewer PPO epochs at matched dose, one fresh cell (DRAFT, 2026-11-17)
 
-**Status: DRAFT, not registered, nothing launched.** A card for [`FRAME.md`](FRAME.md): the lever, what "matched dose"
+**Status: the arm Q5-N was REGISTERED 2026-11-20 by
+[`../q5n_epochs_fresh_2026-11-20/PREREG.md`](../q5n_epochs_fresh_2026-11-20/PREREG.md), which adopts §1 to §6 and REPLACES
+§7 (a card check IS owed, as the first item of the GPU window). The arm Q5-W was NOT registered and stays a draft.
+The text below is the 2026-11-17 draft, kept as written; nothing launched.** A card for [`FRAME.md`](FRAME.md): the lever, what "matched dose"
 means under the learning-rate controller, the argvs at width 128 and 256 with their checks, and the CPU smokes.
 Registering it is a FULL `PREREG.md` that adopts the frame. Queue proposal row Q5; backlog rows 18 (X27) and 19 (X28).
 

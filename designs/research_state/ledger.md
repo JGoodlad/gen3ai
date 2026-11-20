@@ -32269,3 +32269,60 @@ plan would refuse them).
 View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row Q6-N), the frame's and the card's status lines.
 
 Tag: **REGISTRATION · Q6-N policy readout from the trunk, fresh, width 128 · 3 fresh runs vs BOUNDARY-1's banked cell C, 3 × 3 cross on view N, rule `b1_fresh_cell` · 50M CONTINUE / STOPPED; 100M WIN / LOSS / NO-USEFUL-GAIN / UNDECIDED / INCONCLUSIVE · σ_C ≈ 0.36 pp (2 df), half-width ≥ 3.06 pp · P(WIN) 0.00–0.16 at +2 pp, 0.34–0.99 at +4 pp · pin `15136b61` · ≈ 30 / 61–63 GPU-h (50M stop / 100M class) · Q6-W dropped · not launched · moves no recipe**
+
+### 2026-11-20 · REGISTRATION · **Q5-N REGISTERED (full tier; blind: before any Q5 training step, game, look or pilot): five PPO epochs at matched dose (`--n-epochs 5 --lr 6e-4` under the live KL controller), ONE fresh three-seed cell at width 128 against BOUNDARY-1's banked cell C. A tie keeps ten epochs. After Q6-N on the card. NOT LAUNCHED**
+
+**Why.** Five epochs were ADOPTED on forks at matched dose (L21451: +0.75 pp [−1.21, +2.65], 13.59 % less GPU time
+a step), while the one fresh read (the sizing verdict's O8) saw −10.6 pp at about 60 % of the control's dose, a
+confounded comparison. X27 (backlog row 18) asked which it is from scratch and never ran. The post-B1 queue made it
+Q5; the fresh-cell frame reads it against BOUNDARY-1's cell C for three runs.
+
+**The rulings (as Q6-N's entry above).** Width 128 only, **the 256 arm Q5-W is DROPPED, never registered** (the
+queue's note that the card carry the 4.4× sensitivity ratio "at 256" has no arm left to apply to); a card check is
+the first item of the GPU window although the draft owed none; Q5-N runs after Q6-N.
+
+**What is registered** (`measurements/q5n_epochs_fresh_2026-11-20/PREREG.md`; the same frame, rule and kit as Q6-N;
+NO statistic added or changed).
+
+- **The arm:** `rb_q5n_s5201` / `s5202` / `s5203` (kit arm `q5n`; spare seed 5209, pilot 5298): cell C's argv plus
+  `--n-epochs 5 --lr 6e-4`, at B1's launch pin `15136b61`; the network is C's.
+- **"Matched dose":** the arm starts at the control's dose (`lr × n_epochs × optimizer steps an epoch`: 6e-4 × 5 × 2
+  = 3e-4 × 10 × 2) and the SAME live controller then acts on both cells at the same KL target (band 0.005 to 0.02),
+  never a frozen rate: C's controller ran live, so a frozen arm would differ in two levers.
+- **Deciding:** matched STEPS on view N, with Q6-N's statistic, looks and classes. **A tie keeps ten epochs:** a
+  NO-USEFUL-GAIN, an UNDECIDED or a stop at 50M leaves the recipe as it is, and the cell cannot adopt five epochs
+  for speed alone (showing "no worse within 2 pp" needs about ten runs an arm).
+- **REPORTED, never deciding:** each run's realized dose (`python -m main.dose`), the LR rung histogram, the
+  last-epoch KL, clip fraction, entropy, value loss, floor and ceiling touches, the real runs' step-time ratio; the
+  label MOVEMENT-UNMATCHED when the cell's median last-epoch KL over 10M to 50M is not strictly inside the band
+  (it voids nothing); and at 100M a matched-GPU-time cross against C's earlier banked checkpoints.
+- **The card check (not run):** the arm's argv to 2,500,000 steps at seed 5298 into a scratch models dir. PASS iff
+  the compile and its parity check, the graph capture and the startup fit (`oom` null, headroom ≥ 1,024.5 MiB)
+  pass, no parity-gate or non-finite FATAL occurs with the update-10 canary PASS, and the run's sidecar records
+  `n_epochs` 5 and `lr` 0.0006. ρ is RECORDED (reference 517.86 s per 1M steps on the pilot's window).
+
+**Power.** Q6-N's tables: the banked cell and the rule are the same, and the fresh cell here is C's network under
+another update schedule. A +2 pp gain reads WIN 0.00–0.16; a +4 pp gain 0.34–0.99; a −8 pp harm reads LOSS at least
+0.92 of the time in every scenario but the widest (0.81), so a harm of O8's size is what this cell sees best.
+
+**What was executed (2026-11-20, main `66edebfff`, no card).** As Q6-N: the kit's argvs, `checkargs` at the pin (exit
+0; the recipe surface shows `n_epochs 5`, `lr 0.0006` and `ent_coef 0.0125` typed and nothing else), the dry run
+(the same two refusals only), the resolved-config diff (`ok true`: exactly `lr`, `n_epochs`, `seed`, `run_name`
+differ from C), the seed scan (no hit). **The pin does not move.** Nothing trained; no game played.
+
+**Cost.** Card check ≈ 0.4–0.7 GPU-h (bound 3). At a step-time ratio of 1: ≈ 30 GPU-h stopped at 50M, ≈ 61 to a
+100M class, ≈ 45 expected with no true effect. The ratio is UNVERIFIED; between its two bounds (0.59 if the update's
+time halves with the passes, 0.864 from L21451) the cell is ≈ 18–26 / 36–52 / 27–39 GPU-h.
+
+**FINDINGS.** Three REPORTED items have no built tool: `main.b1.lr_report` accepts B1's registered run names only,
+so the KL median, the rung histogram and the label have no command for the new runs (owed before the 50M look), and
+the kit cannot play the matched-GPU-time cross (owed, with its ρ meter by a dated amendment, before the 100M look);
+neither decides and a look is valid without them. The label's exact meter is the registrar's wording of the card's
+rule. As Q6-N: no replacement path in the kit, nothing in code holding the fresh cell's checkpoints.
+
+**Record:** `measurements/q5n_epochs_fresh_2026-11-20/` (`PREREG.md`, `fresh_arm_q5n.json`, `describe_q5n.txt`,
+`checkargs_q5n.txt`, `dryrun_q5n.txt`, `lever_check_q5n.json`, `seed_scan_q5n.txt`); the power record, the step-time
+meter and the banked look are Q6-N's folder's.
+View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row Q5-N, row 18), the frame's and the card's status lines.
+
+Tag: **REGISTRATION · Q5-N five epochs at matched dose, fresh, width 128 · 3 fresh runs (`--n-epochs 5 --lr 6e-4`, live KL controller) vs BOUNDARY-1's banked cell C, matched steps on view N, rule `b1_fresh_cell` · 50M CONTINUE / STOPPED; 100M WIN / LOSS / NO-USEFUL-GAIN / UNDECIDED / INCONCLUSIVE · a tie keeps ten epochs · P(WIN) 0.00–0.16 at +2 pp, 0.34–0.99 at +4 pp · pin `15136b61` · ≈ 18–30 / 36–61 GPU-h (50M stop / 100M class) · Q5-W dropped · not launched · moves no recipe**

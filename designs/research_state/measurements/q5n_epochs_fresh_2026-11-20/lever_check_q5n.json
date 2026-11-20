@@ -1,0 +1,178 @@
+{
+ "ok": true,
+ "problems": [],
+ "declared_keys": [
+  "lr",
+  "n_epochs"
+ ],
+ "targets": {
+  "50000000": {
+   "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+   "runs": {
+    "rb_q5n_s5201": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 50000000 --seed 5201 --device cuda --log-level periodic --run-name rb_q5n_s5201",
+     "diff": {
+      "lr": [
+       0.0003,
+       0.0006
+      ],
+      "n_epochs": [
+       10,
+       5
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q5n_s5201"
+      ],
+      "seed": [
+       5101,
+       5201
+      ]
+     }
+    },
+    "rb_q5n_s5202": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 50000000 --seed 5202 --device cuda --log-level periodic --run-name rb_q5n_s5202",
+     "diff": {
+      "lr": [
+       0.0003,
+       0.0006
+      ],
+      "n_epochs": [
+       10,
+       5
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q5n_s5202"
+      ],
+      "seed": [
+       5101,
+       5202
+      ]
+     }
+    },
+    "rb_q5n_s5203": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 50000000 --seed 5203 --device cuda --log-level periodic --run-name rb_q5n_s5203",
+     "diff": {
+      "lr": [
+       0.0003,
+       0.0006
+      ],
+      "n_epochs": [
+       10,
+       5
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q5n_s5203"
+      ],
+      "seed": [
+       5101,
+       5203
+      ]
+     }
+    }
+   }
+  },
+  "100000000": {
+   "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 100000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+   "runs": {
+    "rb_q5n_s5201": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 100000000 --seed 5201 --device cuda --log-level periodic --run-name rb_q5n_s5201",
+     "diff": {
+      "lr": [
+       0.0003,
+       0.0006
+      ],
+      "n_epochs": [
+       10,
+       5
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q5n_s5201"
+      ],
+      "seed": [
+       5101,
+       5201
+      ]
+     }
+    },
+    "rb_q5n_s5202": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 100000000 --seed 5202 --device cuda --log-level periodic --run-name rb_q5n_s5202",
+     "diff": {
+      "lr": [
+       0.0003,
+       0.0006
+      ],
+      "n_epochs": [
+       10,
+       5
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q5n_s5202"
+      ],
+      "seed": [
+       5101,
+       5202
+      ]
+     }
+    },
+    "rb_q5n_s5203": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 100000000 --seed 5203 --device cuda --log-level periodic --run-name rb_q5n_s5203",
+     "diff": {
+      "lr": [
+       0.0003,
+       0.0006
+      ],
+      "n_epochs": [
+       10,
+       5
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q5n_s5203"
+      ],
+      "seed": [
+       5101,
+       5203
+      ]
+     }
+    }
+   }
+  }
+ },
+ "expected": {
+  "rb_q5n_s5201": {
+   "d_model": 128,
+   "lr": 0.0006,
+   "n_epochs": 5,
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  },
+  "rb_q5n_s5202": {
+   "d_model": 128,
+   "lr": 0.0006,
+   "n_epochs": 5,
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  },
+  "rb_q5n_s5203": {
+   "d_model": 128,
+   "lr": 0.0006,
+   "n_epochs": 5,
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  }
+ },
+ "banked_levers": {
+  "d_model": 128,
+  "team_mix": null,
+  "team_mix_sides": null,
+  "trunk_ffn_dim": 256
+ }
+}
