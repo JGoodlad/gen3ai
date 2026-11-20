@@ -255,6 +255,16 @@ class UnsafeDeletion(RuntimeError):
     """A planned path violates the never-delete rules."""
 
 
+def _assert_not_held(run_dir: str) -> None:
+    """The EXECUTION-TIME re-check of the retention holds (``tiers.retention_hold``): both ``--apply`` paths call it
+    before the first delete, so a plan that names a held run (built by hand, or by a planner that lost its check)
+    deletes nothing. The run is named by its directory and by where that resolves."""
+    for n in sorted({os.path.basename(os.path.normpath(run_dir)), os.path.basename(os.path.realpath(run_dir))}):
+        hold = tiers.retention_hold(n)
+        if hold:
+            raise UnsafeDeletion(f"{n} is HELD, nothing deleted: {hold}")
+
+
 def _assert_safe(run_dir: str, paths: Iterable[str]) -> None:
     """Raise unless every path is inside a touchable subdir of ``run_dir``.
 
@@ -575,6 +585,9 @@ def build_census(models_dir: str, repo_root: str, recent_days: int = RECENT_DAYS
             reasons.append(f"loaded by {len(scripts)} committed script(s): {shown}")
         if n.startswith(tiers.BANKED_B1_PREFIXES):
             reasons.append(tiers.BANKED_B1_REASON)
+        fresh_hold = tiers.fresh_cell_hold(n)
+        if fresh_hold:
+            reasons.append(fresh_hold)
         if is_v8_era(n, r["generation"]):
             reasons.append("v8-era (the era replication + head-to-head load these)")
         if recent_days and r["mtime"] and (now - r["mtime"]) < recent_days * 86400:
@@ -1229,6 +1242,7 @@ def apply_plan(census: dict) -> dict:
         rels = r["plan"]["delete"]
         if not rels:
             continue
+        _assert_not_held(run_dir)
         # RE-CHECK at execution time, under the rules of the tier that produced the
         # plan — never under a weaker set.  Tier 4 reaches outside the two touchable
         # subdirs by design, so it is guarded positively by its own keep-list; every
@@ -1279,7 +1293,8 @@ THIN_NODE_STEP = 10_000_000
 THIN_NODE_WINDOW = 0.5
 #: runs that are never thinned by name (X26's plateau run, X34's toy runs).
 THIN_REFUSED_PREFIXES = ("rb_x26_", "rb_x34", "rb_toy_ent_")
-#: BOUNDARY-1's banked cells (all twelve runs), refused by the same check: ``tiers.BANKED_B1_PREFIXES``.
+#: BOUNDARY-1's banked cells (all twelve runs), refused by the same check: ``tiers.BANKED_B1_PREFIXES``; and the
+#: registered fresh cells whose read is not yet recorded: ``tiers.fresh_cell_hold``.
 THIN_X35_DIR = os.path.join("designs", "research_state", "measurements",
                             "x35_breakers_stage_2026-10-17")
 THIN_KEEP_SIDECAR = SIDECAR_KEEP_REASON
@@ -1432,6 +1447,9 @@ def check_thinnable(run_dir: str, models_dir: str, *, baseline_set: "set[str]",
             raise ThinRefused(f"{n}: a BOUNDARY-1 banked cell, the control of every later fresh-cell arm; "
                               "never thinned until a written owner decision releases it "
                               "(models_retention_policy.md)")
+        fresh_hold = tiers.fresh_cell_hold(n)
+        if fresh_hold:
+            raise ThinRefused(f"{n}: {fresh_hold}")
         if n in baseline_set:
             raise ThinRefused(f"{n}: named in designs/baselines.json — a baseline must stay "
                               "resolvable")
@@ -1550,6 +1568,7 @@ def _kept_hashes(run_dir: str, plan: dict) -> "dict[str, str]":
 def apply_thin_run(plan: dict, log_dir: str) -> dict:
     """Delete the plan's zips, sha-checking every kept file before and after; log to ``log_dir``."""
     run_dir = plan["run_dir"]
+    _assert_not_held(run_dir)
     ck_dir = os.path.join(run_dir, "checkpoints")
     paths = [os.path.join(ck_dir, n) for n in plan["delete"]]
     for p in paths:

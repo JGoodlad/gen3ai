@@ -56,9 +56,18 @@ batches of 500 pairs), on cuda under ``gpu_lock.sh`` + ``mem_cap.sh 32`` (the ca
 19 on the agent cores under ``mem_cap.sh 24``. ``main.sidecar_audit --strict`` and ``main.checkargs`` on every run are
 REPORTED in ``run.log``, never a gate, as in B1.
 
+**A lost fresh run** (a registered card's PREREG §4, as B1's §10): the card has ONE spare seed, and the replacement
+is a dated amendment that edits the lost row of the card's arm file (its seed and its run name), written with its
+cause; there is no switch. The kit holds the amended file to that rule (:data:`REGISTERED_CELLS`,
+:func:`replaced_fresh_seed`): a registered card's rows are its registered seeds in order, at most ONE of them the
+spare's, each named ``rb_<card>_s<seed>``; any other row set is refused, so a second replacement or another seed
+cannot be planned. The spare run is then a fresh run like the others (from step 0, its own registered argv, the
+same guards), and the look doc records ``replaced_fresh_seed``. The cause (files lost or unreadable, or a wrong
+argv; never a run "lost to its lever") is the amendment's to state: the kit cannot see it.
+
 **Not built** (FINDINGS of this build): the REPORTED cross between an own-control cell and B1's banked cell across
-two pins (FRAME §7); a card's own REPORTED extras (Q5's matched-GPU-time cross, its dose and KL reports); and a
-replacement path for a lost FRESH run (the cards' spare seeds): a card amends its arm file instead.
+two pins (FRAME §7); and Q5's REPORTED matched-GPU-time cross (its learning-rate and KL report is
+``python -m main.b1.lr_report --fresh-arm``).
 """
 from __future__ import annotations
 
@@ -94,6 +103,11 @@ OWN_KEYS: Tuple[str, ...] = ("run_name", "seed")
 FORBIDDEN_FLAGS: Tuple[str, ...] = ("--model", "--allow-torch-switch", "--fork-lr", "--fork-lr-freeze")
 #: The keys a run's last process must resolve as its own argv does at the pin, beyond the declared keys.
 CHECKED_KEYS: Tuple[str, ...] = tuple(sorted({*K.CONFIG_KEYS, "n_epochs"}))
+#: card -> (its REGISTERED fresh seeds in arm-file order, its ONE spare seed): §4 of each registered card's PREREG
+#: (``q6n_policy_readout_fresh_2026-11-20``, ``q5n_epochs_fresh_2026-11-20``), held against the committed arm files and
+#: PREREGs by ``fresh_test.py``. A card absent here is a draft: its rows are whatever its file says.
+REGISTERED_CELLS: Dict[str, Tuple[Tuple[int, ...], int]] = {"q6n": ((5211, 5212, 5213), 5219),
+                                                            "q5n": ((5201, 5202, 5203), 5209)}
 _CARD = re.compile(r"^[a-z][a-z0-9]{0,23}$")
 _RUN = re.compile(r"^[a-z][a-z0-9_]{2,63}$")
 _SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -124,6 +138,8 @@ class ArmSpec:
     fresh: Tuple[Run, ...]
     own_control: Optional[Tuple[Run, ...]] = None
     prereg: Optional[str] = None
+    #: The REGISTERED seed the card's spare replaced (:func:`replaced_fresh_seed`); never written to the arm file.
+    replaced_fresh: Optional[int] = None
     sha256: Optional[str] = field(default=None, compare=False)
 
     def as_dict(self) -> Dict[str, Any]:
@@ -151,6 +167,24 @@ def _runs(rows: Any, where: str) -> Tuple[Run, ...]:
             raise FreshError(f"{where}: run name {name!r} is not a run name ending in _s{seed}")
         out.append(Run(seed, name))
     return tuple(out)
+
+
+def replaced_fresh_seed(card: str, fresh: Sequence[Run]) -> Optional[int]:
+    """The REGISTERED seed a registered card's spare replaced, or ``None`` (its registered rows; a card with no entry
+    in :data:`REGISTERED_CELLS`). Any other row set of a registered card is refused (module docstring)."""
+    if card not in REGISTERED_CELLS:
+        return None
+    seeds, spare = REGISTERED_CELLS[card]
+    got = tuple(r.seed for r in fresh)
+    lost = [s for s, g in zip(seeds, got) if g != s]
+    if len(got) != len(seeds) or len(lost) > 1 or any(g not in (s, spare) for s, g in zip(seeds, got)):
+        raise FreshError(f"card {card}: fresh seeds {got} are not its registered {seeds} with at most ONE row replaced "
+                         f"by its spare {spare} (its PREREG §4: one replacement, in the lost row; a second loss is "
+                         "INCONCLUSIVE, never a second replacement)")
+    named = [r.run for r in fresh if r.run != f"rb_{card}_s{r.seed}"]
+    if named:
+        raise FreshError(f"card {card}: {named} are not its registered run names rb_{card}_s<seed>")
+    return lost[0] if lost else None
 
 
 def arm_from_doc(doc: Mapping[str, Any], sha256: Optional[str] = None) -> ArmSpec:
@@ -200,7 +234,8 @@ def arm_from_doc(doc: Mapping[str, Any], sha256: Optional[str] = None) -> ArmSpe
     if prereg is not None and not isinstance(prereg, str):
         raise FreshError("prereg: a path")
     return ArmSpec(card=card, pin=pin, banked_arm=arm, lever=tuple(lever), declared_keys=tuple(sorted(keys)),
-                   fresh=fresh, own_control=own, prereg=prereg, sha256=sha256)
+                   fresh=fresh, own_control=own, prereg=prereg, replaced_fresh=replaced_fresh_seed(card, fresh),
+                   sha256=sha256)
 
 
 def load_arm(path: "str | Path") -> ArmSpec:
@@ -542,7 +577,8 @@ def plan(models: Path, spec: ArmSpec, look: str, resolver: Resolver, *, b1_look:
     zip_of = {f["run"]: f["checkpoint"] for fs in facts.values() for f in fs}
     return {"schema": LOOK_SCHEMA, "look": look, "step": at, "card": spec.card, "pin": spec.pin,
             "arm": spec.as_dict(), "arm_sha256": spec.sha256, "banked_arm": spec.banked_arm,
-            "own_control": spec.own_control is not None, "replaced_seed": replace, "lever_check": lc,
+            "own_control": spec.own_control is not None, "replaced_seed": replace,
+            "replaced_fresh_seed": spec.replaced_fresh, "lever_check": lc,
             "banked_identity": identity, "runs": facts,
             "cells": [[zip_of[p], zip_of[o]] for p, o in design.cells()], "names": names(spec, look)}, []
 
@@ -799,6 +835,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         if a.cmd == "describe":
             spec = load_arm(a.arm)
+            if spec.replaced_fresh is not None:
+                print(f"# REPLACEMENT: the spare {REGISTERED_CELLS[spec.card][1]} stands in the row of registered "
+                      f"seed {spec.replaced_fresh} (PREREG §4: the dated amendment and its cause come first)",
+                      file=sys.stderr)
             for r in spec.fresh:
                 for steps in A.PHASE_STEPS:
                     print(f"{A.LAUNCHER} {shlex.join(fresh_argv(spec, r, steps))}")

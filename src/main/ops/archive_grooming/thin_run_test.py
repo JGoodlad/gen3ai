@@ -196,7 +196,7 @@ def test_the_banked_prefixes_name_all_twelve_runs_and_nothing_else():
     names = [f"rb_b1{arm}_s{seed}" for arm, seeds in SEEDS.items() for seed in seeds]
     assert len(names) == 12 and all(n.startswith(ag.tiers.BANKED_B1_PREFIXES) for n in names)
     assert not "rb_b1_other_s1".startswith(ag.tiers.BANKED_B1_PREFIXES)
-    assert not "rb_q6n_s5211".startswith(ag.tiers.BANKED_B1_PREFIXES)
+    assert not "rb_q6w_s5214".startswith(ag.tiers.BANKED_B1_PREFIXES)
 
 
 def test_a_baseline_run_is_refused(tmp_path):

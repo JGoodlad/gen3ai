@@ -188,6 +188,35 @@ BANKED_B1_PREFIXES = ("rb_b1c_", "rb_b1w_", "rb_b1br_", "rb_b1wb_")
 BANKED_B1_REASON = ("BOUNDARY-1 banked cell: the control of every later fresh-cell arm; never thinned until a "
                     "written owner decision releases it (models_retention_policy.md)")
 
+#: THE RETENTION RULE for REGISTERED FRESH CELLS whose read is not yet recorded (`models_retention_policy.md`, its
+#: second section; `fresh_cell_frame_2026-11-17/FRAME.md` §2 item 6, "every other checkpoint a registered card
+#: names"): run-name prefix -> the PREREG that keeps the runs. A card's three runs AND its spare-seed replacement
+#: (`rb_q6n_s5219`, `rb_q5n_s5209`) carry the prefix. Same force as :data:`BANKED_B1_PREFIXES`: no plan by the
+#: standing policy, the tiered policy or `--thin-run`. The one source: every site reads :func:`fresh_cell_hold`.
+#: RELEASE: the commit that RECORDS the card's closing read (its 100M class, or its STOPPED-AT-50M) moves the entry to
+#: :data:`RELEASED_FRESH_CELLS` with the ledger citation. `fresh_cell_hold_test.py` fails while a registered
+#: `fresh_arm_*.json` names a run that is in neither dict, so an entry cannot be dropped silently.
+OPEN_FRESH_CELLS: "dict[str, str]" = {
+    "rb_q6n_": "designs/research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md",
+    "rb_q5n_": "designs/research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md",
+}
+#: prefix -> where the closing read is recorded (a ledger heading). Deleting the runs stays the owner's alone.
+RELEASED_FRESH_CELLS: "dict[str, str]" = {}
+
+
+def fresh_cell_hold(name: str) -> "str | None":
+    """The reason ``name`` is a registered fresh cell's run that no plan may thin, or ``None``."""
+    for prefix, prereg in OPEN_FRESH_CELLS.items():
+        if name.startswith(prefix):
+            return (f"registered fresh cell ({prefix}*), its read not yet recorded: every checkpoint is kept until "
+                    f"the read closes ({prereg} §3-§4; models_retention_policy.md)")
+    return None
+
+
+def retention_hold(name: str) -> "str | None":
+    """The reason no plan may delete anything of run ``name`` (a banked B1 cell, an open fresh cell), or ``None``."""
+    return BANKED_B1_REASON if name.startswith(BANKED_B1_PREFIXES) else fresh_cell_hold(name)
+
 REVIEW_HOLDS: "dict[str, str]" = {
     "ai_v9_48_G1_action_0826":
         "REVIEW HOLD — the program's first POSITIVE distill arm (pooled +0.0398 "
@@ -453,6 +482,12 @@ def assign_tiers(runs: dict, live: dict, refs: dict, graph: dict,
             r["review_hold"] = BANKED_B1_REASON      # a hold = NO plan at all (a tier-1 run is still planned)
             r["tier"], r["tier_name"] = 1, "REFERENCED"
             r["tier_reasons"] = [BANKED_B1_REASON]
+            continue
+        fresh_hold = fresh_cell_hold(n)
+        if fresh_hold:
+            r["review_hold"] = fresh_hold            # as a banked B1 cell: NO plan at all
+            r["tier"], r["tier_name"] = 1, "REFERENCED"
+            r["tier_reasons"] = [fresh_hold]
             continue
         if n in REVIEW_HOLDS:
             r["review_hold"] = REVIEW_HOLDS[n]

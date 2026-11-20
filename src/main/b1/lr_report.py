@@ -3,6 +3,7 @@
     python -m main.b1.lr_report --look 50M                          # the twelve registered runs; exit 3 = REFUSED
     python -m main.b1.lr_report --look 50M --displacement --out <FILE.json>   # once, at 50M: the weights too
     python -m main.b1.lr_report --look 100M --runs models/rb_b1c_s5101 models/rb_b1w_s5103 ...
+    python -m main.b1.lr_report --look 50M --fresh-arm <fresh_arm.json>          # a FRESH CELL beside its banked cell
 
 The registration is ``designs/research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`` §18 Amendment 8:
 this record is REPORTED beside the 50M and the 100M outcome and decides nothing (no bar, no class). It reads ONLY
@@ -50,6 +51,20 @@ into the tensors the width lever RESIZED and the ones it left the same shape. "R
 themselves (a tensor whose shape differs between two of them); every floating-point tensor lands in exactly one
 group, the policy's two alias copies of the trunk are skipped only after they are verified identical to it, and a
 named group that matches no tensor REFUSES.
+
+**``--fresh-arm``** (:func:`fresh_report`, schema :data:`FRESH_SCHEMA`; REPORTED, it voids nothing and changes no
+class): the same reader on a fresh cell's runs, named by the card's arm file (:mod:`main.b1.fresh`; ``--replace`` is
+B1's replaced seed, as in that kit), beside its banked cell's. Everything above this paragraph is untouched by it.
+The registration is the Q5-N card's ``PREREG.md`` §3 (``q5n_epochs_fresh_2026-11-20``). Per run: the quantities
+above, on the run's OWN ladder (:func:`cell_bases`: a fresh run's base is the ``--lr`` its lever types, else
+production's; the banked cell's is production's), the RUNG HISTOGRAM of every row up to the look
+(:func:`rung_histogram`: rows a rung, and the rows OFF the ladder with their rates, which is where a floor or a
+ceiling shows), and the median of ``train/approx_kl`` over the rows with :data:`KL_WINDOW` (10M <= step <= 50M, the
+same window at either look; superseded rows are already gone). Per cell: the summed histogram and the MEDIAN of its
+runs' KL medians. **The label** :data:`LABEL` is printed unless the FRESH cell's figure lies strictly inside the
+controller's band shrunk by the registered edge, ``0.005 + 1e-6 < figure < 0.02 - 1e-6`` (:func:`movement_label`).
+The window of the histogram is this module's choice (the registration names none); for a card other than Q5-N the
+label is the same arithmetic with no registered meaning.
 """
 from __future__ import annotations
 
@@ -102,6 +117,12 @@ GROUPS: Tuple[str, ...] = ("trunk_resized", "projection", "policy_tower", "criti
 #: The per-run quantities a factor's ratio is taken of.
 QUANTITIES: Tuple[str, ...] = ("lr_geomean_second_half", "lr_at_look", "kl_sum_second_half", "kl_sum_to_look",
                                "sensitivity_median_second_half")
+#: ``--fresh-arm``: the record's schema; the label's window, band and edge (Q5-N PREREG §3), and the label.
+FRESH_SCHEMA = "b1_fresh_lr_report_v1"
+KL_WINDOW: Tuple[int, int] = (10_000_000, 50_000_000)
+KL_BAND: Tuple[float, float] = (0.005, 0.02)
+KL_BAND_EDGE = 1e-6
+LABEL = "MOVEMENT-UNMATCHED"
 _EVENT_FILE = re.compile(r"^events\.out\.tfevents\.(\d+)\.")
 
 
@@ -119,14 +140,15 @@ def geomean(xs: Sequence[float]) -> float:
     return math.exp(math.fsum(math.log(x) for x in xs) / len(xs))
 
 
-def rung(lr: float) -> Tuple[Optional[int], float]:
+def rung(lr: float, base: float = LADDER_BASE) -> Tuple[Optional[int], float]:
     """``(k, exact)``: ``exact`` is ``log(lr / base) / log(factor)``; ``k`` its integer when ``lr`` is ON that rung,
-    ``None`` when it is OFF the ladder. A rate between the two tolerances is refused (module docstring)."""
+    ``None`` when it is OFF the ladder. A rate between the two tolerances is refused (module docstring). ``base`` is
+    BOUNDARY-1's unless a fresh cell's lever types another."""
     if not (lr > 0.0) or math.isinf(lr):
         raise ReportError(f"a learning rate must be finite and positive, not {lr!r}")
-    exact = math.log(lr / LADDER_BASE) / math.log(LADDER_FACTOR)
+    exact = math.log(lr / base) / math.log(LADDER_FACTOR)
     k = round(exact)
-    rel = abs(lr / (LADDER_BASE * LADDER_FACTOR ** k) - 1.0)
+    rel = abs(lr / (base * LADDER_FACTOR ** k) - 1.0)
     if rel <= RUNG_ON_REL:
         return k, exact
     if rel >= RUNG_OFF_REL:
@@ -228,9 +250,11 @@ def read_series(run_dir: Path) -> Dict[str, Any]:
             "rows_kl_only": len(set(series[KL_TAG]) - set(series[LR_TAG]))}
 
 
-def run_row(run_dir: Path, look_step: int, series: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
-    """One run's record at a look step (module docstring: the windows, the per-run quantities)."""
-    arm, seed = arm_of(run_dir)
+def run_row(run_dir: Path, look_step: int, series: Optional[Mapping[str, Any]] = None, *,
+            named: Optional[Tuple[str, int]] = None, base: float = LADDER_BASE) -> Dict[str, Any]:
+    """One run's record at a look step (module docstring: the windows, the per-run quantities). ``named`` and
+    ``base`` are a fresh cell's: the run's ``(side, seed)`` from its arm file, and its ladder's base."""
+    arm, seed = arm_of(run_dir) if named is None else named
     s = read_series(run_dir) if series is None else series
     steps, lr, kl = s["steps"], s["lr"], s["kl"]
     cover = next((i for i, step in enumerate(steps) if step >= look_step), None)
@@ -242,7 +266,7 @@ def run_row(run_dir: Path, look_step: int, series: Optional[Mapping[str, Any]] =
                           f"{steps[cover]:,}, more than one interval ({A.CHECKPOINT_EVERY:,}) late")
     half = next(i for i, step in enumerate(steps) if 2 * step >= look_step)
     lr2, kl2 = lr[half:cover + 1], kl[half:cover + 1]
-    k, exact = rung(lr[cover])
+    k, exact = rung(lr[cover], base)
     return {"run": run_dir.name, "arm": arm, "seed": seed, "tb_files": list(s["files"]),
             "superseded_rows": s["superseded_rows"], "rows_lr_only": s["rows_lr_only"],
             "rows_kl_only": s["rows_kl_only"], "rows_to_look": cover + 1, "rows_second_half": len(lr2),
@@ -343,6 +367,152 @@ def displacement(run_dirs: Sequence[Path], from_step: int, to_step: int) -> Dict
             "resized_tensors": sum(resized.values()), "tensors": len(keys)}
 
 
+# ------------------------------------------------------------------------------------------------ a fresh cell
+def cell_bases(lever: Sequence[str], declared_keys: Sequence[str]) -> Dict[str, float]:
+    """side -> its ladder's base: the ``--lr`` the lever types for the fresh side, production's otherwise. An arm
+    that declares ``lr`` without typing ``--lr`` (or the reverse) is refused: its base cannot be read."""
+    typed = [lever[i + 1] if t == "--lr" and i + 1 < len(lever) else t.split("=", 1)[1]
+             for i, t in enumerate(lever) if t == "--lr" or t.startswith("--lr=")]
+    if len(typed) != int("lr" in declared_keys):
+        raise ReportError(f"the arm declares {sorted(declared_keys)} and its lever types --lr {len(typed)} time(s): "
+                          "the fresh ladder's base cannot be read from it")
+    try:
+        fresh = float(typed[0]) if typed else LADDER_BASE
+    except ValueError:
+        raise ReportError(f"the lever's --lr {typed[0]!r} is not a number") from None
+    if not (fresh > 0.0) or math.isinf(fresh):
+        raise ReportError(f"the lever's --lr {fresh!r} is not a finite positive rate")
+    return {"fresh": fresh, "banked": LADDER_BASE}
+
+
+def rung_histogram(lrs: Sequence[float], base: float) -> Dict[str, Any]:
+    """``{rungs: {k: rows}, off: rows, off_rates: [[rate, rows]]}`` of one run's rates on the ladder from ``base``
+    (:func:`rung`: an undecidable rate refuses)."""
+    on: Dict[int, int] = {}
+    off: Dict[float, int] = {}
+    for lr in lrs:
+        k, _exact = rung(lr, base)
+        if k is None:
+            off[lr] = off.get(lr, 0) + 1
+        else:
+            on[k] = on.get(k, 0) + 1
+    return {"rungs": {str(k): on[k] for k in sorted(on)}, "off": sum(off.values()),
+            "off_rates": [[r, n] for r, n in sorted(off.items())]}
+
+
+def kl_window_median(run: str, steps: Sequence[int], kl: Sequence[float]) -> Tuple[float, int]:
+    """``(median, rows)`` of the KL over the rows with :data:`KL_WINDOW`; refused when the run's rows do not span it."""
+    lo, hi = KL_WINDOW
+    if not steps or steps[0] > lo or steps[-1] < hi:
+        span = f"{steps[0]:,} to {steps[-1]:,}" if steps else "none"
+        raise ReportError(f"{run}: its rows ({span}) do not span the KL window {lo:,} to {hi:,}")
+    rows = [q for s, q in zip(steps, kl) if lo <= s <= hi]
+    if not rows:
+        raise ReportError(f"{run}: no row in the KL window {lo:,} to {hi:,}")
+    return statistics.median(rows), len(rows)
+
+
+def movement_label(figure: float) -> Optional[str]:
+    """:data:`LABEL` unless ``0.005 + 1e-6 < figure < 0.02 - 1e-6`` (the registered inequality, as written)."""
+    lo, hi = KL_BAND
+    return None if lo + KL_BAND_EDGE < figure < hi - KL_BAND_EDGE else LABEL
+
+
+def fresh_runs(arm_file: Path, models_dir: Optional[Path], replace: Optional[int]) -> Tuple[Any, Dict[str, List[Any]]]:
+    """``(the arm, {side: [its runs]})`` from a card's arm file; the fresh side first."""
+    from main.b1 import fresh as F
+
+    try:
+        spec = F.load_arm(arm_file)
+        sides = {"fresh": list(spec.fresh), "banked": list(F.banked_runs(spec, replace))}
+    except (F.FreshError, K.LookError) as e:
+        raise ReportError(f"{arm_file}: {e}") from e
+    if models_dir is None:
+        from utils.paths import main_models_dir
+
+        models_dir = main_models_dir()
+    if models_dir is None:
+        raise ReportError("there is no models directory here; pass --models-dir")
+    return spec, {side: [(r, Path(models_dir) / r.run) for r in runs] for side, runs in sides.items()}
+
+
+def fresh_report(spec: Any, sides: Mapping[str, Sequence[Tuple[Any, Path]]], look: str,
+                 replace: Optional[int] = None) -> Dict[str, Any]:
+    """The fresh cell's record for one look (schema :data:`FRESH_SCHEMA`; module docstring). No run is dropped."""
+    if look not in LOOKS:
+        raise ReportError(f"look {look!r} is not one of {sorted(LOOKS)}")
+    bases = cell_bases(spec.lever, spec.declared_keys)
+    rows: List[Dict[str, Any]] = []
+    problems: List[str] = []
+    for side, runs in sides.items():
+        for run, run_dir in runs:
+            try:
+                if not run_dir.is_dir():
+                    raise ReportError(f"{run.run}: no run directory at {run_dir}")
+                s = read_series(run_dir)
+                row = run_row(run_dir, LOOKS[look], s, named=(side, run.seed), base=bases[side])
+                median, n = kl_window_median(run.run, s["steps"], s["kl"])
+                rows.append({**row, "side": side, "ladder_base": bases[side], "kl_window_median": median,
+                             "kl_window_rows": n,
+                             "rung_histogram": rung_histogram(s["lr"][:row["rows_to_look"]], bases[side])})
+            except ReportError as e:
+                problems.append(str(e))
+    n_runs = sum(len(runs) for runs in sides.values())
+    if problems:
+        raise ReportError(f"{len(problems)} of {n_runs} runs cannot be read at {look}, and no run is dropped: "
+                          + "; ".join(problems))
+    cells: Dict[str, Dict[str, Any]] = {}
+    for side in sides:
+        mine = [r for r in rows if r["side"] == side]
+        rungs: Dict[int, int] = {}
+        for r in mine:
+            for k, n in r["rung_histogram"]["rungs"].items():
+                rungs[int(k)] = rungs.get(int(k), 0) + n
+        cells[side] = {"runs": [r["run"] for r in mine], "ladder_base": bases[side],
+                       "kl_window_median": statistics.median(r["kl_window_median"] for r in mine),
+                       "rung_histogram": {"rungs": {str(k): rungs[k] for k in sorted(rungs)},
+                                          "off": sum(r["rung_histogram"]["off"] for r in mine)}}
+    figure = cells["fresh"]["kl_window_median"]
+    return {"schema": FRESH_SCHEMA, "card": spec.card, "arm_sha256": spec.sha256, "prereg": spec.prereg,
+            "look": look, "look_step": LOOKS[look], "second_half_from": LOOKS[look] / 2,
+            "replaced_seed": replace, "replaced_fresh_seed": spec.replaced_fresh,
+            "ladder": {"factor": LADDER_FACTOR, "base": bases}, "tags": [LR_TAG, KL_TAG],
+            "kl_window": list(KL_WINDOW), "kl_band": list(KL_BAND), "kl_band_edge": KL_BAND_EDGE,
+            "n_runs": len(rows), "runs": rows, "cells": cells, "figure": figure, "label": movement_label(figure)}
+
+
+def _histogram(h: Mapping[str, Any]) -> str:
+    return "  ".join([*(f"{int(k):+d}:{n}" for k, n in h["rungs"].items()), f"off:{h['off']}"])
+
+
+def render_fresh(doc: Mapping[str, Any]) -> str:
+    """The fresh cell's record as text: one row a run, each cell's figure and histogram, then the label's line."""
+    lo, hi = doc["kl_window"]
+    lines = [f"Fresh-cell learning-rate report, card {doc['card']} at the {doc['look']} look (REPORTED; "
+             f"{doc['n_runs']} runs; rungs over every row up to each run's first row at or after "
+             f"{doc['look_step']:,}; KL median over rows with {lo:,} <= step <= {hi:,})",
+             f"{'run':<16}{'side':<7}{'base':>8} {'rows':>5} {'LR at look':>11} {'rung':>5} {'geomean LR 2nd':>15} "
+             f"{'KL median':>10} {'rows':>5}  rung histogram to the look"]
+    for r in doc["runs"]:
+        k = "off" if r["rung"] is None else f"{r['rung']:+d}"
+        lines.append(f"{r['run']:<16}{r['side']:<7}{r['ladder_base']:>8.1e} {r['rows_to_look']:>5} "
+                     f"{r['lr_at_look']:>11.4e} {k:>5} {r['lr_geomean_second_half']:>15.4e} "
+                     f"{r['kl_window_median']:>10.6f} {r['kl_window_rows']:>5}  {_histogram(r['rung_histogram'])}")
+        if r["rung_histogram"]["off_rates"]:
+            lines.append(f"    {r['run']} off its ladder: "
+                         + ", ".join(f"{n} rows at {rate:.6e}" for rate, n in r["rung_histogram"]["off_rates"]))
+        if r["superseded_rows"] or r["rows_lr_only"] or r["rows_kl_only"]:
+            lines.append(f"    {r['run']}: {r['superseded_rows']} superseded rows, {r['rows_lr_only']} with the "
+                         f"rate alone, {r['rows_kl_only']} with the KL alone")
+    for side, c in doc["cells"].items():
+        lines.append(f"cell {side:<7} base {c['ladder_base']:.1e}  median of its runs' KL medians "
+                     f"{c['kl_window_median']:.6f}  rungs {_histogram(c['rung_histogram'])}")
+    band = f"{doc['kl_band'][0]} + {doc['kl_band_edge']:g} < figure < {doc['kl_band'][1]} - {doc['kl_band_edge']:g}"
+    lines.append(f"fresh cell's figure {doc['figure']:.6f}; inside the band ({band}): "
+                 + ("yes, no label" if doc["label"] is None else f"NO -> {doc['label']}"))
+    return "\n".join(lines)
+
+
 # ------------------------------------------------------------------------------------------------ the report
 def check_out(out: Path, run_dirs: Sequence[Path]) -> Path:
     """The resolved ``--out`` path, refused inside the main checkout's models directory, a run directory read, or
@@ -440,18 +610,33 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--displacement", action="store_true",
                     help=f"also the weights' displacement by module group (the {DISPLACEMENT_LOOK} look only)")
     ap.add_argument("--out", help="also write the record as JSON here (refused inside a models directory)")
+    ap.add_argument("--fresh-arm", help="a card's fresh-arm file: report its fresh cell beside its banked cell")
+    ap.add_argument("--replace", type=int, help="with --fresh-arm: the REGISTERED B1 seed B1's spare replaced")
     a = ap.parse_args(argv)
     try:
+        if a.fresh_arm and (a.runs or a.displacement):
+            raise ReportError("--fresh-arm names its own runs and reports no displacement: drop --runs and "
+                              "--displacement")
         if a.runs and a.models_dir:
             raise ReportError("--runs and --models-dir do not go together")
-        runs = ([Path(r) for r in a.runs] if a.runs
-                else default_runs(Path(a.models_dir) if a.models_dir else None))
-        out = check_out(Path(a.out), runs) if a.out else None
-        doc = report(runs, a.look, a.displacement)
+        if a.fresh_arm:
+            spec, sides = fresh_runs(Path(a.fresh_arm), Path(a.models_dir) if a.models_dir else None, a.replace)
+            runs = [d for pairs in sides.values() for _r, d in pairs]
+            out = check_out(Path(a.out), runs) if a.out else None
+            doc = fresh_report(spec, sides, a.look, a.replace)
+            text = render_fresh(doc)
+        else:
+            if a.replace is not None:
+                raise ReportError("--replace goes with --fresh-arm; BOUNDARY-1's own report names a spare run by --runs")
+            runs = ([Path(r) for r in a.runs] if a.runs
+                    else default_runs(Path(a.models_dir) if a.models_dir else None))
+            out = check_out(Path(a.out), runs) if a.out else None
+            doc = report(runs, a.look, a.displacement)
+            text = render(doc)
     except ReportError as e:
         print(f"REFUSED: {e}", file=sys.stderr)
         return 3
-    print(render(doc))
+    print(text)
     if out is not None:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(doc, indent=1) + "\n")

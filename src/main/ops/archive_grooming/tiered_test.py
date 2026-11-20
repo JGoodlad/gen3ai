@@ -471,7 +471,7 @@ def test_boundary1_banked_cells_get_no_plan_and_a_neighbour_does(tmp_path):
     """Retention rule: C/W/Br/WB are held whole; a same-shaped run outside the prefixes is still planned."""
     models = tmp_path / "models"
     models.mkdir()
-    for run in ("rb_b1c_s5101", "rb_b1wb_s5107", "rb_q6n_s5211"):
+    for run in ("rb_b1c_s5101", "rb_b1wb_s5107", "rb_q6w_s5214"):
         make_run(str(models), run, latest_step=25000)
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -480,7 +480,7 @@ def test_boundary1_banked_cells_get_no_plan_and_a_neighbour_does(tmp_path):
     for run in ("rb_b1c_s5101", "rb_b1wb_s5107"):
         r = c["runs"][run]
         assert r["plan"]["delete"] == [] and "REVIEW HOLD" in r["plan"]["skipped"] and r["tier"] == 1
-    assert c["runs"]["rb_q6n_s5211"]["plan"]["delete"]          # the control: the plan is not vacuous
+    assert c["runs"]["rb_q6w_s5214"]["plan"]["delete"]          # the control: the plan is not vacuous
 
 
 def test_the_two_RELEASED_review_runs_are_not_held(tmp_path):

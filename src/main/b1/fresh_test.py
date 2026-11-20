@@ -162,6 +162,107 @@ def test_each_cards_arm_file_builds_the_argv_the_card_recorded_token_for_token(c
                                             "--device", "cuda", "--log-level", "periodic"]
 
 
+# ------------------------------------------------------------------------------- a lost fresh run (PREREG §4)
+#: The registered cards' folders: each holds the PREREG and the arm file it registered.
+REGISTERED = {"q6n": "q6n_policy_readout_fresh_2026-11-20", "q5n": "q5n_epochs_fresh_2026-11-20"}
+
+
+def registered_doc(card: str) -> Dict[str, Any]:
+    from utils.paths import repo_path
+
+    return json.loads(repo_path(f"designs/research_state/measurements/{REGISTERED[card]}/fresh_arm_{card}.json").read_text())
+
+
+def amended(doc: Dict[str, Any], row: int, seed: int, run: Optional[str] = None) -> Dict[str, Any]:
+    """The registered amendment: the lost row's seed and run name, and nothing else."""
+    fresh = [dict(r) for r in doc["fresh"]]
+    fresh[row] = {"seed": seed, "run": run or f"rb_{doc['card']}_s{seed}"}
+    return {**doc, "fresh": fresh}
+
+
+def test_the_kits_registered_cells_are_the_committed_arm_files_and_the_preregs_spares():
+    from utils.paths import repo_path
+
+    assert set(F.REGISTERED_CELLS) == set(REGISTERED)
+    for card, (seeds, spare) in F.REGISTERED_CELLS.items():
+        doc = registered_doc(card)
+        spec = F.arm_from_doc(doc)
+        assert tuple(r.seed for r in spec.fresh) == seeds and spec.replaced_fresh is None
+        assert spare not in seeds and doc["prereg"].endswith(f"{REGISTERED[card]}/PREREG.md")
+        prereg = repo_path(doc["prereg"]).read_text()
+        assert f"spare {spare}" in prereg and f"`rb_{card}_s{spare}`" in prereg
+
+
+@pytest.mark.parametrize("card", sorted(REGISTERED))
+@pytest.mark.parametrize("row", [0, 1, 2])
+def test_the_registered_amendment_puts_the_spare_in_the_lost_row_and_builds_its_argv(tmp_path, card, row):
+    seeds, spare = F.REGISTERED_CELLS[card]
+    doc = registered_doc(card)
+    path = tmp_path / f"fresh_arm_{card}.json"
+    path.write_text(json.dumps(amended(doc, row, spare), indent=1))
+    was, now = F.arm_from_doc(doc), F.load_arm(path)
+    assert now.replaced_fresh == seeds[row] and now.fresh[row] == F.Run(spare, f"rb_{card}_s{spare}")
+    assert [r for i, r in enumerate(now.fresh) if i != row] == [r for i, r in enumerate(was.fresh) if i != row]
+    assert (now.pin, now.lever, now.declared_keys, now.banked_arm) == (was.pin, was.lever, was.declared_keys,
+                                                                       was.banked_arm)
+    swap = {str(seeds[row]): str(spare), f"rb_{card}_s{seeds[row]}": f"rb_{card}_s{spare}"}
+    for steps in A.PHASE_STEPS:                      # from step 0, the lost row's argv with the spare's seed and name
+        assert F.fresh_argv(now, now.fresh[row], steps) == [swap.get(t, t) for t in F.fresh_argv(was, was.fresh[row], steps)]
+    assert F.find_run(now, f"rb_{card}_s{spare}") == ("fresh", now.fresh[row])
+    with pytest.raises(F.FreshError, match="not a fresh or own-control run"):
+        F.find_run(now, f"rb_{card}_s{seeds[row]}")
+    assert F.main(["describe", "--arm", str(path)]) == 0
+
+
+@pytest.mark.parametrize("card", sorted(REGISTERED))
+def test_a_registered_card_takes_one_replacement_by_its_spare_and_nothing_else(card):
+    seeds, spare = F.REGISTERED_CELLS[card]
+    doc = registered_doc(card)
+    second = amended(amended(doc, 0, spare), 1, spare + 1)             # a second loss: there is no second spare
+    other = amended(doc, 1, spare - 1)                                 # a seed that is not the registered spare
+    moved = {**doc, "fresh": [doc["fresh"][1], doc["fresh"][0], doc["fresh"][2]]}
+    for bad in (second, other, moved):
+        with pytest.raises(F.FreshError, match="at most ONE row replaced by its spare"):
+            F.arm_from_doc(bad)
+    with pytest.raises(F.FreshError, match="not its registered run names"):
+        F.arm_from_doc(amended(doc, 2, spare, run=f"rb_{card}x_s{spare}"))
+    draft = F.arm_from_doc({**Q5N, "card": "q9z", "fresh": [{"seed": s, "run": f"rb_q9z_s{s}"} for s in (1, 2, 3)]})
+    assert draft.replaced_fresh is None                                # a card nothing registered is not held
+
+
+def test_a_replaced_fresh_run_plans_like_any_fresh_run_and_the_look_records_it(world):
+    models, spec = world
+    first, _ = plan(models, spec)
+    assert first is not None and first["replaced_fresh_seed"] is None
+    now = F.arm_from_doc(amended({**Q5N}, 1, 5209), sha256="amended")
+    spare = now.fresh[1]
+    doc, probs = plan(models, now)
+    assert doc is None and probs == [f"rb_q5n_s5209: no run folder under {models}"]     # the lost run is not read
+    make_cell_run(models, now, spare)
+    doc, probs = plan(models, now)
+    assert probs == [] and doc is not None
+    assert doc["replaced_fresh_seed"] == 5202 and doc["replaced_seed"] is None and doc["arm_sha256"] == "amended"
+    assert [f["run"] for f in doc["runs"]["fresh"]] == ["rb_q5n_s5201", "rb_q5n_s5209", "rb_q5n_s5203"]
+    assert len(doc["cells"]) == 9 and not any("rb_q5n_s5202" in z for cell in doc["cells"] for z in cell)
+    assert doc["names"] == first["names"]                              # one family and one request a card and look
+    assert doc["arm"]["fresh"][1] == {"seed": 5209, "run": "rb_q5n_s5209"}
+
+
+def test_a_spare_run_that_is_not_its_own_argv_from_step_zero_is_refused(tmp_path):
+    """The replacement is "from step 0 with the spare seed": the lost row's argv, or a fork of the lost run, fails."""
+    for k, (kw, why) in enumerate([
+            ({"argv": F.fresh_argv(spec_of(), spec_of().fresh[1], 50_000_000)},
+             "original_command is not the registered argv of rb_q5n_s5209"),
+            ({"lineage": {"role": "fork", "fork_parent": "models/rb_q5n_s5202/checkpoints/x.zip"}}, "fork")]):
+        models = tmp_path / f"m{k}"
+        now = F.arm_from_doc(amended({**Q5N}, 1, 5209))
+        make_banked(models)
+        for r in now.fresh:
+            make_cell_run(models, now, r, **(kw if r.seed == 5209 else {}))
+        doc, probs = plan(models, now)
+        assert doc is None and any("rb_q5n_s5209" in p and why in p for p in probs), probs
+
+
 # -------------------------------------------------------------------------------------------- the lever check
 def test_the_lever_check_passes_the_cards_levers_with_the_real_parser_and_fails_an_undeclared_key():
     """THIS checkout's parser (the plan's is the pin's, :func:`main.b1.fresh.pin_tree_resolver`): each card's lever

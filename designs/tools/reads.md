@@ -857,7 +857,8 @@ skips and names why.
   under `not_reported`.
 
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries; BOUNDARY-1's learning-rate record
-  beside a look is its own tool, `python -m main.b1.lr_report`) stay per-read. A rule's `params`
+  beside a look is its own tool, `python -m main.b1.lr_report`, whose `--fresh-arm` reads a fresh cell's rungs
+  and KL label beside its banked cell) stay per-read. A rule's `params`
   can carry them, but only the VOID gate and `n4_screen`'s mean LR (`metadata.json`) read run dirs. `n4_screen` lists
   what it cannot compute (ρ, approx KL, G-F, the experts' divergence, home72, K's power) under `not_reported`.
 - **A repin's reach.** `repin` proves the TRACKED play path identical (§3). It cannot see what git does not hold (the

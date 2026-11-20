@@ -431,3 +431,191 @@ def test_the_report_writes_nothing_in_a_run_directory(tmp_path):
                    "--out", str(tmp_path / "out.json")]) == 0
     assert sorted((p.relative_to(models), p.stat().st_mtime_ns, p.stat().st_size)
                   for p in models.rglob("*")) == before
+
+
+# ------------------------------------------------------------------------------------------------ a fresh cell
+#: Q5-N's arm as its card registered it: the lever starts the fresh ladder at 6e-4.
+Q5N: Dict[str, Any] = {"schema": "gen3_b1_fresh_arm_v1", "card": "q5n", "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+                       "banked_arm": "C", "lever": ["--n-epochs", "5", "--lr", "6e-4"],
+                       "declared_keys": ["lr", "n_epochs"],
+                       "fresh": [{"seed": s, "run": f"rb_q5n_s{s}"} for s in (5201, 5202, 5203)]}
+FRESH_BASE = 6e-4
+BANKED = ("rb_b1c_s5101", "rb_b1c_s5102", "rb_b1c_s5110")
+#: Rows every 5M steps from 5M to 50M, then one past the look: ten rows to the look, nine in the KL window.
+STEPS = steps_to(L50 + 50_000)
+
+
+def arm_file(tmp: Path, **over: Any) -> Path:
+    path = tmp / "fresh_arm_q5n.json"
+    path.write_text(json.dumps({**Q5N, **over}))
+    return path
+
+
+def make_named(models: Path, name: str, lrs: Sequence[float], kls: Sequence[float],
+               steps: Sequence[int] = STEPS) -> Path:
+    write_events(models / name, list(zip(steps, lrs, kls)), stamp=1)
+    return models / name
+
+
+def make_cell(models: Path, fresh_kl: Sequence[float] = (0.010, 0.012, 0.014), banked: Sequence[str] = BANKED,
+              fresh: Sequence[str] = ("rb_q5n_s5201", "rb_q5n_s5202", "rb_q5n_s5203")) -> None:
+    """Three fresh runs walking DOWN their own ladder (rungs 0, -1, -2, then -3), a flat KL each; three banked
+    runs flat on rung -3 of B1's."""
+    ks = [0, 0, -1, -1, -1, -2, -2, -3, -3, -3, -3]
+    for name, kl in zip(fresh, fresh_kl):
+        make_named(models, name, [FRESH_BASE * 1.2 ** k for k in ks], [kl] * len(STEPS))
+    for name in banked:
+        make_named(models, name, [_rung_lr(-3)] * len(STEPS), [0.011] * len(STEPS))
+
+
+def fresh_doc(tmp: Path, look: str = "50M", **kw: Any) -> Dict[str, Any]:
+    spec, sides = R.fresh_runs(kw.pop("arm", None) or arm_file(tmp), tmp / "models", kw.get("replace"))
+    return R.fresh_report(spec, sides, look, **kw)
+
+
+def test_a_fresh_cell_is_read_on_its_own_ladder_beside_its_banked_cell(tmp_path, capsys):
+    make_cell(tmp_path / "models")
+    doc = fresh_doc(tmp_path)
+    assert doc["schema"] == R.FRESH_SCHEMA and doc["card"] == "q5n" and doc["n_runs"] == 6
+    assert [(r["run"], r["side"], r["arm"]) for r in doc["runs"]] == \
+        [(f"rb_q5n_s{s}", "fresh", "fresh") for s in (5201, 5202, 5203)] + [(b, "banked", "banked") for b in BANKED]
+    assert doc["ladder"] == {"factor": 1.2, "base": {"fresh": FRESH_BASE, "banked": R.LADDER_BASE}}
+    one = doc["runs"][0]
+    assert one["seed"] == 5201 and one["ladder_base"] == FRESH_BASE and one["rung"] == -3
+    assert one["rows_to_look"] == 10 and one["look_row_step"] == L50, "the row past the look is in no window"
+    assert one["rung_histogram"] == {"rungs": {"-3": 3, "-2": 2, "-1": 3, "0": 2}, "off": 0, "off_rates": []}
+    assert one["kl_window_rows"] == 9 and one["kl_window_median"] == _f32(0.010)
+    assert doc["runs"][3]["rung_histogram"]["rungs"] == {"-3": 10} and doc["runs"][3]["ladder_base"] == R.LADDER_BASE
+    assert doc["cells"]["fresh"]["rung_histogram"] == {"rungs": {"-3": 9, "-2": 6, "-1": 9, "0": 6}, "off": 0}
+    assert doc["cells"]["banked"]["rung_histogram"] == {"rungs": {"-3": 30}, "off": 0}
+    assert doc["figure"] == doc["cells"]["fresh"]["kl_window_median"] == _f32(0.012) and doc["label"] is None
+    assert doc["cells"]["banked"]["kl_window_median"] == _f32(0.011)
+    assert (doc["kl_window"], doc["kl_band"], doc["kl_band_edge"]) == ([10_000_000, 50_000_000], [0.005, 0.02], 1e-6)
+
+    out = tmp_path / "out" / "fresh.json"
+    argv = ["--look", "50M", "--fresh-arm", str(arm_file(tmp_path)), "--models-dir", str(tmp_path / "models")]
+    assert R.main([*argv, "--out", str(out)]) == 0
+    text = capsys.readouterr().out
+    assert json.loads(out.read_text()) == json.loads(json.dumps(doc))
+    assert "card q5n at the 50M look" in text and "yes, no label" in text and R.LABEL not in text
+    assert "-3:3  -2:2  -1:3  +0:2  off:0" in text and "cell banked  base 3.0e-04" in text
+
+
+def test_the_label_is_the_registered_inequality_on_the_fresh_cells_median_of_three(tmp_path, capsys):
+    """Q5-N PREREG §3: printed unless 0.005 + 1e-6 < figure < 0.02 - 1e-6; the figure is the MEDIAN of the three
+    fresh runs' medians (never their pooled rows, never the banked cell's)."""
+    lo, hi, edge = *R.KL_BAND, R.KL_BAND_EDGE
+    assert (lo, hi, edge) == (0.005, 0.02, 1e-6)
+    for inside in (lo + 2 * edge, 0.0125, hi - 2 * edge):
+        assert R.movement_label(inside) is None
+    for outside in (lo + edge, lo, 0.0, hi - edge, hi, 0.03):                 # the edge itself is OUTSIDE: strict
+        assert R.movement_label(outside) == R.LABEL == "MOVEMENT-UNMATCHED"
+    models = tmp_path / "models"
+    make_cell(models, fresh_kl=(0.030, 0.004, 0.025))
+    doc = fresh_doc(tmp_path)
+    assert doc["figure"] == _f32(0.025) and doc["label"] == R.LABEL
+    assert doc["cells"]["banked"]["kl_window_median"] == _f32(0.011), "the banked cell is inside, and does not count"
+    assert R.main(["--look", "50M", "--fresh-arm", str(arm_file(tmp_path)), "--models-dir", str(models)]) == 0
+    assert "NO -> MOVEMENT-UNMATCHED" in capsys.readouterr().out
+    low = tmp_path / "low"
+    make_cell(low / "models", fresh_kl=(0.030, 0.004, 0.006))                 # two runs outside, the median inside
+    assert fresh_doc(low)["label"] is None and fresh_doc(low)["figure"] == _f32(0.006)
+
+
+def test_the_kl_window_is_10m_to_50m_at_either_look_and_superseded_rows_are_out(tmp_path):
+    models = tmp_path / "models"
+    long = steps_to(R.LOOKS["100M"] + 50_000)                                 # 5M ... 100M, then one past
+    kl = [9.0] + [0.01] * 9 + [0.5] * (len(long) - 10)                        # 5M: before; 10M-50M: 0.01; after: 0.5
+    for name in ("rb_q5n_s5201", "rb_q5n_s5202", "rb_q5n_s5203"):
+        make_named(models, name, [FRESH_BASE] * len(long), kl, long)
+    for name in BANKED:
+        make_named(models, name, [R.LADDER_BASE] * len(long), kl, long)
+    for look, rows in (("50M", 10), ("100M", 20)):
+        doc = fresh_doc(tmp_path, look)
+        assert doc["figure"] == _f32(0.01) and doc["runs"][0]["kl_window_rows"] == 9
+        assert doc["runs"][0]["rung_histogram"]["rungs"] == {"0": rows}, "the histogram runs to the look"
+    # a resume from 30M discards the first file's rows from there on: the window reads the second file's
+    write_events(models / "rb_q5n_s5202", [(s, FRESH_BASE, 0.019) for s in long if s >= 30_000_000], stamp=2)
+    row = fresh_doc(tmp_path)["runs"][1]
+    assert row["superseded_rows"] == 2 * len([s for s in long if s >= 30_000_000])
+    assert row["kl_window_median"] == _f32(0.019) and row["kl_window_rows"] == 9      # 4 rows at 0.01, 5 at 0.019
+
+
+def test_a_rate_is_judged_on_its_own_sides_ladder_and_the_bounds_are_off_it(tmp_path, capsys):
+    models = tmp_path / "models"
+    make_cell(models)
+    ceiling, floor, b1_rung = 2 * FRESH_BASE, 1e-5, _rung_lr(1)               # 3.6e-4: ON B1's ladder, OFF the arm's
+    lrs = [ceiling, ceiling, FRESH_BASE, b1_rung, floor, floor, floor, FRESH_BASE / 1.2] + [FRESH_BASE] * 3
+    make_named(models, "rb_q5n_s5203", lrs, [0.014] * len(STEPS))
+    row = fresh_doc(tmp_path)["runs"][2]
+    assert row["rung_histogram"]["rungs"] == {"-1": 1, "0": 3} and row["rung_histogram"]["off"] == 6
+    assert row["rung_histogram"]["off_rates"] == [[_f32(floor), 3], [_f32(b1_rung), 1], [_f32(ceiling), 2]]
+    assert R.rung(_f32(b1_rung))[0] == 1 and R.rung(_f32(b1_rung), FRESH_BASE)[0] is None
+    assert R.main(["--look", "50M", "--fresh-arm", str(arm_file(tmp_path)), "--models-dir", str(models)]) == 0
+    assert "rb_q5n_s5203 off its ladder: 3 rows at 1.000000e-05" in capsys.readouterr().out
+    make_named(models, "rb_q5n_s5201", [FRESH_BASE * (1 + 3 * R.RUNG_ON_REL)] * len(STEPS), [0.01] * len(STEPS))
+    with pytest.raises(R.ReportError, match="not decided"):
+        fresh_doc(tmp_path)
+
+
+def test_the_fresh_ladders_base_is_the_levers_lr_or_productions():
+    assert R.cell_bases(Q5N["lever"], Q5N["declared_keys"]) == {"fresh": 6e-4, "banked": R.LADDER_BASE}
+    assert R.cell_bases(["--n-epochs", "5", "--lr=1.2e-3"], ["lr", "n_epochs"])["fresh"] == 1.2e-3
+    readout = ["--policy-readout", "trunk", "--allow-nonproduction-arch"]     # Q6-N: the lever leaves the rate alone
+    assert R.cell_bases(readout, ["allow_nonproduction_arch", "policy_readout"]) == {"fresh": 3e-4, "banked": 3e-4}
+    for lever, keys, why in ((["--n-epochs", "5"], ["lr", "n_epochs"], "types --lr 0 time"),
+                             (["--lr", "6e-4"], ["n_epochs"], "types --lr 1 time"),
+                             (["--lr", "6e-4", "--lr=3e-4"], ["lr"], "types --lr 2 time"),
+                             (["--lr", "fast"], ["lr"], "not a number"), (["--lr", "0"], ["lr"], "finite positive")):
+        with pytest.raises(R.ReportError, match=why):
+            R.cell_bases(lever, keys)
+
+
+def test_a_fresh_report_drops_no_run_and_refuses_by_name(tmp_path, capsys):
+    models = tmp_path / "models"
+    make_cell(models, fresh=("rb_q5n_s5201", "rb_q5n_s5202"), banked=BANKED[:2])
+    make_named(models, "rb_q5n_s5203", [FRESH_BASE] * 3, [0.01] * 3, [15_000_000, 30_000_000, L50])   # no early rows
+    short = [s for s in STEPS if s < L50]
+    make_named(models, BANKED[2], [R.LADDER_BASE] * len(short), [0.01] * len(short), short)           # still training
+    argv = ["--look", "50M", "--fresh-arm", str(arm_file(tmp_path)), "--models-dir", str(models)]
+    out = tmp_path / "out.json"
+    assert R.main([*argv, "--out", str(out)]) == 3 and not out.exists()
+    err = capsys.readouterr().err
+    assert err.startswith("REFUSED: 2 of 6 runs cannot be read at 50M, and no run is dropped")
+    assert "rb_q5n_s5203: its rows (15,000,000 to 50,000,000) do not span the KL window" in err
+    assert "rb_b1c_s5110 lacks the look step 50,000,000" in err
+    for extra, why in ((["--runs", str(models / "rb_q5n_s5201")], "names its own runs"),
+                       (["--displacement"], "names its own runs"),
+                       (["--out", str(models / "r.json")], "written OUTSIDE models/")):
+        assert R.main([*argv, *extra]) == 3 and why in capsys.readouterr().err
+    assert R.main(["--look", "50M", "--replace", "5102", "--models-dir", str(models)]) == 3
+    assert "--replace goes with --fresh-arm" in capsys.readouterr().err
+    assert R.main([*argv[:2], "--fresh-arm", str(tmp_path / "none.json"), "--models-dir", str(models)]) == 3
+    assert "cannot be read" in capsys.readouterr().err
+    with pytest.raises(R.ReportError, match="not a BOUNDARY-1 run name"):     # B1's own path is as strict as before
+        R.report([models / "rb_q5n_s5201"], "50M")
+
+
+def test_a_replaced_run_on_either_side_is_the_one_the_arm_names(tmp_path):
+    """B1's spare stands in by ``--replace`` (the kit's switch); a lost fresh run by the amended arm file."""
+    models = tmp_path / "models"
+    make_cell(models, banked=("rb_b1c_s5101", "rb_b1c_s5109", "rb_b1c_s5110"),
+              fresh=("rb_q5n_s5201", "rb_q5n_s5209", "rb_q5n_s5203"))
+    rows = [{"seed": s, "run": f"rb_q5n_s{s}"} for s in (5201, 5209, 5203)]
+    doc = fresh_doc(tmp_path, arm=arm_file(tmp_path, fresh=rows), replace=5102)
+    assert [r["run"] for r in doc["runs"]] == ["rb_q5n_s5201", "rb_q5n_s5209", "rb_q5n_s5203",
+                                               "rb_b1c_s5101", "rb_b1c_s5109", "rb_b1c_s5110"]
+    assert (doc["replaced_seed"], doc["replaced_fresh_seed"]) == (5102, 5202)
+    with pytest.raises(R.ReportError, match="rb_b1c_s5102: no run directory"):
+        fresh_doc(tmp_path, arm=arm_file(tmp_path, fresh=rows))
+    with pytest.raises(R.ReportError, match="at most ONE row replaced by its spare"):
+        fresh_doc(tmp_path, arm=arm_file(tmp_path, fresh=[{"seed": 5208, "run": "rb_q5n_s5208"}, *rows[1:]]))
+
+
+def test_the_fresh_report_writes_nothing_in_a_run_directory(tmp_path):
+    models = tmp_path / "models"
+    make_cell(models)
+    before = sorted((p.relative_to(models), p.stat().st_mtime_ns, p.stat().st_size) for p in models.rglob("*"))
+    assert R.main(["--look", "50M", "--fresh-arm", str(arm_file(tmp_path)), "--models-dir", str(models),
+                   "--out", str(tmp_path / "out.json")]) == 0
+    assert sorted((p.relative_to(models), p.stat().st_mtime_ns, p.stat().st_size) for p in models.rglob("*")) == before
