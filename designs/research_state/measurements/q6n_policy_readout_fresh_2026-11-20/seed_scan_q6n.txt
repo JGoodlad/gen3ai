@@ -1,0 +1,13 @@
+# FRAME.md § 2 item 5: main.b1.arms.scan_collisions (main 66edebfff) pointed at this card's three seeds, its spare, its pilot seed and their names, 2026-11-20
+{
+ "roots": [
+  "/home/goodlad/dev/gen3ai/models",
+  "/home/goodlad/gen3ai_archive"
+ ],
+ "sidecars": 693,
+ "dirs": 4173,
+ "hits": [],
+ "own": []
+}
+seeds (5211, 5212, 5213, 5219, 5299)
+names ['rb_q6n_s5211', 'rb_q6n_s5212', 'rb_q6n_s5213', 'rb_q6n_s5219', 'q6n_pilot_s5299']

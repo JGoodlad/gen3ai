@@ -1,6 +1,10 @@
-# One fresh cell against a banked BOUNDARY-1 cell: the frame (DRAFT, 2026-11-17)
+# One fresh cell against a banked BOUNDARY-1 cell: the frame (2026-11-17; ADOPTED 2026-11-20)
 
-**Status: DRAFT. It registers nothing and launches nothing.** It is the shared part of every later registration that
+**Status: ADOPTED 2026-11-20, rules unchanged since `52353b1b7`, by a FULL registration at width 128:
+[`../q6n_policy_readout_fresh_2026-11-20/PREREG.md`](../q6n_policy_readout_fresh_2026-11-20/PREREG.md). The 256 arm
+(Q6-W) was NOT registered (the orchestrator's ruling after B1's 50M look: width is not ahead). § 4's σ amendment is
+Q6-N's §5. From here this file changes only by a dated amendment that every registration adopting it cites. By itself it
+registers nothing and launches nothing.** It is the shared part of every later registration that
 reads ONE new three-seed fresh cell against ONE banked BOUNDARY-1 (B1) cell. Such a read can adopt a recipe or an
 architecture, so each lever is registered in the **FULL tier** (`../../README.md` § Registration tiers). Its
 `PREREG.md` adopts this frame by reference, names its card's choices, and lands on main before its first step. Two
@@ -8,7 +12,7 @@ lever cards sit beside this file: [`CARD_Q5_epochs.md`](CARD_Q5_epochs.md) (fewe
 [`CARD_Q6_policy_readout.md`](CARD_Q6_policy_readout.md) (the flat policy tower retired). Source of the unit: the
 queue proposal `~/.cache/gen3ai/handoffs/post_b1_queue_proposal_2026-11-16.md` §1 D4, §2 rows Q5 / Q6, §3, §4 P5.
 
-**Blind.** No B1 look has been planned or played, and no B1 head-to-head or Kakuna number was read to write this. What
+**Blind (as written, 2026-11-17).** No B1 look has been planned or played, and no B1 head-to-head or Kakuna number was read to write this. What
 was read, none of it a score: B1's PREREG (§2 to §11, Amendments 1 to 6), `python -m main.dose` on the six C and W
 runs, and the sibling analysis of the wide arm's learning rate (`~/.cache/gen3ai/handoffs/b1_wide_lr_floor_2026-11-17.md`).
 

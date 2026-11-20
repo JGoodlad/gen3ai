@@ -32193,3 +32193,79 @@ choice to protect a live B1 training run (no GPU, no lease, nice 19 on the agent
 Design: `designs/endstate/design_v_rank_on_u.md`; MF-4: `EXPERIMENT_BACKLOG.md`.
 
 Tag: **READ · V-RANK look 1 · within-position slope of the real Kakuna outcome on `r0s4_honest@10`'s Q̂, U vs home72 at P\* · CONTINUE (UB(β_U) +0.575 ≥ 0.25) · β_U +0.390 [+0.181, +0.575] / β_home +0.354 [+0.180, +0.516] / Δβ +0.036 [−0.232, +0.277] · team-clustered, 561 U / 554 home positions · look 1 reads NULL only; no other class computed · MF-4 unchanged · ≈ 72 CPU-h · pin `c933afd5a` · moves no recipe**
+
+### 2026-11-20 · REGISTRATION · **Q6-N REGISTERED (full tier; blind: before any Q6 training step, game, look or pilot): the flat policy tower retired, ONE fresh three-seed cell at width 128 against BOUNDARY-1's banked cell C, read by the fresh-cell frame. With it the frame's σ amendment from C's own spread at 50M. First on the card after X35-A3. NOT LAUNCHED**
+
+**Why.** The flat policy tower has a measured mechanism against it (its first layer 0.897 saturated, the policy
+gradient cut 15–18×, 43 % of the parameters), and `--policy-readout trunk` (one learned query over the attention
+trunk) was built and held back for its own registered hypothesis. The post-B1 queue made it Q6. The fresh-cell frame
+(`measurements/fresh_cell_frame_2026-11-17/FRAME.md`, drafted blind on 2026-11-17, rules last changed at `52353b1b7`)
+lets one new cell read against a cell BOUNDARY-1 already trained, so the lever costs three runs, not six.
+
+**The orchestrator's rulings of 2026-11-20, taken as given.** (R1) Width 128 only: B1's 50M look put width at
+CONTINUE with −0.37 pp [−3.32, +2.57], not ahead, and the queue's row for that state keeps lever cells narrow; **the
+256 arm Q6-W is DROPPED, never registered.** (R3) A ≤ 3 GPU-h card check is the first item of the GPU window, its
+criteria registered now. (R4) Q6-N runs before Q5-N; the order changes neither statistic.
+
+**What is registered** (`measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md`; rule `b1_fresh_cell`,
+`main.b1.fresh_rule` at `bc76e9657`; kit `python -m main.b1.fresh` at `52353b1b7`; NO statistic added or changed).
+
+- **The arm:** `rb_q6n_s5211` / `s5212` / `s5213` (kit arm `q6n`; spare seed 5219, pilot 5299): cell C's argv plus
+  `--policy-readout trunk --allow-nonproduction-arch`, at B1's launch pin `15136b61`; 1,547,039 parameters against
+  C's 2,609,183.
+- **The banked cell:** C, `rb_b1c_s5101` / `s5102` / `s5110`, the files B1's looks read (the 50M look's `look.json`
+  is banked in the folder, sha256 `925bfb32…dedc868`; B1's 100M `look.json` is owed by a dated amendment before the
+  100M look).
+- **The statistic:** B1's head-to-head simple effect, fresh against banked, on view N: the mean of the 9 cells of a
+  3 × 3 cross minus 50 (45,000 games a look); variance s²_fresh/3 + s²_banked/3, each floored at 1.76²; t on 4 df,
+  two-sided 90 %; a bound within 0.005 pp of its threshold fails (rule 8).
+- **The looks:** 50M: CONTINUE iff the estimate > +0.005 pp, else STOPPED-AT-50M with no class. 100M: WIN (lower
+  bound > 0) / LOSS (upper bound < 0) / NO-USEFUL-GAIN (upper bound < +4.0 pp) / UNDECIDED; INCONCLUSIVE by B1 §10.
+  A WIN makes the readout a CANDIDATE for the next fresh lineage, never an adoption.
+- **The card check (not run):** the arm's argv to 4,500,000 steps at seed 5299 into a scratch models dir. PASS iff
+  the bf16 compile and its parity check, the inference graph capture, the startup fit (`oom` null, headroom ≥
+  1,024.5 MiB) all pass and no parity-gate or non-finite FATAL occurs through the pilot with the update-10 canary
+  PASS. The step-time ratio ρ is RECORDED by one committed formula (`pilot_rho.py`; reference 518.27 s per 1M steps
+  from B1's C pilot) and decides nothing.
+
+**Power, from the C cell's own spread** (`power_c50m.py`, its log; 50,000 draws a row, 0 mismatches against
+`main.b1.cross` in 48,000 classes). On view N at 50M the variance of C's three run means is 0.2000, 0.0045 and
+0.6411 in B1's three simple effects (one 2-df estimate, mean 0.2819); less the cell noise, **σ_C ≈ 0.36 pp** (95 %
+upper bound 2.31). B1's wide 50M intervals came from the WB arm's spread, not C's. Every C variance is far under
+the floor, so the floor sets the banked side and **the half-width is at least 3.06 pp whatever the fresh cell does**.
+
+| σ fresh / σ banked (pp) | half-width | P(WIN) at +2 | at +4 | at +6 | P(CONTINUE at 50M) at 0 / +2 |
+|---|---|---|---|---|---|
+| 0.36 / 0.36 | 3.06 | 0.002 | 0.99 | 1.00 | 0.50 / 1.00 |
+| 1.76 / 0.36 | 3.06 | 0.13 | 0.72 | 0.98 | 0.50 / 0.97 |
+| 3.1 / 0.36 | 3.88 | 0.15 | 0.47 | 0.78 | 0.50 / 0.86 |
+| 1.76 / 1.76 (the frame's) | 3.28 | 0.16 | 0.61 | 0.93 | 0.50 / 0.92 |
+| 3.1 / 3.1 (the frame's) | 5.09 | 0.14 | 0.34 | 0.60 | 0.50 / 0.78 |
+
+**The power for a realistic lever is poor and the rule is not changed for it:** a +2 pp gain reads WIN at most one
+time in six and UNDECIDED most of the time; a +4 pp gain reads WIN between one time in three and nearly always,
+by the fresh cell's spread, which is UNVERIFIED (as is every σ at 100M). A no-effect arm continues at 50M half the
+time and then reads WIN at most 0.04.
+
+**What was executed (2026-11-20, main `66edebfff`, no card, nice 19 on the agent cores).** The kit's argvs (the first
+is the card's token for token); `checkargs` with the pinned parser (exit 0, 0 unrecognized); the launcher's dry run
+(exit 3 with exactly the two refusals an agent shell owes: the hidden card and the inherited nice); the kit's
+resolved-config diff in a clean checkout of the pin (`ok true`: against C at 50M and 100M, for all three seeds,
+exactly `allow_nonproduction_arch`, `policy_readout`, `seed`, `run_name` differ); the seed scan (693 sidecars,
+4,173 directories, no hit). **The pin does not move.** Nothing trained; no game played.
+
+**Cost.** Card check ≈ 1.0–1.3 GPU-h (bound 3); the cell ≈ 28.6 GPU-h to 50M and ≈ 30.1 more to 100M, times ρ; a
+look ≈ 0.33 (UNVERIFIED). ≈ 30 stopped at 50M, ≈ 61–63 to a 100M class, ≈ 46 expected with no true effect.
+
+**FINDINGS.** The pilot is 4.5M steps where the draft said 2.5M (the draft ended before the first promotion). B1's
+`rho.json` cannot be reproduced (its script is not in the repo), so ρ is one committed formula applied to both
+runs. B1's 50M `look.json` existed only in a cache directory although the kit needs it. The kit has no replacement
+path for a lost fresh run, and nothing in code holds the fresh cell's own checkpoints (UNVERIFIED that a grooming
+plan would refuse them).
+
+**Record:** `measurements/q6n_policy_readout_fresh_2026-11-20/` (`PREREG.md`, `fresh_arm_q6n.json`, `describe_q6n.txt`,
+`checkargs_q6n.txt`, `dryrun_q6n.txt`, `lever_check_q6n.json`, `seed_scan_q6n.txt`, `power_c50m.py` and its log,
+`pilot_rho.py`, `pilot_rho_reference_c.txt`, `b1_look_50M.json`).
+View: `STATUS.md` (§3), `EXPERIMENT_BACKLOG.md` (§1 row Q6-N), the frame's and the card's status lines.
+
+Tag: **REGISTRATION · Q6-N policy readout from the trunk, fresh, width 128 · 3 fresh runs vs BOUNDARY-1's banked cell C, 3 × 3 cross on view N, rule `b1_fresh_cell` · 50M CONTINUE / STOPPED; 100M WIN / LOSS / NO-USEFUL-GAIN / UNDECIDED / INCONCLUSIVE · σ_C ≈ 0.36 pp (2 df), half-width ≥ 3.06 pp · P(WIN) 0.00–0.16 at +2 pp, 0.34–0.99 at +4 pp · pin `15136b61` · ≈ 30 / 61–63 GPU-h (50M stop / 100M class) · Q6-W dropped · not launched · moves no recipe**

@@ -182,6 +182,22 @@ its GO.
   are launch-ready; the three A3 readers plan on declared placeholders until their targets finish. UNVERIFIED until
   the A3 runs exist: an A3 reader's argv at the pin, and that the play checkout loads an exploiter final.
   Every class licenses at most a proposal to the owner.
+- **Q6-N, the flat policy tower retired, from scratch: REGISTERED 2026-11-20, NOT LAUNCHED**
+  ([`research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md`](research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md), full tier; the post-B1 queue's Q6).
+  **First on the card after X35-A3.** One new cell of three fresh runs at width 128 (kit arm `q6n`, seeds 5211–5213)
+  with BOUNDARY-1's control argv plus `--policy-readout trunk`, at BOUNDARY-1's launch pin, read head-to-head
+  against the three banked runs of cell C by the fresh-cell frame (rule `b1_fresh_cell`, kit `52353b1b7`: a 3 × 3
+  cross, 45,000 games a look, the 1.76 pp floor on each cell's spread). The mechanism is measured: the tower's first
+  layer is 0.897 saturated, cuts the policy gradient 15–18× and holds 43 % of the parameters. 50M: CONTINUE iff
+  ahead, else stopped with no class; 100M: WIN / LOSS / NO-USEFUL-GAIN (+4 pp) / UNDECIDED. A WIN is a candidate
+  for the next fresh lineage, never an adoption. The 256 arm is NOT registered: BOUNDARY-1's 50M look put width at
+  CONTINUE (−0.37 pp), not ahead. **Power**, from C's own spread at 50M (σ ≈ 0.36 pp on 2 df, upper bound 2.31; the
+  floor sets the interval, half-width ≥ 3.06 pp): a +2 pp gain reads WIN 0.00–0.16 in every scenario and a +4 pp
+  gain 0.34–0.99, by the fresh cell's unknown spread; a no-effect arm continues at 50M half the time. **Cost** ≈ 30
+  GPU-h stopped at 50M, ≈ 61–63 to a 100M class, ≈ 46 expected with no true effect, times an UNVERIFIED step-time
+  ratio. The window's first item is the registered card check (a 4.5M pilot, ≈ 1.0–1.3 GPU-h, bound 3).
+  `checkargs` at the pin, the dry run (it stops only at the hidden card and nice 19) and the one-lever diff against
+  C were re-run on main `66edebfff`: green, the pin does not move.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

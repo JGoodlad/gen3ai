@@ -1,0 +1,58 @@
+{
+ "window": [
+  300000,
+  4000000
+ ],
+ "pilot": {
+  "run": "rb_b1pinpilot_c_s9201",
+  "rows": 38,
+  "first_step": 300800,
+  "last_step": 3937792,
+  "median_update_s": 42.014,
+  "median_collect_s": 8.934,
+  "median_dsteps": 98304.0,
+  "update_share": 0.8247,
+  "sec_per_1M_steps": 518.27
+ },
+ "reference": {
+  "run": "rb_b1pinpilot_c_s9201",
+  "rows": 38,
+  "first_step": 300800,
+  "last_step": 3937792,
+  "median_update_s": 42.014,
+  "median_collect_s": 8.934,
+  "median_dsteps": 98304.0,
+  "update_share": 0.8247,
+  "sec_per_1M_steps": 518.27
+ },
+ "rho": 1.0
+}
+{
+ "window": [
+  300000,
+  2000000
+ ],
+ "pilot": {
+  "run": "rb_b1pinpilot_c_s9201",
+  "rows": 18,
+  "first_step": 300800,
+  "last_step": 1970944,
+  "median_update_s": 42.0,
+  "median_collect_s": 8.908,
+  "median_dsteps": 98304.0,
+  "update_share": 0.825,
+  "sec_per_1M_steps": 517.86
+ },
+ "reference": {
+  "run": "rb_b1pinpilot_c_s9201",
+  "rows": 18,
+  "first_step": 300800,
+  "last_step": 1970944,
+  "median_update_s": 42.0,
+  "median_collect_s": 8.908,
+  "median_dsteps": 98304.0,
+  "update_share": 0.825,
+  "sec_per_1M_steps": 517.86
+ },
+ "rho": 1.0
+}

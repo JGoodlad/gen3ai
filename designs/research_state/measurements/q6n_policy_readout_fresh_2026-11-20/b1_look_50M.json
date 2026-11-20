@@ -1,0 +1,675 @@
+{
+ "look": "50M",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "steps": {
+  "C": 50000000,
+  "W": 50000000,
+  "Br": 50000000,
+  "WB": 50000000
+ },
+ "eq_step": null,
+ "replaced_seed": null,
+ "survivor": null,
+ "runs": {
+  "C": [
+   {
+    "arm": "C",
+    "seed": 5101,
+    "run": "rb_b1c_s5101",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip",
+    "steps": 50000412,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5101",
+     "verdict": "PASS",
+     "upto": 50000412,
+     "last_row_step": 49954753,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 9.393692016601562e-05,
+      "p99": 1.6661882909829728e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f"
+   },
+   {
+    "arm": "C",
+    "seed": 5102,
+    "run": "rb_b1c_s5102",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip",
+    "steps": 50000041,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5102",
+     "verdict": "PASS",
+     "upto": 50000041,
+     "last_row_step": 49955581,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 0.00010156631469726562,
+      "p99": 1.6157626305357553e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45"
+   },
+   {
+    "arm": "C",
+    "seed": 5110,
+    "run": "rb_b1c_s5110",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip",
+    "steps": 50000220,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5110",
+     "verdict": "PASS",
+     "upto": 50000220,
+     "last_row_step": 49954151,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 7.462501525878906e-05,
+      "p99": 1.599311872269027e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f"
+   }
+  ],
+  "W": [
+   {
+    "arm": "W",
+    "seed": 5103,
+    "run": "rb_b1w_s5103",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip",
+    "steps": 50000086,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1w_s5103",
+     "verdict": "PASS",
+     "upto": 50000086,
+     "last_row_step": 49961071,
+     "rows": {
+      "judged_max": 505,
+      "p99": 505
+     },
+     "max": {
+      "judged_max": 8.940696716308594e-05,
+      "p99": 1.5598536265315488e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "84227794ad05919476d90ec9d65068ac10fb57a9d09b0d4b9fe1425d66aefa84"
+   },
+   {
+    "arm": "W",
+    "seed": 5104,
+    "run": "rb_b1w_s5104",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip",
+    "steps": 50000080,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1w_s5104",
+     "verdict": "PASS",
+     "upto": 50000080,
+     "last_row_step": 49964540,
+     "rows": {
+      "judged_max": 505,
+      "p99": 505
+     },
+     "max": {
+      "judged_max": 0.0001270771026611328,
+      "p99": 1.6914009393076412e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "e4f5d19199f11b8064877891d1cba4b442da3f329a5c91e65a64c9480abd6356"
+   },
+   {
+    "arm": "W",
+    "seed": 5111,
+    "run": "rb_b1w_s5111",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip",
+    "steps": 50000117,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1w_s5111",
+     "verdict": "PASS",
+     "upto": 50000117,
+     "last_row_step": 49963698,
+     "rows": {
+      "judged_max": 505,
+      "p99": 505
+     },
+     "max": {
+      "judged_max": 0.00015544891357421875,
+      "p99": 1.6524791135452688e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "5d11bcb7a42285069d9141e077c220eea89214e911fa359f13f343a3fc56016c"
+   }
+  ],
+  "Br": [
+   {
+    "arm": "Br",
+    "seed": 5105,
+    "run": "rb_b1br_s5105",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip",
+    "steps": 50000082,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1br_s5105",
+     "verdict": "PASS",
+     "upto": 50000082,
+     "last_row_step": 49955891,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 0.00010156631469726562,
+      "p99": 1.5406609236379154e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "09774228297dde6c4038c0ad980d797d7364cebb6077e38a95de4746d052b513"
+   },
+   {
+    "arm": "Br",
+    "seed": 5106,
+    "run": "rb_b1br_s5106",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip",
+    "steps": 50000139,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1br_s5106",
+     "verdict": "PASS",
+     "upto": 50000139,
+     "last_row_step": 49955856,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 9.85860824584961e-05,
+      "p99": 1.6856192814884707e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "756bddc0ce398c980fb78960b3aa12e5206a750aebc26ac746c895bc04909fc5"
+   },
+   {
+    "arm": "Br",
+    "seed": 5112,
+    "run": "rb_b1br_s5112",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip",
+    "steps": 50000126,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1br_s5112",
+     "verdict": "PASS",
+     "upto": 50000126,
+     "last_row_step": 49953785,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 0.00010454654693603516,
+      "p99": 1.610279105079826e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "426e44334e00d3826097a99838dd36978f327c7a003cc4046f8b5b167510a340"
+   }
+  ],
+  "WB": [
+   {
+    "arm": "WB",
+    "seed": 5107,
+    "run": "rb_b1wb_s5107",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+    "steps": 50000127,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1wb_s5107",
+     "verdict": "PASS",
+     "upto": 50000127,
+     "last_row_step": 49966709,
+     "rows": {
+      "judged_max": 505,
+      "p99": 505
+     },
+     "max": {
+      "judged_max": 8.082389831542969e-05,
+      "p99": 1.475512999604689e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "af79a96b281b8a26f585d293997c71e46aec84e155965fa5c869b687e2787e34"
+   },
+   {
+    "arm": "WB",
+    "seed": 5108,
+    "run": "rb_b1wb_s5108",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+    "steps": 50000005,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1wb_s5108",
+     "verdict": "PASS",
+     "upto": 50000005,
+     "last_row_step": 49965842,
+     "rows": {
+      "judged_max": 505,
+      "p99": 505
+     },
+     "max": {
+      "judged_max": 8.279085159301758e-05,
+      "p99": 1.610279105079826e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "4d8685165595fd1a0ed7c5e83de6fc934278f760fc119f79deab041119d66412"
+   },
+   {
+    "arm": "WB",
+    "seed": 5113,
+    "run": "rb_b1wb_s5113",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+    "steps": 50000201,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1wb_s5113",
+     "verdict": "PASS",
+     "upto": 50000201,
+     "last_row_step": 49963119,
+     "rows": {
+      "judged_max": 505,
+      "p99": 505
+     },
+     "max": {
+      "judged_max": 0.00011277198791503906,
+      "p99": 1.8193721189163625e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "d459e408dcede04afb78fcd5bcc9bca9ead7e8eb74e98d1a09dbe853b0b253da"
+   }
+  ]
+ },
+ "cells": [
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_50000086_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_50000080_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_50000117_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5107/checkpoints/checkpoint_50000127_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5108/checkpoints/checkpoint_50000005_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5105/checkpoints/checkpoint_50000082_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5106/checkpoints/checkpoint_50000139_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1wb_s5113/checkpoints/checkpoint_50000201_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1br_s5112/checkpoints/checkpoint_50000126_steps.zip"
+  ]
+ ],
+ "names": {
+  "home72": {
+   "family": "b1_scratch_h2h_home72",
+   "request": "b1_50m_home72",
+   "pairs": 1000,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel home72, 1000 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  },
+  "heldout72_hpfix": {
+   "family": "b1_scratch_h2h_heldout72_hpfix",
+   "request": "b1_50m_heldout72_hpfix",
+   "pairs": 500,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel heldout72_hpfix, 500 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  },
+  "forum72": {
+   "family": "b1_scratch_h2h_forum72",
+   "request": "b1_50m_forum72",
+   "pairs": 500,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel forum72, 500 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  },
+  "p72": {
+   "family": "b1_scratch_h2h_p72",
+   "request": "b1_50m_p72",
+   "pairs": 500,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel p72, 500 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  }
+ }
+}

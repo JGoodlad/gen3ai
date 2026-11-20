@@ -1,0 +1,31 @@
+(A) cell C at 50M, view N: B1's look of 50M at pin 15136b616; cell noise SD 0.68 pp, so a run mean over 3 cells carries variance 0.153; floor 1.76 pp (variance 3.0976)
+  W vs C on N: +1.71 [-1.48, +4.90] | C run means 51.20 / 51.91 / 52.02, s2_raw 0.2000 (floored: True) | W s2_raw 3.6339 (floored: False)
+  W vs C on forum72: +1.71 [-1.35, +4.77] | C run means 52.05 / 51.20 / 51.88, s2_raw 0.2029 (floored: True) | W s2_raw 2.9515 (floored: True)
+  Br vs C on N: -1.35 [-4.41, +1.71] | C run means 48.67 / 48.57 / 48.70, s2_raw 0.0045 (floored: True) | Br s2_raw 0.4273 (floored: True)
+  Br vs C on forum72: +0.23 [-2.84, +3.29] | C run means 50.38 / 50.42 / 49.88, s2_raw 0.0893 (floored: True) | Br s2_raw 0.5534 (floored: True)
+  WB vs C on N: -3.82 [-9.58, +1.95] | C run means 45.28 / 46.47 / 46.80, s2_raw 0.6411 (floored: True) | WB s2_raw 18.8457 (floored: False)
+  WB vs C on forum72: -2.35 [-7.78, +3.08] | C run means 45.92 / 47.88 / 49.15, s2_raw 2.6544 (floored: True) | WB s2_raw 16.3878 (floored: False)
+  C on N: mean s2_raw 0.2819 (SD 0.53 pp) on 2 df; minus the cell noise: sigma_C = 0.36 pp; chi-square 5 % / 95 % bounds on the raw variance 0.094 / 5.496, so sigma_C lies in [0.00, 2.31] pp (the lower bound is under the cell noise: 0)
+  every C variance above is under the floor: the BANKED side of a fresh cell's interval is the floor, 3.0976 / 3. The half-width is then at least 3.06 pp whatever the fresh cell's spread
+
+(B) THE 50M RULE: P(CONTINUE) = P(estimate > +0.005 pp), closed form, at a true 50M effect (pp) of -4, -2, +0, +2, +4, +6
+  seed SD fresh 0.36 / banked 0.36 | SD of the estimate 0.37 | 0.000 | 0.000 | 0.495 | 1.000 | 1.000 | 1.000
+  seed SD fresh 1.76 / banked 0.36 | SD of the estimate 1.06 | 0.000 | 0.029 | 0.498 | 0.970 | 1.000 | 1.000
+  seed SD fresh 2.50 / banked 0.36 | SD of the estimate 1.48 | 0.003 | 0.087 | 0.499 | 0.912 | 0.997 | 1.000
+  seed SD fresh 3.10 / banked 0.36 | SD of the estimate 1.82 | 0.014 | 0.135 | 0.499 | 0.864 | 0.986 | 1.000
+  seed SD fresh 1.76 / banked 2.31 | SD of the estimate 1.69 | 0.009 | 0.118 | 0.499 | 0.881 | 0.991 | 1.000
+  seed SD fresh 1.76 / banked 1.76 | SD of the estimate 1.45 | 0.003 | 0.084 | 0.499 | 0.915 | 0.997 | 1.000
+  seed SD fresh 2.50 / banked 2.50 | SD of the estimate 2.05 | 0.026 | 0.164 | 0.499 | 0.834 | 0.974 | 0.998
+  seed SD fresh 3.10 / banked 3.10 | SD of the estimate 2.54 | 0.058 | 0.215 | 0.499 | 0.784 | 0.942 | 0.991
+
+(C) THE 100M CLASSES on N, 3 runs against 3: P(WIN) / P(LOSS) / P(NO-USEFUL-GAIN) / P(UNDECIDED) at a true 100M effect (pp); 50000 draws a row, the first 1000 through main.b1.cross
+  seed SD fresh 0.36 / banked 0.36 | median half-width 3.06 | -4: 0.000 / 0.995 / 0.005 / 0.000 | +0: 0.000 / 0.000 / 0.994 / 0.006 | +2: 0.002 / 0.000 / 0.002 / 0.996 | +4: 0.994 / 0.000 / 0.000 / 0.006 | +6: 1.000 / 0.000 / 0.000 / 0.000 | +8: 1.000 / 0.000 / 0.000 / 0.000
+  seed SD fresh 1.76 / banked 0.36 | median half-width 3.06 | -4: 0.000 / 0.726 / 0.273 / 0.000 | +0: 0.002 / 0.002 / 0.728 / 0.269 | +2: 0.126 / 0.000 / 0.124 / 0.750 | +4: 0.724 / 0.000 / 0.002 / 0.274 | +6: 0.984 / 0.000 / 0.000 / 0.016 | +8: 1.000 / 0.000 / 0.000 / 0.000
+  seed SD fresh 2.50 / banked 0.36 | median half-width 3.39 | -4: 0.000 / 0.563 / 0.424 / 0.014 | +0: 0.010 / 0.010 / 0.557 / 0.423 | +2: 0.150 / 0.000 / 0.148 / 0.702 | +4: 0.560 / 0.000 / 0.011 / 0.429 | +6: 0.892 / 0.000 / 0.000 / 0.108 | +8: 0.985 / 0.000 / 0.000 / 0.015
+  seed SD fresh 3.10 / banked 0.36 | median half-width 3.88 | -4: 0.000 / 0.464 / 0.478 / 0.058 | +0: 0.022 / 0.021 / 0.450 / 0.507 | +2: 0.150 / 0.001 / 0.151 / 0.698 | +4: 0.467 / 0.000 / 0.021 / 0.512 | +6: 0.784 / 0.000 / 0.001 / 0.215 | +8: 0.941 / 0.000 / 0.000 / 0.059
+  seed SD fresh 1.76 / banked 2.31 | median half-width 3.61 | -4: 0.000 / 0.528 / 0.452 / 0.020 | +0: 0.018 / 0.018 / 0.512 / 0.452 | +2: 0.161 / 0.000 / 0.161 / 0.677 | +4: 0.528 / 0.000 / 0.018 / 0.454 | +6: 0.863 / 0.000 / 0.001 / 0.136 | +8: 0.979 / 0.000 / 0.000 / 0.021
+  seed SD fresh 1.76 / banked 1.76 | median half-width 3.28 | -4: 0.000 / 0.611 / 0.384 / 0.005 | +0: 0.011 / 0.011 / 0.599 / 0.379 | +2: 0.158 / 0.000 / 0.164 / 0.678 | +4: 0.612 / 0.000 / 0.011 / 0.377 | +6: 0.934 / 0.000 / 0.000 / 0.066 | +8: 0.996 / 0.000 / 0.000 / 0.004
+  seed SD fresh 2.50 / banked 2.50 | median half-width 4.22 | -4: 0.000 / 0.431 / 0.496 / 0.073 | +0: 0.027 / 0.028 / 0.405 / 0.540 | +2: 0.150 / 0.002 / 0.151 / 0.698 | +4: 0.432 / 0.000 / 0.028 / 0.540 | +6: 0.745 / 0.000 / 0.003 / 0.252 | +8: 0.925 / 0.000 / 0.000 / 0.075
+  seed SD fresh 3.10 / banked 3.10 | median half-width 5.09 | -4: 0.001 / 0.339 / 0.473 / 0.187 | +0: 0.036 / 0.037 / 0.305 / 0.622 | +2: 0.136 / 0.007 / 0.129 / 0.728 | +4: 0.340 / 0.001 / 0.034 / 0.626 | +6: 0.599 / 0.000 / 0.006 / 0.396 | +8: 0.814 / 0.000 / 0.001 / 0.186
+
+RULE CODE vs B1'S NUMPY FORMULA: 0 mismatches in 48000 classes

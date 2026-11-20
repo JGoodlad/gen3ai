@@ -1,0 +1,181 @@
+{
+ "ok": true,
+ "problems": [],
+ "declared_keys": [
+  "allow_nonproduction_arch",
+  "policy_readout"
+ ],
+ "targets": {
+  "50000000": {
+   "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+   "runs": {
+    "rb_q6n_s5211": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5211 --device cuda --log-level periodic --run-name rb_q6n_s5211",
+     "diff": {
+      "allow_nonproduction_arch": [
+       false,
+       true
+      ],
+      "policy_readout": [
+       "tower",
+       "trunk"
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q6n_s5211"
+      ],
+      "seed": [
+       5101,
+       5211
+      ]
+     }
+    },
+    "rb_q6n_s5212": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5212 --device cuda --log-level periodic --run-name rb_q6n_s5212",
+     "diff": {
+      "allow_nonproduction_arch": [
+       false,
+       true
+      ],
+      "policy_readout": [
+       "tower",
+       "trunk"
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q6n_s5212"
+      ],
+      "seed": [
+       5101,
+       5212
+      ]
+     }
+    },
+    "rb_q6n_s5213": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5213 --device cuda --log-level periodic --run-name rb_q6n_s5213",
+     "diff": {
+      "allow_nonproduction_arch": [
+       false,
+       true
+      ],
+      "policy_readout": [
+       "tower",
+       "trunk"
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q6n_s5213"
+      ],
+      "seed": [
+       5101,
+       5213
+      ]
+     }
+    }
+   }
+  },
+  "100000000": {
+   "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 100000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+   "runs": {
+    "rb_q6n_s5211": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 100000000 --seed 5211 --device cuda --log-level periodic --run-name rb_q6n_s5211",
+     "diff": {
+      "allow_nonproduction_arch": [
+       false,
+       true
+      ],
+      "policy_readout": [
+       "tower",
+       "trunk"
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q6n_s5211"
+      ],
+      "seed": [
+       5101,
+       5211
+      ]
+     }
+    },
+    "rb_q6n_s5212": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 100000000 --seed 5212 --device cuda --log-level periodic --run-name rb_q6n_s5212",
+     "diff": {
+      "allow_nonproduction_arch": [
+       false,
+       true
+      ],
+      "policy_readout": [
+       "tower",
+       "trunk"
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q6n_s5212"
+      ],
+      "seed": [
+       5101,
+       5212
+      ]
+     }
+    },
+    "rb_q6n_s5213": {
+     "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 100000000 --seed 5213 --device cuda --log-level periodic --run-name rb_q6n_s5213",
+     "diff": {
+      "allow_nonproduction_arch": [
+       false,
+       true
+      ],
+      "policy_readout": [
+       "tower",
+       "trunk"
+      ],
+      "run_name": [
+       "rb_b1c_s5101",
+       "rb_q6n_s5213"
+      ],
+      "seed": [
+       5101,
+       5213
+      ]
+     }
+    }
+   }
+  }
+ },
+ "expected": {
+  "rb_q6n_s5211": {
+   "allow_nonproduction_arch": true,
+   "d_model": 128,
+   "n_epochs": 10,
+   "policy_readout": "trunk",
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  },
+  "rb_q6n_s5212": {
+   "allow_nonproduction_arch": true,
+   "d_model": 128,
+   "n_epochs": 10,
+   "policy_readout": "trunk",
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  },
+  "rb_q6n_s5213": {
+   "allow_nonproduction_arch": true,
+   "d_model": 128,
+   "n_epochs": 10,
+   "policy_readout": "trunk",
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  }
+ },
+ "banked_levers": {
+  "d_model": 128,
+  "team_mix": null,
+  "team_mix_sides": null,
+  "trunk_ffn_dim": 256
+ }
+}

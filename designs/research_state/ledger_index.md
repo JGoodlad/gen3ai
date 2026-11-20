@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-32,196-line file. **The ledger itself is append-only and is never edited by this**;
+32,272-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1020 headings · 965 dated · 2026-08-01 → 2026-11-19 · ledger 32,196 lines.**
+**1021 headings · 966 dated · 2026-08-01 → 2026-11-20 · ledger 32,272 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1040,3 +1040,4 @@ rename.
   - `L32027` · `2026-11-18` · MEASUREMENT (DESCRIPTIVE) · **BOUNDARY-1 OFF-POOL BELIEF AT 50M (REPORTED, no verdict): at 50M breadth brings the unseen-species belief on forum72 from 1.56 nats below the Smogon prior to the prior (+1.32 [+0.93, +1.78] breadth ON minus OFF), and costs 0.40 nats of the in-pool advantage; width alone moves it +0.16; the move leg (`moves_ll`) gains from both; no arm is detected above the prior off the pool; it explains nothing about the game meter's breadth STOP-HARM**
   - `L32078` · `2026-11-18` · REGISTRATION · **V-RANK REGISTERED (full tier; blind: before any game of the read): does the honest one-ply search's value rank the moves of ONE position worse on unfamiliar teams than on home72, judged by real games against Kakuna? It decides MF-4's funding. Built, smoked, NOT LAUNCHED**
   - `L32138` · `2026-11-19` · READ · **V-RANK look 1, PLAYED (100 blocks, COMPLETE, 1,168 selected states, 6,615 one-game branch and null units, exit 0): CONTINUE. RANK-NULL-ON-U is NOT reached (UB(β_U) +0.575 against the 0.25 bar); β_U +0.390 [+0.181, +0.575], β_home +0.354 [+0.180, +0.516], Δβ +0.036 [−0.232, +0.277]. Look 1 reads NULL only, so no other class is computed; MF-4 stays unchanged and look 2 (200 blocks by the sizing rule) is the orchestrator's to schedule.**
+  - `L32197` · `2026-11-20` · REGISTRATION · **Q6-N REGISTERED (full tier; blind: before any Q6 training step, game, look or pilot): the flat policy tower retired, ONE fresh three-seed cell at width 128 against BOUNDARY-1's banked cell C, read by the fresh-cell frame. With it the frame's σ amendment from C's own spread at 50M. First on the card after X35-A3. NOT LAUNCHED**

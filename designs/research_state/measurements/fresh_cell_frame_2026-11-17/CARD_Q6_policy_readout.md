@@ -1,6 +1,10 @@
 # Lever card Q6: retire the flat policy tower, one fresh cell (DRAFT, 2026-11-17)
 
-**Status: DRAFT, not registered, nothing launched; NOT launch-ready until its GPU card check (§ 6) is green.** A card
+**Status: the arm Q6-N was REGISTERED 2026-11-20 by
+[`../q6n_policy_readout_fresh_2026-11-20/PREREG.md`](../q6n_policy_readout_fresh_2026-11-20/PREREG.md), which adopts §1 to §5
+and REPLACES §6 and §7 (the card check is the first item of the GPU window, at 4.5M steps and width 128 only; Q6 runs
+before Q5). The arm Q6-W was NOT registered and stays a draft. The text below is the 2026-11-17 draft, kept as
+written: nothing launched; not launch-ready until the card check is green.** A card
 for [`FRAME.md`](FRAME.md). Queue proposal row Q6. Registering it is a FULL `PREREG.md` that adopts the frame.
 
 ## 1. The lever
