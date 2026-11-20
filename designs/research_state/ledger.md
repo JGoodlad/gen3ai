@@ -32134,3 +32134,62 @@ code `src/main/value_search/v_rank.py`, `v_rank_stat.py`, `src/main/reads/rules_
 View: `designs/endstate/design_v_rank_on_u.md`, `designs/endstate/search_ledger.md`, `EXPERIMENT_BACKLOG.md` (MF-4).
 
 Tag: **REGISTRATION · V-RANK · within-position slope of the real Kakuna outcome on `r0s4_honest@10`'s Q̂, U vs home72 at P\* · RANK-NULL-ON-U / RANK-WORSE-ON-U / RANK-HOLDS-ON-U / UNDECIDED · two looks (100 / 200 blocks, cap 400) · team-clustered · NULL at β_U = 0 seen 0.95 (deal-independent, an upper bound) · ≈ 120 CPU-h · pin `c933afd5a` · not launched · funds or does not fund MF-4's leaf-value step · moves no recipe**
+
+### 2026-11-19 · READ · **V-RANK look 1, PLAYED (100 blocks, COMPLETE, 1,168 selected states, 6,615 one-game branch and null units, exit 0): CONTINUE. RANK-NULL-ON-U is NOT reached (UB(β_U) +0.575 against the 0.25 bar); β_U +0.390 [+0.181, +0.575], β_home +0.354 [+0.180, +0.516], Δβ +0.036 [−0.232, +0.277]. Look 1 reads NULL only, so no other class is computed; MF-4 stays unchanged and look 2 (200 blocks by the sizing rule) is the orchestrator's to schedule.**
+
+**Question and rule** (registered in `measurements/v_rank_2026-11-18/PREREG.md`, pin `c933afd5a`, spec `read_spec.json` sha256
+`d7342bc9…dc4f`, see the registration entry of 2026-11-18): is the within-position slope β of the REAL Kakuna outcome on
+`r0s4_honest@10`'s Q̂ lower when P\* pilots an unfamiliar team (H, F, P72, equal weight) than when it pilots a home72 team? Team-clustered
+percentile bootstrap (B = 2,000, seed 20261027). Look 1 reads RANK-NULL-ON-U (UB(β_U) < 0.25) only; anything else is CONTINUE.
+
+**Result** (`main.reads decide` / `record` on the look-1 state; the state `~/gen3ai_archive/v_rank_2026-11-18/live/`; the record
+`measurements/v_rank_2026-11-18/record/v_rank_look1.json`, `completeness` COMPLETE, no VOID, no `boundary` flag, rule 8 not engaged).
+
+| panel | β [95 %, team-clustered] | teams | positions |
+|---|---|---|---|
+| `heldout72_hpfix` (H) | +0.472 [+0.089, +0.833] | 37 | 193 |
+| forum72 (F) | +0.125 [−0.221, +0.434] | 37 | 187 |
+| p72 (P72) | +0.573 [+0.200, +0.844] | 37 | 181 |
+| **U** (mean of the three) | **+0.390 [+0.181, +0.575]** | | 561 |
+| **home72** | **+0.354 [+0.180, +0.516]** | 63 | 554 |
+| **Δβ = U − home** | **+0.036 [−0.232, +0.277]** | | |
+
+The deal-clustered interval (REPORTED beside the registered one) is the same width: β_U [+0.195, +0.575], β_home [+0.169, +0.542],
+Δβ [−0.248, +0.292] (width 0.54 against the team-clustered 0.51), so no team design effect on the slope shows at this size (the PREREG's §6
+UNVERIFIED point, now read off the record). **The Δβ interval is wide (about ±0.26); this look does not
+separate "ranks as well on U" from "ranks 0.2 worse on U"**, and the F panel on its own (+0.125, interval through 0) is the low one, P72 and H
+the high ones. Nothing here is a verdict on MF-4, which the PREREG leaves unchanged on CONTINUE.
+
+**REPORTED, never decided** (all team-clustered, U / home): by stratum, turns 10–19 +0.427 / +0.387 and 20–30 +0.360 / +0.326;
+partial slope given π's logits +0.266 / +0.112; contender slope +0.241 / +0.075; α_top −0.001 / +0.023; H +0.004 / −0.004; the piKL pick's
+IMP +0.013 / +0.004 (the search-facing contrasts cannot be decided here: reviews M6 / M3). Self-referee (1,115 positions): the slope
+of Q_self (the 8-seed oracle) on Q̂ is +0.519 / +0.580, of y on Q_self +0.113 / +0.134, and +0.209 / +0.271 corrected for the 8-seed
+noise. Q̂'s Monte Carlo reliability is 0.767 / 0.773 and β corrected for it +0.507 / +0.458. Σq_c² a position is 0.041 on U and 0.046 on
+home72; legal actions a position 6.8–6.9.
+
+**Counts and teeth.** 30 raw units (15 U, 15 home) all counted, unplayed 0, one engine (`port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`).
+Exclusion (no honest world fits) after the full draw: H 1 / 194 (0.5 %), F 10 / 197 (5.1 %), P72 10 / 193 (5.2 %), home72 30 / 584 (5.1 %).
+Stage 0's 2 / 10 on F (over §5's 15 % hold) was small-sample noise; the orchestrator's ruling (proceed, hold again only if a panel stayed over
+15 % on all scored states) is in `record/operator_notes.md`. Branch and null units: 6,615, 6,585 branches and 30 nulls; all 30 nulls reproduced
+their raw game (classifier: `identical`); one deal, p72 unit 2002 game 1 (its two positions, 16 branch units), failed G-BRANCH in every attempt and
+was classified `peer_first` (the peer left the raw line before the position): 2 P72 positions dropped, 16 branch peer drops of 1,082 (1.5 % of
+P72's, 0.24 % pooled; the dlive read's 0.43 %), far under `max_drop_frac` 10 %. **Stage 0** (`record/stage0.json`, before look 1 was decided, no outcome):
+s̄ 0.0528, so the sizing rule gives 200 final blocks and the cap does not bind (the PREREG guessed 0.015–0.025; Q̂ spread is about twice that).
+
+**Predictions against the result (GUESSES, before any game):** β_home 0.45 (read +0.354), β_U 0.40 (+0.390), Δβ −0.05 (+0.036); class
+probabilities HOLDS 0.40 / UNDECIDED 0.38 / WORSE 0.12 / NULL 0.10: look 1 reads CONTINUE, which the table does not split.
+
+**Cost** (CPU-s, summed over the units' own records; wall is the supervisor's). Raw lane: 30 units, 29 min wall at concurrency 3. Full score:
+two scorers 16,418 s and 16,983 s wall (peak 1.2 GB each), search 20,088 CPU-s + referee 14,603 CPU-s (≈ 29.7 CPU-s a state; excluded states'
+search 8,537 CPU-s of it). Branches: 222,953 CPU-s (61.9 CPU-h) over ≈ 19.9 h wall, 3 lanes at a time; with the scorers about 71.6 CPU-h in all
+against the PREREG's ≈ 60 (50–70): 19 % over its midpoint, just past its top. At that rate the final (200 blocks) is ≈ 145 CPU-h in all, so look 2's new work (the other 100 blocks) is ≈ 72.
+
+**Operations, as run (not in the PREREG launch block).** Concurrency 3, not 4, and at most 3 branch supervisors at once, by the orchestrator's
+choice to protect a live B1 training run (no GPU, no lease, nice 19 on the agent cores): moves no statistic. The plan root fixes its 4 shards
+(1,798 / 1,800 / 1,493 / 1,524 units), so a scheduling-only driver (`record/branch_driver.py`) time-sliced them 3 at a time with
+`main.x35.kakuna run --stop-at-epoch`, a clean stop between units; no unit, seed or plan byte changed. The last 73 units were one shard alone.
+
+**Record:** `measurements/v_rank_2026-11-18/record/` (`v_rank_look1.json` 10 MB, `stage0.json`, `operator_notes.md`, `branch_driver.py`, `README.md`).
+Design: `designs/endstate/design_v_rank_on_u.md`; MF-4: `EXPERIMENT_BACKLOG.md`.
+
+Tag: **READ · V-RANK look 1 · within-position slope of the real Kakuna outcome on `r0s4_honest@10`'s Q̂, U vs home72 at P\* · CONTINUE (UB(β_U) +0.575 ≥ 0.25) · β_U +0.390 [+0.181, +0.575] / β_home +0.354 [+0.180, +0.516] / Δβ +0.036 [−0.232, +0.277] · team-clustered, 561 U / 554 home positions · look 1 reads NULL only; no other class computed · MF-4 unchanged · ≈ 72 CPU-h · pin `c933afd5a` · moves no recipe**
