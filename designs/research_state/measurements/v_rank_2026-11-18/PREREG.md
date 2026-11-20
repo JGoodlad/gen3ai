@@ -300,3 +300,10 @@ above prints an outcome before step 5.
 11. **The smoke's outcomes were seen** by its builder (7 positions on unit seed 2900, a pipeline check; the rule read
     UNDECIDED with two teams a panel). Seed 2900 is not in this read and none of its numbers is quoted as a result.
 12. **A two-look read with a sizing rule**: the false-NULL bound is §4's; the other classes are read once.
+
+## Errata (dated; operational command corrections only: no rule, number, bar, seed or class changes)
+
+- **ERRATA 2026-11-19 (an operational command correction, NOT a rule change; found at look 1,
+  `record/operator_notes.md`).** §8 step 5's `main.reads record --state $A/look1 --out $M/record` names a directory,
+  but the verb's `--out` writes ONE file. Look 1's record was written with `--out $M/record/v_rank_look1.json`; look
+  2's is `--out $M/record/v_rank_look2.json`. Nothing the read decides or reports changes.
