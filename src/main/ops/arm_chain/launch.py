@@ -44,8 +44,25 @@ class Describe:
     steps: int
     argv: List[str]
     #: ``plan``'s phase-1 note for a phase-2 arm (``PLACEHOLDER`` before phase 1 has finished, ``RECORD`` once the
-    #: record verifies; ``""`` for every other arm): what the argv was built from.
+    #: record verifies; ``TARGET-PLACEHOLDER`` for an X71 responder whose target has no final yet; ``""`` for every
+    #: other arm): what the argv was built from. A G-E reader whose target has not finished (X35-A3's ``ge_a3``) is
+    #: ``TARGET-PLACEHOLDER`` too.
     phase1: str = ""
+
+    def fork_step(self) -> Optional[int]:
+        """The step this fork starts at: its ``--model`` checkpoint's, or -- a fork of a run's FINAL (a reader:
+        ``final_model.zip`` names no step) -- ``--steps`` minus the kit's ``delta_text``. ``None`` = neither."""
+        if "--model" not in self.argv or self.argv.index("--model") + 1 >= len(self.argv):
+            return None
+        model = self.argv[self.argv.index("--model") + 1]
+        m = re.search(r"checkpoint_(\d+)_steps\.zip$", model)
+        if m:
+            return int(m.group(1))
+        delta = re.fullmatch(r"\+(\d{1,3}(?:,\d{3})*|\d+) steps", self.delta_text)
+        if os.path.basename(model) != "final_model.zip" or not delta:
+            return None
+        step = self.steps - int(delta.group(1).replace(",", ""))
+        return step if step > 0 else None
 
     @staticmethod
     def load(path: str) -> "Describe":

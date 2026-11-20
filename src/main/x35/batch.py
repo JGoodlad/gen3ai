@@ -168,11 +168,12 @@ look; a record for another arm or look is a refusal.
   is PENDING until ``N4_PIN`` is set AND the PREREG names it in full (its pin NOTE), then ALLOWED (one look, no look
   2). Arm labels ``C0N4`` / ``N4``.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_d3`` /
-  ``ge_n1p`` / ``ge_x60t`` / ``ge_c0``
+  ``ge_n1p`` / ``ge_x60t`` / ``ge_a3`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin (``ge_x60t`` at X60-T's own, :data:`ARM_PINS`, typing ``--human-data off``): :func:`pin_check` judges their
   recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
-  reader the ``ge.trigger`` condition (ALLOWED only when its arm's primary reads GAIN; ``ge_c0`` when any does).
+  reader the ``ge.trigger`` condition (ALLOWED only when its arm's primary reads GAIN; ``ge_c0`` when any does;
+  X35-A3's six readers, ``ge_a3`` and ``ge_c0`` at the target seeds 3501-3503, by the A3 registration instead).
 
 DECLARED HERE (choices the rulings leave open; each a FINDING of this build):
 * AM-1's "every existing ``rb_x35*`` run" is read as every SIDE-PINNED run OF THE LAUNCH'S SIDE
@@ -1351,8 +1352,8 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
     from main.x35.ge import READER_ARMS, trigger
     from main.x35.kit import ARMS
 
-    if arm in READER_ARMS:                   # a G-E reader: only on its arm's GAIN (main.x35.ge), after AM-8
-        return trigger(stage, arm)
+    if arm in READER_ARMS:                   # a reader: its arm's GAIN, or A3's registration (main.x35.ge), after AM-8
+        return trigger(stage, arm, seed)
     if arm in BATCH2_ARMS:                   # F-AS-8: the AM-8 side gate, then batch 2's registered conditions
         return _batch2_status(stage, arm, seed)
     if arm in R0_ARMS + X52_ARMS + X48_ARMS:  # AM-R0 / AM-X52 / X48: the side gate only (production: FP32_ALT, AM-8)

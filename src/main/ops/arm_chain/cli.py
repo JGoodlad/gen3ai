@@ -81,9 +81,15 @@ def _plan(a: argparse.Namespace, runner: Optional[Runner] = None) -> int:
             if a.describe:
                 note = {"": "", "RECORD": "; phase-1 record VERIFIED in full",
                         "PLACEHOLDER": "; phase 1 not finished: its finals are PLACEHOLDERS, judged for shape only "
-                                       "(the phase boundary judges the record in full)"}.get(d.phase1, f"; phase-1 {d.phase1}")
+                                       "(the phase boundary judges the record in full)",
+                        "TARGET-PLACEHOLDER": "; its target has no final yet: the argv is built from a declared "
+                                              "PLACEHOLDER, judged for shape only (the kit judges the real final "
+                                              "in full at the launch)"}.get(d.phase1, f"; phase-1 {d.phase1}")
                 print(f"    {it.key}: the kit agrees — FORK of {d.parent_run_dir}, {d.delta_text}, --steps {d.steps:,}{note}")
-            if a.check_pins and pins.is_commit(s.repo, it.pin):   # an unresolvable pin is already a problem above
+            if a.check_pins and d.phase1 == "TARGET-PLACEHOLDER":   # the pinned parser opens --model: no file yet
+                print(f"    {it.key}: its argv is NOT run through the pin's parser yet (--model is a final that does "
+                      "not exist); the pin itself is judged above, the argv at the GO's dry run")
+            elif a.check_pins and pins.is_commit(s.repo, it.pin):   # an unresolvable pin is already a problem above
                 bad += pins.check_argv_at_pin(s, it, d, lau.runner, lau.base_env)
     for b in bad:
         print(f"REFUSED: {b}")

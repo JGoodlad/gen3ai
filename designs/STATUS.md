@@ -166,7 +166,12 @@ its GO.
   queue proposal's 15–18 did not count the readers) and ≈ 34–41 CPU lane-h. Phase 1 is launch-ready (stage check,
   `checkargs` at the pin, the kit's dry run with the card hidden, the arm chain's plan); phase 2 plans on declared
   placeholders until then and waits for the record only phase 1 can produce (`kit verify-phase1` judges it in full:
-  the registered runs, lineage, pin, argv, dose). OWED before the read: six reader kit arms and the read's driver.
+  the registered runs, lineage, pin, argv, dose). **The read is BUILT (2026-11-19), nothing played:** the six
+  reader kit arms (`ge_a3` and `ge_c0` at the target seeds 3501–3503, allowed by this registration; draft chain
+  items `chain_items_a3_readers.json`, no GO), the read's driver `read_a3.py` (plan, play, read: it ends in
+  `a3_rule.py decide`'s class) and the cells files of the gate, G-F and R1 crosses (`cross/`). The three C0 readers
+  are launch-ready; the three A3 readers plan on declared placeholders until their targets finish. UNVERIFIED until
+  the A3 runs exist: an A3 reader's argv at the pin, and that the play checkout loads an exploiter final.
   Every class licenses at most a proposal to the owner.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU

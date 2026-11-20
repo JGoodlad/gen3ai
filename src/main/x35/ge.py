@@ -23,6 +23,12 @@ trainer has no switch to type. It runs at X60-T's own pin (``batch.ARM_PINS``) t
 golden and played-bits fixtures, and the team streams at ``@0`` against ``off``), so it best-responds in ``ge_c0``'s
 regime and only its target differs.
 
+X35-A3'S SIX READERS (PREREG ``x35_a3_main_exploiters_2026-11-16`` §5.1, §11.1 item 1): its deciding read E takes ONE
+reader per final, the three A3 finals and C0's s3501-s3503, so ``ge_a3`` and ``ge_c0`` are registered at the target
+seeds :data:`A3_TARGET_SEEDS` (:func:`target_seeds`; every other reader keeps 3501 alone). Same argv, same reader seed
+3531, the side pin: ``rb_x35_ge_a3mx_s3501``-``s3503`` read ``rb_x35_a3mx_s350x`` and ``rb_x35_ge_c0_s3501``-``s3503``
+read ``rb_x35_c0_s350x``. ``ge_c0`` s3501 is ONE run whoever asks for it: §5.6.4's shared b-OFF reader and A3's.
+
 THE ARGV (:func:`build_reader_argv`): ``--model F --exploiter F --no-self-play --trainee-teams <offense 5>
 --fork-lr 5.6e-05 --fork-lr-freeze --behaviour-check warn --steps <F's step + 5M> --checkpoint-every-steps 1000000
 --device cuda --seed 3531 --run-name …``, F = ``models/<target run>/final_model.zip``. ``--no-self-play`` is F16 (the
@@ -37,7 +43,12 @@ level, ``main.reads.rules_x60.stage_keys``) has a saved FINAL class GAIN (``read
 not read yet, CONTINUE, or an INCONCLUSIVE primary is PENDING; a final NULL / LOSS / UNDECIDED is REFUSED (G-E decides
 only between ADOPT-CANDIDATE and TRADE, so a reader of a non-GAIN arm buys nothing: launch sheet §0). ``ge_c0`` is
 ALLOWED as soon as ANY of A1 / A2 / D1 / D3 / N1-P reads GAIN. Production readers also wait for the side's FP32_ALT commit (AM-8),
-and run at the SIDE'S pin (``kit pin-check`` judges the reader runs with the side's batch-1 runs).
+and run at the SIDE'S pin (``kit pin-check`` judges the reader runs with the side's batch-1 runs). A3's six readers
+are allowed by A3's REGISTRATION instead (its §11.1: "allowed by THIS registration"): with the A3 PREREG in the
+checkout (:func:`a3_registered`), ``ge_a3`` and ``ge_c0`` are ALLOWED at 3501-3503 after the side gate, whatever any
+primary reads; without it ``ge_a3`` is PENDING and ``ge_c0`` falls back to the GAIN rule at 3501 (PENDING at
+3502 / 3503). The trigger does not look for the target's final: the kit's ``describe`` refuses a reader whose target
+has not finished, and the ORDER of the readers against the forks is the chain's (A3 PREREG §13: separate items).
 
 THE READ (:func:`r2_input`, ``python -m main.x35.ge r2-input --arm a1``): the ``r2`` block of ``readout.decide`` /
 ``decide-d1``'s input, ``{"on": [wins, games], "off": [wins, games]}``, from the two reader runs through
@@ -69,13 +80,17 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 READER_PHASE = 3
 #: Reader arm -> the arm whose seed final it reads. ``ge_c0`` is every arm's shared b-OFF reader.
 READER_ARMS: Dict[str, str] = {"ge_a1": "a1", "ge_a2": "a2", "ge_d1": "d1", "ge_d3": "d3", "ge_n1p": "n1p",
-                               "ge_x60t": "x60t", "ge_c0": "c0"}
+                               "ge_x60t": "x60t", "ge_a3": "a3", "ge_c0": "c0"}
 #: The arms whose PRIMARY GAIN needs G-E before a verdict (``readout.decide``: A1 / A2; ``d1.d1_verdict``: D1; rule
 #: ``x60``'s §11: X60-T, whose ``ge_x60t`` is the fresh reader its PREREG registers).
 GAIN_ARMS = ("a1", "a2", "d1", "d3", "n1p", "x60t")
 #: §5.6.4: "for each arm's seed-3501 final … 5M steps".
 L_READER = 5_000_000
 TARGET_SEEDS = (3501,)
+#: X35-A3's deciding read (its PREREG §5.1): ONE reader per final, the three A3 finals and C0's s3501-s3503. These two
+#: reader arms are registered at these target seeds and allowed by THAT registration (module docs).
+A3_READER_ARMS = ("ge_a3", "ge_c0")
+A3_TARGET_SEEDS = (3501, 3502, 3503)
 #: §5.6.1: "best-response readers 3531+"; the same on both sides (b-ON and b-OFF share the dice).
 READER_SEED = 3531
 #: production's ``recipe.fork`` fork rate (``designs/production_config.json``, E5), frozen: the dose is a constant.
@@ -89,6 +104,21 @@ FINAL_PRIMARY = ("GAIN", "NULL", "LOSS", "UNDECIDED", "NO-USEFUL-GAIN", "NOT-RES
 
 class ReaderError(ValueError):
     """A reader cannot be built, triggered or read (named; the launch script HOLDs on it)."""
+
+
+def target_seeds(reader_arm: str) -> Tuple[int, ...]:
+    """The TARGET seeds a reader arm is registered at: A3's two arms at 3501-3503, every other at 3501 alone."""
+    if reader_arm not in READER_ARMS:
+        raise ReaderError(f"{reader_arm!r} is not a reader arm ({sorted(READER_ARMS)})")
+    return A3_TARGET_SEEDS if reader_arm in A3_READER_ARMS else TARGET_SEEDS
+
+
+def a3_registered() -> bool:
+    """Is X35-A3's PREREG in this checkout? It is what allows A3's six readers (the batch's own test for ``a3``)."""
+    from main.x35.batch import A3_PREREG
+    from utils.paths import repo_path
+
+    return repo_path(A3_PREREG).is_file()
 
 
 def target_run(reader_arm: str, seed: int) -> str:
@@ -138,6 +168,22 @@ def target_final(reader_arm: str, seed: int, models_dir: str, *, min_step: Optio
     return {"run": run, "path": str(z.resolve()), "step": step, "sha256": sha256_file(z), "standin": False}
 
 
+#: The declared sha256 of a PLACEHOLDER target (``kit.describe_for_plan``): only a finished target has one.
+TARGET_PLACEHOLDER_SHA = "<sha256 of the target's final, declared when the target arm ends>"
+#: ``describe --plan``'s ``phase1.mode`` for a reader built on a placeholder target (the arm chain's plan note; X71's
+#: responders use the same word, ``main.x35.x71``).
+TARGET_PLACEHOLDER_MODE = "TARGET-PLACEHOLDER"
+
+
+def placeholder_target(reader_arm: str, seed: int, models_dir: str, step: int) -> Dict[str, Any]:
+    """The target a reader WILL read, before that target has finished (``arm_chain plan`` only): the registered run
+    and its final's path filled in, ``step`` the arm's registered floor (P*'s step + its length; the real final lands
+    a little above it), the sha256 DECLARED. ``kit.build_argv`` refuses it unless ``plan`` is set: never a launch."""
+    run = target_run(reader_arm, seed)
+    return {"run": run, "path": str(Path(models_dir) / run / "final_model.zip"), "step": int(step),
+            "sha256": TARGET_PLACEHOLDER_SHA, "standin": False, "placeholder": True}
+
+
 def standin_target(path: str, step: int) -> Dict[str, Any]:
     """A VALIDATION-ONLY target (``validate_batch1.sh --reader-standin``): never a launch value."""
     return {"run": "STANDIN", "path": path, "step": int(step), "sha256": None, "standin": True}
@@ -179,16 +225,25 @@ def primary_class(stage: str, arm: str) -> Tuple[Optional[str], str]:
     return None, f"{arm}: no saved read"
 
 
-def trigger(stage: str, reader_arm: str) -> Tuple[str, str]:
-    """ALLOWED / PENDING / REFUSED for a reader now (module docs), with the reason."""
-    from main.x35.batch import ALLOWED, PENDING, REFUSED, side_gate
+def trigger(stage: str, reader_arm: str, seed: Optional[int] = None) -> Tuple[str, str]:
+    """ALLOWED / PENDING / REFUSED for a reader now (module docs), with the reason. ``seed`` is the TARGET's (the kit
+    seed; default 3501): a seed the arm is not registered at is REFUSED."""
+    from main.x35.batch import A3_PREREG, ALLOWED, PENDING, REFUSED, side_gate
 
-    if reader_arm not in READER_ARMS:
-        raise ReaderError(f"{reader_arm!r} is not a reader arm")
+    seed = TARGET_SEEDS[0] if seed is None else int(seed)
+    if seed not in target_seeds(reader_arm):
+        return REFUSED, (f"{reader_arm} s{seed} is not a registered reader (its target seeds: "
+                         f"{list(target_seeds(reader_arm))})")
     filled, why = side_gate(stage, "production")
     if not filled:
         return PENDING, why
     t = READER_ARMS[reader_arm]
+    if reader_arm in A3_READER_ARMS:
+        if a3_registered():
+            return ALLOWED, (f"{reader_arm} s{seed}: a reader of X35-A3's deciding read, allowed by the A3 "
+                             f"registration (PREREG §5.1, §11.1 item 1; reads {target_run(reader_arm, seed)})")
+        if reader_arm == "ge_a3" or seed != TARGET_SEEDS[0]:
+            return PENDING, f"{reader_arm} s{seed}: its PREREG {A3_PREREG} is not in this checkout yet"
     if t in GAIN_ARMS:
         cls, why = primary_class(stage, t)
         if cls is None:
@@ -276,12 +331,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     r.add_argument("--models-dir", default=None)
     t = sub.add_parser("trigger", help="may this reader launch now? exit 0 ALLOWED, 1 not")
     t.add_argument("--arm", required=True, choices=sorted(READER_ARMS))
+    t.add_argument("--seed", type=int, default=TARGET_SEEDS[0], help="the TARGET's seed (default 3501)")
     t.add_argument("--stage", required=True)
     a = ap.parse_args(argv)
     try:
         if a.cmd == "trigger":
-            st, why = trigger(a.stage, a.arm)
-            print(f"[x35 ge] {a.arm}: {st}: {why}")
+            st, why = trigger(a.stage, a.arm, a.seed)
+            print(f"[x35 ge] {a.arm} s{a.seed}: {st}: {why}")
             return 0 if st == "ALLOWED" else 1
         from utils.paths import main_models_dir
 

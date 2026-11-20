@@ -26,7 +26,9 @@ canonical flag order (the order carries no meaning to the trainer's parser):
 * the G-E READERS (``main.x35.ge``, F27 closed for the readers, 2026-10-20; +5M): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` /
   ``ge_d3`` / ``ge_n1p`` / ``ge_x60t`` (AM-X60T-2) / ``ge_c0`` -- one fresh best responder of the arm's seed-3501 FINAL (``--model F --exploiter F --no-self-play``, the
   pinned offense 5-team archetype, ``--fork-lr 5.6e-05 --fork-lr-freeze``), launched only when the arm's primary reads
-  GAIN (``stage-check``); the kit seed is the TARGET's, the reader trains at seed 3531;
+  GAIN (``stage-check``); the kit seed is the TARGET's, the reader trains at seed 3531. X35-A3's deciding read takes
+  SIX: ``ge_a3`` and ``ge_c0`` at the target seeds 3501-3503, allowed by A3's registration (``main.x35.ge``);
+  ``describe --plan`` builds a reader whose target has not finished on a declared PLACEHOLDER target (shape only);
 * toy (``--behaviour-check warn`` under X34's registered GIGO ceilings, C3, orchestrator 2026-10-19; +70M; the X34
   toy extras): ``toy_c0``, ``toy_a1``, ``toy_a2``, and ``toy_x47`` -- X47 / depth growth (``design_bot_ideas_screen.md``
   §2.1), the toy C0 argv + the ONE lever ``--grow trunk_layers=4`` (seeds 3601-3603), read against ``toy_c0``;
@@ -404,7 +406,7 @@ def _reader_run(target_run: str) -> str:
     return "rb_x35_ge_" + tag
 
 
-ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.TARGET_SEEDS, _reader_run(ARMS[t].run), _GE.READER_PHASE,
+ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.target_seeds(r), _reader_run(ARMS[t].run), _GE.READER_PHASE,
                     "warn")
              for r, t in _GE.READER_ARMS.items()})
 #: R0, the exploitability curve (``main.x35.r0``, AM-R0): the kit seed is the training seed.
@@ -481,13 +483,16 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
                target: Optional[Mapping[str, Any]] = None, *, plan: bool = False) -> List[str]:
     """The trainer argv (the launcher's own flags excluded) of one arm × seed. A G-E reader needs its ``target``
     (:func:`reader_target`). ``plan`` lets a phase-2 arm take the planner's PLACEHOLDER record
-    (:func:`phase1_placeholder_record`), which is otherwise refused: an argv built from it is never a launch."""
+    (:func:`phase1_placeholder_record`) and a reader a PLACEHOLDER target (``ge.placeholder_target``), which are
+    otherwise refused: an argv built from either is never a launch."""
     a = _arm(arm, seed)
     if call.get("side") != a.side:
         raise KitError(f"arm {arm} reads the {a.side} call record, got side {call.get('side')!r}")
     if a.phase == _GE.READER_PHASE:
         if target is None:
             raise KitError(f"arm {arm} is a G-E reader: it needs its target final (reader_target)")
+        if target.get("placeholder") and not plan:
+            raise KitError(f"arm {arm}: a PLACEHOLDER target is for planning only, never a launch argv")
         return _GE.build_reader_argv(arm, seed, target, behaviour=a.behaviour, ckpt_every=CKPT_EVERY)
     if a.phase == _R0.R0_PHASE:
         return _R0.build_r0_argv(arm, seed, call, run_name=run_name(arm, seed), behaviour=a.behaviour,
@@ -854,8 +859,28 @@ def describe_for_plan(arm: str, seed: int, call: Mapping[str, Any], *, stage: st
     * a record: it is judged in full by :func:`verify_phase1`, exactly as the launch judges it; a problem refuses the
       plan, none gives the argv the launch will run (``phase1.mode`` ``RECORD``).
 
+    A READER (X35-A3's ``ge_a3`` before the A3 forks have run) is planned the same way: with no ``target`` given, its
+    target's FINISHED final is read as the launch reads it (:func:`reader_target`; a short or unreadable final refuses
+    the plan), and a target with NO ``final_model.zip`` yet gives the argv built on the declared PLACEHOLDER target
+    (``ge.placeholder_target``: the registered run and path, the step the arm's registered floor), judged for SHAPE
+    only; the result says so (``phase1.mode`` ``TARGET-PLACEHOLDER``, the arm chain's plan note).
+
     Any other arm is ``describe`` unchanged. Never a launch path: ``launch_x35.sh`` passes the real record."""
     a = _arm(arm, seed)
+    if a.phase == _GE.READER_PHASE:
+        if target is None:
+            t_arm = ARMS[_GE.READER_ARMS[a.name]]
+            if os.path.isfile(os.path.join(models_dir, run_name(t_arm.name, seed), "final_model.zip")):
+                target = reader_target(arm, seed, call, models_dir=models_dir)
+            else:
+                target = _GE.placeholder_target(a.name, seed, models_dir, int(call["pstar"]["step"]) + t_arm.length)
+        doc = describe(arm, seed, call, None, target, plan=True)
+        if target.get("placeholder"):
+            doc["phase1"] = {"mode": _GE.TARGET_PLACEHOLDER_MODE,
+                             "note": f"the target {target['run']} has no final yet: its path is the registered one "
+                                     "and its step the arm's floor, judged for shape only; the kit judges the real "
+                                     "final in full at the launch"}
+        return doc
     if a.phase != 2:
         return describe(arm, seed, call, None, target)
     rec = phase1_record_path(stage, a.name)
@@ -1228,8 +1253,11 @@ def _load(path: str) -> Dict[str, Any]:
 
 
 def _cli_target(a: argparse.Namespace, call: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
-    """The target of a G-E reader arm on the CLI (None for every other arm)."""
+    """The target of a G-E reader arm on the CLI (None for every other arm, and for a reader under ``--plan`` with
+    no stand-in: :func:`describe_for_plan` resolves it, a PLACEHOLDER while its target has not finished)."""
     if ARMS[a.arm].phase != _GE.READER_PHASE:
+        return None
+    if getattr(a, "plan", False) and not a.target_standin:
         return None
     from utils.paths import main_models_dir
 

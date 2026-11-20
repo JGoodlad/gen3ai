@@ -11,9 +11,10 @@
 #   arms:  c0 a1 a2 d1 d3 n1p (production, +20M; d1 / d3 / n1p at their OWN corpus-only pins, batch.ARM_PINS) · a3_mx a6_lx
 #          (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
 #          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
-#          `warn`) · ge_a1 ge_a2 ge_d1 ge_d3 ge_n1p ge_x60t ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
+#          `warn`) · ge_a1 ge_a2 ge_d1 ge_d3 ge_n1p ge_x60t ge_a3 ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
 #          best responder of that arm's FINISHED final, launched only when the arm's primary reads GAIN (pre-check 9);
-#          ge_c0 is every arm's shared b-OFF reader) · BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; each = the side's C0
+#          ge_c0 is every arm's shared b-OFF reader; X35-A3's six readers are ge_a3 and ge_c0 at the target seeds
+#          3501-3503, allowed by the A3 registration) · BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; each = the side's C0
 #          argv + ONE lever, at the side's written pin): sprt lrfloor (+20M) · toy_sprt toy_lrfloor (+70M)
 #          · R0, the exploitability curve (AM-R0, main.x35.r0, +20M, a best responder of the side's start node):
 #          toy_r0 3631 (toy pin) · r0 3531 (production pin) · X52, the practice ceiling (AM-X52, main.x35.x52, +5M,
@@ -72,7 +73,8 @@
 #      conditional fork its records REFUSED (AM-9) is not counted
 #   9. AM-9 / AM-3 / AM-4 / AM-8: the fork's stage is ALLOWED by the saved records (kit stage-check: G1, look-1
 #      CONTINUE, production's FINAL class before the toy calibration, the FP32_ALT commit named for production; a G-E
-#      reader: its arm's primary FINAL class GAIN, ge_c0 any arm's); PENDING or REFUSED HOLDs
+#      reader: its arm's primary FINAL class GAIN, ge_c0 any arm's, or the A3 registration for A3's six); PENDING or
+#      REFUSED HOLDs
 #  10. POOL: the parent's seeded snapshot set (T54's filter, names + sha256) equals the side's record
 #      (x35_pool_batch1_<side>.json, written by the side's first GO)
 #  11. AM-6: every FINISHED batch-1 / batch-2 arm has a K9(b) arm-end record (its own rows after the fork step) that PASSes;

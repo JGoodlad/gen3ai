@@ -327,7 +327,10 @@ def test_plan_describe_asks_the_kit_in_plan_mode_with_the_stage_and_the_models_d
 
 
 @pytest.mark.parametrize("mode,note", [("PLACEHOLDER", "its finals are PLACEHOLDERS, judged for shape only"),
-                                       ("RECORD", "phase-1 record VERIFIED in full"), (None, None)])
+                                       ("RECORD", "phase-1 record VERIFIED in full"),
+                                       ("TARGET-PLACEHOLDER", "its target has no final yet: the argv is built from a "
+                                                              "declared PLACEHOLDER, judged for shape only"),
+                                       (None, None)])
 def test_plan_says_what_a_phase_2_argv_was_built_from(world, capsys, mode, note):
     p = write_chain(world, [world.arm("a1", 1, world.pin_a)])
     r = FakeRunner().on(*describe_handler(phase1=mode))
@@ -335,6 +338,21 @@ def test_plan_says_what_a_phase_2_argv_was_built_from(world, capsys, mode, note)
     line = next(ln for ln in capsys.readouterr().out.splitlines() if "the kit agrees" in ln)
     assert line.endswith("--steps 2,000") if note is None else note in line
     assert Describe.load(_describe_file(world, mode)).phase1 == (mode or "")
+
+
+@pytest.mark.parametrize("mode,skipped", [("TARGET-PLACEHOLDER", True), ("PLACEHOLDER", False), (None, False)])
+def test_plan_does_not_parse_at_the_pin_an_argv_whose_target_final_does_not_exist_yet(world, capsys, mode, skipped):
+    """A reader forks its target's ``final_model.zip``; before that target has finished the kit plans on a DECLARED
+    placeholder. The pinned parser opens ``--model``, so layer 3 would refuse a file that cannot exist yet: the plan
+    says so in words and judges the PIN alone; every other argv is parsed at the pin."""
+    p = write_chain(world, [world.arm("a1", 1, world.pin_a)])
+    r = FakeRunner().on(*describe_handler(phase1=mode)).on(*checkargs_handler(3, REFUSED_TRANSCRIPT))
+    rc = plan(p, r, "--check-pins")
+    out = capsys.readouterr().out
+    if skipped:
+        assert rc == 0 and "NOT run through the pin's parser yet" in out and checkargs_calls(r) == []
+    else:
+        assert rc == 1 and "NOT run through the pin's parser" not in out and len(checkargs_calls(r)) == 1
 
 
 def _describe_file(world: World, mode) -> str:

@@ -473,14 +473,15 @@ class Chain:
         self._guard_main_clean("before the dry run")
         d = self.launcher.prelaunch(it)
         self._guard_main_clean("after the dry run")
-        m = re.search(r"checkpoint_(\d+)_steps\.zip$", d.argv[d.argv.index("--model") + 1]) if "--model" in d.argv else None
-        if not m:
-            raise Hold(f"{it.run}: the describe's --model is not a checkpoint (a chain arm is a FORK)")
+        fork_step = d.fork_step()
+        if fork_step is None:
+            raise Hold(f"{it.run}: the describe's --model is neither a checkpoint nor a final with a '+N steps' delta "
+                       "(a chain arm is a FORK)")
         self._set(it, "PRECHECKED",
                   f"dry run PASS at pin {it.pin[:12]}: FORK of {d.parent_run_dir}, {d.delta_text}; {disk}",
                   prechecked_epoch=self.d.now(),
                   describe={"run_name": d.run_name, "parent_run_dir": d.parent_run_dir, "delta_text": d.delta_text,
-                            "steps": d.steps, "argv": d.argv}, fork_step=int(m.group(1)))
+                            "steps": d.steps, "argv": d.argv}, fork_step=fork_step)
 
     def _arm_prechecked(self, it: ArmItem) -> None:
         age = self.d.now() - float(self.rec(it)["data"].get("prechecked_epoch", 0))

@@ -76,11 +76,16 @@ def test_the_on_and_off_readers_differ_only_in_their_target_and_run_name():
     assert set(on) == set(off)
 
 
-def test_a_reader_needs_its_target_and_only_seed_3501_is_registered():
+def test_a_reader_needs_its_target_and_only_a3s_readers_are_registered_past_seed_3501():
     with pytest.raises(K.KitError, match="needs its target"):
         K.build_argv("ge_a1", 3501, _call())
     with pytest.raises(K.KitError, match="not registered"):
         K.build_argv("ge_a1", 3502, _call(), target=_target("ge_a1"))
+    assert {r: K.ARMS[r].seeds for r in GE.READER_ARMS if K.ARMS[r].seeds != (3501,)} == {
+        "ge_a3": (3501, 3502, 3503), "ge_c0": (3501, 3502, 3503)}              # A3 PREREG §5.1: six readers
+    for r in GE.A3_READER_ARMS:
+        with pytest.raises(K.KitError, match="not registered"):
+            K.build_argv(r, 3504, _call(), target=_target(r))
     assert all(K.ARMS[r].side == "production" and K.ARMS[r].phase == GE.READER_PHASE for r in GE.READER_ARMS)
     assert not {a for a, _ in K.BATCH1} & set(GE.READER_ARMS)                  # not batch-1 forks (order, disk)
 
@@ -112,7 +117,97 @@ def test_the_post_spawn_pool_check_exempts_a_reader_it_seeds_no_pool(tmp_path):
     assert K.check_pool_seed("ge_c0", str(tmp_path / "nowhere"), _call(), "", None) == ("PASS", [])
 
 
+# ------------------------------------------------------------------------------------------- X35-A3's six readers
+A3_READERS = [(r, s) for r in GE.A3_READER_ARMS for s in GE.A3_TARGET_SEEDS]
+
+
+def test_a3s_six_readers_are_one_per_final_three_a3_and_three_c0():
+    assert [(GE.target_run(r, s), GE.reader_run(r, s)) for r, s in A3_READERS] == [
+        ("rb_x35_a3mx_s3501", "rb_x35_ge_a3mx_s3501"), ("rb_x35_a3mx_s3502", "rb_x35_ge_a3mx_s3502"),
+        ("rb_x35_a3mx_s3503", "rb_x35_ge_a3mx_s3503"), ("rb_x35_c0_s3501", "rb_x35_ge_c0_s3501"),
+        ("rb_x35_c0_s3502", "rb_x35_ge_c0_s3502"), ("rb_x35_c0_s3503", "rb_x35_ge_c0_s3503")]
+    assert [K.run_name(r, s) for r, s in A3_READERS] == [GE.reader_run(r, s) for r, s in A3_READERS]
+    names = B.side_pinned_run_names(readers=True)
+    assert {GE.reader_run(r, s) for r, s in A3_READERS} <= set(names)        # the side's pin judges all six
+
+
+@pytest.mark.parametrize("arm,seed", A3_READERS)
+def test_an_a3_reader_is_the_g_e_argv_on_its_own_target_and_differs_from_its_twin_in_nothing_else(arm, seed):
+    def target(a: str, s: int) -> Dict[str, Any]:
+        run = GE.target_run(a, s)
+        return {"run": run, "path": f"/m/{run}/final_model.zip", "step": FINAL_STEP, "sha256": "s", "standin": False}
+    f = flags(K.build_argv(arm, seed, _call(), target=target(arm, seed)))
+    assert f["--model"] == f["--exploiter"] == f"/m/{GE.target_run(arm, seed)}/final_model.zip"
+    assert f["--seed"] == "3531" and f["--steps"] == str(FINAL_STEP + 5_000_000)
+    assert f["--run-name"] == GE.reader_run(arm, seed) and not LEVERS & set(f)
+    twin = flags(K.build_argv("ge_c0", 3501, _call(), target=target("ge_c0", 3501)))
+    assert set(f) == set(twin)
+    assert {k for k in f if f[k] != twin.get(k)} <= {"--model", "--exploiter", "--run-name"}
+
+
+def test_a_reader_whose_target_has_not_finished_plans_on_a_declared_placeholder_never_launches_on_one(tmp_path):
+    models = tmp_path / "models"
+    models.mkdir()
+    with pytest.raises(K.KitError, match="no final_model.zip"):                # the launch path: refused
+        K.reader_target("ge_a3", 3502, _call(), models_dir=str(models))
+    d = K.describe_for_plan("ge_a3", 3502, _call(), stage=str(tmp_path), models_dir=str(models))
+    t = d["target"]
+    assert t["placeholder"] is True and t["sha256"] == GE.TARGET_PLACEHOLDER_SHA and not t["standin"]
+    assert t["path"] == str(models / "rb_x35_a3mx_s3502" / "final_model.zip") and t["step"] == FINAL_STEP
+    f = flags(d["argv"])
+    assert f["--model"] == f["--exploiter"] == t["path"] and f["--steps"] == str(FINAL_STEP + 5_000_000)
+    assert d["parent_run_dir"] == str(models / "rb_x35_a3mx_s3502") and d["delta_text"] == "+5,000,000 steps"
+    with pytest.raises(K.KitError, match="PLACEHOLDER target is for planning only"):
+        K.build_argv("ge_a3", 3502, _call(), target=t)
+    with pytest.raises(K.KitError, match="PLACEHOLDER target is for planning only"):
+        K.describe("ge_a3", 3502, _call(), target=t)
+
+
+def test_a_plan_reads_the_real_final_once_the_target_has_finished(tmp_path, monkeypatch):
+    models = tmp_path / "models"
+    run = models / "rb_x35_a3mx_s3502"
+    run.mkdir(parents=True)
+    (run / "final_model.zip").write_bytes(b"final")
+    monkeypatch.setattr(K, "_final_step", lambda p: FINAL_STEP + 61_805)
+    d = K.describe_for_plan("ge_a3", 3502, _call(), stage=str(tmp_path), models_dir=str(models))
+    assert "placeholder" not in d["target"] and len(d["target"]["sha256"]) == 64
+    assert flags(d["argv"])["--steps"] == str(FINAL_STEP + 61_805 + 5_000_000)
+    monkeypatch.setattr(K, "_final_step", lambda p: FINAL_STEP - 1)            # a short final is no placeholder case
+    with pytest.raises(K.KitError, match="did not reach its registered length"):
+        K.describe_for_plan("ge_a3", 3502, _call(), stage=str(tmp_path), models_dir=str(models))
+
+
+@pytest.mark.parametrize("arm,seed", A3_READERS)
+def test_the_a3_registration_allows_its_six_readers_after_the_sides_gate(tmp_path, monkeypatch, arm, seed):
+    monkeypatch.setattr(GE, "a3_registered", lambda: True)
+    st, why = B.stage_status(_stage(tmp_path), arm, seed)
+    assert st == B.ALLOWED and "A3 registration" in why and GE.target_run(arm, seed) in why
+    st, why = B.stage_status(_stage(tmp_path, fp32=False), arm, seed)
+    assert st == B.PENDING and "AM-8" in why                                   # the side's pin comes first
+
+
+def test_without_the_a3_prereg_its_readers_wait_and_the_shared_reader_keeps_its_gain_rule(tmp_path):
+    st = _stage(tmp_path)                                                      # the fixture: A3 not registered
+    for arm, seed in A3_READERS:
+        if (arm, seed) != ("ge_c0", 3501):
+            status, why = B.stage_status(st, arm, seed)
+            assert status == B.PENDING and "PREREG" in why
+    assert "waits for an arm's GAIN" in B.stage_status(st, "ge_c0", 3501)[1]
+    assert GE.trigger(st, "ge_c0", 3504)[0] == B.REFUSED and GE.trigger(st, "ge_a1", 3502)[0] == B.REFUSED
+
+
+def test_the_real_checkout_holds_the_a3_registration():
+    assert repo_path(B.A3_PREREG).is_file()
+
+
 # ---------------------------------------------------------------------------------------------------- the trigger
+@pytest.fixture(autouse=True)
+def _a3_not_registered(monkeypatch):
+    """The trigger tests below are the G-E rule's (a reader waits for its arm's GAIN): the A3 registration, which
+    allows ``ge_c0`` s3501 outright, is switched on only by the A3 tests above."""
+    monkeypatch.setattr(GE, "a3_registered", lambda: False)
+
+
 def _stage(tmp_path: Path, fp32: bool = True) -> str:
     sha = "c" * 40 if fp32 else "FP32_ALT_SHA_PENDING"
     (tmp_path / B.SIDE_REQUIRED_FILE.format(side="production")).write_text(f"{sha} FP32_ALT the fp32 build\n")
@@ -325,7 +420,8 @@ VALIDATED_READERS = ("ge_a1", "ge_a2", "ge_c0", "ge_d1")
 
 
 def test_every_reader_but_d3s_n1ps_and_x60ts_has_a_validation_transcript():
-    assert set(GE.READER_ARMS) - set(VALIDATED_READERS) == {"ge_d3", "ge_n1p", "ge_x60t"}
+    # ``ge_a3`` (X35-A3, 2026-11-19): its target finals do not exist yet; its plan transcripts are A3's (a3_test.py).
+    assert set(GE.READER_ARMS) - set(VALIDATED_READERS) == {"ge_d3", "ge_n1p", "ge_x60t", "ge_a3"}
 
 
 @pytest.mark.parametrize("arm", VALIDATED_READERS)

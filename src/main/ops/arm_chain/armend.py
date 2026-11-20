@@ -253,9 +253,10 @@ def dose_record(it: ArmItem, status_lines: List[str], desc: Describe, launcher_l
     if any(t1 <= t0 for t0, t1 in segs):
         raise Hold(f"dose: a segment of {it.run} ends before it starts")
     t0, t1 = segs[0][0], segs[-1][1]
-    m = re.search(r"checkpoint_(\d+)_steps\.zip$", desc.argv[desc.argv.index("--model") + 1]) if "--model" in desc.argv else None
-    if not m:
-        raise Hold("dose: the describe's --model is not a checkpoint_<N>_steps.zip")
+    first_step = desc.fork_step()
+    if first_step is None:
+        raise Hold("dose: the describe's --model is neither a checkpoint_<N>_steps.zip nor a final_model.zip with a "
+                   "'+N steps' delta")
     s = parse_launcher_log(launcher_log)
     if not (s.pins and s.last_step is not None and s.fps is not None):
         raise Hold("dose: the launcher log lacks --pin-commit / 'Last step' / 'FPS'")
@@ -265,7 +266,7 @@ def dose_record(it: ArmItem, status_lines: List[str], desc: Describe, launcher_l
     rec: Dict[str, Any] = {
         "schema": "x35_dose_v1", "run": it.run, "arm": it.arm, "seed": it.seed, "pin": it.pin,
         "wall_min": round(wall, 1), "gpu_h": round(wall / 60, 3), "gpu_h_note": "one card: GPU-h = wall START→END",
-        "steps_per_s": s.fps, "steps_per_s_source": "launcher summary 'FPS'", "first_step": int(m.group(1)),
+        "steps_per_s": s.fps, "steps_per_s_source": "launcher summary 'FPS'", "first_step": first_step,
         "last_step": s.last_step, "target_steps": desc.steps, "restarts": s.restarts, "launcher_rc": rc,
         "start": t0.isoformat(), "end": t1.isoformat(), "segments": len(segs),
         "segments_note": "wall = the sum of every START→END segment; FPS / last step from the newest launcher log"}

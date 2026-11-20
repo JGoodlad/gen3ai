@@ -6,7 +6,8 @@
   reads ``python -m main.launcher …`` so ``/proc`` identity checks see a launcher (its pid file appears only once ``/proc`` shows
   that argv). Per-run knobs come from
   ``<job>/fake/<run>.env`` (``FAKE_RC``, ``FAKE_LAST``, ``FAKE_FINAL``, ``FAKE_BANNER``, ``FAKE_RUN_S``,
-  ``FAKE_DRY_FAIL``, ``FAKE_NO_PASS``, ``FAKE_GO_HOLD`` (the GO's own pre-checks HOLD before START), ``FAKE_DIRTY_MAIN``:
+  ``FAKE_DRY_FAIL``, ``FAKE_NO_PASS``, ``FAKE_GO_HOLD`` (the GO's own pre-checks HOLD before START),
+  ``FAKE_FINAL_FORK`` (a reader: ``--model`` is the parent's ``final_model.zip``), ``FAKE_DIRTY_MAIN``:
   the dry run writes a stray record into main's stage, as the unfixed kit's ``k9b-batch`` did); every call appends ``<mode> <arm> <seed> <pin> CVD=<state>`` to
   ``<job>/fake/calls.log``.
 * :class:`FakeRunner` — scripted handlers for ``main.x35.kit k9b`` and the thin planner; anything else runs for real.
@@ -36,15 +37,17 @@ while [ $# -gt 0 ]; do case "$1" in --pin) PIN=$2; shift 2;; --lease-owner|--max
   GO) GO=1; shift;; *) shift;; esac; done
 J=$X35_JOB_DIR; ST=$J/status.txt; M=$(dirname "$J")/models; mkdir -p "$J/fake"
 RUN=rb_${ARM}_s${SEED}; [ -f "$J/fake/$ARM.$SEED.run" ] && RUN=$(cat "$J/fake/$ARM.$SEED.run")
-FAKE_RC=0; FAKE_LAST=5000; FAKE_FINAL=1; FAKE_BANNER=""; FAKE_RUN_S=1.2; FAKE_DRY_FAIL=0; FAKE_NO_PASS=0; FAKE_DIRTY_MAIN=0; FAKE_GO_HOLD=0
+FAKE_RC=0; FAKE_LAST=5000; FAKE_FINAL=1; FAKE_BANNER=""; FAKE_RUN_S=1.2; FAKE_DRY_FAIL=0; FAKE_NO_PASS=0; FAKE_DIRTY_MAIN=0; FAKE_GO_HOLD=0; FAKE_FINAL_FORK=0
 [ -f "$J/fake/$RUN.env" ] && . "$J/fake/$RUN.env"
 log() { echo "[$(date -Is)] $ARM s$SEED: $1" >> "$ST"; }
 CVD=${CUDA_VISIBLE_DEVICES-unset}; [ -z "${CUDA_VISIBLE_DEVICES-x}" ] && CVD=EMPTY
 echo "$([ $GO = 1 ] && echo GO || echo DRY) $ARM $SEED $PIN CVD=$CVD" >> "$J/fake/calls.log"
 P=$M/parent_run
+# FAKE_FINAL_FORK=1: a READER's describe, a fork of its target run's FINAL (no step in the file name)
+MODEL=$P/checkpoints/checkpoint_1000_steps.zip; [ "$FAKE_FINAL_FORK" = 1 ] && MODEL=$P/final_model.zip
 cat > "$J/describe.$ARM.$SEED.json" <<EOF
 {"arm": "$ARM", "seed": $SEED, "run_name": "$RUN", "parent_run_dir": "$P", "delta_text": "+4,000 steps",
- "argv": ["--model", "$P/checkpoints/checkpoint_1000_steps.zip", "--steps", "5000", "--run-name", "$RUN"]}
+ "argv": ["--model", "$MODEL", "--steps", "5000", "--run-name", "$RUN"]}
 EOF
 if [ "$FAKE_DRY_FAIL" = 1 ]; then log "HOLD: fake dry run refusal"; echo "HOLD: fake" >&2; exit 7; fi
 if [ "$FAKE_DIRTY_MAIN" = 1 ] && [ "$GO" != 1 ]; then
@@ -60,7 +63,7 @@ cat > "$J/$RUN.dry.dryrun.txt" <<EOF
 EOF
 if [ "$GO" != 1 ]; then echo "DRY RUN PASS — every pre-check passed"; exit 0; fi
 if [ "$FAKE_GO_HOLD" = 1 ]; then log "HOLD: fake GO-time pre-check refusal (kit live)"; exit 7; fi
-log "START $RUN: --model $P/checkpoints/checkpoint_1000_steps.zip (pin ${PIN:0:8}, restart 24 h)"
+log "START $RUN: --model $MODEL (pin ${PIN:0:8}, restart 24 h)"
 R=$M/$RUN; mkdir -p "$R/checkpoints"
 bash -c "exec -a 'python -m main.launcher --run-name $RUN' sleep $FAKE_RUN_S" &
 LP=$!

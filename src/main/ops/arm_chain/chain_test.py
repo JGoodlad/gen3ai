@@ -289,6 +289,20 @@ def test_the_dose_record_shipped_is_the_runs_own(w):
     assert k9b["verdict"] == "PASS"
 
 
+def test_a_reader_a_fork_of_its_targets_final_runs_to_done_with_the_targets_step_as_its_fork_step(w):
+    """A G-E reader forks ``<target>/final_model.zip`` (no step in the name): the chain HELD on it ("not a
+    checkpoint"); its fork step is ``--steps`` minus the kit's delta, which the throughput gate and the dose read."""
+    w.knobs("rb_a1_s1", FAKE_FINAL_FORK=1)
+    sh = FakeShipper(w.repo)
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a)]), deps(w, runner_for(w), sh))
+    ch.run()
+    assert phases(ch) == {"arm:rb_a1_s1": "DONE"}
+    rec = ch.state["items"]["arm:rb_a1_s1"]["data"]
+    assert rec["describe"]["argv"][1].endswith("parent_run/final_model.zip") and rec["fork_step"] == 1000
+    dose = json.loads(open(sh.shipped[0][os.path.join(w.stage_rel, "dose", "rb_a1_s1.json")]).read())
+    assert (dose["first_step"], dose["last_step"]) == (1000, 5000)
+
+
 def test_an_abandoned_held_arm_hands_off_past_itself(w):
     """A VOID arm the orchestrator stopped can never finish: abandoning it is the only way past, and only when held."""
     w.knobs("rb_a1_s1", FAKE_RC=1)

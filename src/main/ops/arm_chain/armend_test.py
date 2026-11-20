@@ -193,6 +193,36 @@ def test_dose_sums_every_segment_and_refuses_a_cross_pin_log(w):
         A.dose_record(it, lines, _desc(), log.replace(w.pin_a, w.pin_b), 0)
 
 
+@pytest.mark.parametrize("model,delta,steps,want", [
+    ("/p/checkpoints/checkpoint_1000_steps.zip", "+4,000 steps", 5000, 1000),
+    ("/t/final_model.zip", "+5,000,000 steps", 305_061_805, 300_061_805),       # a READER: a fork of its target's FINAL
+    ("/t/final_model.zip", "+4000 steps", 5000, 1000),
+    ("/t/final_model.zip", "+1", 5000, None),                                   # no '+N steps' delta: no step to derive
+    ("/t/final_model.zip", "+5,000 steps", 5000, None),                         # a fork that starts at step 0 is none
+    ("/t/best_model.zip", "+4,000 steps", 5000, None),
+])
+def test_a_forks_first_step_is_its_checkpoints_or_a_finals_steps_minus_the_delta(model, delta, steps, want):
+    d = Describe(run_name="r", parent_run_dir="/t", delta_text=delta, steps=steps,
+                 argv=["--model", model, "--steps", str(steps)])
+    assert d.fork_step() == want
+    assert Describe(run_name="r", parent_run_dir="/t", delta_text=delta, steps=steps, argv=["--steps", "1"]).fork_step() is None
+
+
+def test_dose_takes_a_final_model_forks_first_step_and_refuses_a_model_with_none(w):
+    it = w.spec([w.arm("x", 1, w.pin_a, run="rb_x_s1")]).arms()[0]
+    t = launch_tag("x", 1)
+    lines = [f"[2026-10-26T01:00:00-07:00] {t}: START rb_x_s1: argv",
+             f"[2026-10-26T01:30:00-07:00] {t}: END rb_x_s1 launcher_rc=0"]
+    log = f"--pin-commit {w.pin_a}\n  Last step   : 5,000\n  FPS         : 1,400\n  Restarts    : 0\n"
+    final = Describe(run_name="rb_x_s1", parent_run_dir="/t", delta_text="+4,000 steps", steps=5000,
+                     argv=["--model", "/t/final_model.zip", "--steps", "5000"])
+    assert A.dose_record(it, lines, final, log, 0)["first_step"] == 1000
+    other = Describe(run_name="rb_x_s1", parent_run_dir="/t", delta_text="+4,000 steps", steps=5000,
+                     argv=["--model", "/t/best_model.zip", "--steps", "5000"])
+    with pytest.raises(Hold, match="neither a checkpoint_<N>_steps.zip nor a final_model.zip"):
+        A.dose_record(it, lines, other, log, 0)
+
+
 def test_dose_refuses_a_run_with_no_segment(w):
     it = w.spec([w.arm("x", 1, w.pin_a, run="rb_x_s1")]).arms()[0]
     with pytest.raises(Hold, match="no START"):
