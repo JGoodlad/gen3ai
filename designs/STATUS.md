@@ -188,7 +188,7 @@ its GO.
   Every class licenses at most a proposal to the owner.
 - **Q6-N, the flat policy tower retired, from scratch: REGISTERED 2026-11-20, NOT LAUNCHED**
   ([`research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md`](research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md), full tier; the post-B1 queue's Q6).
-  **First on the card after X35-A3.** One new cell of three fresh runs at width 128 (kit arm `q6n`, seeds 5211–5213)
+  **On the card after Segment B** (the armed chain runs X35-A3, then Segment B; orchestrator ruling 2026-11-20). One new cell of three fresh runs at width 128 (kit arm `q6n`, seeds 5211–5213)
   with BOUNDARY-1's control argv plus `--policy-readout trunk`, at BOUNDARY-1's launch pin, read head-to-head
   against the three banked runs of cell C by the fresh-cell frame (rule `b1_fresh_cell`, kit `52353b1b7`: a 3 × 3
   cross, 45,000 games a look, the 1.76 pp floor on each cell's spread). The mechanism is measured: the tower's first
