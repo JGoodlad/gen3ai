@@ -1,6 +1,8 @@
 # V-RANK — does the search's value rank the moves of ONE position as well on unfamiliar teams as on home72, against Kakuna?
 
-**Status: REGISTERED 2026-11-18, NOT LAUNCHED** ([`PREREG.md`](../research_state/measurements/v_rank_2026-11-18/PREREG.md), pin `c933afd5a`; its builds are §6
+**Status: READ 2026-11-20, RANK-HOLDS-ON-U** (the final look, 200 blocks: β_U +0.315 [+0.153, +0.449], β_home +0.333 [+0.210, +0.447], Δβ −0.018 [−0.215, +0.167];
+MF-4's leaf-value step NOT FUNDED on this evidence; ledger 2026-11-20). REGISTERED 2026-11-18
+([`PREREG.md`](../research_state/measurements/v_rank_2026-11-18/PREREG.md), pin `c933afd5a`; its builds are §6
 "As built"). The PREREG is the registration: it takes §3–§4 with §6's deviations (the team-clustered interval, the
 honest Q̂ source, the pipeline's shape, the decision re-pointed to MF-4, look 1 fixed at 100 blocks), the engine and
 the smoke's measured cost. Where this draft and the PREREG differ, the PREREG wins.

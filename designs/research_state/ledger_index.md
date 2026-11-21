@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-32,329-line file. **The ledger itself is append-only and is never edited by this**;
+32,404-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1022 headings · 967 dated · 2026-08-01 → 2026-11-20 · ledger 32,329 lines.**
+**1023 headings · 968 dated · 2026-08-01 → 2026-11-20 · ledger 32,404 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1042,3 +1042,4 @@ rename.
   - `L32138` · `2026-11-19` · READ · **V-RANK look 1, PLAYED (100 blocks, COMPLETE, 1,168 selected states, 6,615 one-game branch and null units, exit 0): CONTINUE. RANK-NULL-ON-U is NOT reached (UB(β_U) +0.575 against the 0.25 bar); β_U +0.390 [+0.181, +0.575], β_home +0.354 [+0.180, +0.516], Δβ +0.036 [−0.232, +0.277]. Look 1 reads NULL only, so no other class is computed; MF-4 stays unchanged and look 2 (200 blocks by the sizing rule) is the orchestrator's to schedule.**
   - `L32197` · `2026-11-20` · REGISTRATION · **Q6-N REGISTERED (full tier; blind: before any Q6 training step, game, look or pilot): the flat policy tower retired, ONE fresh three-seed cell at width 128 against BOUNDARY-1's banked cell C, read by the fresh-cell frame. With it the frame's σ amendment from C's own spread at 50M. First on the card after X35-A3. NOT LAUNCHED**
   - `L32273` · `2026-11-20` · REGISTRATION · **Q5-N REGISTERED (full tier; blind: before any Q5 training step, game, look or pilot): five PPO epochs at matched dose (`--n-epochs 5 --lr 6e-4` under the live KL controller), ONE fresh three-seed cell at width 128 against BOUNDARY-1's banked cell C. A tie keeps ten epochs. After Q6-N on the card. NOT LAUNCHED**
+  - `L32330` · `2026-11-20` · READ · **V-RANK look 2 (FINAL), PLAYED (200 blocks, COMPLETE, 2,340 selected states, 13,405 one-game branch and null units over both looks, exit 0): RANK-HOLDS-ON-U. β_U +0.315 [+0.153, +0.449], β_home +0.333 [+0.210, +0.447], Δβ −0.018 [−0.215, +0.167] on 1,124 U / 1,114 home positions. Per the PREREG, MF-4's leaf-value step is NOT FUNDED on this evidence; this is a meter of the model and never a statement that search pays.**

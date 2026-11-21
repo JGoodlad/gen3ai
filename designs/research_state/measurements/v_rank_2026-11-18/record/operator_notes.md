@@ -22,3 +22,22 @@ record, ship); any panel > 15 % => HOLD and report.
 - Look 1 finished (Nov 19 20:58 PST): the branch lanes ran 01:00 to 20:58 (6,288 new units; 16 not counted = p72 unit 2002 game 1's two positions, all attempts G-BRANCH
   failures classed peer_first by `v_rank classify`: 2 P72 positions dropped). decide: CONTINUE (beta_U +0.390 [+0.181, +0.575]); record written with `main.reads record --out <file>`
   (the PREREG's `--out $M/record` names a directory but the verb writes ONE FILE: v_rank_look1.json, 10 MB, into record/). No VOID.
+
+## Look 2 (operator: a worker dispatched by the orchestrator, 2026-11-19; spec `read_spec_look2.json` shipped at ec17bd0d8 before any look-2 game)
+- Same play worktree (c933afd5a), same rule-5b shape (nice 19, agent cores, OMP 1, no GPU), concurrency 3 (the orchestrator's cap: at most 3 lanes). Env: $A/env2.sh.
+- Raw lane started Nov 19 21:07 PST: `main.reads run --state $A/look2 --lane anchor --hours 3 --concurrency 3` (30 fresh units: u2 2005-2009 x 3 panels, home2 2115-2129).
+- Raw lane 21:07-21:40 PST (30 units, K=3): 30/30 counted, unplayed 0, one engine, regimes equal to look 1's; u1 / home1 imported from look 1's state.
+- Draw (once): selected2.jsonl 1,172 states (H 197, F 197, P72 193, home72 585).
+- Full score started 21:42 PST: two scorers --part 0/2 and 1/2 into scored2 (mem_cap 8 each), as PREREG 8 step 4.
+- Full score done Nov 20 02:40 PST: 1,172/1,172 scored, 0 missing, 0 duplicates (part_0of2 582 + part_1of2 590; 18,020 s and 16,686 s wall, peak 1.2 GB each).
+  Exclusion by panel (searched=false), outcome-free: H 4/197 (2.0 %), F 10/197 (5.1 %), P72 8/193 (4.1 %), home72 25/585 (4.3 %). All <= 15 %.
+- Look-2 plan (Nov 20 02:42, --shards 4 as registered, fresh root branches2): 6,790 units (1825/1809/1605/1551), 6,760 branches + 30 nulls.
+- Branch lanes started Nov 20 02:43: $A/branch_driver2.py (look 1's branch_driver.py with the plan root branches2 and the log name branch2_; scheduling only,
+  3 workers, slices of 3000 s via --stop-at-epoch; pid in $A/branch_driver2.pid). Stop it with the file $A/STOP_DRIVER.
+- Look 2 finished (Nov 20 22:47 PST): the branch lanes ran 02:42 to 22:47 (20.1 h; 6,790 units, 6,781 counted; 9 not counted = p72 unit 2007 game 4's two
+  positions, 8 branch units and that deal's null, every attempt (36 a unit) a G-BRANCH failure classed peer_first by `v_rank classify`: 2 P72 positions dropped,
+  the 29 other nulls classed identical). decide (frozen rule, look 2, both looks' positions): RANK-HOLDS-ON-U, beta_U +0.315 [+0.153, +0.449],
+  beta_home +0.333 [+0.210, +0.447], delta -0.018 [-0.215, +0.167]; positions U 1,124 / home 1,114; no boundary flag; COMPLETE, no VOID.
+  Record: `main.reads record --state $A/look2 --out <record>/v_rank_look2.json` (20 MB). Outputs: $A/classify2.out, decide2.out, record2.out.
+- Look-2 cost: branches 225,806 CPU-s (62.7 CPU-h; 8,632 of it the 324 failed attempts), scoring 34,318 CPU-s (9.5 CPU-h), about 72.3 CPU-h in all
+  (raw lane not metered, 33 min wall at 3); 25.7 h wall from the raw lane's start to the last branch.
