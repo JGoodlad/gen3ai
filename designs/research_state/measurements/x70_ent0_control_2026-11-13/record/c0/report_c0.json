@@ -1,0 +1,55 @@
+{
+ "decides": "nothing",
+ "cross": "c0",
+ "read": true,
+ "reading": "removing the entropy bonus alone, with no anchor, beats the C0 finals at this horizon",
+ "lower_end_above_0": true,
+ "upper_end_below_0": false,
+ "near_boundary": [],
+ "delta_hat_pp": 2.995312499999997,
+ "se_pp": 0.2795084971874737,
+ "df": 8.4,
+ "t_0.95": 1.8481332164522817,
+ "interval90_pp": [
+  2.4787435620671676,
+  3.5118814379328267
+ ],
+ "s2_rows_raw": 0.1269694010416655,
+ "s2_cols_raw": 0.2634681919642855,
+ "s2_rows": 0.15625,
+ "s2_cols": 0.3125,
+ "floor_rows_bound": true,
+ "floor_cols_bound": true,
+ "row_means_pp": [
+  52.69375,
+  52.7625,
+  53.046875,
+  53.478125
+ ],
+ "col_means_pp": [
+  53.24375,
+  53.243750000000006,
+  52.83125,
+  53.425,
+  53.71875,
+  52.8625,
+  52.48125,
+  52.15625
+ ],
+ "shape": [
+  4,
+  8
+ ],
+ "cell_var_pp2": 1.25,
+ "n_cells_read": 32,
+ "played_on": [
+  {
+   "device": "cuda",
+   "backend": "graph",
+   "rows": 64
+  }
+ ],
+ "family": "x70_ent0_vs_c0_h2h",
+ "request": "x70_ent0_vs_c0",
+ "pairs": 1000
+}

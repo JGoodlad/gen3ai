@@ -11,11 +11,17 @@ config v161 there, the two fields un-versioned; the first launch at the backport
 finals head to head: **D +3.97 pp, 90 % interval [+3.31, +4.63]**; label ENT-LOW (end entropy 0.49 nats against C0's
 1.01). Against X67's three finals (reported, deciding nothing): **+1.01 pp [−0.12, +2.13]**, read "the swap's gain
 over C0 is plausibly the lower uniform push alone". The PASS licenses REGISTERING a follow-up (`--ent-coef 0` with no
-magnet, at the same pin, on new seeds). That follow-up is REGISTERED 2026-11-13 as **X70**, not launched
-([`../research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md`](../research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md)):
-four forks at `--ent-coef 0` with NO magnet (kit arm `x70`, the swap's argv minus `--magnet-kl-coef 0.05`) at the same
-pin, read head to head against the three swap forks. It is also the first β = 0 learner at this pin on the card.
-Nothing moves a recipe, and the flags stay OFF.
+magnet, at the same pin, on new seeds). That follow-up, **X70**, is READ 2026-11-22: **`ANCHOR-ADDS`**
+([`../research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md`](../research_state/measurements/x70_ent0_control_2026-11-13/PREREG.md) §15).
+Four forks at `--ent-coef 0` with NO magnet (kit arm `x70`, the swap's argv minus `--magnet-kl-coef 0.05`) at the same
+pin played the three swap forks head to head on the card: the swap ahead by **+0.73 pp, 90 % interval [+0.22, +1.23]**
+(Welch df 5.00; 96,000 games, one look). Labels: `ENT-BELOW-SWAP` (the no-magnet forks ended at 0.463–0.477 nats, each
+below every swap fork's 0.484–0.496, so the reading is "the anchor OR its entropy level") and `LR-MOVED` on all four
+forks (the KL controller cut their rate three times against the swap's once). Reported, deciding nothing: the
+no-magnet forks beat the eight C0 finals by +3.00 pp [+2.48, +3.51], beside the swap's own +3.97 over the same
+finals (two crosses, the earlier one on the CPU; no interval on their difference). No β = 0 fork collapsed with no regulariser over 20M steps. The class licenses REGISTERING the
+matched-realised-entropy arm first (a small entropy bonus tuned to end near 0.49 nats, against the swap); it is
+proposed, not registered. Nothing moves a recipe, and the flags stay OFF.
 
 ```
 loss += β · mean over rows of KL(π_θ(·|s) ‖ π_mag(·|s))       β = --magnet-kl-coef (unset = 0 = OFF)

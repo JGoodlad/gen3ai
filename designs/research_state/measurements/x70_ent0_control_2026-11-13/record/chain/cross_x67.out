@@ -1,0 +1,3 @@
+[2026-11-22T14:15:01-08:00] plan (x67): 12 cells; registering family x70_ent0_vs_x67_h2h and playing (1000 pairs a cell, batches of 500, cuda)
+[2026-11-22T14:31:11-08:00] played; reading and applying the coded report
+[2026-11-22T14:31:12-08:00] DONE (x67): {"decides": "nothing", "cross": "x67", "read": true, "reading": "ent_coef 0 is not separated from ent_coef 0.0125 at this horizon", "lower_end_above_0": false, "upper_end_below_0": false, "near_boundary": [], "delta_hat_pp": 0.28958333333333286, "se_pp": 0.5629614876473108, "df": 4.896225607277689, "t_0.95": 2.0245210608373734, "interval90_pp": [-0.8501440548489867, 1.4293107215156524], "s2_rows_r

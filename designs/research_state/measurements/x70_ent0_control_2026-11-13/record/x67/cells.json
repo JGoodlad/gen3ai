@@ -1,0 +1,218 @@
+[
+ {
+  "player": "rb_x35_x70ent0_s7331@300061338",
+  "opponent": "rb_x35_x67ent_s6701@300021355",
+  "n_pairs": 1000,
+  "w": 996,
+  "l": 996,
+  "d": 8,
+  "aborted": 0,
+  "pairs": [
+   223,
+   5,
+   545,
+   3,
+   224
+  ],
+  "score_pp": 50.0,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7331@300061338",
+  "opponent": "rb_x35_x67ent_s6702@300061997",
+  "n_pairs": 1000,
+  "w": 1000,
+  "l": 986,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   228,
+   3,
+   527,
+   11,
+   231
+  ],
+  "score_pp": 50.349999999999994,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7331@300061338",
+  "opponent": "rb_x35_x67ent_s6703@300061533",
+  "n_pairs": 1000,
+  "w": 986,
+  "l": 1005,
+  "d": 9,
+  "aborted": 0,
+  "pairs": [
+   222,
+   5,
+   556,
+   4,
+   213
+  ],
+  "score_pp": 49.525000000000006,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7332@300061786",
+  "opponent": "rb_x35_x67ent_s6701@300021355",
+  "n_pairs": 1000,
+  "w": 969,
+  "l": 1012,
+  "d": 19,
+  "aborted": 0,
+  "pairs": [
+   226,
+   8,
+   553,
+   9,
+   204
+  ],
+  "score_pp": 48.925000000000004,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7332@300061786",
+  "opponent": "rb_x35_x67ent_s6702@300061997",
+  "n_pairs": 1000,
+  "w": 956,
+  "l": 1040,
+  "d": 4,
+  "aborted": 0,
+  "pairs": [
+   245,
+   1,
+   549,
+   3,
+   202
+  ],
+  "score_pp": 47.9,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7332@300061786",
+  "opponent": "rb_x35_x67ent_s6703@300061533",
+  "n_pairs": 1000,
+  "w": 1012,
+  "l": 972,
+  "d": 16,
+  "aborted": 0,
+  "pairs": [
+   198,
+   8,
+   568,
+   8,
+   218
+  ],
+  "score_pp": 51.0,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7333@300061763",
+  "opponent": "rb_x35_x67ent_s6701@300021355",
+  "n_pairs": 1000,
+  "w": 1028,
+  "l": 960,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   205,
+   4,
+   546,
+   8,
+   237
+  ],
+  "score_pp": 51.7,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7333@300061763",
+  "opponent": "rb_x35_x67ent_s6702@300061997",
+  "n_pairs": 1000,
+  "w": 1030,
+  "l": 956,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   200,
+   6,
+   551,
+   6,
+   237
+  ],
+  "score_pp": 51.849999999999994,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7333@300061763",
+  "opponent": "rb_x35_x67ent_s6703@300061533",
+  "n_pairs": 1000,
+  "w": 1011,
+  "l": 977,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   206,
+   7,
+   559,
+   3,
+   225
+  ],
+  "score_pp": 50.849999999999994,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7334@300061152",
+  "opponent": "rb_x35_x67ent_s6701@300021355",
+  "n_pairs": 1000,
+  "w": 977,
+  "l": 1001,
+  "d": 22,
+  "aborted": 0,
+  "pairs": [
+   226,
+   6,
+   546,
+   10,
+   212
+  ],
+  "score_pp": 49.4,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7334@300061152",
+  "opponent": "rb_x35_x67ent_s6702@300061997",
+  "n_pairs": 1000,
+  "w": 1018,
+  "l": 969,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   191,
+   6,
+   582,
+   5,
+   216
+  ],
+  "score_pp": 51.225,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_x35_x70ent0_s7334@300061152",
+  "opponent": "rb_x35_x67ent_s6703@300061533",
+  "n_pairs": 1000,
+  "w": 1010,
+  "l": 980,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   199,
+   4,
+   579,
+   4,
+   214
+  ],
+  "score_pp": 50.74999999999999,
+  "verdict": "OK"
+ }
+]

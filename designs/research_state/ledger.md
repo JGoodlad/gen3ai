@@ -32592,3 +32592,109 @@ commit `d41989b96` (`src/main/b1/fresh.py`, `fresh_survivor_look_test.py`).
 View: `STATUS.md` (the Q5-N bullet), `EXPERIMENT_BACKLOG.md` (rows Q6-N, Q5-N).
 
 Tag: **REGISTRATION · Q6-N and Q5-N Amendment 1 · blind · banked C at 100M = B1's 100M survivor look's files (`rb_b1c_s5101` 100,000,127, `s5102` 100,000,172, `s5110` 100,000,025) · `b1_look_100M.json` · kit `d41989b96` · Q5-N: ρ_run = mean-of-three `step_time` ratio over 10M–50M, exact, M = ⌈ρ × 100⌉ × 1M, build `ab0048861` · no rule moves**
+
+### 2026-11-22 · READ · **X70 the ent-0 control of the trailing-magnet screen: `ANCHOR-ADDS` — the three swap forks (trailing anchor, `--ent-coef 0 --magnet-kl-coef 0.05`) beat the four X70 forks (`--ent-coef 0`, no magnet) head to head on the card, D +0.73 pp [+0.22, +1.23] (90 %, Welch df 5.00; 12 cells × 4,000 pairs, 96,000 games, one look); labels `ENT-BELOW-SWAP` (X70 ended at 0.463–0.477 nats, the swap at 0.484–0.496) and `LR-MOVED` on ALL FOUR X70 forks (`lr_median` 8.372e-05 / 7.675e-05 against the swap's 0.0001005), so the class goes to the orchestrator with both numbers; REPORTED: X70 against the C0 finals +3.00 pp [+2.48, +3.51], against X67's finals +0.29 pp [−0.85, +1.43]; it licenses REGISTERING the matched-realised-entropy arm first and nothing else; nothing is registered and no recipe moves**
+
+**Question** (PREREG `761a5c015` 2026-11-13, full tier; Amendment 1 `2205a2ea2` 2026-11-16, the GO conditions and
+the card as the venue of all three crosses; both blind, before any fork, game or read). CE-3d's swap replaced the
+entropy bonus with a pull toward a trailing copy of the policy and beat the unchanged recipe by +3.97 pp. Is that
+the anchor, or only the missing entropy bonus? X70 is the control: four P\* + 20M forks with the entropy bonus
+switched off and NO anchor (`rb_x35_x70ent0_s7331..s7334`, P\* `rb_x26_s2601` @280,000,170, training pin
+`9e97cad5`, the swap's own). **The deciding cross:** rows = the three banked swap forks `rb_x35_ce3dswap_s7321..s7323`,
+columns = the four X70 forks; ONE flag differs (`--magnet-kl-coef 0.05`), and it adds the whole KL term. 4,000
+mirrored team pairs a cell, played at the play pin `333a73dd` on the card (`cuda` / `graph`, one venue a cross),
+family `x70_swap_vs_ent0_h2h`, one look. Two more crosses are REPORTED and decide nothing: the X70 forks against the
+eight C0 finals and against X67's three finals, 1,000 pairs a cell.
+
+**Verdict: `ANCHOR-ADDS`** (`screen_rule.decide` through `cross/read_cross.py`, `record/anchor/verdict.json`,
+`near_boundary: []`). D = mean(h) − 50 = **+0.727 pp**, 90 % interval **[+0.218, +1.235]** (SE 0.252, Welch df
+5.00, t 2.015). The row floor bound (the swap forks' sample 0.063 pp² → 0.3125/4), the column floor did not (the X70
+forks' 0.150). Row means 50.51 / 50.66 / 51.00; column means 50.62 / 51.19 / 50.26 / 50.84; 11 of the 12 cells above
+50 (the one below: s7323 against s7333, 49.79). 96,000 games, every cell complete, 0 aborted, 557 draws; played
+2026-11-22 13:18 to 13:50 PST, read once. **Reported:** with the fresh-run floor on the rows the interval is
+[−2.06, +3.51] and holds 0 (CE-3d's own excluded 0). The lower end clears 0 by 0.22 pp.
+
+**VOID guards (§8), executed per fork 2026-11-22 14:39 PST from main at `81bb6e90b` (CPU, no lease): none fired,
+four valid forks.** rc 0; `Last step` 300,061,099 / 300,061,786 / 300,061,763 / 300,061,152; `final_model.zip`; the
+newest checkpoint at 300,000,066 / 300,000,082 / 300,000,206 / 300,000,075; K9(b) PASS at arm end (max 1.92e-4 /
+2.37e-4 / 2.25e-4 / 2.26e-4, p99 ≤ 4.2e-5); the launcher log names only `9e97cad5709d…`; a fork of `rb_x26_s2601`
+(lineage: step 280,000,170, sha256 `814823c5…`); `sidecar_audit` one span, 0 PIN-SPLIT; pool-seed PASS; the banner's
+`ent_coef` row reads 0 and no `[MAGNET]` line exists; `ent_coef` 0 in `metadata` and `cli_args`; `magnet_kl_coef`
+0.0 and no magnet sidecar; 10 epochs, effective batch 65,536; the plan's guards re-run at the read, rc 0 for each
+cross, with byte-identical plans. 0 restarts, no HOLD, no PAGE. GO: the orchestrator's marker
+(`commit=2205a2ea2…`, `g2_entry=L32405`), lease held by the Training session.
+
+**Labels (they never change the class).** `ENT-BELOW-SWAP`: fires (the highest X70 end entropy 0.47666 < 0.48377,
+the lowest swap fork's; a margin of 0.0071 nats; `screen_rule.py labels`, `record/labels.json`). `ENT-ABOVE-SWAP`:
+no. `ENT-COLLAPSED`: no fork (bar 0.2419 nats; the lowest ended at 0.4635). **`LR-MOVED`: all four forks**
+(`lr_median`, `main.dose` as printed: 8.372e-05 / 7.675e-05 / 8.372e-05 / 8.372e-05, each below 0.0000905; the swap
+forks' and C0's is 0.0001005). §8: "A class with `LR-MOVED` goes to the orchestrator with both numbers."
+
+**Reported (§9), never decided.** End entropy 0.472 / 0.476 / 0.463 / 0.477 (mean 0.472) against the swap's
+0.484–0.496, X67's 0.659–0.687 and C0's 1.004–1.018; by 5M window ≈ 0.67 → 0.52 → 0.49 → 0.47 against the swap's
+0.77 → 0.60 → 0.53 → 0.50: the arms were ≈ 0.10 nats apart early and ≈ 0.02 at the end, and X70 was still falling.
+No fork crossed below the swap's end range before 287.97M steps. **The learning rate:** the controller cut every
+X70 fork three times (1.206e-4 → 1.005e-4 → 8.372e-5 → 6.977e-5; the swap forks took the first cut only, s7322 a
+late second), so the X70 arm's median update ran at 83 % of the swap's rate and its last at 69 %, and its
+`main.dose` dose rate is 1.703e-08 (1.561e-08 for s7332) against 2.044e-08; `approx_kl` medians are equal
+(0.0185–0.0191 against 0.0186–0.0189). **Against the C0 finals** (family `x70_ent0_vs_c0_h2h`, 32 cells, 64,000
+games, 0 aborted, 292 draws, read once): D = **+2.995 pp**, 90 % interval **[+2.479, +3.512]** (SE 0.280, df 8.4,
+both floors bound); all 32 cells above 50; reading, word for word: "removing the entropy bonus alone, with no
+anchor, beats the C0 finals at this horizon". **Against X67's finals** (family `x70_ent0_vs_x67_h2h`, 12 cells,
+24,000 games, 0 aborted, 153 draws, read once): D = **+0.290 pp**, 90 % interval **[−0.850, +1.429]** (SE 0.563,
+df 4.90, the column floor bound); 4 of 12 cells below 50; reading: "ent_coef 0 is not separated from ent_coef
+0.0125 at this horizon", weak evidence quoted with §5.4's figures (a +1 pp effect clears 0 with probability only
+0.41 and 0.34; 0.81 and 0.67 at +1.5 pp). Both carry the registered venue label: played on the card; the banked
+crosses beside it were played on the CPU; the venue's effect on a cell is UNVERIFIED; and CE-3d §4.3's pin and day
+confound. **The dose curve over the C0 finals** (differences carry no interval and no class): `ent_coef` 0.0125
+(X67) +1.97 pp, 0 (X70) +3.00 pp, the swap +3.97 pp; indirectly the swap is +0.97 pp over X70, directly +0.73.
+**The first fork's GPU confirmation** (§4.3; CE-3d §4.4 item 6): a β = 0 learner at this pin trains on the card;
+compile gate parity PASS for R1, the compile lock held, three canary passes in each of the four forks; `time/fps`
+medians 1,451 / 1,494 / 1,470 / 1,452 against the swap's 1,372–1,398 (uncontrolled). **Cost:** 16.06 GPU-h of
+training (estimate 16.4–17) and 1.22 GPU-h for the three crosses on the card (estimate ≈ 1.3, UNVERIFIED before):
+0.54 / 0.41 / 0.27. No Kakuna game.
+
+**Against the GUESS (§1).** `ENT-BELOW-SWAP`: held. X70 beats C0 by about X67's margin or more: held (+3.00
+against +1.97, no interval on the difference). D between 0 and +1.5 pp: held. "Most likely `NOT-SEPARATED`":
+missed, the lower end cleared 0.
+
+**What it licenses (§10).** "Every class licenses at most REGISTERING a next step. No class moves a recipe, and
+nothing moves a recipe without the owner." `ANCHOR-ADDS` ⇒ "at β 0.05 and a 2M cadence, the trailing KL makes a
+P\* + 20M fork stronger head to head than no regulariser does", and "with `ENT-BELOW-SWAP`: first the
+matched-realised-entropy arm (a small entropy bonus tuned to end near 0.49 nats, against the swap), because the
+result is not yet "the anchor"". So the PROPOSED next step is to register that arm; it is proposed, not registered,
+and it is the orchestrator's. The longer-horizon or fresh-run magnet arm is not licensed. `LR-MOVED` sends the class
+to the orchestrator with both numbers (above). The `c0` and `x67` readings go to the owner beside X67's PASS.
+`production_config.json`, `design_learner_recipe.md` and every B1 arm are untouched. **Limits, registered:** the
+anchor is the whole KL term (direction and entropy level are not separated, and here the rate differs too); three
+swap forks, 2 df, a floored row variance; the meter is not cycling or exploitability ("a sharp, regulariser-free
+policy may win head to head and be MORE exploitable"; no best-responder read); a late fork and a short horizon,
+entropy still falling in both arms; one spelling of each side; head to head against siblings is not strength
+against others; the reported crosses carry the pin, day and venue differences and decide nothing.
+
+**FINDINGs** (PREREG §15.9). X70-R1: all four forks `LR-MOVED`; the arms' realised rate and dose rate differ and
+§4.2's table does not list it; a follow-up's registration should say how it treats the rate. X70-R2: s7332's
+`lr_median` is 7.675e-05 by `main.dose` and 8.372e-05 by the TensorBoard median; the label fires on either. X70-R3:
+the window chain launched the kit directly, so no arm-chain K9(b) or dose record was shipped to the X35 stage and no
+`x35_dose_v1` record exists (none was fabricated); `record/arm_end/` holds the kit's K9(b) JSONs and the chain's
+printed reads. X70-R4: s7331's launcher `Last step` (300,061,099) and its final model (300,061,338) differ by 239
+steps; both clear the guard. X70-R5: "FORK of" is not a literal launcher-log line (verified from the dry-run role
+line, lineage and `sidecar_audit`). X70-R6: guards and diagnostics ran from main's code, not the pin's. X70-R7: the
+four forks are un-thinned. X70-R8: `training_oct_notes.txt` was not copied. X70-R9: the chain's stop of a real
+launcher was never exercised.
+
+**Record:** `measurements/x70_ent0_control_2026-11-13/PREREG.md` §15 and `record/` (48 files,
+`record/SHA256SUMS`): `anchor/verdict.json` (sha256 `7e33f153d2fc3ceaddcdae8da21ab6bd42ffc4ceca5c05e2ec3ee9a02258ee04`),
+`anchor/h.json` (`55685a2c3474abdd0e43bf152b57a0c51948863b581580ffe9cf05d74d859b0d`),
+`anchor/cells.json` (`8c88b500e95d158decf768b6a82f1b8dc7f973a79efe0dbda4d941b2280bc5ed`),
+`c0/report_c0.json` (`45c7877f96bfec18e3996a488db490bd20f7baff4ecd879c0cbf608ddec87237`),
+`x67/report_x67.json` (`8a9844a75ad55095df92630922a5d3c228e4a6a769715fffd03ccdfc563ea9d6`),
+`labels.json` (`5a9e4af45c049d6b5156c69ff552dbb9408a27a43fccf28e36fb8d07902f38da`),
+`diag9_x70.json` (`6916ed46615b899ed67a50881465eae5ac035267965fb0f18cf29b2fa8988c32`),
+`void_guards.txt` (`0c06392be35ac5638d11e805fa74befc749604f2d4893fc5d156ea42f7ed91d9`); each cross's `cells_plan.json`, `shas.json`, `h.json`, `cells.json`
+and `run.log`; `chain/` (the window chain's log, the three cross logs, the GO marker); `arm_end/` (per fork: the
+kit's K9(b) JSON, each PASS, and the chain's K9(b), `main.dose` and launch-record reads). The games' rows are in the
+eval ledger under requests `x70_swap_vs_ent0`, `x70_ent0_vs_c0` and `x70_ent0_vs_x67` (regime `adfdbee824c9eb0a`).
+View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (TL;DR 5, §4.15, §4.16, §6), `EXPERIMENT_BACKLOG.md` (row X70, now in §3; the CE-3d rows), `training/magnet_kl.md`, `ops/TASK_BACKLOG.md` (T56), and the four `endstate/` docs that carry the magnet row (each with a Decision-record row).
+
+Tag: **READ · X70 the ent-0 control · swap ×3 v X70 ×4, P\* + 20M forks at pin 9e97cad5 · 12 cells @ 4,000 pairs, 96,000 games, on the card · 90 %, Welch df 5.00 · `ANCHOR-ADDS` D +0.73 [+0.22, +1.23] · `ENT-BELOW-SWAP` · `LR-MOVED` ×4 · reported: v C0 +3.00 [+2.48, +3.51], v X67 +0.29 [−0.85, +1.43] · licenses REGISTERING the matched-realised-entropy arm (proposed, not registered) · no recipe moves**

@@ -1,0 +1,9 @@
+# K9(b) warn notices under --behaviour-check warn: grep -c 'BEHAVIOUR-POLICY MISMATCH' models/<run>/launcher_child.full.log
+# read-only, 2026-11-22T14:51:31-08:00; the arm-end K9(b) guard (void_guards.txt [2]) is the VOID guard, these counts are REPORTED
+rb_x35_x70ent0_s7331 31 5940ad47888d3b8a568e4466615455ab69064a6c908834d0a861f181cf11109c
+rb_x35_x70ent0_s7332 29 d1a6e737e7c96b456ddde83c8abf24ae65e5f395647fa6d79ef2079e4ee7a9d9
+rb_x35_x70ent0_s7333 27 7294152391e4b98c3a2d519e70fdd4e87e32e1b9e3f3b21ba1c913c145b4b57f
+rb_x35_x70ent0_s7334 35 cf8059d76e019382c1adc556fab443b0ae1a5c956a244cddc01dc03c98395a71
+rb_x35_ce3dswap_s7321 18 3a21f437b950b8bbb8e7b4b952e7de1ebe9d3dc3e4a0983cffecb65adaafbaf6
+rb_x35_ce3dswap_s7322 18 562e5112965ccd58bd07b707a2da509cd626502e4e05895884904da62a992513
+rb_x35_ce3dswap_s7323 18 6ed617b5f8b830bf72939ce4a698674fbfd9931f1c103acd6fedeeec721d2c62

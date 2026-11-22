@@ -1,0 +1,78 @@
+# python -m main.ops.tb_read <run> --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl (PREREG §9), the four X70 forks;
+# main's code at 81bb6e90b, CPU, no lease, nice 19 on the agent cores; 2026-11-22T14:42:18-08:00. REPORTED, decides nothing.
+
+$ python -m main.ops.tb_read models/rb_x35_x70ent0_s7331 --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+train/entropy_loss
+  points 204   steps 280,203,887 .. 300,061,338   (last 20)
+  median -0.4709   min -0.4785   max -0.4676   last -0.4785
+
+train/learning_rate
+  points 204   steps 280,203,887 .. 300,061,338   (last 20)
+  median +0.0001   min +0.0001   max +0.0001   last +0.0001
+
+train/approx_kl
+  points 204   steps 280,203,887 .. 300,061,338   (last 20)
+  median +0.0187   min +0.0172   max +0.0237   last +0.0194
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+
+$ python -m main.ops.tb_read models/rb_x35_x70ent0_s7332 --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+train/entropy_loss
+  points 204   steps 280,203,136 .. 300,061,786   (last 20)
+  median -0.4754   min -0.4820   max -0.4711   last -0.4780
+
+train/learning_rate
+  points 204   steps 280,203,136 .. 300,061,786   (last 20)
+  median +0.0001   min +0.0001   max +0.0001   last +0.0001
+
+train/approx_kl
+  points 204   steps 280,203,136 .. 300,061,786   (last 20)
+  median +0.0181   min +0.0167   max +0.0191   last +0.0186
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+
+$ python -m main.ops.tb_read models/rb_x35_x70ent0_s7333 --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+train/entropy_loss
+  points 204   steps 280,204,283 .. 300,061,763   (last 20)
+  median -0.4641   min -0.4725   max -0.4578   last -0.4582
+
+train/learning_rate
+  points 204   steps 280,204,283 .. 300,061,763   (last 20)
+  median +0.0001   min +0.0001   max +0.0001   last +0.0001
+
+train/approx_kl
+  points 204   steps 280,204,283 .. 300,061,763   (last 20)
+  median +0.0181   min +0.0174   max +0.0194   last +0.0181
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+
+$ python -m main.ops.tb_read models/rb_x35_x70ent0_s7334 --tag train/entropy_loss --tag train/learning_rate --tag train/approx_kl
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+
+train/entropy_loss
+  points 204   steps 280,203,794 .. 300,061,152   (last 20)
+  median -0.4766   min -0.4840   max -0.4694   last -0.4694
+
+train/learning_rate
+  points 204   steps 280,203,794 .. 300,061,152   (last 20)
+  median +0.0001   min +0.0001   max +0.0001   last +0.0001
+
+train/approx_kl
+  points 204   steps 280,203,794 .. 300,061,152   (last 20)
+  median +0.0183   min +0.0168   max +0.0197   last +0.0192
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0

@@ -1,0 +1,39 @@
+{
+ "cross": "anchor",
+ "pairs": 4000,
+ "row_arm": "swap",
+ "col_arm": "x70",
+ "rows": [
+  "c068bb1a0df29afe3ebdaba4e15452c42df76020f02e1d48871ba68216100cb7",
+  "f1306f8dc3c62a4660db1fccc1e2ab9c96a08bc7895304160cb989329fc8aaff",
+  "7eee05c7cc06502284f8373001d47975c0f2c2cd0430e224a2b590ecf7c647dd"
+ ],
+ "cols": [
+  "60b3a78a056c4ec4636d3b3158d1028abc65227f929280af771a4acaac9b9407",
+  "55834bdbe14635ab8232da64e20022004ede8e6dc7540d91f199d32dd649d0b7",
+  "701d371fb318d30771bd9ddcfe34049671c5a75c5cc40d6fdee4e66d2a948d34",
+  "5bd2fe6d37c0d31da3701e19447c26b46499fe15c3efe5f405243529d279d844"
+ ],
+ "row_seeds": [
+  7321,
+  7322,
+  7323
+ ],
+ "col_seeds": [
+  7331,
+  7332,
+  7333,
+  7334
+ ],
+ "row_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7321/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7322/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7323/final_model.zip"
+ ],
+ "col_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7331/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7332/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7333/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7334/final_model.zip"
+ ]
+}

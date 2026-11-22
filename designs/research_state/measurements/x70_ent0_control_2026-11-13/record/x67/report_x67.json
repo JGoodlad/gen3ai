@@ -1,0 +1,50 @@
+{
+ "decides": "nothing",
+ "cross": "x67",
+ "read": true,
+ "reading": "ent_coef 0 is not separated from ent_coef 0.0125 at this horizon",
+ "lower_end_above_0": false,
+ "upper_end_below_0": false,
+ "near_boundary": [],
+ "delta_hat_pp": 0.28958333333333286,
+ "se_pp": 0.5629614876473108,
+ "df": 4.896225607277689,
+ "t_0.95": 2.0245210608373734,
+ "interval90_pp": [
+  -0.8501440548489867,
+  1.4293107215156524
+ ],
+ "s2_rows_raw": 0.8510358796296263,
+ "s2_cols_raw": 0.0702083333333328,
+ "s2_rows": 0.8510358796296263,
+ "s2_cols": 0.3125,
+ "floor_rows_bound": false,
+ "floor_cols_bound": true,
+ "row_means_pp": [
+  49.958333333333336,
+  49.275,
+  51.46666666666666,
+  50.458333333333336
+ ],
+ "col_means_pp": [
+  50.00625,
+  50.33125,
+  50.53125
+ ],
+ "shape": [
+  4,
+  3
+ ],
+ "cell_var_pp2": 1.25,
+ "n_cells_read": 12,
+ "played_on": [
+  {
+   "device": "cuda",
+   "backend": "graph",
+   "rows": 24
+  }
+ ],
+ "family": "x70_ent0_vs_x67_h2h",
+ "request": "x70_ent0_vs_x67",
+ "pairs": 1000
+}

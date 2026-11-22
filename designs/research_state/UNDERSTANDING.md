@@ -103,7 +103,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); human-built ladder teams in half the pool (X60-T, final) read NO-TRANSFER: F −0.23 [−1.95, +1.49] at −2.12 pp in-pool, with the corpus's own teams +1.69 pp in-house (§3.1); from scratch, procedural teams in half the pool are behind the pool arms in-house at 50M (BOUNDARY-1: HF −5.18 pp [−8.35, −2.01], 90 %; stopped at 50M and never read at 100M; forum72, the one unfamiliar panel those arms did not train on, −2.40 pp [−5.62, +0.83]; §4.17); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) and against Kakuna on F and H reads +1.75 pp [−0.12, +3.63] (90 %), UNCONFIRMED, in a read that sees a +2 pp gain only about half the time; replacing the bonus with a pull toward a trailing copy of the policy beats the same siblings by more (CE-3d, +3.97 pp [+3.31, +4.63], §4.16), ends sharper still, and against Kakuna reads **+2.61 pp [+0.95, +4.28]** (90 %), KAKUNA-CONFIRMED: the only lever in this item whose interval against its control excludes 0 on Kakuna, on forks whose control C0 is level there (0.5026 on F and H). It is not separated from X67 against Kakuna (+0.86 pp [−1.98, +3.71]) or from simply removing the bonus, and the read is no goal-(b) read (no P72, three forks, +20M, one opponent); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); human-built ladder teams in half the pool (X60-T, final) read NO-TRANSFER: F −0.23 [−1.95, +1.49] at −2.12 pp in-pool, with the corpus's own teams +1.69 pp in-house (§3.1); from scratch, procedural teams in half the pool are behind the pool arms in-house at 50M (BOUNDARY-1: HF −5.18 pp [−8.35, −2.01], 90 %; stopped at 50M and never read at 100M; forum72, the one unfamiliar panel those arms did not train on, −2.40 pp [−5.62, +0.83]; §4.17); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); a quarter of the entropy bonus beats its siblings in-house (X67, +1.97 pp [+1.35, +2.59] head to head, §4.15) and against Kakuna on F and H reads +1.75 pp [−0.12, +3.63] (90 %), UNCONFIRMED, in a read that sees a +2 pp gain only about half the time; replacing the bonus with a pull toward a trailing copy of the policy beats the same siblings by more (CE-3d, +3.97 pp [+3.31, +4.63], §4.16), ends sharper still, and against Kakuna reads **+2.61 pp [+0.95, +4.28]** (90 %), KAKUNA-CONFIRMED: the only lever in this item whose interval against its control excludes 0 on Kakuna, on forks whose control C0 is level there (0.5026 on F and H). It is not separated from X67 against Kakuna (+0.86 pp [−1.98, +3.71]). In-house, removing the bonus alone reaches +3.00 pp [+2.48, +3.51] over the same siblings (reported) and the anchor adds +0.73 pp [+0.22, +1.23] head to head on top (X70, `ANCHOR-ADDS`, with the two arms' entropy and learning rate both differing, so not yet "the anchor"; no Kakuna read of the ent-0 forks; §4.16). The Kakuna read is no goal-(b) read (no P72, three forks, +20M, one opponent); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -818,6 +818,9 @@ would be [−0.65, +4.58].
   (semantics 168), not the one it trained on (151); three forks an arm, one parent, one dose, F and H only; Kakuna
   is one opponent. The label never changes the PASS.
 - **What it does not show.** A late fork is not a fresh run. One coefficient, one dose.
+- **Below 0.0125 (X70, REPORTED 2026-11-22).** Forks with the bonus fully off read +0.29 pp [−0.85, +1.43] against
+  these three finals: "ent_coef 0 is not separated from ent_coef 0.0125 at this horizon", in a cross that sees a
+  true +1 pp with probability only 0.34 to 0.41 (§4.16).
 - **What it moves.** By its registration a PASS names 0.0125 for the base of every BOUNDARY-1 arm. The owner said
   yes on 2026-11-11 (in writing, to the orchestrator), and BOUNDARY-1's Amendment 2 (2026-11-12) types
   `--ent-coef 0.0125` on all twelve runs. The owner's 2026-09-29 ruling ("no direct adoption of a lower bonus") is lifted for that
@@ -827,7 +830,7 @@ would be [−0.65, +4.58].
 [MEASURED · in-house head to head at pin `f4b25238`, CPU · ledger 2026-11-11 · *X67 the entropy screen: PASS*]
 [MEASURED · Kakuna on F and H, engine E6 at pin `15136b616`, rule `b1_kakuna` at 0.90 · ledger 2026-11-18 · *The Kakuna read of the banked entropy finals, RECORDED*]
 
-### 4.16 A trailing anchor in place of the entropy bonus: the forks win by more, end sharper still, and the gain shows against Kakuna (CE-3d, 2026-11-12; Kakuna read 2026-11-18)
+### 4.16 A trailing anchor in place of the entropy bonus: the forks win by more, end sharper still, and the gain shows against Kakuna; in-house, removing the bonus alone reads +3.00 pp of the swap's +3.97 (CE-3d, 2026-11-12; Kakuna read 2026-11-18; the ent-0 control X70, 2026-11-22)
 
 CE-3d continued P\* 20M with no entropy bonus and, at the bonus's weight, a pull toward a trailing copy of the policy
 (a "magnet", refreshed every 2M steps: `--ent-coef 0 --magnet-kl-coef 0.05`, three seeds). It played every fork
@@ -855,13 +858,34 @@ all 24 cells above 50). Under the fresh-run seed floor the interval is [+1.35, +
 - **What it does not show.** The C0 finals trained at another pin and on other days (the evidence that this does
   not matter is CPU only). A late fork with nine refreshes is not a fresh run, and nothing here measures
   exploitability or cycling, which is what the lever was proposed for. One weight, one cadence.
-- **What it moves: nothing.** The PASS licenses REGISTERING a follow-up on new seeds, and its reading names the
-  control that follow-up most needs: an `--ent-coef 0` arm with no magnet at the CE-3d pin (§6). It is
-  REGISTERED 2026-11-13 as X70 and not launched
-  ([`measurements/x70_ent0_control_2026-11-13/PREREG.md`](measurements/x70_ent0_control_2026-11-13/PREREG.md)). The
+- **The ent-0 control (X70): removing the bonus alone beats C0 by +3.00 pp, and the anchor adds a little on top
+  (`ANCHOR-ADDS`).** Four forks with the bonus off and NO anchor (the swap's pin, new seeds) are the
+  control the PASS named
+  ([`measurements/x70_ent0_control_2026-11-13/PREREG.md`](measurements/x70_ent0_control_2026-11-13/PREREG.md) §15).
+  The three swap forks beat them head to head by **+0.73 pp [+0.22, +1.23]** (90 %, Welch df 5.00; 12 cells, 96,000
+  games, one look). The ent-0 forks themselves beat the eight C0 finals by **+3.00 pp [+2.48, +3.51]** (REPORTED, it
+  decides nothing: "removing the entropy bonus alone, with no anchor, beats the C0 finals at this horizon"), beside
+  the swap's +3.97 over the same finals (two crosses; no interval on their difference). Against X67's three finals they read +0.29 pp [−0.85, +1.43], not separated,
+  in a cross that sees a true +1 pp with probability only 0.34 to 0.41. All three crosses were played on the card; the banked
+  crosses beside them were played on the CPU, and the venue's effect on a cell is UNVERIFIED.
+  - **The class is the registered one, by a small margin.** The lower end clears 0 by 0.22 pp, on a row variance
+    set by the binomial floor (three swap forks, 2 df); under the fresh-run seed floor the interval is
+    [−2.06, +3.51] and holds 0.
+  - **It is not yet "the anchor".** Two labels fired. `ENT-BELOW-SWAP`: the ent-0 forks ended at 0.463–0.477 nats,
+    each below every swap fork's 0.484–0.496 (≈ 0.10 nats below the swap over the first 5M steps, ≈ 0.02 at the
+    end), so the verdict reads "the anchor OR its entropy level". `LR-MOVED`, all four forks: the KL controller cut
+    their rate three times (median 8.372e-05, last 6.977e-05, against the swap's 0.0001005; dose rate 0.83×, one
+    fork 0.76×), so the arms also learned at different rates.
+  - **No fork collapsed** with no regulariser over 20M steps: the lowest ended at 0.463 nats, and all were still
+    falling.
+  - **It does not measure exploitability**, which is what the lever was proposed for: a sharp, regulariser-free
+    policy may win head to head and be more exploitable. No Kakuna game of the ent-0 forks was played.
+- **What it moves: nothing.** X70's class licenses REGISTERING one thing first: the matched-realised-entropy arm (a
+  small entropy bonus tuned to end near 0.49 nats, against the swap). It is PROPOSED, not registered (§6). The
   production recipe and BOUNDARY-1's arms are untouched.
 
 [MEASURED · in-house head to head, forks at tag `ce3d-pin-9e97cad5` vs C0 at pin `f4b25238`, played at tag `ce3d-pin-333a73dd`, CPU · ledger 2026-11-12 · *CE-3d the trailing-magnet screen: PASS*]
+[MEASURED · in-house head to head, both arms forks at tag `ce3d-pin-9e97cad5`, played at tag `ce3d-pin-333a73dd` on the card; the crosses against C0's and X67's finals REPORTED · ledger 2026-11-22 · *X70 the ent-0 control of the trailing-magnet screen: `ANCHOR-ADDS`*]
 [MEASURED · Kakuna on F and H, engine E6 at pin `15136b616`, rule `b1_kakuna` at 0.90; C0's level DESCRIPTIVE · ledger 2026-11-18 · *The Kakuna read of the banked entropy finals, RECORDED*]
 
 ### 4.17 From scratch at 50M: procedural teams in half the pool are behind in-house and stopped; width 256 is not stopped and not read (BOUNDARY-1, 2026-11-18)
@@ -931,8 +955,9 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 **In flight** (what runs now, and its progress: [`../STATUS.md`](../STATUS.md) §2)
 
 No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16).
-BOUNDARY-1's survivor ended on 2026-11-21 (C's and W's six runs at 100M and both survivor looks, §4.17); the card
-goes to the armed window chains, X70 first (STATUS §2's rows).
+BOUNDARY-1's survivor ended on 2026-11-21 (C's and W's six runs at 100M and both survivor looks, §4.17). X70's
+window (four forks and three crosses on the card) ran 2026-11-21 to 11-22 and is read (§4.16); the card then went
+to the next armed window chain (STATUS §2's rows).
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)
 
@@ -954,7 +979,7 @@ primary cannot be powered on the toy, and it costs more than the production read
 | Did Kakuna's self-play see near copies of our unfamiliar panels (assumption A-K)? | the sealed `forum216b` panel and the reverse cell; the open part needs downloads not made |
 | Does Foul Play beat P\*? | a direct read; only the Kakuna proxy exists (§3.1) |
 | Do a human's choices identify a human's team (L3-H)? | the L3 read on ladder states with a human opponent model |
-| Is the trailing anchor worth anything beyond removing the entropy bonus (CE-3d, §4.16)? | **X70, REGISTERED 2026-11-13, not launched** ([`measurements/x70_ent0_control_2026-11-13/PREREG.md`](measurements/x70_ent0_control_2026-11-13/PREREG.md)): four `--ent-coef 0` forks with NO magnet at the CE-3d pin, on new seeds, head to head against the three swap forks (`ANCHOR-ADDS` / `ANCHOR-COSTS` / `NOT-SEPARATED`; a +1.5 pp effect is seen with probability 0.87–0.99, +1 pp with 0.58–0.83). It reads the whole KL term: the anchor's direction and the entropy it holds stay unseparated (the matched-realised-entropy arm is the next control, not registered), and a C0-recipe control at the same pin is not registered either |
+| Is the anchor's +0.73 pp over no regulariser the anchor's direction, or the entropy level and learning rate it held (X70, §4.16)? | **The matched-realised-entropy arm**: a small entropy bonus tuned to end near 0.49 nats, against the swap. X70's `ANCHOR-ADDS` with `ENT-BELOW-SWAP` licenses REGISTERING it first; it is PROPOSED, not registered. Its registration has to say how it treats the learning rate (X70's four forks were all `LR-MOVED`). Not registered either: a C0-recipe control at the same pin, and any exploitability read of the swap |
 | Does one-ply search add to a best responder, or defend its target? | R0's search cells, DEFERRED (S′-HONEST un-paused search for goal (b) only) |
 | Can P\* + S′h's gain be bought cheaper, and played as a deployable player? | search ledger Q19: the player is designed (`../endstate/design_searched_player.md`) and its cost read DRAFTED, not registered; CPU-side, below the model-first GPU queue (owner, 2026-11-09; [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md) §2.0) |
 | Can the network absorb honest search's gain? | Supervised distillation at two recipes did not deliver the search's choices: X65 on the leak-inclusive labels and X66 (ExIt-0H) on S′h's 188k honest labels both read NOT-DELIVERED (§4). What stays open, each needing its own case and registration and none planned on X66 alone: a de-noised target (several search keys a decision; a third of S′h's departures reproduce under another key), whether the network can memorise the honest departures in-sample at all, more labels, an in-loop form (ExIt-1). X66 is not evidence for or against the scale bet |

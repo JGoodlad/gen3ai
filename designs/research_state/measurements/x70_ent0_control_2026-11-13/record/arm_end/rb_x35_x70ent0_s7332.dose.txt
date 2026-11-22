@@ -1,0 +1,4 @@
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7332  300,061,786  65,536     10      7.675e-05  0.0002035     1.561e-08  0.73x 

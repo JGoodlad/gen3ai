@@ -1,0 +1,37 @@
+X70W: X70 window chain 3234291 ARMED: waits for the survivor-looks chain 2246182 to exit, then B1 settled, the GO marker /home/goodlad/.claude/jobs/x35/x70/GO_X70, X70's GO conditions, forks 7331 7332 7333 7334 one at a time, then the three crosses on the card (helper sha256 9ef4893d6638)
+X70W: G1/G3 PASS: SETTLED p2=2244315 verdict_since=2026-11-21T21:09:41-08:00 end_ts=2026-11-21T21:09:42-08:00 end_date=2026-11-21; DISK-OK 6 survivors at 100M, 6 stopped-arm runs at 50M
+X70W: B1 is settled; waiting up to 12 h for the orchestrator's GO marker /home/goodlad/.claude/jobs/x35/x70/GO_X70 (the card is idle until it exists)
+X70W: G5 PASS: 2205a2ea2 prereg(x70): Amendment 1 (blind, before any fork, game or read) -- the GO conditions, and the three 
+X70W: G2 PASS: G2-OK L32405 2026-11-21 READ **BOUNDARY-1's survivor looks at 75M and 100M, PLAYED (two looks, 90,000 games, each exit 0): both `NO-CLASS`,
+X70W: G4 PASS: the lease is held by 'Training Oct' (granted for X70 by the GO marker: orchestrator (lease granted to Training Oct for X70), 2026-11-21)
+X70W: G6 PASS: stage-check ALLOWED for 7331 7332 7333 7334; pin-check exit 0
+X70W: G9 PASS: PLAN OK, 4 items, the kit agrees on each
+X70W: G10 PASS: the play checkout is at 333a73dd, src and data clean
+X70W: START fork [1/4] rb_x35_x70ent0_s7331: G7 PASS (GATE-OK card: FORK of rb_x26_s2601, +20,000,000 to 300,000,170, torch 2.8.0+cu126, ent_coef 0.0, seed 7331), G8 PASS (71 GiB free); bash designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh x70 7331 --pin 9e97cad5 --lease-owner 'Training Oct' --thinning GO
+X70W: [1/4] rb_x35_x70ent0_s7331 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+X70W: [1/4] rb_x35_x70ent0_s7331 early check 2/2 PASS: RATE-OK best 1463 steps/s over 1 pair(s), floor 1000.0
+X70W: END [1/4] rb_x35_x70ent0_s7331 launcher_rc=0
+X70W: fork [1/4] rb_x35_x70ent0_s7331 COMPLETE: COMPLETE last step 300,061,099 >= 300,000,170, final_model.zip, newest checkpoint 300000066, pin 9e97cad5; K9(b) PASS; FORK of rb_x26_s2601 at pin 9e97cad5; ent_coef 0, no magnet; DOSE-OK effective batch 65,536, epochs 10, lr_median 8.372e-05 (reported, not judged), steps 300,061,338
+X70W: START fork [2/4] rb_x35_x70ent0_s7332: G7 PASS (GATE-OK card: FORK of rb_x26_s2601, +20,000,000 to 300,000,170, torch 2.8.0+cu126, ent_coef 0.0, seed 7332), G8 PASS (66 GiB free); bash designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh x70 7332 --pin 9e97cad5 --lease-owner 'Training Oct' --thinning GO
+X70W: [2/4] rb_x35_x70ent0_s7332 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+X70W: [2/4] rb_x35_x70ent0_s7332 early check 2/2 PASS: RATE-OK best 1539 steps/s over 1 pair(s), floor 1000.0
+X70W: END [2/4] rb_x35_x70ent0_s7332 launcher_rc=0
+X70W: fork [2/4] rb_x35_x70ent0_s7332 COMPLETE: COMPLETE last step 300,061,786 >= 300,000,170, final_model.zip, newest checkpoint 300000082, pin 9e97cad5; K9(b) PASS; FORK of rb_x26_s2601 at pin 9e97cad5; ent_coef 0, no magnet; DOSE-OK effective batch 65,536, epochs 10, lr_median 7.675e-05 (reported, not judged), steps 300,061,786
+X70W: START fork [3/4] rb_x35_x70ent0_s7333: G7 PASS (GATE-OK card: FORK of rb_x26_s2601, +20,000,000 to 300,000,170, torch 2.8.0+cu126, ent_coef 0.0, seed 7333), G8 PASS (67 GiB free); bash designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh x70 7333 --pin 9e97cad5 --lease-owner 'Training Oct' --thinning GO
+X70W: [3/4] rb_x35_x70ent0_s7333 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+X70W: [3/4] rb_x35_x70ent0_s7333 early check 2/2 PASS: RATE-OK best 1523 steps/s over 1 pair(s), floor 1000.0
+X70W: END [3/4] rb_x35_x70ent0_s7333 launcher_rc=0
+X70W: fork [3/4] rb_x35_x70ent0_s7333 COMPLETE: COMPLETE last step 300,061,763 >= 300,000,170, final_model.zip, newest checkpoint 300000206, pin 9e97cad5; K9(b) PASS; FORK of rb_x26_s2601 at pin 9e97cad5; ent_coef 0, no magnet; DOSE-OK effective batch 65,536, epochs 10, lr_median 8.372e-05 (reported, not judged), steps 300,061,763
+X70W: START fork [4/4] rb_x35_x70ent0_s7334: G7 PASS (GATE-OK card: FORK of rb_x26_s2601, +20,000,000 to 300,000,170, torch 2.8.0+cu126, ent_coef 0.0, seed 7334), G8 PASS (64 GiB free); bash designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh x70 7334 --pin 9e97cad5 --lease-owner 'Training Oct' --thinning GO
+X70W: [4/4] rb_x35_x70ent0_s7334 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+X70W: [4/4] rb_x35_x70ent0_s7334 early check 2/2 PASS: RATE-OK best 1525 steps/s over 1 pair(s), floor 1000.0
+X70W: END [4/4] rb_x35_x70ent0_s7334 launcher_rc=0
+X70W: fork [4/4] rb_x35_x70ent0_s7334 COMPLETE: COMPLETE last step 300,061,152 >= 300,000,170, final_model.zip, newest checkpoint 300000075, pin 9e97cad5; K9(b) PASS; FORK of rb_x26_s2601 at pin 9e97cad5; ent_coef 0, no magnet; DOSE-OK effective batch 65,536, epochs 10, lr_median 8.372e-05 (reported, not judged), steps 300,061,152
+X70W: all four forks COMPLETE and their arm-end checks PASS; the three crosses on the card are next (no second GO: Amendment 1)
+X70W: cross anchor: start on the card, work /home/goodlad/.cache/gen3ai/x70_cross/20261122T131756/anchor
+X70W: cross anchor DONE in 1937s: CLEAN anchor: outcome ANCHOR-ADDS, 12 cells x 4000 pairs, one venue (cuda, graph)
+X70W: cross c0: start on the card, work /home/goodlad/.cache/gen3ai/x70_cross/20261122T131756/c0
+X70W: cross c0 DONE in 1482s: CLEAN c0: reported (decides nothing), 32 cells x 1000 pairs, one venue (cuda, graph)
+X70W: cross x67: start on the card, work /home/goodlad/.cache/gen3ai/x70_cross/20261122T131756/x67
+X70W: cross x67 DONE in 981s: CLEAN x67: reported (decides nothing), 12 cells x 1000 pairs, one venue (cuda, graph)
+X70W: X70 WINDOW COMPLETE: four forks and three crosses, every cross on one venue (the card), results under /home/goodlad/.cache/gen3ai/x70_cross/20261122T131756; CLEAN anchor: outcome ANCHOR-ADDS, 12 cells x 4000 pairs, one venue (cuda, graph); CLEAN c0: reported (decides nothing), 32 cells x 1000 pairs, one venue (cuda, graph); CLEAN x67: reported (decides nothing), 12 cells x 1000 pairs, one venue (cuda, graph); the read's labels and its ledger entry are the orchestrator's; nothing launches from here

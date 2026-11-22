@@ -1,0 +1,47 @@
+{
+ "h_pp": [
+  [
+   50.0,
+   50.349999999999994,
+   49.525000000000006
+  ],
+  [
+   48.925000000000004,
+   47.9,
+   51.0
+  ],
+  [
+   51.7,
+   51.849999999999994,
+   50.849999999999994
+  ],
+  [
+   49.4,
+   51.225,
+   50.74999999999999
+  ]
+ ],
+ "rows": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7331/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7332/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7333/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x70ent0_s7334/final_model.zip"
+ ],
+ "cols": [
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6701/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6702/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_x35_x67ent_s6703/final_model.zip"
+ ],
+ "row_seeds": [
+  7331,
+  7332,
+  7333,
+  7334
+ ],
+ "col_seeds": [
+  6701,
+  6702,
+  6703
+ ],
+ "pairs": 1000
+}

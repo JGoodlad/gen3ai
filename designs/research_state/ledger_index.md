@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-32,595-line file. **The ledger itself is append-only and is never edited by this**;
+32,701-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1025 headings · 970 dated · 2026-08-01 → 2026-11-22 · ledger 32,595 lines.**
+**1026 headings · 971 dated · 2026-08-01 → 2026-11-22 · ledger 32,701 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1045,3 +1045,4 @@ rename.
   - `L32330` · `2026-11-20` · READ · **V-RANK look 2 (FINAL), PLAYED (200 blocks, COMPLETE, 2,340 selected states, 13,405 one-game branch and null units over both looks, exit 0): RANK-HOLDS-ON-U. β_U +0.315 [+0.153, +0.449], β_home +0.333 [+0.210, +0.447], Δβ −0.018 [−0.215, +0.167] on 1,124 U / 1,114 home positions. Per the PREREG, MF-4's leaf-value step is NOT FUNDED on this evidence; this is a meter of the model and never a statement that search pays.**
   - `L32405` · `2026-11-21` · READ · **BOUNDARY-1's survivor looks at 75M and 100M, PLAYED (two looks, 90,000 games, each exit 0): both `NO-CLASS`, as registered. W against C (width 256 against 128, three from-scratch runs each) at 100M: +0.39 [−3.55, +4.32] pp on N, −0.31 [−3.64, +3.02] on U, +1.08 [−3.52, +5.69] on home72, +0.15 [−3.07, +3.37] on forum72 (90 %, 4 df); at 75M +0.80 [−2.27, +3.86] on N. Every interval of both looks spans zero. No class is read at 100M for either factor; nothing is adopted, retired or carried forward; by Amendment 6's default the control's three runs are the candidates, and its 72-hour owner veto window starts at this 100M verdict**
   - `L32530` · `2026-11-22` · REGISTRATION · **Q6-N and Q5-N PREREG Amendment 1 each (blind: before any Q6 or Q5 training step, pilot, card check, game or look): the banked cell C's 100M files are B1's 100M SURVIVOR look's (three named files, read by the kit at `d41989b96`), and Q5-N's ρ_run meter is registered with its build `ab0048861`. No rule, bar, class, seed or statistic moves**
+  - `L32596` · `2026-11-22` · READ · **X70 the ent-0 control of the trailing-magnet screen: `ANCHOR-ADDS` — the three swap forks (trailing anchor, `--ent-coef 0 --magnet-kl-coef 0.05`) beat the four X70 forks (`--ent-coef 0`, no magnet) head to head on the card, D +0.73 pp [+0.22, +1.23] (90 %, Welch df 5.00; 12 cells × 4,000 pairs, 96,000 games, one look); labels `ENT-BELOW-SWAP` (X70 ended at 0.463–0.477 nats, the swap at 0.484–0.496) and `LR-MOVED` on ALL FOUR X70 forks (`lr_median` 8.372e-05 / 7.675e-05 against the swap's 0.0001005), so the class goes to the orchestrator with both numbers; REPORTED: X70 against the C0 finals +3.00 pp [+2.48, +3.51], against X67's finals +0.29 pp [−0.85, +1.43]; it licenses REGISTERING the matched-realised-entropy arm first and nothing else; nothing is registered and no recipe moves**

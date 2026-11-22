@@ -1,0 +1,331 @@
+# X70 §8 VOID guards; code: 81bb6e90b39abdab56ae7bec716379c876e559f5 (main); agent cpus 5-7,13-15; 2026-11-22T14:39:36-08:00
+
+================================================================ rb_x35_x70ent0_s7331
+--- [1] completeness (main.ops.arm_chain.armend.completeness on the launcher log + the run dir; rc from the wrapper's END line)
+[2026-11-22T01:26:38-08:00] x70 s7331: END rb_x35_x70ent0_s7331 launcher_rc=0
+launcher_rc 0 | last_step 300061099 | fps 1441 | restarts 0 | pins named ['9e97cad5709da21a1f9d4d8846096c87eb17b1d0']
+metadata.json num_timesteps: 300061338
+checkpoints on disk: [281000038, 282000220, 283000443, 284000199, 285000077, 286000074, 287000081, 288000076, 289000320, 290000024, 291000015, 292000001, 293000207, 294000153, 295000202, 296000173, 297000066, 298000081, 299000076, 300000066]
+complete: last step 300,061,099 >= --steps 300,000,170, final_model.zip present, newest checkpoint 300,000,066 >= --steps - 98,304
+rc=0
+--- [2] K9(b) at the arm's end (python -m main.x35.kit k9b --run-dir; no record written)
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_x70ent0_s7331",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.00019168853759765625,
+  "p99": 3.6995410482631996e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+rc=0
+--- [3] the launcher log's pin, and the fork role
+5:[21:13:56] ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 1.7s]
+24:[21:13:57] 📌 --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 → 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+distinct --pin-commit shas in the launcher log: --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 
+pin: ONLY the training pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+the kit's GO-time dry run (/home/goodlad/.claude/jobs/x35/rb_x35_x70ent0_s7331.go.dryrun.txt):
+3:  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+9:  pin         : 9e97cad5709da21a1f9d4d8846096c87eb17b1d0  (source: pin_commit)
+10:                ↳ ce3d pin 2: the CE-3d pin 333a73dd + the startup fit check's dry update trains with the magnet (gen3_update_fit_fill_inputs_v1)
+
+== rb_x35_x70ent0_s7331 ==
+   run-level git_hash : 9e97cad5  (pin_source=pin_commit)
+   num_timesteps      : 300,061,338
+   pin_history        : 1 span(s)
+       [1] 9e97cad5 pin_source=pin_commit  steps 280000170 → 300061338
+   sidecars           : 21
+
+SUMMARY: 1 run(s) · 21 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+rc=0
+lineage: role fork | parent run /home/goodlad/dev/gen3ai/models/rb_x26_s2601 | parent step 280000170 | parent sha256 814823c514fb791e | fork_step 280000170
+FORK of .../rb_x26_s2601 (P* sha256 814823c5...): yes
+--- [4] the post-spawn pool-seed check (python -m main.x35.kit pool-seed-check, re-run now on the finished run)
+at the launch: [x35 kit] pool seed: PASS
+[x35 kit] pool seed: PASS
+rc=0
+--- [5] the lever in the record (ent_coef 0, no magnet)
+[2026-11-21T21:33:55-08:00] X70W: [1/4] rb_x35_x70ent0_s7331 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+[MAGNET] banner lines in the full child log (X70 expects none): 0
+hyperparameter-table ent_coef rows in the full child log:
+395:|    ent_coef   | 0        |
+VOID strings (ent_coef 0.05 / 0.1 / 0.0125 rows, [ModelVersion] FATAL): 0 line(s)
+{'metadata_ent_coef': 0.0, 'cli_ent_coef': 0.0, 'cfg_has_magnet_kl_coef': True, 'cfg_magnet_kl_coef': 0.0, 'cfg_magnet_refresh_steps': 2000000, 'sidecar': False, 'any_magnet_pt': [], 'cli_seed': 7331, 'n_epochs': 10}
+lever in the record (ent_coef 0.0 twice; magnet_kl_coef present and 0.0; no magnet sidecar): yes
+--- [6] python -m main.dose rb_x35_x70ent0_s7331
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7331  300,061,338  65,536     10      8.372e-05  0.0002035     1.703e-08  0.79x 
+rc=0
+the chain's own dose read at the fork's end (/home/goodlad/.claude/jobs/x35/x70/rb_x35_x70ent0_s7331.dose.txt):
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7331  300,061,338  65,536     10      8.372e-05  0.0002035     1.703e-08  0.79x 
+
+================================================================ rb_x35_x70ent0_s7332
+--- [1] completeness (main.ops.arm_chain.armend.completeness on the launcher log + the run dir; rc from the wrapper's END line)
+[2026-11-22T05:19:00-08:00] x70 s7332: END rb_x35_x70ent0_s7332 launcher_rc=0
+launcher_rc 0 | last_step 300061786 | fps 1476 | restarts 0 | pins named ['9e97cad5709da21a1f9d4d8846096c87eb17b1d0']
+metadata.json num_timesteps: 300061786
+checkpoints on disk: [281000132, 282000223, 283000212, 284000371, 285000038, 286000168, 287000122, 288000194, 289000031, 290000167, 291000006, 292000180, 293000160, 294000104, 295000451, 296000202, 297000188, 298000191, 299000107, 300000082]
+complete: last step 300,061,786 >= --steps 300,000,170, final_model.zip present, newest checkpoint 300,000,082 >= --steps - 98,304
+rc=0
+--- [2] K9(b) at the arm's end (python -m main.x35.kit k9b --run-dir; no record written)
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_x70ent0_s7332",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.00023674964904785156,
+  "p99": 3.701210152939893e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+rc=0
+--- [3] the launcher log's pin, and the fork role
+5:[01:27:29] ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 1.7s]
+24:[01:27:30] 📌 --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 → 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+distinct --pin-commit shas in the launcher log: --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 
+pin: ONLY the training pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+the kit's GO-time dry run (/home/goodlad/.claude/jobs/x35/rb_x35_x70ent0_s7332.go.dryrun.txt):
+3:  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+9:  pin         : 9e97cad5709da21a1f9d4d8846096c87eb17b1d0  (source: pin_commit)
+10:                ↳ ce3d pin 2: the CE-3d pin 333a73dd + the startup fit check's dry update trains with the magnet (gen3_update_fit_fill_inputs_v1)
+
+== rb_x35_x70ent0_s7332 ==
+   run-level git_hash : 9e97cad5  (pin_source=pin_commit)
+   num_timesteps      : 300,061,786
+   pin_history        : 1 span(s)
+       [1] 9e97cad5 pin_source=pin_commit  steps 280000170 → 300061786
+   sidecars           : 21
+
+SUMMARY: 1 run(s) · 21 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+rc=0
+lineage: role fork | parent run /home/goodlad/dev/gen3ai/models/rb_x26_s2601 | parent step 280000170 | parent sha256 814823c514fb791e | fork_step 280000170
+FORK of .../rb_x26_s2601 (P* sha256 814823c5...): yes
+--- [4] the post-spawn pool-seed check (python -m main.x35.kit pool-seed-check, re-run now on the finished run)
+at the launch: [x35 kit] pool seed: PASS
+[x35 kit] pool seed: PASS
+rc=0
+--- [5] the lever in the record (ent_coef 0, no magnet)
+[2026-11-22T01:31:45-08:00] X70W: [2/4] rb_x35_x70ent0_s7332 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+[MAGNET] banner lines in the full child log (X70 expects none): 0
+hyperparameter-table ent_coef rows in the full child log:
+46:|    ent_coef   | 0        |
+VOID strings (ent_coef 0.05 / 0.1 / 0.0125 rows, [ModelVersion] FATAL): 0 line(s)
+{'metadata_ent_coef': 0.0, 'cli_ent_coef': 0.0, 'cfg_has_magnet_kl_coef': True, 'cfg_magnet_kl_coef': 0.0, 'cfg_magnet_refresh_steps': 2000000, 'sidecar': False, 'any_magnet_pt': [], 'cli_seed': 7332, 'n_epochs': 10}
+lever in the record (ent_coef 0.0 twice; magnet_kl_coef present and 0.0; no magnet sidecar): yes
+--- [6] python -m main.dose rb_x35_x70ent0_s7332
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7332  300,061,786  65,536     10      7.675e-05  0.0002035     1.561e-08  0.73x 
+rc=0
+the chain's own dose read at the fork's end (/home/goodlad/.claude/jobs/x35/x70/rb_x35_x70ent0_s7332.dose.txt):
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7332  300,061,786  65,536     10      7.675e-05  0.0002035     1.561e-08  0.73x 
+
+================================================================ rb_x35_x70ent0_s7333
+--- [1] completeness (main.ops.arm_chain.armend.completeness on the launcher log + the run dir; rc from the wrapper's END line)
+[2026-11-22T09:15:57-08:00] x70 s7333: END rb_x35_x70ent0_s7333 launcher_rc=0
+launcher_rc 0 | last_step 300061763 | fps 1448 | restarts 0 | pins named ['9e97cad5709da21a1f9d4d8846096c87eb17b1d0']
+metadata.json num_timesteps: 300061763
+checkpoints on disk: [281000063, 282000070, 283000050, 284000040, 285000327, 286000096, 287000205, 288000223, 289000168, 290000162, 291000012, 292000238, 293000232, 294000265, 295000125, 296000224, 297000226, 298000059, 299000185, 300000206]
+complete: last step 300,061,763 >= --steps 300,000,170, final_model.zip present, newest checkpoint 300,000,206 >= --steps - 98,304
+rc=0
+--- [2] K9(b) at the arm's end (python -m main.x35.kit k9b --run-dir; no record written)
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_x70ent0_s7333",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.000225067138671875,
+  "p99": 4.124879706068896e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+rc=0
+--- [3] the launcher log's pin, and the fork role
+5:[05:20:14] ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 1.6s]
+24:[05:20:15] 📌 --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 → 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+distinct --pin-commit shas in the launcher log: --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 
+pin: ONLY the training pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+the kit's GO-time dry run (/home/goodlad/.claude/jobs/x35/rb_x35_x70ent0_s7333.go.dryrun.txt):
+3:  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+9:  pin         : 9e97cad5709da21a1f9d4d8846096c87eb17b1d0  (source: pin_commit)
+10:                ↳ ce3d pin 2: the CE-3d pin 333a73dd + the startup fit check's dry update trains with the magnet (gen3_update_fit_fill_inputs_v1)
+
+== rb_x35_x70ent0_s7333 ==
+   run-level git_hash : 9e97cad5  (pin_source=pin_commit)
+   num_timesteps      : 300,061,763
+   pin_history        : 1 span(s)
+       [1] 9e97cad5 pin_source=pin_commit  steps 280000170 → 300061763
+   sidecars           : 21
+
+SUMMARY: 1 run(s) · 21 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+rc=0
+lineage: role fork | parent run /home/goodlad/dev/gen3ai/models/rb_x26_s2601 | parent step 280000170 | parent sha256 814823c514fb791e | fork_step 280000170
+FORK of .../rb_x26_s2601 (P* sha256 814823c5...): yes
+--- [4] the post-spawn pool-seed check (python -m main.x35.kit pool-seed-check, re-run now on the finished run)
+at the launch: [x35 kit] pool seed: PASS
+[x35 kit] pool seed: PASS
+rc=0
+--- [5] the lever in the record (ent_coef 0, no magnet)
+[2026-11-22T05:24:31-08:00] X70W: [3/4] rb_x35_x70ent0_s7333 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+[MAGNET] banner lines in the full child log (X70 expects none): 0
+hyperparameter-table ent_coef rows in the full child log:
+46:|    ent_coef   | 0        |
+VOID strings (ent_coef 0.05 / 0.1 / 0.0125 rows, [ModelVersion] FATAL): 0 line(s)
+{'metadata_ent_coef': 0.0, 'cli_ent_coef': 0.0, 'cfg_has_magnet_kl_coef': True, 'cfg_magnet_kl_coef': 0.0, 'cfg_magnet_refresh_steps': 2000000, 'sidecar': False, 'any_magnet_pt': [], 'cli_seed': 7333, 'n_epochs': 10}
+lever in the record (ent_coef 0.0 twice; magnet_kl_coef present and 0.0; no magnet sidecar): yes
+--- [6] python -m main.dose rb_x35_x70ent0_s7333
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7333  300,061,763  65,536     10      8.372e-05  0.0002035     1.703e-08  0.79x 
+rc=0
+the chain's own dose read at the fork's end (/home/goodlad/.claude/jobs/x35/x70/rb_x35_x70ent0_s7333.dose.txt):
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7333  300,061,763  65,536     10      8.372e-05  0.0002035     1.703e-08  0.79x 
+
+================================================================ rb_x35_x70ent0_s7334
+--- [1] completeness (main.ops.arm_chain.armend.completeness on the launcher log + the run dir; rc from the wrapper's END line)
+[2026-11-22T13:17:16-08:00] x70 s7334: END rb_x35_x70ent0_s7334 launcher_rc=0
+launcher_rc 0 | last_step 300061152 | fps 1425 | restarts 0 | pins named ['9e97cad5709da21a1f9d4d8846096c87eb17b1d0']
+metadata.json num_timesteps: 300061152
+checkpoints on disk: [281000231, 282000133, 283000013, 284000090, 285000175, 286000234, 287000457, 288000126, 289000039, 290000174, 291000092, 292000197, 293000163, 294000271, 295000459, 296000048, 297000052, 298000131, 299000153, 300000075]
+complete: last step 300,061,152 >= --steps 300,000,170, final_model.zip present, newest checkpoint 300,000,075 >= --steps - 98,304
+rc=0
+--- [2] K9(b) at the arm's end (python -m main.x35.kit k9b --run-dir; no record written)
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_x70ent0_s7334",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.00022554397583007812,
+  "p99": 3.6872625059913844e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+rc=0
+--- [3] the launcher log's pin, and the fork role
+5:[09:17:08] ✅ argv validated against PINNED parser @9e97cad5 via the pinned build_parser() [mode=build_parser, 390 options, 2.1s]
+24:[09:17:09] 📌 --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 → 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+distinct --pin-commit shas in the launcher log: --pin-commit 9e97cad5709da21a1f9d4d8846096c87eb17b1d0 
+pin: ONLY the training pin 9e97cad5709da21a1f9d4d8846096c87eb17b1d0
+the kit's GO-time dry run (/home/goodlad/.claude/jobs/x35/rb_x35_x70ent0_s7334.go.dryrun.txt):
+3:  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+9:  pin         : 9e97cad5709da21a1f9d4d8846096c87eb17b1d0  (source: pin_commit)
+10:                ↳ ce3d pin 2: the CE-3d pin 333a73dd + the startup fit check's dry update trains with the magnet (gen3_update_fit_fill_inputs_v1)
+
+== rb_x35_x70ent0_s7334 ==
+   run-level git_hash : 9e97cad5  (pin_source=pin_commit)
+   num_timesteps      : 300,061,152
+   pin_history        : 1 span(s)
+       [1] 9e97cad5 pin_source=pin_commit  steps 280000170 → 300061152
+   sidecars           : 21
+
+SUMMARY: 1 run(s) · 21 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+rc=0
+lineage: role fork | parent run /home/goodlad/dev/gen3ai/models/rb_x26_s2601 | parent step 280000170 | parent sha256 814823c514fb791e | fork_step 280000170
+FORK of .../rb_x26_s2601 (P* sha256 814823c5...): yes
+--- [4] the post-spawn pool-seed check (python -m main.x35.kit pool-seed-check, re-run now on the finished run)
+at the launch: [x35 kit] pool seed: PASS
+[x35 kit] pool seed: PASS
+rc=0
+--- [5] the lever in the record (ent_coef 0, no magnet)
+[2026-11-22T09:21:51-08:00] X70W: [4/4] rb_x35_x70ent0_s7334 early check 1/2 PASS: pool seed PASS; banner OK launcher_child.log: '|    ent_coef   | 0        |'
+[MAGNET] banner lines in the full child log (X70 expects none): 0
+hyperparameter-table ent_coef rows in the full child log:
+46:|    ent_coef   | 0        |
+VOID strings (ent_coef 0.05 / 0.1 / 0.0125 rows, [ModelVersion] FATAL): 0 line(s)
+{'metadata_ent_coef': 0.0, 'cli_ent_coef': 0.0, 'cfg_has_magnet_kl_coef': True, 'cfg_magnet_kl_coef': 0.0, 'cfg_magnet_refresh_steps': 2000000, 'sidecar': False, 'any_magnet_pt': [], 'cli_seed': 7334, 'n_epochs': 10}
+lever in the record (ent_coef 0.0 twice; magnet_kl_coef present and 0.0; no magnet sidecar): yes
+--- [6] python -m main.dose rb_x35_x70ent0_s7334
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7334  300,061,152  65,536     10      8.372e-05  0.0002035     1.703e-08  0.79x 
+rc=0
+the chain's own dose read at the fork's end (/home/goodlad/.claude/jobs/x35/x70/rb_x35_x70ent0_s7334.dose.txt):
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                   steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+rb_x35_x70ent0_s7334  300,061,152  65,536     10      8.372e-05  0.0002035     1.703e-08  0.79x 
+
+================================================================ the plan's guards (PREREG §5.2), re-run at the read on every run of the three crosses
+12
+plan_cross --cross anchor rc=0
+cells_plan.json (anchor): byte-identical to the one the cross was played from
+shas.json (anchor): byte-identical (every final's sha256 is the one the cross was played on)
+32
+plan_cross --cross c0 rc=0
+cells_plan.json (c0): byte-identical to the one the cross was played from
+shas.json (c0): byte-identical (every final's sha256 is the one the cross was played on)
+12
+plan_cross --cross x67 rc=0
+cells_plan.json (x67): byte-identical to the one the cross was played from
+shas.json (x67): byte-identical (every final's sha256 is the one the cross was played on)

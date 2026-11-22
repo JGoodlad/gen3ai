@@ -1,0 +1,25 @@
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x35_x70ent0_s7334",
+ "verdict": "PASS",
+ "fork_step": 280000170,
+ "rows_after_fork": {
+  "judged_max": 204,
+  "p99": 204
+ },
+ "max_after_fork": {
+  "judged_max": 0.00022554397583007812,
+  "p99": 3.6872625059913844e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}
+[x35 kit] K9(b) record /home/goodlad/.claude/jobs/x35/x70/k9b/k9b/rb_x35_x70ent0_s7334.json
