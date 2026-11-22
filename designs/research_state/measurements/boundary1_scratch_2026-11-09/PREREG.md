@@ -18,7 +18,9 @@ blind to the training curves, its item 3), both during phase 1 and before any lo
 LAUNCHED 2026-11-12 17:18 PST** ([1] `rb_b1c_s5101`; that first attempt was stopped
 by a kit bug at its early check and is discarded whole, Amendment 4). **THE 50M LOOK WAS PLAYED 2026-11-18
 (§18, "The 50M look's record"): width CONTINUE, breadth STOP-HARM. By §8 no class is read at 100M for either
-factor, Br and WB get no phase 2, and the survivor (W against C) alone trains on to 100M.** **The LAUNCH pin is
+factor, Br and WB get no phase 2, and the survivor (W against C) alone trains on to 100M.** **THE SURVIVOR LOOKS
+AT 75M AND 100M WERE PLAYED 2026-11-21 (§18, "The survivor looks' record"): both `NO-CLASS`, the simple effect
+REPORTED; the *owner* row's 72 hours are counted from the 100M verdict.** **The LAUNCH pin is
 `15136b61634b667bb9da5ccc6647ff9265238829` (§18's re-pin record, 2026-11-12); the registered pin launches
 nothing. The KIT commit is `1d592e6cd5ff2b6b9f634e67573a98e3cdaede44` (Amendment 4): it trains nothing and plays nothing.**
 **§13's GPU items 1 to 7 are green at the launch pin (2026-11-12; §18, slots S1 to S7): ρ = 1.392, the EQ step is
@@ -1968,7 +1970,8 @@ check and item 3's compile cell were their first card runs, and both passed (slo
 
 **Slots only the card can fill (all at the launch pin). S1 to S7 were filled on 2026-11-12, every one green; their
 records follow the table. S8 is written at and after the launch; phase 1 is in it whole. S9 (Amendment 6) was
-opened on 2026-11-18 by the 50M look's STOP-HARM, an *owner* row; the 50M look's record and S9 follow S8.**
+opened on 2026-11-18 by the 50M look's STOP-HARM, an *owner* row; the 50M look's record, the survivor looks'
+record (2026-11-21) and S9 follow S8.**
 
 | slot | what | from |
 |---|---|---|
@@ -2086,7 +2089,8 @@ scratch models dir; neither is a BOUNDARY-1 run and neither is read at any look.
   its resume, and the quit-save probe's record once the Training session reports it (Amendment 5); the twelve
   arm-end K9(b) records. **Written so far (2026-11-18): run [1]'s two launches, the warm start's cost, all
   twelve runs at phase 1, the card check between [10] and [11], and the twelve K9(b) reads at the end of phase 1
-  (the last two sub-items). Phase 2's launches are in the 50M look's record below.**
+  (the last two sub-items). Phase 2's launches are in the 50M look's record (its first) and the survivor looks'
+record (all six, with C's and W's arm-end K9(b) reads at 100M) below.**
   Evidence: `~/.claude/jobs/x35/b1/` (the driver's records; outside the repository). Every launch is from main
   with `--pin-commit 15136b61634b667bb9da5ccc6647ff9265238829`, on an RTX 3080 Ti that `nvidia-smi` read at
   33 MiB used of 12,288 with no compute app, `gdm` inactive.
@@ -2222,8 +2226,9 @@ scratch models dir; neither is a BOUNDARY-1 run and neither is read at any look.
     ends (§8; the recorder's reading of "at each run's END", §10). C's and W's six are reads at the end of phase 1;
     their arm-end records are owed at 100M.
   - **Still OPEN in S8:** the quit-save probe's record (Amendment 5; the Training session has reported none);
-    each run's GPU-hours as a card reading (only wall hours are recorded); C's and W's six arm-end K9(b) records
-    at 100M; phase 2's per-launch records after its first (the 50M look's record, item 10).
+    each run's GPU-hours as a card reading (only wall hours are recorded). C's and W's six arm-end K9(b) records
+    at 100M and phase 2's per-launch records were written on 2026-11-21 (the survivor looks' record, items 6
+    and 7).
 
 
 **The 50M look's record (2026-11-18).** Written after the look was played and read, by the agent the orchestrator
@@ -2354,6 +2359,98 @@ record was registered, so that folder is the recorder's choice.
     `~/.claude/jobs/x35/b1/` (`S8_pending.txt`, `phase2_notes.txt`, `look50_chain.out`, the `look50_pre_*`
     and `p2_rb_b1c_s5101.*` files).
 
+**The survivor looks' record (2026-11-21).** Written after both looks were played and read, by the agent the
+orchestrator named, on CPU, from the looks' own files and the Training session's records. **It is a record. It
+moves no rule, bar, view or class, and it is no amendment.** The record files are in
+[`record/look_75M/`](record/look_75M/) and [`record/look_100M/`](record/look_100M/) (item 8), the 50M record's
+pattern.
+
+1. **How they were played.** The survivor looks' chain (armed 2026-11-18 15:27:41; the 50M look's record, item
+   10) saw the phase-2 driver exit and ran its pre-checks at 19:53:04 PST on 2026-11-21: six PHASE-2 COMPLETE
+   lines, and on each of the six runs `check-run --step 75000000` and `check-run --step 100000000 --arm-end`,
+   all exit 0. Before each look `main.sidecar_audit --strict` and `main.checkargs` exited 0 on the six runs.
+   Each look is `looks/drive_look.sh <look> cuda --survivor width` from the look's pin checkout with a fresh
+   `TORCHINDUCTOR_CACHE_DIR`: W's three runs against C's three, 9 cells a panel, home72 at 1,000 pairs a cell
+   and `heldout72_hpfix`, forum72 and p72 at 500, 45,000 games a look, every row on CUDA, under requests
+   `b1_75m_widthonly_<panel>` and `b1_100m_widthonly_<panel>`. **75M:** 19:53:04 to 20:32:17 PST, 2,353 s,
+   exit 0; engine up 1353.2 s, 58.9 s, 59.4 s, 59.5 s over the four panels. **100M:** 20:32:17 to 21:09:42
+   PST, 2,245 s, exit 0; engine up 1270.0 s, 58.4 s, 58.8 s, 58.7 s over the four panels. The chain classified each look CLEAN
+   (outcome `NO-CLASS`, survivor width, 6 checkpoints) and wrote its end line at 21:09:42 PST: the 100M
+   verdict exists since 2026-11-21 21:09:41 PST.
+2. **The checkpoints played** (each run's first at or after the look's step; their sha256 are in each
+   `verdict.json`). At 75M: C 75,000,191 / 75,000,231 / 75,000,181; W 75,000,178 / 75,000,179 / 75,000,229. At 100M: C 100,000,127 / 100,000,172 / 100,000,025; W 100,000,162 / 100,000,089 / 100,000,185 (the arm-end
+   checkpoints of item 6).
+3. **The outcome, both looks: `NO-CLASS`, `class_is: REPORTED`, effect `W_vs_C`, stopped breadth, to the
+   owner.** W minus C in pp, 90 % interval at 4 df, within-arm variance floor 1.76 pp; every row is REPORTED
+   and none decides anything (§8).
+
+   | view | 75M | 100M |
+   |---|---|---|
+   | N | +0.80 [−2.27, +3.86] | **+0.39 [−3.55, +4.32]** |
+   | HF | +1.02 [−2.04, +4.09] | +0.62 [−3.21, +4.44] |
+   | home72 | +2.36 [−0.76, +5.48] | **+1.08 [−3.52, +5.69]** |
+   | forum72 | −0.31 [−3.37, +2.75] | **+0.15 [−3.07, +3.37]** |
+   | `heldout72_hpfix` | −1.00 [−4.21, +2.21] | −0.97 [−4.47, +2.53] |
+   | p72 | −0.98 [−4.55, +2.59] | −0.12 [−3.53, +3.30] |
+   | U | −0.76 [−3.83, +2.30] | **−0.31 [−3.64, +3.02]** |
+
+4. **Draws**, far under §10's quarter. At 75M: home72 175 of 18,000 (0.97 %; worst cell 1.5 %); `heldout72_hpfix` 54 of 9,000 (0.60 %; worst cell 0.8 %); forum72 94 of 9,000 (1.04 %; worst cell 1.9 %); p72 106 of 9,000 (1.18 %; worst cell 1.9 %) (429 of 45,000). At 100M: home72 158 of 18,000 (0.88 %; worst cell 1.1 %); `heldout72_hpfix` 41 of 9,000 (0.46 %; worst cell 0.7 %); forum72 93 of 9,000 (1.03 %; worst cell 1.9 %); p72 89 of 9,000 (0.99 %; worst cell 1.9 %) (381 of 45,000).
+5. **Not produced for these looks (each REPORTED, never a gate).** The team-cluster bootstrap: `main.b1.team_bootstrap`
+   exits 2 on a survivor look ("REFUSED: TeamBootstrapError: a survivor look (two arms) has no factor statistic:
+   not built"). Amendment 8's learning-rate report: `python -m main.b1.lr_report --look 100M` exits 3 on the
+   twelve runs ("REFUSED: 6 of 12 runs cannot be read at 100M, and no run is dropped": the breadth runs ended
+   at 50M) and exits 3 with `--runs` naming the six survivors ("6 runs over arms ['c', 'w'] cannot separate the
+   factors with an interval: both levels of each factor and more than 3 runs are needed"); it has no 75M look.
+   The recorder did not change either tool. Amendment 8's "beside each look" is therefore unmet at 75M and at
+   100M, and the 50M report (the 50M look's record, item 8) is the only one.
+6. **C's and W's six arm-end K9(b) reads at 100M, owed since the 50M look's record: all PASS**
+   (`check-run --step 100000000 --arm-end`, exit 0, at the chain's pre-checks; ceilings 1e-3 on the judged
+   maximum and 1e-4 on the 99th percentile; no fire, no overlap, torch 2.8.0+cu126):
+
+   | run | arm-end checkpoint | K9(b) | judged maximum | 99th percentile | rows judged |
+   |---|---|---|---|---|---|
+   | `rb_b1c_s5101` | 100,000,127 | PASS | 1.06e-04 | 1.83e-05 | 1,015 |
+   | `rb_b1c_s5102` | 100,000,172 | PASS | 1.07e-04 | 1.77e-05 | 1,015 |
+   | `rb_b1c_s5110` | 100,000,025 | PASS | 9.05e-05 | 1.73e-05 | 1,015 |
+   | `rb_b1w_s5103` | 100,000,162 | PASS | 8.94e-05 | 1.80e-05 | 1,013 |
+   | `rb_b1w_s5104` | 100,000,089 | PASS | 1.30e-04 | 2.03e-05 | 1,013 |
+   | `rb_b1w_s5111` | 100,000,185 | PASS | 1.55e-04 | 2.19e-05 | 1,013 |
+
+   Each look also judged K9(b) on the six checkpoints it played, up to each checkpoint's step: PASS on all six
+   at 75M and at 100M (each look's `look.json`).
+7. **Phase 2's launches (the per-launch records S8 asks for; the first is in the 50M look's record, item 10).**
+   One run at a time under the phase-2 driver, 2026-11-18 15:25:14 to 2026-11-21 19:51:48 PST (76.4 h of wall),
+   each launch §14's resume form at the launch pin from the run's `final_model.zip` to `--steps 100000000`,
+   the trainer on CPUs 0-4,8-12. Times are the status file's lines, PST:
+
+   | # | run | START | early check PASS (checkpoint) | END, launcher rc | wall h | arm-end checkpoint | restarts |
+   |---|---|---|---|---|---|---|---|
+   | 1 | `rb_b1c_s5101` | 11-18 15:25:18 | 15:41:25 (51,000,096) | 11-19 02:21:01, 0 | 10.93 | 100,000,127 | 1 |
+   | 2 | `rb_b1w_s5103` | 11-19 02:21:13 | 02:42:18 (51,000,007) | 11-19 17:05:40, 0 | 14.74 | 100,000,162 | 2 |
+   | 3 | `rb_b1c_s5102` | 11-19 17:05:53 | 17:22:58 (51,000,158) | 11-20 03:59:27, 0 | 10.89 | 100,000,172 | 1 |
+   | 4 | `rb_b1w_s5104` | 11-20 03:59:42 | 04:20:48 (51,000,353) | 11-20 18:55:43, 0 | 14.93 | 100,000,089 | 2 |
+   | 5 | `rb_b1c_s5110` | 11-20 18:55:59 | 19:13:05 (51,000,048) | 11-21 05:32:54, 0 | 10.62 | 100,000,025 | 1 |
+   | 6 | `rb_b1w_s5111` | 11-21 05:33:05 | 05:53:08 (51,000,211) | 11-21 19:51:42, 0 | 14.31 | 100,000,185 | 2 |
+
+   Every restart was warm and the driver's arm-end check PASSED on each run (the Training session's notes; the
+   restart count and the rates below are its log lines, not re-read from the runs here). Each C run started
+   phase 2 at a learning rate of 1.74e-04 and restarted once at 1.45e-04; `rb_b1w_s5103` and `rb_b1w_s5104`
+   started and first restarted at 6.98e-05 and restarted again at 5.81e-05; `rb_b1w_s5111` started at 8.37e-05
+   and restarted twice at 6.98e-05. Wall hours are START to END (the first three are the Training session's
+   figures, the last three the recorder's subtraction); no card reading of GPU-hours exists (still OPEN in S8).
+8. **The record files** (byte copies, sha256 first 12): [`record/look_75M/`](record/look_75M/) holds
+   `verdict.json` (`1c563658ca90`, from `~/.cache/gen3ai/b1_aside/survlook75m_20261121T195304/result/`) and
+   `look_record.txt` (`e40d1ec10616`, the chain's record); [`record/look_100M/`](record/look_100M/) holds
+   `verdict.json` (`09e7bb383b21`, from `~/.cache/gen3ai/b1_aside/survlook100m_20261121T203217/result/`) and
+   `look_record.txt` (`4cf2efee569c`). Evidence outside the repository: those two work directories (`look.json`,
+   `cells_plan.json`, `run.log`) and `~/.claude/jobs/x35/b1/` (`survlooks_chain.out`, `S8_pending.txt`, the
+   `survlook_pre_*` files).
+9. **What these looks do not say (§16, unchanged).** `NO-CLASS` is not a null and not "no effect". Nothing is
+   claimed from three runs against three beyond the printed interval, and the default that follows is not a
+   finding. The 50M, 75M and 100M rows read the same six runs. The factor is width plus the learning-rate
+   controller's response to it, under the 128-wide recipe alone. Nothing here is about the plateau, and
+   nothing about breadth.
+
 - **S9: OPENED 2026-11-18 by the 50M look's STOP-HARM (the first *owner* row to apply).** Written so far:
   - **The outcome that goes to the owner:** breadth STOP-HARM at 50M on HF, −5.18 pp [−8.35, −2.01]; width
     CONTINUE on N, −0.37 pp [−3.32, +2.57]; no class for either factor at 100M; the survivor's simple effect
@@ -2366,4 +2463,10 @@ record was registered, so that folder is the recorder's choice.
     the 100M survivor look's verdict exists. **No owner ruling and no default that acted is on record here.**
     The orchestrator's ruling of about 15:23 PST (the look record's item 9) is the orchestrator applying §8, not
     an owner ruling.
+  - **The 100M survivor look's verdict exists since 2026-11-21 21:09:41 PST** (the survivor looks' record, item 1): outcome
+    `NO-CLASS`; W minus C at 100M is +0.39 [−3.55, +4.32] pp on N and −0.31 [−3.64, +3.02] on U (90 %, 4 df, REPORTED). By the ruling the
+    72 hours are counted from it, to 2026-11-24 21:09 PST. Amendment 6 item 1 words the default as acting 72 hours "after
+    that notification"; **the owner notification for this verdict is the orchestrator's and is not on record
+    here yet**, so if it goes out later than the verdict the two wordings differ by that gap, and the later end
+    is the safe one. No owner ruling and no default that acted is on record as of this record's writing.
   - **Still OPEN in S9:** every other record its row in the table names.

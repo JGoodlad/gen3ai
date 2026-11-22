@@ -1,0 +1,13 @@
+survivor look 100M record 2026-11-21T21:09:42-08:00: drive_look exit 0 after 2245s; work /home/goodlad/.cache/gen3ai/b1_aside/survlook100m_20261121T203217; inductor cache /home/goodlad/.cache/gen3ai/b1_aside/survlook100m_inductor_cache_20261121T203217 (2.5G)
+-- engine up lines:
+[h2h] engine up in 1270.0s: rb_b1w_s5103@100000162 vs rb_b1c_s5101@100000127; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime d4de0fd7c16a2658
+[h2h] engine up in 58.4s: rb_b1w_s5103@100000162 vs rb_b1c_s5101@100000127; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 04c74bb478c5f351
+[h2h] engine up in 58.8s: rb_b1w_s5103@100000162 vs rb_b1c_s5101@100000127; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0c972bc06eab468f
+[h2h] engine up in 58.7s: rb_b1w_s5103@100000162 vs rb_b1c_s5101@100000127; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 88f0de6fbb7e15a9
+-- panel / DONE / HOLD lines:
+[2026-11-21T20:32:38-08:00] plan: 9 cells at look 100M (--survivor width); four panels on cuda
+[2026-11-21T20:32:46-08:00] panel home72: 1000 pairs a cell, family b1_scratch_h2h_home72, request b1_100m_widthonly_home72
+[2026-11-21T20:58:55-08:00] panel heldout72_hpfix: 500 pairs a cell, family b1_scratch_h2h_heldout72_hpfix, request b1_100m_widthonly_heldout72_hpfix
+[2026-11-21T21:02:20-08:00] panel forum72: 500 pairs a cell, family b1_scratch_h2h_forum72, request b1_100m_widthonly_forum72
+[2026-11-21T21:06:08-08:00] panel p72: 500 pairs a cell, family b1_scratch_h2h_p72, request b1_100m_widthonly_p72
+classification: CLEAN look 100M: outcome NO-CLASS, survivor width, 6 checkpoints

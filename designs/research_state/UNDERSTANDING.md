@@ -885,12 +885,18 @@ harm view? It reads no gain.
 - **The width factor is width plus half the learning rate.** The KL-adaptive controller holds the wide arms at
   ×0.473 [0.451, 0.495] of the narrow arms' rate over 25M to 50M at an equal summed KL (×1.015 [0.995, 1.035]);
   their resized trunk tensors moved ×0.443 as far per weight between 30M and 50M (REPORTED, 9 df).
-- **What it moves.** C and W train on to 100M as the survivor; no class is read at 100M for either factor, and
-  their three-against-three comparison is REPORTED with its interval and nothing more. The outcome goes to the
-  owner; the registered default is that the control's three runs are the candidates and no factor is adopted. No
-  recipe, baseline or production config moves, and procedural teams as a training lever are not retired by it.
+- **At 75M and 100M the survivor is REPORTED, with no class (2026-11-21).** C and W trained on to 100M, three
+  runs each, and played each other at both steps (9 cells a panel, 45,000 games a look). W minus C at 100M:
+  **+0.39 [−3.55, +4.32] pp on N**, −0.31 [−3.64, +3.02] on U, +1.08 [−3.52, +5.69] on home72, +0.15 [−3.07, +3.37] on forum72 (90 %, 4 df); at 75M +0.80 [−2.27, +3.86] on N and
+  −0.76 [−3.83, +2.30] on U. Every interval of both looks spans zero. `NO-CLASS` is not a null and not "no effect": three runs against three have a
+  half-width of at least 3.06 pp, the 50M, 75M and 100M rows read the same six runs, and the factor is still
+  width plus the lower learning rate (no learning-rate report exists for these two looks).
+- **What it moves.** Nothing by class. No factor is adopted or carried forward; the wide arm is not retired and
+  not continued past 100M. By the registered default the control's three runs are the candidates and continue
+  to their plateau after the owner's 72-hour veto window (it ends 2026-11-24 21:09 PST), unless the owner rules. No recipe,
+  baseline or production config moves, and procedural teams as a training lever are not retired by it.
 
-[MEASURED · in-house head to head among the twelve runs' 50M checkpoints, at pin `15136b616`, CUDA · ledger 2026-11-18 · *BOUNDARY-1's 50M look, PLAYED*; [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md) §18]
+[MEASURED · in-house head to head among the twelve runs' 50M checkpoints, and among C's and W's six at 75M and at 100M, at pin `15136b616`, CUDA · ledger 2026-11-18 · *BOUNDARY-1's 50M look, PLAYED*; ledger 2026-11-21 · *BOUNDARY-1's survivor looks at 75M and 100M, PLAYED*; [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md) §18]
 
 ---
 
@@ -924,8 +930,9 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 **In flight** (what runs now, and its progress: [`../STATUS.md`](../STATUS.md) §2)
 
-No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16). The GPU
-trains BOUNDARY-1's survivor, C's and W's six runs from 50M to 100M (§4.17; STATUS §2's row).
+No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16).
+BOUNDARY-1's survivor ended on 2026-11-21 (C's and W's six runs at 100M and both survivor looks, §4.17); the card
+goes to the armed window chains, X70 first (STATUS §2's rows).
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)
 

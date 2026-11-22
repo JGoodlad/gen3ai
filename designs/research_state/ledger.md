@@ -32401,3 +32401,128 @@ free-text `note` was reworded to describe look 2; §7 lists every other change.
 `branch_driver.py`, `branch_driver2.py`, `README.md`). Design: `designs/endstate/design_v_rank_on_u.md`; MF-4: `EXPERIMENT_BACKLOG.md`.
 
 Tag: **READ · V-RANK look 2 (final) · within-position slope of the real Kakuna outcome on `r0s4_honest@10`'s Q̂, U vs home72 at P\* · RANK-HOLDS-ON-U (LB(Δβ) −0.215 > −0.25, LB(β_U) +0.153 > 0) · β_U +0.315 [+0.153, +0.449] / β_home +0.333 [+0.210, +0.447] / Δβ −0.018 [−0.215, +0.167] · team-clustered, 1,124 U / 1,114 home positions · MF-4's leaf-value step NOT FUNDED on this evidence; licenses nothing about search · ≈ 72 CPU-h (the read ≈ 144) · pin `c933afd5a` · moves no recipe**
+
+### 2026-11-21 · READ · **BOUNDARY-1's survivor looks at 75M and 100M, PLAYED (two looks, 90,000 games, each exit 0): both `NO-CLASS`, as registered. W against C (width 256 against 128, three from-scratch runs each) at 100M: +0.39 [−3.55, +4.32] pp on N, −0.31 [−3.64, +3.02] on U, +1.08 [−3.52, +5.69] on home72, +0.15 [−3.07, +3.37] on forum72 (90 %, 4 df); at 75M +0.80 [−2.27, +3.86] on N. Every interval of both looks spans zero. No class is read at 100M for either factor; nothing is adopted, retired or carried forward; by Amendment 6's default the control's three runs are the candidates, and its 72-hour owner veto window starts at this 100M verdict**
+
+**Question** (registered in `measurements/boundary1_scratch_2026-11-09/PREREG.md`, §8's rows after a STOP-HARM and
+§9's *owner* row; the launch pin `15136b61634b667bb9da5ccc6647ff9265238829`, the kit commit
+`1d592e6cd5ff2b6b9f634e67573a98e3cdaede44`; the PREREG is the registration of record and is through Amendment 8,
+`524ae8490`). BOUNDARY-1's 50M look (ledger 2026-11-18) read breadth STOP-HARM and width CONTINUE. By §8 no class
+is then read at 100M for either factor, the breadth arms (Br, WB) ended at 50M, and only the survivor trained on to
+100M: C `rb_b1c_s5101/s5102/s5110` (`d_model` 128, the pool) and W `rb_b1w_s5103/s5104/s5111` (`d_model` 256, the
+pool), every run at `ent_coef` 0.0125. The two survivor looks ask no yes-or-no question. Each plays W's three runs
+against C's three (`--survivor width`, 9 cells a panel) and REPORTS the simple effect W against C on every view:
+the mean of the nine cells' scores with W the player, minus 50, in pp, with a 90 % interval at 4 df (within-arm
+variances floored at 1.76 pp, so the half-width is at least 3.06 pp). The registered outcome is `NO-CLASS`, and it
+goes to the owner with a default (Amendment 6 item 1).
+
+**Result** (`looks/drive_look.sh 75M cuda --survivor width`, then the same at 100M, from the look's pin checkout,
+run by the chain B1S that was armed behind phase 2 on 2026-11-18; 2026-11-21 19:53:04 to 20:32:17 PST, 2,353 s,
+exit 0, and 20:32:17 to 21:09:42 PST, 2,245 s, exit 0; every row on CUDA; 9 cells a panel; home72 at 1,000
+pairs a cell, `heldout72_hpfix`, forum72 and p72 at 500; 45,000 games a look; each run's first checkpoint at or
+after the look's step: at 75M C 75,000,191 / 75,000,231 / 75,000,181 and W 75,000,178 / 75,000,179 / 75,000,229, at 100M C 100,000,127 / 100,000,172 / 100,000,025 and W 100,000,162 / 100,000,089 / 100,000,185). Both looks
+classify CLEAN and print outcome `NO-CLASS`, `class_is: REPORTED`, effect `W_vs_C`, survivor width, stopped
+breadth, six checkpoints. Each row is W minus C in pp with its 90 % interval at 4 df, floor 1.76 pp; **every row
+is REPORTED and none decides anything.**
+
+| view | 75M | 100M |
+|---|---|---|
+| N | +0.80 [−2.27, +3.86] | **+0.39 [−3.55, +4.32]** |
+| HF | +1.02 [−2.04, +4.09] | +0.62 [−3.21, +4.44] |
+| home72 | +2.36 [−0.76, +5.48] | **+1.08 [−3.52, +5.69]** |
+| forum72 | −0.31 [−3.37, +2.75] | **+0.15 [−3.07, +3.37]** |
+| `heldout72_hpfix` | −1.00 [−4.21, +2.21] | −0.97 [−4.47, +2.53] |
+| p72 | −0.98 [−4.55, +2.59] | −0.12 [−3.53, +3.30] |
+| U | −0.76 [−3.83, +2.30] | **−0.31 [−3.64, +3.02]** |
+
+N is half home72 and a sixth each of `heldout72_hpfix`, forum72 and p72; HF is half home72 and half forum72; U is
+the mean of `heldout72_hpfix`, forum72 and p72. REPORTED beside it: W's three runs score 49.42, 51.31, 51.67 on N at 75M and
+50.24, 47.79, 53.13 at 100M (per cent, each against C's three; 50 is level), and on U 47.48, 50.31, 49.92 and 49.38, 47.81, 51.88. At 100M
+W's between-run variance is above the floor on every view and C's is below it on every view, so the 100M
+half-widths run from 3.22 to 4.61 pp (3.06 to 3.57 at 75M). The same
+effect at 50M was +1.71 pp [−1.48, +4.90] on N and +1.71 pp [−1.35, +4.77] on forum72 (ledger 2026-11-18).
+Draws, far under §10's quarter: at 75M home72 175 of 18,000 (0.97 %; worst cell 1.5 %); `heldout72_hpfix` 54 of 9,000 (0.60 %; worst cell 0.8 %); forum72 94 of 9,000 (1.04 %; worst cell 1.9 %); p72 106 of 9,000 (1.18 %; worst cell 1.9 %) (429 of 45,000); at 100M home72 158 of 18,000 (0.88 %; worst cell 1.1 %); `heldout72_hpfix` 41 of 9,000 (0.46 %; worst cell 0.7 %); forum72 93 of 9,000 (1.03 %; worst cell 1.9 %); p72 89 of 9,000 (0.99 %; worst cell 1.9 %) (381 of 45,000).
+
+**What §8 and Amendment 6 do with it.** Nothing is read by class. The outcome is §9's *owner* row "a STOP-HARM at
+50M" with Amendment 6 item 1's default: no factor is adopted or carried forward from a `NO-CLASS`; the survivor
+(W) is not retired and is not continued past 100M; **the control's three runs are the candidates** (their plateau
+continuation is Amendment 6 item 3). §8 registers no Kakuna read for this case, so the default "acts once the
+survivor look's verdict exists and the window has passed". The 100M verdict exists since 2026-11-21 21:09:41 PST (the chain's end
+line, written 21:09:42 PST), and by the orchestrator's ruling of 2026-11-18 the 72 hours are counted from it:
+**the window ends 2026-11-24 21:09 PST unless the owner rules.** Nothing of BOUNDARY-1's acts inside the window (§9 rule 2), and
+the card takes other queued work meanwhile. The owner notification for this verdict is the orchestrator's to send
+(slot S9); this entry does not record one.
+
+**Limits (PREREG §16; they travel with every quote of this entry).**
+- **`NO-CLASS` is not a null, not "no effect" and not equivalence.** These are three runs against three: the
+  interval's half-width is at least 3.06 pp by the floor, and at registration three against three found a true
+  +4 pp about six times in ten at a seed SD of 1.76 pp and four in ten at 2.5 (§8, §11.5). Nothing is claimed
+  beyond the printed interval, and the default that follows is not a finding.
+- **The three looks are not three experiments.** The 50M, 75M and 100M rows read the same six runs at three
+  checkpoints; they are not independent, and no trend across them is claimed.
+- **The factor is width plus the learning-rate controller's response to it**, read under the 128-wide recipe
+  alone (§16; next paragraph). Nothing here is about a width other than 256, or about 256 with a recipe of its
+  own.
+- **Nothing about the plateau from a 100M look.** C's continuation to its plateau is a separate, later step.
+- **Nothing about breadth.** Its STOPPED-FOR-HARM at 50M stands as a 50M fact, is not a LOSS at 100M, and no
+  breadth run was played here.
+
+**The learning-rate record** (Amendment 8: "beside each look"). **None could be produced for these looks**
+(FINDING 1). What exists: the 50M report (ledger 2026-11-18: the wide arms trained at ×0.473 [0.451, 0.495] of
+the narrow arms' rate at an equal summed KL), and the Training session's phase-2 start and restart lines (slot
+S8's pending notes; log lines, not re-read from the runs here): each C run started phase 2 at 1.74e-04 and
+restarted once at 1.45e-04; `rb_b1w_s5103` and `rb_b1w_s5104` started and first restarted at 6.98e-05 and
+restarted again at 5.81e-05; `rb_b1w_s5111` started at 8.37e-05 and restarted twice at 6.98e-05. W's logged rates
+(5.81e-05 to 8.37e-05) sit below C's (1.45e-04 to 1.74e-04) throughout phase 2; that is a reading of log lines,
+not Amendment 8's statistic.
+
+**Checks.** Phase 2 ran 2026-11-18 15:25:14 to 2026-11-21 19:51:48 PST (76.4 h of driver wall, one run at a
+time, every run on the launch pin): six launchers rc 0, six early checks PASS at 51M, every restart warm. **C's
+and W's six arm-end K9(b) reads at 100M, owed since the 50M entry, all PASS** (`check-run --step 100000000
+--arm-end`, exit 0, at the look chain's pre-checks, 19:53:04 PST; checkpoints 100,000,127 / 100,000,172 /
+100,000,025 for C and 100,000,162 / 100,000,089 / 100,000,185 for W; judged maximum 8.94e-05 to 1.55e-04 against
+1e-3, 99th percentile 1.73e-05 to 2.19e-05 against 1e-4, no fire, no row near a ceiling, 1,015 rows judged on a
+narrow run and 1,013 on a wide one, torch 2.8.0+cu126). `check-run --step 75000000` exited 0 on all six, and each
+look judged K9(b) again on the checkpoints it played (PASS on all six, both looks). Before each look
+`main.sidecar_audit --strict` and `main.checkargs` on the six runs exited 0. The record files are byte copies
+(sha256 below, equal to the sources'). The recorder re-read every figure above from the two `verdict.json` files
+on CPU; it replayed no game and re-ran no look.
+
+**FINDINGs.**
+1. **Amendment 8's learning-rate report does not exist for these looks, and the tool was not changed to make
+   one.** `python -m main.b1.lr_report --look 100M` on the twelve runs exits 3: "REFUSED: 6 of 12 runs cannot be
+   read at 100M, and no run is dropped" (Br's and WB's last rows are at 50.05M to 50.07M, their registered end
+   after the stop). With `--runs` naming the six survivors it exits 3: "6 runs over arms ['c', 'w'] cannot
+   separate the factors with an interval: both levels of each factor and more than 3 runs are needed". The tool
+   has no `--look 75M`. Amendment 8 was written for twelve runs at 100M and did not provide for a stopped factor.
+2. **No team-cluster bootstrap exists for a survivor look.** `main.b1.team_bootstrap` exits 2 on both looks
+   ("REFUSED: TeamBootstrapError: a survivor look (two arms) has no factor statistic: not built"; REPORTED, never
+   a gate). The printed intervals therefore carry no between-team variance; at 50M that term was 1.2 % of the
+   combined variance for breadth.
+3. **The owner notification for the 100M verdict is not on record here** (slot S9; the orchestrator's): UNVERIFIED
+   whether or when one was sent. Amendment 6 item 1 words the window as 72 hours "after that notification", its
+   STOP-HARM row as "once the survivor look's verdict exists and the window has passed", and the ruling counts
+   from the verdict. If the notification goes out later than 2026-11-21 21:09:41 PST, the two readings differ by that gap; the
+   later end is the safe one.
+4. Still not in the record (S8): the quit-save probe's record, and each run's GPU-hours as a card reading. Only
+   wall hours exist: phase 2's six runs took 10.93, 14.74, 10.89, 14.93, 10.62 and 14.31 h from START to END
+   (the first three are the Training session's figures, the last three the recorder's subtraction of its START
+   and END lines), 76.4 h together, against the orchestrator's guess of ≈ 72 GPU-h.
+5. The record folders hold each look's `verdict.json` and the chain's `look_record.txt`, as at 50M. Each look's
+   `look.json`, `cells_plan.json` and `run.log` stay outside the repository, in
+   `~/.cache/gen3ai/b1_aside/survlook75m_20261121T195304/` and `survlook100m_20261121T203217/`; the checkpoints'
+   sha256 are in `verdict.json`.
+
+**What it licenses.** The quote "from scratch at 100M, three runs each, width 256 against 128 on the pool reads
++0.39 [−3.55, +4.32] pp on N and −0.31 [−3.64, +3.02] on U (90 %, 4 df, `NO-CLASS`, REPORTED)", with the limits above. Nothing else: no
+recipe, baseline or production config moves; no width is adopted or retired; W is not continued past 100M; the
+breadth stop is as it was. After the veto window, and only on the orchestrator's GO, C's three runs continue to
+their plateau (Amendment 6 item 3).
+
+**Record:** `measurements/boundary1_scratch_2026-11-09/record/look_75M/` (`verdict.json`, sha256
+`1c563658ca90…`; `look_record.txt`, `e40d1ec10616…`) and `record/look_100M/` (`verdict.json`, `09e7bb383b21…`;
+`look_record.txt`, `4cf2efee569c…`); the PREREG's §18 ("The survivor looks' record", slots S8 and S9). The games' rows
+are in the eval ledger under requests `b1_75m_widthonly_<panel>` and `b1_100m_widthonly_<panel>`.
+View: `STATUS.md` (§2, §3, §6), `UNDERSTANDING.md` (§4.17), `EXPERIMENT_BACKLOG.md` (MF-5).
+
+Tag: **READ · BOUNDARY-1 survivor looks, 75M and 100M · C, W ×3 from scratch · W v C, 9 cells a panel · home72 @ 1,000 pairs a cell, heldout72_hpfix, forum72, p72 @ 500 · 90,000 games · 90 %, 4 df, floor 1.76 pp · 100M: N +0.39 [−3.55, +4.32], U −0.31 [−3.64, +3.02], home72 +1.08 [−3.52, +5.69], forum72 +0.15 [−3.07, +3.37] · 75M: N +0.80 [−2.27, +3.86] · `NO-CLASS`, REPORTED · no class at 100M for either factor · default: C's three runs are the candidates; 72 h owner window from the 100M verdict · pin `15136b616`**
