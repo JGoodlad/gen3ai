@@ -4,6 +4,7 @@
 export PYTHONPATH=$PYTHONPATH:src
 python -m main.dose models/<run> [models/<run2> ...]
 python -m main.dose models/a models/b --reference models/<baseline> --md
+python -m main.dose models/a --upto 50053315   # the run as it stood at that step (a look's covering row)
 ```
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
@@ -108,8 +109,14 @@ def _row_step(row: Dict[str, Any], base: str) -> int:
     return step
 
 
-def _sidecar_rows(run_dir: str) -> List[Dict[str, Any]]:
-    """Every per-checkpoint sidecar, oldest first by recorded step.
+def _within(step: int, upto: Optional[int]) -> bool:
+    """A row at ``step`` is kept under ``upto``: always without one; with one, only a placed row (step >= 0) at or
+    before it (a row that states no step cannot be placed before a cut, so it is not kept)."""
+    return upto is None or 0 <= step <= upto
+
+
+def _sidecar_rows(run_dir: str, upto: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Every per-checkpoint sidecar, oldest first by recorded step (``upto``: only those at or before it).
 
     Sorted by STEP rather than by name so `checkpoint_9_steps.json` cannot sort after
     `checkpoint_10_steps.json`; a row that states neither a `num_timesteps` nor a parseable name
@@ -121,20 +128,21 @@ def _sidecar_rows(run_dir: str) -> List[Dict[str, Any]]:
         if row is None:
             continue
         base = os.path.basename(path)
-        rows.append((_row_step(row, base), base, row))
+        if _within(_row_step(row, base), upto):
+            rows.append((_row_step(row, base), base, row))
     rows.sort(key=lambda r: (r[0], r[1]))
     return [r[2] for r in rows]
 
 
-def _history_rows(run_dir: str) -> List[Dict[str, Any]]:
+def _history_rows(run_dir: str, upto: Optional[int] = None) -> List[Dict[str, Any]]:
     meta = _read_json(os.path.join(run_dir, "metadata.json")) or {}
     hist = meta.get("snapshot_history") or {}
     if not isinstance(hist, dict):
         return []
-    return [v for _, v in sorted(hist.items()) if isinstance(v, dict)]
+    return [v for k, v in sorted(hist.items()) if isinstance(v, dict) and _within(_row_step(v, str(k)), upto)]
 
 
-def _tb_lr_points(run_dir: str) -> List[float]:
+def _tb_lr_points(run_dir: str, upto: Optional[int] = None) -> List[float]:
     """The run's OWN `train/learning_rate` curve from `<run>/tb/`, oldest step first; `[]` if none.
 
     A fork's `tb/` also holds its PARENT's curve as one inherited prefix file
@@ -158,7 +166,8 @@ def _tb_lr_points(run_dir: str) -> List[float]:
             if TB_LR_TAG not in acc.Tags().get("scalars", []):
                 continue
             for pt in acc.Scalars(TB_LR_TAG):
-                by_step[int(pt.step)] = float(pt.value)
+                if _within(int(pt.step), upto):
+                    by_step[int(pt.step)] = float(pt.value)
         except Exception:  # noqa: BLE001 — a truncated / foreign event file contributes nothing
             continue
     return [v for _, v in sorted(by_step.items()) if v > 0]
@@ -175,11 +184,15 @@ def _shape(row: Dict[str, Any]) -> Optional[tuple]:
         return None
 
 
-def read_run(run_dir: str) -> Dict[str, Any]:
+def read_run(run_dir: str, upto: Optional[int] = None) -> Dict[str, Any]:
     """Everything `main.dose` knows about one run. Pure over the filesystem; unit-tested directly.
 
     `error` is set (and every numeric field left None) when the run states no usable row — a run
     that recorded nothing must read as UNKNOWN, never as a dose of 0.
+
+    `upto` (`--upto`) reads the run as it stood at that step: only the rows (sidecars, history, TB
+    points) at or before it, `num_timesteps` the last kept row's, and no run-level record (the
+    recorded dose and the `metadata` source are the run's END, so they are not read under a cut).
     """
     out: Dict[str, Any] = {
         "run": os.path.basename(os.path.normpath(run_dir)), "dir": run_dir,
@@ -194,11 +207,15 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         out["error"] = "no such run directory"
         return out
 
-    rows = _sidecar_rows(run_dir)
+    out["upto"] = upto
+    rows = _sidecar_rows(run_dir, upto)
     source = "sidecars"
     if not rows:
-        rows, source = _history_rows(run_dir), "snapshot_history"
+        rows, source = _history_rows(run_dir, upto), "snapshot_history"
     meta = _read_json(os.path.join(run_dir, "metadata.json")) or {}
+    if upto is not None and not rows:
+        out["error"] = f"no checkpoint row at or before step {upto:,} (a run-level record cannot be cut)"
+        return out
     if not rows and meta:
         # Last resort: the run-level record is ONE point. Reported as such (`n_lr` = 1), because a
         # median over one sample and a median over forty are different claims about the same run.
@@ -207,12 +224,12 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     # The checkpoint rows are the finest LR record when they exist. With the sidecars gone (groomed,
     # or the 2026-10-09 pre-Rustboro cleanup) the run's own TensorBoard curve is finer than the
     # capped `snapshot_history`, so it takes the LR over — the SHAPE still comes from `rows`.
-    tb_lrs = _tb_lr_points(run_dir) if source != "sidecars" else []
+    tb_lrs = _tb_lr_points(run_dir, upto) if source != "sidecars" else []
 
     # The RECORDED dose block, when the run is new enough to have written one. Reported beside the
     # derived numbers rather than instead of them: a recorded value and a derived one that disagree
     # is a finding, and only showing one of them hides it.
-    dose = meta.get("dose") if isinstance(meta.get("dose"), dict) else None
+    dose = meta.get("dose") if isinstance(meta.get("dose"), dict) and upto is None else None
     if dose:
         out["recorded_dose"] = dose.get("dose_rate_now")
         out["fork_lr"] = dose.get("fork_lr")
@@ -220,7 +237,7 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     # HOW FAR THE RUN TRAINED — the run-level `num_timesteps`, else the LAST row's. A dose is a
     # rate, so the steps it was applied for is the other half of the exposure; a run that recorded
     # neither reads None => `—`, never 0.
-    steps = meta.get("num_timesteps")
+    steps = meta.get("num_timesteps") if upto is None else None
     if not isinstance(steps, (int, float)) and rows:
         steps = rows[-1].get("num_timesteps")
     if isinstance(steps, (int, float)):
@@ -358,16 +375,18 @@ def main(argv: Optional[List[str]] = None) -> int:
                          f"'none' to omit the column)")
     ap.add_argument("--md", action="store_true", help="emit a markdown table")
     ap.add_argument("--json", action="store_true", help="emit the raw rows as JSON")
+    ap.add_argument("--upto", type=int, default=None,
+                    help="read each run as it stood at this step: only its rows at or before it")
     args = ap.parse_args(argv)
 
-    rows = [read_run(_resolve(r)) for r in args.runs]
+    rows = [read_run(_resolve(r), args.upto) for r in args.runs]
 
     reference = None
     if args.reference != "none":
         ref_name = args.reference or DEFAULT_REFERENCE
         ref_dir = _resolve(ref_name)
         if os.path.isdir(ref_dir):
-            reference = read_run(ref_dir)
+            reference = read_run(ref_dir, args.upto)
         elif args.reference:
             print(f"[dose] reference {ref_name!r} not found — omitting the ratio column",
                   file=sys.stderr)

@@ -4,6 +4,7 @@
     python -m main.b1.lr_report --look 50M --displacement --out <FILE.json>   # once, at 50M: the weights too
     python -m main.b1.lr_report --look 100M --runs models/rb_b1c_s5101 models/rb_b1w_s5103 ...
     python -m main.b1.lr_report --look 50M --fresh-arm <fresh_arm.json>          # a FRESH CELL beside its banked cell
+                                                                   # (+ its REPORTED meters: clip, entropy, ...)
 
 The registration is ``designs/research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`` §18 Amendment 8:
 this record is REPORTED beside the 50M and the 100M outcome and decides nothing (no bar, no class). It reads ONLY
@@ -65,6 +66,22 @@ runs' KL medians. **The label** :data:`LABEL` is printed unless the FRESH cell's
 controller's band shrunk by the registered edge, ``0.005 + 1e-6 < figure < 0.02 - 1e-6`` (:func:`movement_label`).
 The window of the histogram is this module's choice (the registration names none); for a card other than Q5-N the
 label is the same arithmetic with no registered meaning.
+
+**The fresh cell's REPORTED meters** (:func:`run_meters`, :func:`cell_meters`; Q5-N PREREG §3's list, read in the same
+one pass over the event files, :func:`load_tags`): per run, each of :data:`METERS` (the clip fraction
+``train/clip_fraction``, which is the mean over ALL epochs of an update; the LAST epoch's, the highest
+``train/clip_fraction_epoch_<k>`` at a row, whose ``epochs`` say which k that was; the entropy, the negated
+``train/entropy_loss``; the value loss) as the median over each :data:`METER_WINDOW` window ``[k W, (k + 1) W)``
+below the look and over :data:`KL_WINDOW`; the rows (up to the look) AT the registered floor (:data:`LR_FLOOR`) or
+ceiling (:data:`CEILING_FACTOR` x the side's base) within float error, and BEYOND either; the realized dose to the
+look (``main.dose`` with ``upto`` = the look checkpoint's step, the file the look plays); and the STEP TIME
+(:func:`step_time`: the card check's one formula, ``pilot_rho.py``'s, over :data:`STEP_TIME_WINDOW`, in exact rational
+arithmetic). Per cell, the MEAN of its runs' figures; the record's ``dose_rate_ratio`` and ``step_time_ratio`` (rho,
+also ``_exact`` as ``"p/q"``) are fresh over banked. **Absence is never a zero and never refuses the label:** a meter
+with no row reads ``None``, a step time or dose that cannot be read carries its ``error``, and a ratio is ``None``
+unless every run of both cells is read. The same rho, by :func:`step_time_ratio`, prices the matched-GPU-time cross
+(``python -m main.b1.fresh plan-gpu-time``); **its use as rho_run waits on Q5-N's dated amendment registering this
+meter** (PREREG §3).
 """
 from __future__ import annotations
 
@@ -77,7 +94,8 @@ import statistics
 import sys
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from fractions import Fraction
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.b1 import arms as A
 from main.b1 import cross as X
@@ -123,6 +141,29 @@ KL_WINDOW: Tuple[int, int] = (10_000_000, 50_000_000)
 KL_BAND: Tuple[float, float] = (0.005, 0.02)
 KL_BAND_EDGE = 1e-6
 LABEL = "MOVEMENT-UNMATCHED"
+#: ``--fresh-arm``'s REPORTED training meters (Q5-N PREREG §3), read from the same event files in the same pass.
+CLIP_TAG = "train/clip_fraction"
+CLIP_EPOCH_PREFIX = "train/clip_fraction_epoch_"
+ENTROPY_LOSS_TAG = "train/entropy_loss"
+VALUE_LOSS_TAG = "train/value_loss"
+#: meter -> (what it is read from, its sign): the entropy is the NEGATED entropy loss (``loss = pg + ent_coef *
+#: entropy_loss``); ``clip_fraction_last_epoch`` is the highest ``train/clip_fraction_epoch_<k>`` at a row.
+METERS: Dict[str, Tuple[str, float]] = {"clip_fraction": (CLIP_TAG, 1.0),
+                                        "clip_fraction_last_epoch": (CLIP_EPOCH_PREFIX + "<last k>", 1.0),
+                                        "entropy": (ENTROPY_LOSS_TAG, -1.0), "value_loss": (VALUE_LOSS_TAG, 1.0)}
+METER_WINDOW = 5_000_000
+#: The controller's registered bounds (Q5-N PREREG §2): the floor ``--min-lr``'s 1e-5, the ceiling 2 x the side's base.
+LR_FLOOR = 1e-5
+CEILING_FACTOR = 2.0
+#: The step-time meter: Q6-N PREREG §7 item 5's card-check formula, on the real runs' rows in STEP_TIME_WINDOW.
+UPDATE_TAG = "lifecycle/update_wall_s"
+COLLECT_TAG = "rollout/collect_ms"
+TRAIN_MS_TAG = "train/train_ms"
+STEP_TIME_WINDOW: Tuple[int, int] = KL_WINDOW
+STEP_TIME_MIN_ROWS = 10
+FRESH_TAGS = frozenset({LR_TAG, KL_TAG, CLIP_TAG, ENTROPY_LOSS_TAG, VALUE_LOSS_TAG, UPDATE_TAG, COLLECT_TAG,
+                        TRAIN_MS_TAG})
+_CLIP_EPOCH = re.compile(r"^" + re.escape(CLIP_EPOCH_PREFIX) + r"(\d+)$")
 _EVENT_FILE = re.compile(r"^events\.out\.tfevents\.(\d+)\.")
 
 
@@ -217,37 +258,54 @@ def event_files(run_dir: Path) -> List[Path]:
     return [p for _ts, _name, p in sorted(found)]
 
 
-def read_series(run_dir: Path) -> Dict[str, Any]:
-    """``{steps, lr, kl, files, superseded_rows, rows_lr_only, rows_kl_only}``: the two series on their common steps,
-    ascending (module docstring: a later file supersedes the earlier rows at or after its first step)."""
+TagRows = Dict[str, Dict[int, float]]
+
+
+def load_tags(run_dir: Path, wanted: Callable[[str], bool]) -> Tuple[TagRows, Dict[str, int], List[str]]:
+    """``(tag -> {step: value}, tag -> superseded rows, event file names)`` for every tag ``wanted`` accepts, read in
+    ONE pass of the run's event files (module docstring: a later file supersedes, tag by tag, the earlier rows at or
+    after its own first step of that tag)."""
     from tensorboard.backend.event_processing.event_file_loader import EventFileLoader
     from tensorboard.util import tensor_util
 
     files = event_files(run_dir)
     if not files:
         raise ReportError(f"{run_dir.name}: no TensorBoard event file under {run_dir / 'tb'}")
-    series: Dict[str, Dict[int, float]] = {LR_TAG: {}, KL_TAG: {}}
-    superseded = 0
+    series: TagRows = {}
+    superseded: Dict[str, int] = {}
     for f in files:
-        own: Dict[str, Dict[int, float]] = {LR_TAG: {}, KL_TAG: {}}
+        own: TagRows = {}
         for event in EventFileLoader(str(f)).Load():
             for v in event.summary.value:
-                if v.tag in own:
-                    own[v.tag][int(event.step)] = (float(v.simple_value) if v.HasField("simple_value")
-                                                   else float(tensor_util.make_ndarray(v.tensor)))
+                if wanted(v.tag):
+                    own.setdefault(v.tag, {})[int(event.step)] = (
+                        float(v.simple_value) if v.HasField("simple_value")
+                        else float(tensor_util.make_ndarray(v.tensor)))
         for tag, rows in own.items():
-            if rows:
-                first = min(rows)
-                stale = [s for s in series[tag] if s >= first]
-                superseded += len(stale)
-                for s in stale:
-                    del series[tag][s]
-                series[tag].update(rows)
-    steps = sorted(set(series[LR_TAG]) & set(series[KL_TAG]))
-    return {"steps": steps, "lr": [series[LR_TAG][s] for s in steps], "kl": [series[KL_TAG][s] for s in steps],
-            "files": [f.name for f in files], "superseded_rows": superseded,
-            "rows_lr_only": len(set(series[LR_TAG]) - set(series[KL_TAG])),
-            "rows_kl_only": len(set(series[KL_TAG]) - set(series[LR_TAG]))}
+            have = series.setdefault(tag, {})
+            first = min(rows)
+            stale = [s for s in have if s >= first]
+            superseded[tag] = superseded.get(tag, 0) + len(stale)
+            for s in stale:
+                del have[s]
+            have.update(rows)
+    return series, superseded, [f.name for f in files]
+
+
+def series_of(loaded: Tuple[TagRows, Mapping[str, int], Sequence[str]]) -> Dict[str, Any]:
+    """:func:`read_series`'s record from a :func:`load_tags` result that holds (at least) the two tags."""
+    series, superseded, files = loaded
+    lr, kl = series.get(LR_TAG, {}), series.get(KL_TAG, {})
+    steps = sorted(set(lr) & set(kl))
+    return {"steps": steps, "lr": [lr[s] for s in steps], "kl": [kl[s] for s in steps], "files": list(files),
+            "superseded_rows": superseded.get(LR_TAG, 0) + superseded.get(KL_TAG, 0),
+            "rows_lr_only": len(set(lr) - set(kl)), "rows_kl_only": len(set(kl) - set(lr))}
+
+
+def read_series(run_dir: Path) -> Dict[str, Any]:
+    """``{steps, lr, kl, files, superseded_rows, rows_lr_only, rows_kl_only}``: the two series on their common steps,
+    ascending (module docstring: a later file supersedes the earlier rows at or after its first step)."""
+    return series_of(load_tags(run_dir, {LR_TAG, KL_TAG}.__contains__))
 
 
 def run_row(run_dir: Path, look_step: int, series: Optional[Mapping[str, Any]] = None, *,
@@ -418,6 +476,154 @@ def movement_label(figure: float) -> Optional[str]:
     return None if lo + KL_BAND_EDGE < figure < hi - KL_BAND_EDGE else LABEL
 
 
+def last_epoch_clip(series: TagRows) -> Tuple[Dict[int, float], List[int]]:
+    """``(step -> the clip fraction of the highest epoch logged at that step, the sorted set of those epochs)``."""
+    best: Dict[int, Tuple[int, float]] = {}
+    for tag, rows in series.items():
+        m = _CLIP_EPOCH.match(tag)
+        if m:
+            k = int(m.group(1))
+            for step, v in rows.items():
+                if step not in best or k > best[step][0]:
+                    best[step] = (k, v)
+    return {step: v for step, (_k, v) in best.items()}, sorted({k for k, _v in best.values()})
+
+
+def meter(points: Mapping[int, float], look_step: int, sign: float = 1.0) -> Dict[str, Any]:
+    """One REPORTED meter of one run: the median of ``sign * value`` over the rows of each :data:`METER_WINDOW`
+    window ``[k W, (k + 1) W)`` below the look step (``None``: a window with no row), and over :data:`KL_WINDOW`."""
+    lo, hi = KL_WINDOW
+    medians: List[Optional[float]] = []
+    counts: List[int] = []
+    for k in range(look_step // METER_WINDOW):
+        xs = [sign * v + 0.0 for step, v in points.items() if k * METER_WINDOW <= step < (k + 1) * METER_WINDOW]
+        medians.append(statistics.median(xs) if xs else None)
+        counts.append(len(xs))
+    span = [sign * v + 0.0 for step, v in points.items() if lo <= step <= hi]
+    return {"rows": len(points), "kl_window_median": statistics.median(span) if span else None,
+            "kl_window_rows": len(span), "by_window": medians, "by_window_rows": counts}
+
+
+def bound_touches(steps: Sequence[int], lrs: Sequence[float], base: float) -> Dict[str, Any]:
+    """The rows (up to the look) AT the registered floor or ceiling (within :data:`RUNG_ON_REL`, as a rung is), the
+    first step of each, and the rows BEYOND either (a moved bound shows there)."""
+    floor, ceiling = LR_FLOOR, CEILING_FACTOR * base
+    at_f = [s for s, r in zip(steps, lrs) if abs(r / floor - 1.0) <= RUNG_ON_REL]
+    at_c = [s for s, r in zip(steps, lrs) if abs(r / ceiling - 1.0) <= RUNG_ON_REL]
+    return {"floor": floor, "ceiling": ceiling, "at_floor": len(at_f), "first_at_floor": at_f[0] if at_f else None,
+            "at_ceiling": len(at_c), "first_at_ceiling": at_c[0] if at_c else None,
+            "below_floor": sum(1 for r in lrs if r < floor * (1.0 - RUNG_ON_REL)),
+            "above_ceiling": sum(1 for r in lrs if r > ceiling * (1.0 + RUNG_ON_REL))}
+
+
+def exact(q: Fraction) -> str:
+    """A rational as ``"p/q"`` (``Fraction(...)`` reads it back exactly)."""
+    return f"{q.numerator}/{q.denominator}"
+
+
+def step_time(run: str, series: TagRows) -> Dict[str, Any]:
+    """One run's seconds per 1M steps over :data:`STEP_TIME_WINDOW`, by the card check's ONE formula
+    (``pilot_rho.py``, Q6-N PREREG §7 item 5): ``(median update_wall_s + median collect_ms / 1000) / median
+    d(steps) * 1e6`` over the rollout rows (steps carrying both tags; a resume's superseded rows already gone) with
+    ``lo <= step <= hi``, ``d(steps)`` between consecutive rollout rows whose later row is in the window. Computed
+    in EXACT rational arithmetic (``sec_per_1M_steps_exact``), so a ratio and a step chosen from it carry no float
+    rounding. Also REPORTED, never the meter: ``train/train_ms`` on the same rows and steps. Refused when the rows do
+    not span the window or are fewer than :data:`STEP_TIME_MIN_ROWS`."""
+    upd, col, tms = (series.get(t, {}) for t in (UPDATE_TAG, COLLECT_TAG, TRAIN_MS_TAG))
+    lo, hi = STEP_TIME_WINDOW
+    every = sorted(set(upd) & set(col))
+    if not every or every[0] > lo or every[-1] < hi:
+        span = f"{every[0]:,} to {every[-1]:,}" if every else "none"
+        raise ReportError(f"{run}: its rollout rows ({span}) do not span the step-time window {lo:,} to {hi:,}")
+    rows = [step for step in every if lo <= step <= hi]
+    if len(rows) < STEP_TIME_MIN_ROWS:
+        raise ReportError(f"{run}: {len(rows)} rollout rows in the step-time window; the meter needs "
+                          f"{STEP_TIME_MIN_ROWS}")
+    d = statistics.median([Fraction(b - a) for a, b in zip(every, every[1:]) if lo <= b <= hi])
+    u = statistics.median([Fraction(upd[step]) for step in rows])
+    c = statistics.median([Fraction(col[step]) for step in rows]) / 1000
+    if not (d > 0 and u >= 0 and c >= 0 and u + c > 0):
+        raise ReportError(f"{run}: the step-time medians are not positive (update {float(u)} s, collect "
+                          f"{float(c)} s, {float(d)} steps a rollout)")
+    sec = (u + c) / d * 10 ** 6
+    t = [Fraction(tms[step]) for step in rows if step in tms]
+    train = statistics.median(t) / 1000 / d * 10 ** 6 if t else None
+    return {"rows": len(rows), "first_step": rows[0], "last_step": rows[-1], "median_update_s": float(u),
+            "median_collect_s": float(c), "median_dsteps": float(d), "update_share": float(u / (u + c)),
+            "sec_per_1M_steps": float(sec), "sec_per_1M_steps_exact": exact(sec),
+            "train_ms_sec_per_1M_steps": None if train is None else float(train), "train_ms_rows": len(t)}
+
+
+def cell_mean_exact(figures: Sequence[str]) -> Fraction:
+    """The exact mean of runs' ``"p/q"`` figures."""
+    if not figures:
+        raise ReportError("a cell mean of no runs")
+    return sum((Fraction(f) for f in figures), Fraction(0)) / len(figures)
+
+
+def step_time_ratio(fresh: Sequence[Mapping[str, Any]], banked: Sequence[Mapping[str, Any]]) -> Fraction:
+    """rho: the fresh cell's mean seconds per 1M steps over the banked cell's (each run a :func:`step_time`)."""
+    return (cell_mean_exact([r["sec_per_1M_steps_exact"] for r in fresh])
+            / cell_mean_exact([r["sec_per_1M_steps_exact"] for r in banked]))
+
+
+def run_step_time(run_dir: Path) -> Dict[str, Any]:
+    """:func:`step_time` of one run directory (one pass over its event files, the three timing tags alone)."""
+    series, _sup, _files = load_tags(run_dir, {UPDATE_TAG, COLLECT_TAG, TRAIN_MS_TAG}.__contains__)
+    return step_time(run_dir.name, series)
+
+
+def _wanted(tag: str) -> bool:
+    return tag in FRESH_TAGS or bool(_CLIP_EPOCH.match(tag))
+
+
+def run_meters(run_dir: Path, series: TagRows, row: Mapping[str, Any], base: float, look_step: int,
+               lr_steps: Sequence[int], lrs: Sequence[float]) -> Dict[str, Any]:
+    """The REPORTED meters of one fresh-arm run (module docstring): each :data:`METERS` entry, the bounds' touches,
+    the dose to the look (``main.dose`` cut at the look's checkpoint, the file the look plays) and the step time. A meter with no row reads
+    ``None`` and a step time that cannot be read carries its ``error``: absence is never a zero, and never refuses
+    the registered label."""
+    from main import dose as D
+
+    last, epochs = last_epoch_clip(series)
+    points = {"clip_fraction": series.get(CLIP_TAG, {}), "clip_fraction_last_epoch": last,
+              "entropy": series.get(ENTROPY_LOSS_TAG, {}), "value_loss": series.get(VALUE_LOSS_TAG, {})}
+    out: Dict[str, Any] = {m: meter(points[m], look_step, METERS[m][1]) for m in METERS}
+    out["clip_fraction_last_epoch"]["epochs"] = epochs
+    try:
+        st: Dict[str, Any] = step_time(run_dir.name, series)
+    except ReportError as e:
+        st = {"error": str(e)}
+    _zip, look_ckpt, why = K.find_checkpoint(run_dir, look_step)
+    dose = (D.read_run(str(run_dir), upto=look_ckpt) if look_ckpt is not None
+            else {"error": f"no look checkpoint to cut the dose at ({why})", "upto": None})
+    return {"meters": out, "lr_bounds": bound_touches(lr_steps, lrs, base), "step_time": st,
+            "dose": {k: dose.get(k) for k in ("dose_rate", "lr_median", "n_lr", "source", "n_epochs",
+                                              "updates_per_env_step", "num_timesteps", "upto", "error")}}
+
+
+def _mean(xs: Sequence[Optional[float]]) -> Optional[float]:
+    return None if not xs or any(x is None for x in xs) else math.fsum(xs) / len(xs)  # type: ignore[arg-type]
+
+
+def cell_meters(mine: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
+    """A cell's REPORTED meters: the MEAN of its runs' figures, window by window (``None`` if any run lacks one), the
+    bounds' touches summed, the step time's exact mean (``None`` if any run's cannot be read), the dose's mean."""
+    meters: Dict[str, Any] = {}
+    for m in METERS:
+        rs = [r["meters"][m] for r in mine]
+        meters[m] = {"kl_window_median_mean": _mean([r["kl_window_median"] for r in rs]),
+                     "by_window_mean": [_mean(list(w)) for w in zip(*(r["by_window"] for r in rs))]}
+    sts = [r["step_time"] for r in mine]
+    st = None if any("error" in x for x in sts) else cell_mean_exact([x["sec_per_1M_steps_exact"] for x in sts])
+    return {"meters": meters,
+            "lr_bounds": {k: sum(r["lr_bounds"][k] for r in mine)
+                          for k in ("at_floor", "at_ceiling", "below_floor", "above_ceiling")},
+            "sec_per_1M_steps_mean": None if st is None else float(st),
+            "sec_per_1M_steps_mean_exact": None if st is None else exact(st),
+            "dose_rate_mean": _mean([r["dose"]["dose_rate"] for r in mine])}
+
+
 def fresh_runs(arm_file: Path, models_dir: Optional[Path], replace: Optional[int]) -> Tuple[Any, Dict[str, List[Any]]]:
     """``(the arm, {side: [its runs]})`` from a card's arm file; the fresh side first."""
     from main.b1 import fresh as F
@@ -449,12 +655,15 @@ def fresh_report(spec: Any, sides: Mapping[str, Sequence[Tuple[Any, Path]]], loo
             try:
                 if not run_dir.is_dir():
                     raise ReportError(f"{run.run}: no run directory at {run_dir}")
-                s = read_series(run_dir)
+                loaded = load_tags(run_dir, _wanted)
+                s = series_of(loaded)
                 row = run_row(run_dir, LOOKS[look], s, named=(side, run.seed), base=bases[side])
                 median, n = kl_window_median(run.run, s["steps"], s["kl"])
+                to_look = row["rows_to_look"]
                 rows.append({**row, "side": side, "ladder_base": bases[side], "kl_window_median": median,
-                             "kl_window_rows": n,
-                             "rung_histogram": rung_histogram(s["lr"][:row["rows_to_look"]], bases[side])})
+                             "kl_window_rows": n, "rung_histogram": rung_histogram(s["lr"][:to_look], bases[side]),
+                             **run_meters(run_dir, loaded[0], row, bases[side], LOOKS[look], s["steps"][:to_look],
+                                          s["lr"][:to_look])})
             except ReportError as e:
                 problems.append(str(e))
     n_runs = sum(len(runs) for runs in sides.values())
@@ -471,14 +680,22 @@ def fresh_report(spec: Any, sides: Mapping[str, Sequence[Tuple[Any, Path]]], loo
         cells[side] = {"runs": [r["run"] for r in mine], "ladder_base": bases[side],
                        "kl_window_median": statistics.median(r["kl_window_median"] for r in mine),
                        "rung_histogram": {"rungs": {str(k): rungs[k] for k in sorted(rungs)},
-                                          "off": sum(r["rung_histogram"]["off"] for r in mine)}}
+                                          "off": sum(r["rung_histogram"]["off"] for r in mine)},
+                       **cell_meters(mine)}
     figure = cells["fresh"]["kl_window_median"]
+    f_st, b_st = (cells[k]["sec_per_1M_steps_mean_exact"] for k in ("fresh", "banked"))
+    rho = None if f_st is None or b_st is None else Fraction(f_st) / Fraction(b_st)
+    f_d, b_d = (cells[k]["dose_rate_mean"] for k in ("fresh", "banked"))
     return {"schema": FRESH_SCHEMA, "card": spec.card, "arm_sha256": spec.sha256, "prereg": spec.prereg,
             "look": look, "look_step": LOOKS[look], "second_half_from": LOOKS[look] / 2,
             "replaced_seed": replace, "replaced_fresh_seed": spec.replaced_fresh,
             "ladder": {"factor": LADDER_FACTOR, "base": bases}, "tags": [LR_TAG, KL_TAG],
             "kl_window": list(KL_WINDOW), "kl_band": list(KL_BAND), "kl_band_edge": KL_BAND_EDGE,
-            "n_runs": len(rows), "runs": rows, "cells": cells, "figure": figure, "label": movement_label(figure)}
+            "n_runs": len(rows), "runs": rows, "cells": cells, "figure": figure, "label": movement_label(figure),
+            "meter_window": METER_WINDOW, "step_time_window": list(STEP_TIME_WINDOW),
+            "step_time_ratio": None if rho is None else float(rho),
+            "step_time_ratio_exact": None if rho is None else exact(rho),
+            "dose_rate_ratio": None if not (f_d is not None and b_d) else f_d / b_d}
 
 
 def _histogram(h: Mapping[str, Any]) -> str:
@@ -510,7 +727,63 @@ def render_fresh(doc: Mapping[str, Any]) -> str:
     band = f"{doc['kl_band'][0]} + {doc['kl_band_edge']:g} < figure < {doc['kl_band'][1]} - {doc['kl_band_edge']:g}"
     lines.append(f"fresh cell's figure {doc['figure']:.6f}; inside the band ({band}): "
                  + ("yes, no label" if doc["label"] is None else f"NO -> {doc['label']}"))
-    return "\n".join(lines)
+    return "\n".join(lines + render_meters(doc))
+
+
+def _g(x: Optional[float], width: int = 9) -> str:
+    return f"{'-':>{width}}" if x is None else f"{x:>{width}.4g}"
+
+
+def render_meters(doc: Mapping[str, Any]) -> List[str]:
+    """The REPORTED meters as text: each meter by window (a run a row, then each cell's mean), the bounds, the dose
+    and the step time with their ratios."""
+    w = int(doc["meter_window"])
+    n = int(doc["look_step"]) // w
+    lo, hi = doc["kl_window"]
+    head = "".join(f"{f'{k * w // 10**6}-{(k + 1) * w // 10**6}M':>9}" for k in range(n))
+    lines = [f"REPORTED meters, never deciding: the median of a run's rows in each {w:,}-step window below the look "
+             f"('-': no row), and over {lo:,} <= step <= {hi:,}; a cell's line is the MEAN of its runs"]
+    for m, (tag, sign) in METERS.items():
+        what = f"-{tag}" if sign < 0 else tag
+        epochs = sorted({k for r in doc["runs"] for k in r["meters"][m].get("epochs", [])})
+        lines.append(f"{m} ({what}{f'; last epochs seen {epochs}' if m == 'clip_fraction_last_epoch' else ''})")
+        lines.append(f"  {'':<16}{head}{'10M-50M':>10}")
+        for r in doc["runs"]:
+            mm = r["meters"][m]
+            lines.append(f"  {r['run']:<16}{''.join(_g(x) for x in mm['by_window'])}{_g(mm['kl_window_median'], 10)}")
+        for side, c in doc["cells"].items():
+            cm = c["meters"][m]
+            lines.append(f"  {'cell ' + side:<16}{''.join(_g(x) for x in cm['by_window_mean'])}"
+                         f"{_g(cm['kl_window_median_mean'], 10)}")
+    lines.append("LR floor / ceiling, rows up to the look (at = within float error; beyond = past the bound):")
+    for r in doc["runs"]:
+        b = r["lr_bounds"]
+        lines.append(f"  {r['run']:<16} floor {b['floor']:.1e}: {b['at_floor']} at (first {b['first_at_floor']}), "
+                     f"{b['below_floor']} below; ceiling {b['ceiling']:.1e}: {b['at_ceiling']} at (first "
+                     f"{b['first_at_ceiling']}), {b['above_ceiling']} above")
+    lines.append("dose_rate to the look (main.dose, the rows at or before each run's look checkpoint):")
+    for r in doc["runs"]:
+        d = r["dose"]
+        lines.append(f"  {r['run']:<16} " + (f"ERROR {d['error']}" if d.get("error") else
+                                             f"{d['dose_rate']:.4g} (lr median {d['lr_median']:.4g} over {d['n_lr']} "
+                                             f"{d['source']} rows, {d['n_epochs']} epochs, to step {d['num_timesteps']})"))
+    lines.append("  cell means: " + ", ".join(f"{k} {_g(c['dose_rate_mean'], 0)}" for k, c in doc["cells"].items())
+                 + f"; fresh / banked {_g(doc['dose_rate_ratio'], 0)}")
+    slo, shi = doc["step_time_window"]
+    lines.append(f"step time over {slo:,} <= step <= {shi:,} (the card check's formula; s per 1M steps):")
+    for r in doc["runs"]:
+        t = r["step_time"]
+        lines.append(f"  {r['run']:<16} " + (f"ERROR {t['error']}" if "error" in t else
+                                             f"{t['sec_per_1M_steps']:8.2f}  (update {t['median_update_s']:.3f} s + "
+                                             f"collect {t['median_collect_s']:.3f} s per {t['median_dsteps']:,.0f} "
+                                             f"steps, {t['rows']} rows, update share {t['update_share']:.3f}; "
+                                             f"train_ms alone {_g(t['train_ms_sec_per_1M_steps'], 0)})"))
+    lines.append("  cell means: " + ", ".join(f"{k} {_g(c['sec_per_1M_steps_mean'], 0)}"
+                                              for k, c in doc["cells"].items())
+                 + f"; fresh / banked (rho) {_g(doc['step_time_ratio'], 0)}"
+                 + (f" = {doc['step_time_ratio_exact']}" if doc["step_time_ratio_exact"] and
+                    len(doc["step_time_ratio_exact"]) <= 60 else ""))
+    return lines
 
 
 # ------------------------------------------------------------------------------------------------ the report

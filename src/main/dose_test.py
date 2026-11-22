@@ -325,3 +325,53 @@ def test_the_full_resolution_sources_are_the_ones_best_response_gap_compares_on(
 
     assert set(dose.FULL_RESOLUTION_SOURCES) <= set(dose.LR_SOURCES)
     assert tuple(brg.DOSE_FULL_RESOLUTION) == tuple(dose.FULL_RESOLUTION_SOURCES)
+
+
+# ------------------------------------------------------------------------------------------------ --upto
+def test_upto_reads_the_run_as_it_stood_at_that_step(tmp_path, capsys):
+    """A fresh cell's look compares runs AT the look: a banked run trained past it is cut there (rows at or before
+    the step), its shape and step come from the kept rows, and the run-level records (its END) are not read."""
+    run = _run(tmp_path, "r", lrs=[1e-4] * 3 + [9.0] * 4,                         # steps 1000 .. 7000
+               dose={"dose_rate_now": 1.0, "fork_lr": None, "lr_frozen": False})
+    (run / "checkpoints" / "checkpoint_7000_steps.json").write_text(json.dumps(
+        {"lr": 9.0, "n_epochs": 3, "batch_size": 2048, "grad_accum_steps": 16}))     # a later shape, past the cut
+    md = json.loads((run / "metadata.json").read_text())
+    (run / "metadata.json").write_text(json.dumps({**md, "num_timesteps": 7000}))
+    whole, cut = read_run(str(run)), read_run(str(run), upto=3000)
+    assert whole["lr_median"] == pytest.approx(9.0) and whole["num_timesteps"] == 7000 and whole["upto"] is None
+    assert whole["recorded_dose"] == 1.0 and whole["n_epochs"] == 3
+    assert (cut["n_lr"], cut["lr_median"], cut["n_epochs"], cut["upto"]) == (3, pytest.approx(1e-4), 7, 3000)
+    assert cut["recorded_dose"] is None and cut["num_timesteps"] is None, "no step is recorded in the kept rows"
+    assert read_run(str(run), upto=2999)["n_lr"] == 2 and read_run(str(run), upto=1000)["n_lr"] == 1
+    assert "no checkpoint row at or before step 999" in read_run(str(run), upto=999)["error"]
+    assert main_json(capsys, [str(run), "--upto", "3000", "--reference", "none"])[0]["n_lr"] == 3
+
+
+def main_json(capsys, argv):
+    from main.dose import main
+
+    assert main([*argv, "--json"]) == 0
+    return json.loads(capsys.readouterr().out)["runs"]
+
+
+def test_upto_keeps_only_placed_rows_and_never_falls_back_to_the_run_level_point(tmp_path):
+    run = tmp_path / "r"
+    (run / "checkpoints").mkdir(parents=True)
+    (run / "checkpoints" / "best_model.json").write_text(json.dumps(
+        {"lr": 9.0, "n_epochs": 7, "batch_size": 2048, "grad_accum_steps": 16}))     # no step: unplaceable
+    (run / "checkpoints" / "checkpoint_2000_steps.json").write_text(json.dumps(
+        {"lr": 1e-4, "n_epochs": 7, "batch_size": 2048, "grad_accum_steps": 16, "num_timesteps": 2000}))
+    (run / "metadata.json").write_text(json.dumps({"current_lr": 5.0, "n_epochs": 7, "batch_size": 2048}))
+    assert read_run(str(run))["n_lr"] == 2, "uncut, the unplaced row counts as before"
+    cut = read_run(str(run), upto=5000)
+    assert cut["n_lr"] == 1 and cut["lr_median"] == pytest.approx(1e-4) and cut["num_timesteps"] == 2000
+    meta_only = tmp_path / "m"
+    meta_only.mkdir()
+    (meta_only / "metadata.json").write_text(json.dumps({"current_lr": 5.0, "n_epochs": 7, "batch_size": 2048}))
+    assert read_run(str(meta_only))["source"] == "metadata"
+    assert "a run-level record cannot be cut" in read_run(str(meta_only), upto=10)["error"]
+    hist = _history_only_run(tmp_path, "h", history_lrs=(2e-5, 4e-5, 8e-5))
+    assert read_run(str(hist), upto=2000)["lr_median"] == pytest.approx(3e-5)
+    _tb(hist, [(s, "train/learning_rate", lr) for s, lr in ((500, 1e-5), (1500, 1e-5), (2500, 7e-5))])
+    row = read_run(str(hist), upto=2000)
+    assert row["source"] == "tb" and row["n_lr"] == 2 and row["lr_median"] == pytest.approx(1e-5)

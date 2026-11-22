@@ -215,9 +215,11 @@ its GO.
   band) and a matched-GPU-time cross at 100M. **Power:** Q6-N's. **Cost** at a step-time ratio of 1: ≈ 30 / 61 /
   45 GPU-h (stopped at 50M / a 100M class / expected with no effect); at the expected ratio 0.59–0.86 (UNVERIFIED)
   ≈ 18–26 / 36–52 / 27–39. First item: a 2.5M card check (≈ 0.4–0.7 GPU-h, bound 3). Built: the rung and KL
-  report (`python -m main.b1.lr_report --fresh-arm`); for this cell and Q6-N, a retention hold on the runs until
-  the read is recorded and the kit's check of a lost run's one replacement. Owed, not deciding: the
-  matched-GPU-time cross (before the 100M look).
+  report with every REPORTED meter (`python -m main.b1.lr_report --fresh-arm`: clip fraction, entropy by 5M
+  window, value loss, the LR bounds, dose, step time); the matched-GPU-time cross's plan
+  (`python -m main.b1.fresh plan-gpu-time`); for this cell and Q6-N, a retention hold on the runs until the read is
+  recorded and the kit's check of a lost run's one replacement. Owed, not deciding: the dated amendment that
+  registers ρ_run's meter (before the 50M look, which reports the same step-time ratio).
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

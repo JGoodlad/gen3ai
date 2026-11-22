@@ -4,6 +4,7 @@
     python -m main.b1.fresh lever-check --arm <fresh_arm.json> --pin-tree <PIN_DIR>  # FRAME §2 item 2; exit 3 = FAIL
     python -m main.b1.fresh check-run  --arm <J> --run <name> --pin-tree <PIN_DIR> [--step N]   # ONE fresh run, early
     python -m main.b1.fresh plan  --arm <J> --look 50M --pin-tree <PIN_DIR> --b1-look <B1 W>/look.json --out <W>
+    python -m main.b1.fresh plan-gpu-time --arm <J> --pin-tree <PIN_DIR> --fresh-look <W100>/look.json --out <WG>
     python -m main.b1.fresh play  --work <W> --pin-dir <PIN_DIR> --device cuda      # four panels; exit 4 = a panel failed
     python -m main.b1.fresh read  --work <W>                                       # W/result/{inputs,verdict}.json
     python -m main.b1.fresh recheck --work <W>                                     # re-decide from inputs.json alone
@@ -65,14 +66,27 @@ cannot be planned. The spare run is then a fresh run like the others (from step 
 same guards), and the look doc records ``replaced_fresh_seed``. The cause (files lost or unreadable, or a wrong
 argv; never a run "lost to its lever") is the amendment's to state: the kit cannot see it.
 
+**The matched-GPU-time cross** (:func:`plan_gpu_time`; Q5-N PREREG §3, REPORTED at 100M, deciding nothing): the fresh
+side is the card's OWN 100M look's files (``--fresh-look``: that look's ``look.json``; each file re-hashed and held to
+the step and sha256 it records), the banked side each banked run's first checkpoint at or after ``M`` within one
+interval, guarded at ``M`` as a look's banked run is. ``M`` (:func:`matched_gpu_step`) is the first 1,000,000 multiple
+at or after ``rho x 100M`` in EXACT arithmetic, and the plan refuses when ``M`` reaches 100M (rho above 0.99: the
+banked file would be the look's own, or past the banked runs' end). rho (:func:`gpu_time_rho`) is
+:func:`main.b1.lr_report.step_time` on all six runs, the exact mean of each cell's, fresh over banked; no run is
+dropped. The plan carries ``cross`` and its own request ids (``..._100m_gputime_<panel>``, the card's families), so
+``play`` plays it unchanged and ``read`` / ``recheck`` report the registered statistic on every view with the class
+NOT read (:func:`cross_verdict`: ``REPORTED``; an INCONCLUSIVE stays one); ``bootstrap`` refuses it. **That meter is
+the build's; Q5-N's PREREG registers rho_run's meter by a dated amendment before rho_run is computed.**
+
 **Not built** (FINDINGS of this build): the REPORTED cross between an own-control cell and B1's banked cell across
-two pins (FRAME §7); and Q5's REPORTED matched-GPU-time cross (its learning-rate and KL report is
-``python -m main.b1.lr_report --fresh-arm``).
+two pins (FRAME §7). The 100M look's ``--b1-look`` must be B1's FULL look (:func:`b1_look_problems`); B1's 100M look
+was a survivor look.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import shlex
@@ -80,6 +94,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
+from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -97,6 +112,10 @@ LOOK_SCHEMA = "gen3_b1_fresh_look_v1"
 #: The B1 arms a banked cell may be (FRAME §1: C at width 128, or W at 256).
 BANKED_ARMS: Tuple[str, ...] = ("C", "W")
 LOOK_STEPS: Dict[str, int] = {"50M": 50_000_000, "100M": 100_000_000}
+#: The REPORTED crosses a card may register beside its 100M look, and each one's request-id tag.
+GPU_TIME = "matched_gpu_time"
+CROSSES: Dict[str, str] = {GPU_TIME: "gputime"}
+REPORTED = "REPORTED"
 #: The resolved keys a fresh argv differs in beyond its declared keys: its own seed and name.
 OWN_KEYS: Tuple[str, ...] = ("run_name", "seed")
 #: Flags no lever may type (beside every flag the banked argv already types): a resume, a torch switch.
@@ -509,10 +528,12 @@ def family(card: str, panel: str) -> str:
     return f"b1_fresh_{card}_h2h_{panel}"
 
 
-def request(card: str, look: str, panel: str) -> str:
+def request(card: str, look: str, panel: str, cross: Optional[str] = None) -> str:
     if look not in LOOK_STEPS:
         raise FreshError(f"look {look!r} is not one of {tuple(LOOK_STEPS)}")
-    return f"b1fresh_{card}_{look.lower()}_{panel}"
+    if cross is not None and cross not in CROSSES:
+        raise FreshError(f"cross {cross!r} is not one of {CROSSES}")
+    return f"b1fresh_{card}_{look.lower()}{'_' + CROSSES[cross] if cross else ''}_{panel}"
 
 
 def family_rule(card: str, panel: str, pin: str) -> str:
@@ -522,8 +543,8 @@ def family_rule(card: str, panel: str, pin: str) -> str:
             f"variances floored at {X.FLOOR_PP} pp, t on 2(n-1) df, {int(round(100 * X.LEVEL))} % interval)")
 
 
-def names(spec: ArmSpec, look: str) -> Dict[str, Dict[str, Any]]:
-    return {p: {"family": family(spec.card, p), "request": request(spec.card, look, p), "pairs": X.PAIRS[p],
+def names(spec: ArmSpec, look: str, cross: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+    return {p: {"family": family(spec.card, p), "request": request(spec.card, look, p, cross), "pairs": X.PAIRS[p],
                 "rule": family_rule(spec.card, p, spec.pin)} for p in X.PANELS}
 
 
@@ -534,14 +555,36 @@ def plan(models: Path, spec: ArmSpec, look: str, resolver: Resolver, *, b1_look:
     """``(look doc, [])`` or ``(None, problems)`` (module docstring). TESTS ONLY, never the CLI: ``guard`` replaces the
     per-run guard, ``cross`` the cross-run guards, ``step`` the look's step and ``k9b`` the K9(b) reader; the
     rehearsal uses them to pose B1 runs as a fresh cell, which the registered guards refuse."""
-    from utils.hashing import sha256_file
-
     if look not in LOOK_STEPS:
         raise FreshError(f"look {look!r} is not one of {tuple(LOOK_STEPS)}")
     at = LOOK_STEPS[look] if step is None else step
     lc = lever_check(spec, resolver)
     if not lc["ok"]:
         return None, [f"lever check: {p}" for p in lc["problems"]]
+    facts, probs = check_sides(models, spec, lc, {FR.FRESH: at, FR.BANKED: at}, replace, guard=guard, cross=cross,
+                               k9b=k9b)
+    if probs:
+        return None, probs
+    identity: Dict[str, Any] = {"checked": False, "why": "own control: no B1 look reads these runs"}
+    if spec.own_control is None:
+        if b1_look is None:
+            return None, ["no B1 look.json given (--b1-look): the banked cell's files cannot be shown to be the bytes "
+                          "B1 read (FRAME §2 item 6)"]
+        bad = b1_look_problems(b1_look, spec, look, facts[FR.BANKED])
+        if bad:
+            return None, bad
+        identity = {"checked": True, "b1_look": b1_look.get("look"), "pin": b1_look.get("pin")}
+    return look_doc(spec, look, at, lc, facts, identity, replace), []
+
+
+def check_sides(models: Path, spec: ArmSpec, lc: Mapping[str, Any], steps: Mapping[str, int],
+                replace: Optional[int], *, guard: Optional[RunGuard] = None,
+                cross: Optional[Callable[[ArmSpec, Mapping[str, Sequence[Mapping[str, Any]]]], List[str]]] = None,
+                k9b: Optional[K.K9bReader] = None) -> Tuple[Dict[str, List[Dict[str, Any]]], List[str]]:
+    """``(facts by side, problems)``: every run of each side guarded at that side's step (module docstring, "A run
+    counts"), the cross-run guards, then each checkpoint's sha256 (two equal hashes refuse)."""
+    from utils.hashing import sha256_file
+
     check = guard or default_guard(spec, lc, k9b)
     sides = {FR.FRESH: spec.fresh, FR.BANKED: banked_runs(spec, replace)}
     probs: List[str] = []
@@ -552,35 +595,141 @@ def plan(models: Path, spec: ArmSpec, look: str, resolver: Resolver, *, b1_look:
             if not run_dir.is_dir():
                 probs.append(f"{r.run}: no run folder under {models}")
                 continue
-            p, f = check(side, run_dir, r, at)
+            p, f = check(side, run_dir, r, steps[side])
             probs.extend(f"{r.run}: {x}" for x in p)
             facts[side].append(dict(f, run=r.run, seed=r.seed))
     probs.extend((cross or cross_problems)(spec, facts))
     if probs:
-        return None, probs
+        return facts, probs
     for fs in facts.values():
         for f in fs:
             f["sha256"] = sha256_file(f["checkpoint"])
     shas = [f["sha256"] for fs in facts.values() for f in fs]
     if len(set(shas)) != len(shas):
-        return None, ["two runs' checkpoints have the same sha256"]
-    identity: Dict[str, Any] = {"checked": False, "why": "own control: no B1 look reads these runs"}
-    if spec.own_control is None:
-        if b1_look is None:
-            return None, ["no B1 look.json given (--b1-look): the banked cell's files cannot be shown to be the bytes "
-                          "B1 read (FRAME §2 item 6)"]
-        bad = b1_look_problems(b1_look, spec, look, facts[FR.BANKED])
-        if bad:
-            return None, bad
-        identity = {"checked": True, "b1_look": b1_look.get("look"), "pin": b1_look.get("pin")}
+        return facts, ["two runs' checkpoints have the same sha256"]
+    return facts, []
+
+
+def look_doc(spec: ArmSpec, look: str, at: int, lc: Mapping[str, Any], facts: Mapping[str, Sequence[Any]],
+             identity: Mapping[str, Any], replace: Optional[int], cross: Optional[Mapping[str, Any]] = None
+             ) -> Dict[str, Any]:
+    """The look document ``play`` and ``read`` take (schema :data:`LOOK_SCHEMA`); ``cross`` a REPORTED cross's."""
     design = FR.design_of({s: [f["run"] for f in facts[s]] for s in FR.SIDES})
     zip_of = {f["run"]: f["checkpoint"] for fs in facts.values() for f in fs}
-    return {"schema": LOOK_SCHEMA, "look": look, "step": at, "card": spec.card, "pin": spec.pin,
-            "arm": spec.as_dict(), "arm_sha256": spec.sha256, "banked_arm": spec.banked_arm,
-            "own_control": spec.own_control is not None, "replaced_seed": replace,
-            "replaced_fresh_seed": spec.replaced_fresh, "lever_check": lc,
-            "banked_identity": identity, "runs": facts,
-            "cells": [[zip_of[p], zip_of[o]] for p, o in design.cells()], "names": names(spec, look)}, []
+    doc = {"schema": LOOK_SCHEMA, "look": look, "step": at, "card": spec.card, "pin": spec.pin,
+           "arm": spec.as_dict(), "arm_sha256": spec.sha256, "banked_arm": spec.banked_arm,
+           "own_control": spec.own_control is not None, "replaced_seed": replace,
+           "replaced_fresh_seed": spec.replaced_fresh, "lever_check": dict(lc),
+           "banked_identity": dict(identity), "runs": {k: list(v) for k, v in facts.items()},
+           "cells": [[zip_of[p], zip_of[o]] for p, o in design.cells()],
+           "names": names(spec, look, None if cross is None else str(cross["kind"]))}
+    if cross is not None:
+        doc["cross"] = dict(cross)
+    return doc
+
+
+# --------------------------------------------------------------------------------- the matched-GPU-time cross
+def matched_gpu_step(rho: Fraction, look_step: int = LOOK_STEPS["100M"], every: int = A.CHECKPOINT_EVERY) -> int:
+    """``M``: the first multiple of ``every`` at or after ``rho * look_step``, in exact arithmetic (Q5-N PREREG §3:
+    rounding toward the control is conservative to the arm). Refused unless ``0 < M < look_step``: at ``rho`` above
+    ``1 - every / look_step`` the banked file is the look's own, and past 1 the banked runs hold no such file."""
+    if not isinstance(rho, Fraction) or rho <= 0:
+        raise FreshError(f"rho {rho!r} is not a positive exact ratio")
+    m = math.ceil(rho * look_step / every) * every
+    if m >= look_step:
+        raise FreshError(f"rho {float(rho):.6f} puts the banked file at {m:,} steps, at or past the look's "
+                         f"{look_step:,}: the arm is not cheaper a step by a checkpoint interval, so there is no "
+                         "matched-GPU-time cross to play (record it so)")
+    return m
+
+
+def cross_look_problems(fresh_look: Mapping[str, Any], spec: ArmSpec) -> List[str]:
+    """The card's own played 100M look, whose fresh files the cross reuses: this card, pin and arm file, no cross."""
+    probs: List[str] = []
+    want = {"schema": LOOK_SCHEMA, "look": "100M", "card": spec.card, "pin": spec.pin, "arm_sha256": spec.sha256}
+    for k, v in want.items():
+        if fresh_look.get(k) != v:
+            probs.append(f"the fresh look's {k} is {fresh_look.get(k)!r}, not {v!r}")
+    if fresh_look.get("cross") is not None:
+        probs.append("the fresh look given is itself a cross, not the card's 100M look")
+    return probs
+
+
+def gpu_time_rho(models: Path, spec: ArmSpec, replace: Optional[int]) -> Tuple[Fraction, Dict[str, Any]]:
+    """``(rho_run, the meter's record)``: :func:`main.b1.lr_report.step_time` on every run of both sides over its
+    window, the cell figure the exact MEAN of its runs', rho the fresh cell's over the banked cell's."""
+    from main.b1 import lr_report as LR
+
+    sides = {FR.FRESH: spec.fresh, FR.BANKED: banked_runs(spec, replace)}
+    per: Dict[str, List[Dict[str, Any]]] = {s: [] for s in FR.SIDES}
+    errs: List[str] = []
+    for side, runs in sides.items():
+        for r in runs:
+            try:
+                per[side].append(dict(LR.run_step_time(models / r.run), run=r.run))
+            except LR.ReportError as e:
+                errs.append(str(e))
+    if errs:
+        raise FreshError("the step-time meter cannot be read, and no run is dropped: " + "; ".join(errs))
+    rho = LR.step_time_ratio(per[FR.FRESH], per[FR.BANKED])
+    return rho, {"meter": "main.b1.lr_report.step_time", "window": list(LR.STEP_TIME_WINDOW),
+                 "cell": "the exact mean of the runs' seconds per 1M steps", "runs": per,
+                 "rho": float(rho), "rho_exact": LR.exact(rho)}
+
+
+def plan_gpu_time(models: Path, spec: ArmSpec, resolver: Resolver, fresh_look: Mapping[str, Any], *,
+                  rho: Optional[Tuple[Fraction, Mapping[str, Any]]] = None, k9b: Optional[K.K9bReader] = None,
+                  guard: Optional[RunGuard] = None,
+                  cross: Optional[Callable[[ArmSpec, Mapping[str, Sequence[Mapping[str, Any]]]], List[str]]] = None
+                  ) -> Tuple[Optional[Dict[str, Any]], List[str]]:
+    """The REPORTED matched-GPU-time cross (Q5-N PREREG §3; module docstring): ``(look doc, [])`` or ``(None,
+    problems)``. The fresh side is the card's 100M look's files, byte for byte; the banked side each banked run's
+    first checkpoint at or after ``M`` (:func:`matched_gpu_step` of rho), guarded as a look's banked run is at its
+    step. TESTS ONLY: ``rho`` replaces the meter, ``guard`` / ``cross`` / ``k9b`` as in :func:`plan`."""
+    probs = cross_look_problems(fresh_look, spec)
+    if probs:
+        return None, probs
+    replace = fresh_look.get("replaced_seed")
+    try:
+        got_rho, meter = rho if rho is not None else gpu_time_rho(models, spec, replace)
+        m = matched_gpu_step(got_rho)
+    except FreshError as e:
+        return None, [str(e)]
+    look_at = LOOK_STEPS["100M"]
+    lc = lever_check(spec, resolver)
+    if not lc["ok"]:
+        return None, [f"lever check: {p}" for p in lc["problems"]]
+    facts, probs = check_sides(models, spec, lc, {FR.FRESH: look_at, FR.BANKED: m}, replace, guard=guard,
+                               cross=cross, k9b=k9b)
+    if probs:
+        return None, probs
+    looked = {f.get("run"): f for f in (fresh_look.get("runs") or {}).get(FR.FRESH) or ()}
+    for f in facts[FR.FRESH]:
+        t = looked.get(f["run"])
+        if t is None or (t.get("steps"), t.get("sha256")) != (f.get("steps"), f.get("sha256")):
+            probs.append(f"{f['run']}: its 100M file is step {f.get('steps')} sha {str(f.get('sha256'))[:12]}, the "
+                         f"card's 100M look read {None if t is None else (t.get('steps'), str(t.get('sha256'))[:12])}")
+    if probs:
+        return None, probs
+    record = {"kind": GPU_TIME, "registration": "the card's PREREG §3, REPORTED at 100M: decides nothing",
+              "banked_step_target": m, "fresh_look_step": look_at, "rho": float(got_rho),
+              "rho_exact": f"{got_rho.numerator}/{got_rho.denominator}", "step_time": dict(meter),
+              "banked_checkpoint_steps": {f["run"]: f["steps"] for f in facts[FR.BANKED]}}
+    identity = {"checked": False, "why": "the matched-GPU-time cross: no B1 look read these banked files; the fresh "
+                                         "side is the card's own 100M look's, byte for byte"}
+    return look_doc(spec, "100M", look_at, lc, facts, identity, replace, record), []
+
+
+def cross_verdict(verdict: Mapping[str, Any], cross: Mapping[str, Any]) -> Dict[str, Any]:
+    """A REPORTED cross's verdict: the registered statistic on every view, the class NOT read (``REPORTED``); an
+    INCONCLUSIVE stays INCONCLUSIVE."""
+    d = dict(verdict["decision"])
+    if d.get("outcome") != FR.INCONCLUSIVE:
+        words = str(d.get("words", ""))
+        d = {"verdict": REPORTED, "outcome": REPORTED, "at_boundary": [], "labels": [], "reasons": [],
+             "words": REPORTED + words[len(str(d.get("outcome"))):] if words.startswith(str(d.get("outcome")))
+             else words}
+    return dict(verdict, decision=d, cross=dict(cross), decides=None)
 
 
 # ----------------------------------------------------------------------------------------------------- play
@@ -723,6 +872,8 @@ def recheck(work: Path) -> Tuple[bool, Dict[str, Any]]:
     """``(same, re-decided verdict)``: ``decide`` run again on ``result/inputs.json`` alone."""
     doc = json.loads((work / "result" / "inputs.json").read_text())
     got = FR.decide(doc, {"look": doc["look"]})
+    if doc.get("cross") is not None:
+        got = cross_verdict(got, doc["cross"])
     had = json.loads((work / "result" / "verdict.json").read_text())
     return _json(got) == had, got
 
@@ -741,6 +892,8 @@ def bootstrap(doc: Mapping[str, Any], cells_by_panel: Mapping[str, Sequence[Any]
 
     if draws < 100:
         raise FreshError(f"--draws {draws}: at least 100")
+    if doc.get("cross") is not None:
+        raise FreshError(f"the {doc['cross'].get('kind')} cross is REPORTED: no team bootstrap is registered for it")
     _inputs, verdict = FR.read(doc, cells_by_panel, row_reasons, pairs=pairs)
     head = {"what": "team-cluster bootstrap of the fresh-cell statistic", "status": TB.REPORTED, "decides": None,
             "card": doc["card"], "look": doc["look"], "pin": doc["pin"], "draws": draws, "seed": seed}
@@ -810,9 +963,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     lv = sub.add_parser("lever-check", help="FRAME §2 item 2 at the pin (exit 3 = FAIL)")
     c = sub.add_parser("check-run", help="ONE fresh or own-control run at its first checkpoint (exit 3 = a problem)")
     p = sub.add_parser("plan", help="check the six runs and write the look's cells (exit 3 = REFUSED)")
-    for q in (d, lv, c, p):
+    g = sub.add_parser("plan-gpu-time", help="the REPORTED matched-GPU-time cross at 100M: its cells (exit 3 = REFUSED)")
+    for q in (d, lv, c, p, g):
         q.add_argument("--arm", required=True, help="the card's fresh-arm file (schema gen3_b1_fresh_arm_v1)")
-    for q in (lv, c, p):
+    for q in (lv, c, p, g):
         q.add_argument("--pin-tree", required=True, help="a clean detached checkout of the arm's pin (its parser)")
     c.add_argument("--run", required=True)
     c.add_argument("--step", type=int, default=A.CHECKPOINT_EVERY)
@@ -820,6 +974,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     p.add_argument("--out", required=True, help="the look's work directory")
     p.add_argument("--b1-look", help="B1's look.json at the same step (FRAME §2 item 6; required for a banked B1 cell)")
     p.add_argument("--replace", type=int, help="the REGISTERED B1 seed B1's spare replaced (B1 PREREG §10)")
+    g.add_argument("--fresh-look", required=True, help="the card's own 100M look.json (its fresh files are reused)")
+    g.add_argument("--out", required=True, help="the cross's work directory (not the 100M look's)")
     y = sub.add_parser("play", help="play a planned look's four panels in the pin checkout")
     y.add_argument("--work", required=True)
     y.add_argument("--pin-dir", required=True, help="a clean checkout of the plan's pin, Rust built")
@@ -846,7 +1002,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             for r in spec.own_control or ():
                 print(f"{A.LAUNCHER} {shlex.join(control_argv(spec, A.PHASE_STEPS[0], r))}   # own control")
             return 0
-        if a.cmd in ("lever-check", "check-run", "plan"):
+        if a.cmd in ("lever-check", "check-run", "plan", "plan-gpu-time"):
             spec = load_arm(a.arm)
             resolver = pin_tree_resolver(a.pin_tree, spec.pin)
             if a.cmd == "lever-check":
@@ -865,8 +1021,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 print(json.dumps({"run": run.run, "side": side, "ok": not probs, "problems": probs, **facts},
                                  indent=1, default=str))
                 return 0 if not probs else 3
-            b1 = json.loads(Path(a.b1_look).read_text()) if a.b1_look else None
-            doc, probs = plan(_models(), spec, a.look, resolver, b1_look=b1, replace=a.replace)
+            if a.cmd == "plan-gpu-time":
+                fresh_look = Path(a.fresh_look)
+                if Path(a.out).resolve() == fresh_look.resolve().parent:
+                    raise FreshError("--out is the 100M look's own work directory: the cross writes its own")
+                doc, probs = plan_gpu_time(_models(), spec, resolver, json.loads(fresh_look.read_text()))
+            else:
+                b1 = json.loads(Path(a.b1_look).read_text()) if a.b1_look else None
+                doc, probs = plan(_models(), spec, a.look, resolver, b1_look=b1, replace=a.replace)
             if doc is None:
                 print("REFUSED: " + "; ".join(probs), file=sys.stderr)
                 return 3
@@ -874,6 +1036,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             out.mkdir(parents=True, exist_ok=True)
             (out / "cells_plan.json").write_text(json.dumps(doc["cells"], indent=1))
             (out / "look.json").write_text(json.dumps(doc, indent=1, default=str))
+            if doc.get("cross"):
+                cx = doc["cross"]
+                print(f"REPORTED {cx['kind']}: rho {cx['rho']:.6f}, banked files at or after "
+                      f"{cx['banked_step_target']:,} ({cx['banked_checkpoint_steps']})", file=sys.stderr)
             print(len(doc["cells"]))
             return 0
         work = Path(a.work)
@@ -886,6 +1052,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         doc = json.loads((work / "look.json").read_text())
         if a.cmd == "read":
             inp, verdict = read_ledger(_ledger_root(a), doc)
+            if doc.get("cross") is not None:
+                inp, verdict = dict(inp, cross=doc["cross"]), cross_verdict(verdict, doc["cross"])
             (work / "result").mkdir(parents=True, exist_ok=True)
             (work / "result" / "inputs.json").write_text(json.dumps(inp, indent=1, default=str))
             (work / "result" / "verdict.json").write_text(json.dumps(verdict, indent=1, default=str))
