@@ -40,7 +40,12 @@ resolved every declared key, every one of B1's lever keys (:data:`main.b1.look.C
 own argv resolves them at the pin (the card's epochs, not B1's ten); and its K9(b) read through the look checkpoint is
 PASS. **A banked B1 run counts** iff :func:`main.b1.look.check_run` passes it at the look's step, with its lever keys
 from the pin's parser, AND (FRAME §2 item 6) its look checkpoint is byte-identical to what B1's own look read
-(``--b1-look``: B1's ``look.json`` for that step; the plan refuses without it). **Across the six runs**: one
+(``--b1-look``: B1's ``look.json`` for that step; the plan refuses without it). That file is B1's FULL look, or,
+where B1 played none, the SURVIVOR look :data:`B1_SURVIVOR_RECORD` names (:func:`b1_look_problems`): B1's 100M look
+read only its survivor W and C, so cell C's 100M files are that look's, accepted iff its rows for C are exactly the
+banked cell's three runs and each file's step and sha256 are the same on disk, in the look and in B1's committed
+record; every other survivor look (another look, factor or arm; any row or byte that differs) is refused.
+**Across the six runs**: one
 ``torch_version`` and one ``init_num_threads``; every run's last process records the same public ``cli_args`` as the
 first banked run's, except its own keys (:data:`main.b1.look.RUN_OWN_KEYS`), a fresh run's declared keys, and the
 keys a resume rewrites between processes of different kinds (:data:`main.b1.look.RESUME_REWRITES`); and the same
@@ -79,8 +84,7 @@ NOT read (:func:`cross_verdict`: ``REPORTED``; an INCONCLUSIVE stays one); ``boo
 the build's; Q5-N's PREREG registers rho_run's meter by a dated amendment before rho_run is computed.**
 
 **Not built** (FINDINGS of this build): the REPORTED cross between an own-control cell and B1's banked cell across
-two pins (FRAME §7). The 100M look's ``--b1-look`` must be B1's FULL look (:func:`b1_look_problems`); B1's 100M look
-was a survivor look.
+two pins (FRAME §7); a banked cell W read from a survivor look (no card registers one).
 """
 from __future__ import annotations
 
@@ -127,6 +131,15 @@ CHECKED_KEYS: Tuple[str, ...] = tuple(sorted({*K.CONFIG_KEYS, "n_epochs"}))
 #: PREREGs by ``fresh_test.py``. A card absent here is a draft: its rows are whatever its file says.
 REGISTERED_CELLS: Dict[str, Tuple[Tuple[int, ...], int]] = {"q6n": ((5211, 5212, 5213), 5219),
                                                             "q5n": ((5201, 5202, 5203), 5209)}
+#: look -> B1's SURVIVOR look a banked cell is read from where B1 played no full look (FRAME §2 item 6): the look's
+#: ``survivor`` factor, the banked arm it serves, and that arm's rows ``run -> (step, sha256)`` as B1's committed
+#: record states them (``designs/research_state/measurements/boundary1_scratch_2026-11-09/record/look_100M/
+#: verdict.json``'s ``checkpoints``; ``fresh_test.py`` holds this table against that file). Breadth stopped at 50M
+#: (STOP-HARM), so B1's 75M and 100M looks read only W and C; a card's 100M look takes cell C from the 100M one.
+B1_SURVIVOR_RECORD: Dict[str, Dict[str, Any]] = {"100M": {"survivor": "width", "banked_arm": "C", "checkpoints": {
+    "rb_b1c_s5101": (100_000_127, "d833aab47f49a726753b60a35bb7d085fb70909e855b2bf9b46cef54c26db098"),
+    "rb_b1c_s5102": (100_000_172, "32e1a8d0587f2463600a41107a1b431990de53b085c320312ae28e2642a43148"),
+    "rb_b1c_s5110": (100_000_025, "21868790990e0ded79e710a2d747fa2f303a9047b8d3c41a1557a14848fa159b")}}}
 _CARD = re.compile(r"^[a-z][a-z0-9]{0,23}$")
 _RUN = re.compile(r"^[a-z][a-z0-9_]{2,63}$")
 _SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -504,14 +517,22 @@ def cross_problems(spec: ArmSpec, facts: Mapping[str, Sequence[Mapping[str, Any]
     return probs
 
 
-def b1_look_problems(b1_look: Mapping[str, Any], spec: ArmSpec, look: str,
-                     banked: Sequence[Mapping[str, Any]]) -> List[str]:
-    """FRAME §2 item 6: each banked run's look checkpoint is the file B1's own look read (same step, same sha256)."""
+def b1_look_problems(b1_look: Mapping[str, Any], spec: ArmSpec, look: str, banked: Sequence[Mapping[str, Any]],
+                     record: Optional[Mapping[str, Mapping[str, Any]]] = None) -> List[str]:
+    """FRAME §2 item 6: each banked run's look checkpoint is the file B1's own look read (same step, same sha256).
+    The look is B1's FULL look, or the survivor look :data:`B1_SURVIVOR_RECORD` names for this look, factor and banked
+    arm, which is held to more (:func:`survivor_look_problems`). ``record`` (TESTS ONLY) replaces that table."""
     probs: List[str] = []
-    if b1_look.get("look") != look or b1_look.get("pin") != spec.pin or b1_look.get("survivor"):
+    survivor = b1_look.get("survivor")
+    rec = (B1_SURVIVOR_RECORD if record is None else record).get(look) if survivor else None
+    named = rec is not None and (rec["survivor"], rec["banked_arm"]) == (survivor, spec.banked_arm)
+    if b1_look.get("look") != look or b1_look.get("pin") != spec.pin or (survivor and not named):
         return [f"the B1 look given is the {b1_look.get('look')!r} look at {str(b1_look.get('pin'))[:12]} "
-                f"(survivor {b1_look.get('survivor')!r}), not B1's full {look} look at {spec.pin[:12]}"]
-    theirs = {f.get("run"): f for f in (b1_look.get("runs") or {}).get(spec.banked_arm) or ()}
+                f"(survivor {survivor!r}), not B1's full {look} look at {spec.pin[:12]}"
+                + (f", nor the survivor look B1's record names for cell {spec.banked_arm} at {look}" if survivor
+                   else "")]
+    rows = (b1_look.get("runs") or {}).get(spec.banked_arm) or ()
+    theirs = {f.get("run"): f for f in rows}
     for f in banked:
         t = theirs.get(f["run"])
         if t is None:
@@ -519,6 +540,28 @@ def b1_look_problems(b1_look: Mapping[str, Any], spec: ArmSpec, look: str,
         elif (t.get("steps"), t.get("sha256")) != (f.get("steps"), f.get("sha256")):
             probs.append(f"{f['run']}: its {look} file is step {f.get('steps')} sha {str(f.get('sha256'))[:12]}, B1 "
                          f"read step {t.get('steps')} sha {str(t.get('sha256'))[:12]}")
+    if survivor and rec is not None:
+        probs.extend(survivor_look_problems(rows, rec["checkpoints"], spec.banked_arm, look, banked))
+    return probs
+
+
+def survivor_look_problems(rows: Sequence[Mapping[str, Any]], checkpoints: Mapping[str, Sequence[Any]], arm: str,
+                           look: str, banked: Sequence[Mapping[str, Any]]) -> List[str]:
+    """What a survivor look owes beyond a full look's check: its rows for the banked arm are EXACTLY the banked
+    cell's runs (none more, none fewer, none twice), those are the runs of B1's record, and each row's step and sha256
+    are the record's. With :func:`b1_look_problems`' own comparison, disk, look and record then agree byte for byte."""
+    probs: List[str] = []
+    cell, theirs = sorted(f["run"] for f in banked), sorted(str(r.get("run")) for r in rows)
+    if theirs != cell:
+        probs.append(f"B1's {look} survivor look reads {theirs} for cell {arm}, not exactly the banked cell's {cell}")
+    if sorted(checkpoints) != cell:
+        probs.append(f"B1's record of its {look} survivor look names {sorted(checkpoints)} for cell {arm}, not the "
+                     f"banked cell's {cell}")
+    for r in rows:
+        want = checkpoints.get(str(r.get("run")))
+        if want is not None and (r.get("steps"), r.get("sha256")) != tuple(want):
+            probs.append(f"{r.get('run')}: B1's {look} survivor look says step {r.get('steps')} sha "
+                         f"{str(r.get('sha256'))[:12]}, B1's record step {want[0]} sha {str(want[1])[:12]}")
     return probs
 
 
@@ -551,10 +594,12 @@ def names(spec: ArmSpec, look: str, cross: Optional[str] = None) -> Dict[str, Di
 def plan(models: Path, spec: ArmSpec, look: str, resolver: Resolver, *, b1_look: Optional[Mapping[str, Any]] = None,
          replace: Optional[int] = None, k9b: Optional[K.K9bReader] = None, guard: Optional[RunGuard] = None,
          cross: Optional[Callable[[ArmSpec, Mapping[str, Sequence[Mapping[str, Any]]]], List[str]]] = None,
-         step: Optional[int] = None) -> Tuple[Optional[Dict[str, Any]], List[str]]:
+         step: Optional[int] = None, b1_record: Optional[Mapping[str, Mapping[str, Any]]] = None
+         ) -> Tuple[Optional[Dict[str, Any]], List[str]]:
     """``(look doc, [])`` or ``(None, problems)`` (module docstring). TESTS ONLY, never the CLI: ``guard`` replaces the
-    per-run guard, ``cross`` the cross-run guards, ``step`` the look's step and ``k9b`` the K9(b) reader; the
-    rehearsal uses them to pose B1 runs as a fresh cell, which the registered guards refuse."""
+    per-run guard, ``cross`` the cross-run guards, ``step`` the look's step, ``k9b`` the K9(b) reader and
+    ``b1_record`` :data:`B1_SURVIVOR_RECORD`; the rehearsal uses them to pose B1 runs as a fresh cell, which the
+    registered guards refuse."""
     if look not in LOOK_STEPS:
         raise FreshError(f"look {look!r} is not one of {tuple(LOOK_STEPS)}")
     at = LOOK_STEPS[look] if step is None else step
@@ -570,10 +615,12 @@ def plan(models: Path, spec: ArmSpec, look: str, resolver: Resolver, *, b1_look:
         if b1_look is None:
             return None, ["no B1 look.json given (--b1-look): the banked cell's files cannot be shown to be the bytes "
                           "B1 read (FRAME §2 item 6)"]
-        bad = b1_look_problems(b1_look, spec, look, facts[FR.BANKED])
+        bad = b1_look_problems(b1_look, spec, look, facts[FR.BANKED], b1_record)
         if bad:
             return None, bad
         identity = {"checked": True, "b1_look": b1_look.get("look"), "pin": b1_look.get("pin")}
+        if b1_look.get("survivor"):
+            identity["survivor"] = b1_look.get("survivor")
     return look_doc(spec, look, at, lc, facts, identity, replace), []
 
 
