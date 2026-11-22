@@ -218,8 +218,10 @@ its GO.
   report with every REPORTED meter (`python -m main.b1.lr_report --fresh-arm`: clip fraction, entropy by 5M
   window, value loss, the LR bounds, dose, step time); the matched-GPU-time cross's plan
   (`python -m main.b1.fresh plan-gpu-time`); for this cell and Q6-N, a retention hold on the runs until the read is
-  recorded and the kit's check of a lost run's one replacement. Owed, not deciding: the dated amendment that
-  registers ρ_run's meter (before the 50M look, which reports the same step-time ratio).
+  recorded and the kit's check of a lost run's one replacement. **Amendment 1 (2026-11-22, blind)** registers
+  ρ_run's meter (the mean-of-three step-time ratio over 10M to 50M, exact; the same ratio is reported at both
+  looks) and, for this cell and Q6-N, names the banked cell's 100M files: those of B1's 100M survivor look, which
+  the kit reads since `d41989b96`. Nothing of either registration is owed a build or an amendment.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
   mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh runs, no GPU
   of its own.

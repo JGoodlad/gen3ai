@@ -4,7 +4,9 @@
 check. NOTHING HAS TRAINED and this file authorises no launch.** The GPU window is the orchestrator's and comes AFTER
 Q6-N's ([`../q6n_policy_readout_fresh_2026-11-20/PREREG.md`](../q6n_policy_readout_fresh_2026-11-20/PREREG.md), its
 ruling R4); its first item is § 7's card check. Nothing below changes after the first Q5-N run launches except by a
-dated amendment written before the look it touches, saying why.
+dated amendment written before the look it touches, saying why. **AMENDED 2026-11-22 (Amendment 1, § 11: the banked
+cell's 100M files are those of B1's 100M survivor look; ρ_run's meter is registered with its build; no rule
+moves), also blind.**
 
 **The question.** From scratch, under the production learning-rate controller, does an agent trained with five
 passes over each batch at matched movement (`--n-epochs 5 --lr 6e-4`, X27's form) end stronger, weaker or not
@@ -239,3 +241,57 @@ figure (ledger `L21451`: 13.59 % less GPU time a step at forks, an earlier era a
   read closes. **UNVERIFIED:** that a grooming plan would refuse them.
 - **F6. UNVERIFIED and priced as such:** ρ_Q5, the look's cost, σ of the fresh cell, σ at 100M, and that five
   epochs change nothing in the compiled update but its pass count.
+
+## 11. Amendments
+
+### Amendment 1 (2026-11-22): the banked cell's 100M files; ρ_run's meter
+
+Written 2026-11-22 on the orchestrator's instruction and ruling, before both looks and before every other Q5 event.
+**Blind: no Q5-N run, pilot, card check, game or look exists** (no `rb_q5n_*` directory, no GPU window), **and
+ρ_run has not been computed** (it needs the arm's runs). **It moves no rule**: no bar, class, view, panel, pair
+count, seed, run name, argv, pin, guard or deciding statistic. Item 1 says WHICH files the 100M look reads for the
+banked cell; item 2 fixes the meter § 3 left to "a dated amendment, before Q5's 100M look and before ρ_run is
+computed". **What was read to write it:** the plan of B1's 100M survivor look (its `look.json`, which holds no
+score), the `checkpoints` block of B1's committed record of that look, and the build of commit `ab0048861`. Known to
+the writer and saying nothing of a Q5 run: B1's 100M outcome (W against C, `NO-CLASS`), and the meter's figures on
+B1's own runs from that build's check (C over W, 0.7127).
+
+1. **The banked cell's 100M files** are Q6-N's Amendment 1, item for item
+   ([`../q6n_policy_readout_fresh_2026-11-20/PREREG.md`](../q6n_policy_readout_fresh_2026-11-20/PREREG.md) § 11):
+   B1's 100M look was the SURVIVOR look of width, and the banked cell's files are that look's files for C:
+   - `rb_b1c_s5101` at 100,000,127, sha256 `d833aab47f49a726753b60a35bb7d085fb70909e855b2bf9b46cef54c26db098`;
+   - `rb_b1c_s5102` at 100,000,172, sha256 `32e1a8d0587f2463600a41107a1b431990de53b085c320312ae28e2642a43148`;
+   - `rb_b1c_s5110` at 100,000,025, sha256 `21868790990e0ded79e710a2d747fa2f303a9047b8d3c41a1557a14848fa159b`.
+   The look's `look.json` is banked as
+   [`../q6n_policy_readout_fresh_2026-11-20/b1_look_100M.json`](../q6n_policy_readout_fresh_2026-11-20/b1_look_100M.json)
+   (sha256 `cd074fb09fd2e9d1ae0f119b64b270ee1721f26945b8f6013667f854e5bd826c`), the kit's `--b1-look` at the 100M
+   look. The kit that reads it is `python -m main.b1.fresh` at `d41989b96`, under the three conditions of Q6-N's
+   Amendment 1 item 2 (the rows for C exactly the banked cell's three runs; each step and sha256 the same on disk,
+   in the look and in B1's record; B1's run guard with K9(b) at the step). This closes § 3's "B1's 100M `look.json`
+   is banked the same way before any 100M look". The 50M look is untouched.
+2. **ρ_run's meter** (the orchestrator's ruling; the text below is registered as ruled):
+
+   > ρ_run's meter (§3, F2), registered with its build `ab0048861`: per run, `main.b1.lr_report.step_time`. That
+   > is §7's card-check formula, (median `lifecycle/update_wall_s` + median `rollout/collect_ms`/1000) / median
+   > Δsteps × 10⁶, over the rollout rows with 10,000,000 ≤ step ≤ 50,000,000 after a resume's superseded rows are
+   > removed. The cell's figure is the mean of its three runs, and ρ_run = the arm's figure / C's, in exact
+   > arithmetic. M = ⌈ρ_run × 100⌉ × 1,000,000. The banked file is each C run's first checkpoint at or after M,
+   > within one interval. Not played if M ≥ 100,000,000. Command: `python -m main.b1.fresh plan-gpu-time`. The
+   > same meter is the REPORTED step-time ratio at both looks.
+
+3. **Why this meter.** It is the card check's own formula (§ 7 item 6) on the window § 3 already names, so it adds
+   no degree of freedom; exact arithmetic leaves no rounding at a 1,000,000 boundary (root rule 8). **The cell's
+   figure is the MEAN of three** because that is this registration's convention for an arm-to-control ratio of a
+   training quantity: § 3 reports the dose as "the arm-to-control ratio of the cell means of `dose_rate`", and the
+   build reports every cell meter as the mean of its runs. § 3's one median of three is the MOVEMENT-UNMATCHED
+   label's, which is the card's own wording for that label ("the arm cell's median last-epoch KL"); it is not
+   moved, and it is not a ratio. § 3 itself named no aggregate for ρ_run ("the arm cell's GPU time a step over
+   C's"): this item fixes it.
+4. **What the build does at the edges** (a description of `ab0048861`, registering nothing more). No run is
+   dropped: the meter refuses when the rollout rows of any of the six runs do not span the window, and the plan
+   then refuses by name; that refusal is recorded beside the look. The plan needs the card's own 100M look's
+   `look.json` (`--fresh-look`), so it is made only after that look. The cross stays REPORTED; the class never
+   waits on it (§ 3).
+5. **What this closes.** § 3's owed amendment and § 10 F2: the rung, KL and label report and every REPORTED meter
+   (`python -m main.b1.lr_report --fresh-arm`), the cross's plan (`python -m main.b1.fresh plan-gpu-time`) and its
+   meter are built and registered. Nothing of this registration is owed a build.

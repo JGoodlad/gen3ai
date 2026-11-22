@@ -81,7 +81,7 @@ banked file would be the look's own, or past the banked runs' end). rho (:func:`
 dropped. The plan carries ``cross`` and its own request ids (``..._100m_gputime_<panel>``, the card's families), so
 ``play`` plays it unchanged and ``read`` / ``recheck`` report the registered statistic on every view with the class
 NOT read (:func:`cross_verdict`: ``REPORTED``; an INCONCLUSIVE stays one); ``bootstrap`` refuses it. **That meter is
-the build's; Q5-N's PREREG registers rho_run's meter by a dated amendment before rho_run is computed.**
+rho_run's REGISTERED meter: Q5-N's PREREG, Amendment 1 (2026-11-22, blind), item 2.**
 
 **Not built** (FINDINGS of this build): the REPORTED cross between an own-control cell and B1's banked cell across
 two pins (FRAME §7); a banked cell W read from a survivor look (no card registers one).

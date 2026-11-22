@@ -32526,3 +32526,69 @@ are in the eval ledger under requests `b1_75m_widthonly_<panel>` and `b1_100m_wi
 View: `STATUS.md` (§2, §3, §6), `UNDERSTANDING.md` (§4.17), `EXPERIMENT_BACKLOG.md` (MF-5).
 
 Tag: **READ · BOUNDARY-1 survivor looks, 75M and 100M · C, W ×3 from scratch · W v C, 9 cells a panel · home72 @ 1,000 pairs a cell, heldout72_hpfix, forum72, p72 @ 500 · 90,000 games · 90 %, 4 df, floor 1.76 pp · 100M: N +0.39 [−3.55, +4.32], U −0.31 [−3.64, +3.02], home72 +1.08 [−3.52, +5.69], forum72 +0.15 [−3.07, +3.37] · 75M: N +0.80 [−2.27, +3.86] · `NO-CLASS`, REPORTED · no class at 100M for either factor · default: C's three runs are the candidates; 72 h owner window from the 100M verdict · pin `15136b616`**
+
+### 2026-11-22 · REGISTRATION · **Q6-N and Q5-N PREREG Amendment 1 each (blind: before any Q6 or Q5 training step, pilot, card check, game or look): the banked cell C's 100M files are B1's 100M SURVIVOR look's (three named files, read by the kit at `d41989b96`), and Q5-N's ρ_run meter is registered with its build `ab0048861`. No rule, bar, class, seed or statistic moves**
+
+**Why.** Both registrations (the two 2026-11-20 entries) read one fresh cell against BOUNDARY-1's banked cell C and
+left two items to "a dated amendment": which bytes the 100M look reads for C (B1's 100M `look.json` was owed a
+banked copy), and, for Q5-N only, the exact meter of ρ_run (the step-time ratio that places the REPORTED
+matched-GPU-time cross). B1's 100M look turned out to be a SURVIVOR look (breadth stopped at 50M; the 2026-11-21
+entry), and the kit refused every survivor look as its `--b1-look`, so neither card's 100M look could have been
+planned.
+
+**What is registered** (`measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md` §11 and
+`measurements/q5n_epochs_fresh_2026-11-20/PREREG.md` §11, Amendment 1 of each; the bodies are not rewritten).
+
+- **(a) Both cards: the banked cell's 100M files** are the files B1's 100M survivor look (width, 2026-11-21) read
+  for C: `rb_b1c_s5101` at 100,000,127 (sha256 `d833aab47f49…`), `rb_b1c_s5102` at 100,000,172 (`32e1a8d0587f…`),
+  `rb_b1c_s5110` at 100,000,025 (`21868790990e…`). That look's `look.json` is banked as
+  `measurements/q6n_policy_readout_fresh_2026-11-20/b1_look_100M.json` (a byte copy, sha256 `cd074fb09fd2…`), the
+  kit's `--b1-look` at 100M. A statement of which files; no rule moves.
+- **The kit** (`python -m main.b1.fresh` at `d41989b96`) accepts that ONE survivor look, and only when its rows for
+  C are exactly the banked cell's three runs, each step and sha256 is the same on disk, in the look and in B1's
+  committed record (`boundary1_scratch_2026-11-09/record/look_100M/verdict.json`), and B1's run guard with K9(b)
+  passes at the step. Every other survivor look stays refused (another look, factor, arm or pin; any survivor look
+  at 50M; an extra, missing or changed row). The 50M look reads B1's FULL 50M look, unchanged.
+- **(b) Q5-N only: ρ_run's meter**, registered as the orchestrator ruled, with its build `ab0048861`: per run,
+  `main.b1.lr_report.step_time`, the card check's formula ((median `lifecycle/update_wall_s` + median
+  `rollout/collect_ms`/1000) / median Δsteps × 10⁶) over the rollout rows with 10,000,000 ≤ step ≤ 50,000,000 after
+  a resume's superseded rows are removed; the cell's figure is the MEAN of its three runs; ρ_run = the arm's figure
+  / C's in exact arithmetic; M = ⌈ρ_run × 100⌉ × 1,000,000; the banked file is each C run's first checkpoint at or
+  after M within one interval; not played if M ≥ 100,000,000; command `python -m main.b1.fresh plan-gpu-time`. The
+  same meter is the REPORTED step-time ratio at both looks. **The mean of three was checked against the PREREG:**
+  §3 reports the dose as the ratio of the cell MEANS and named no aggregate for ρ_run; its one median of three is
+  the MOVEMENT-UNMATCHED label's (the card's own wording for that label), which is not moved.
+
+**Blindness.** No `rb_q6n_*` or `rb_q5n_*` directory exists; no pilot, card check, game or look of either card has
+run; ρ_run has not been computed (it needs the arm's runs). Read to write the amendments: the plan of B1's 100M
+survivor look (`look.json`, no score in it), the `checkpoints` block of B1's committed record, and the build
+`ab0048861`. Known to the writer and saying nothing of a Q5 or Q6 run: B1's published 100M outcome (W against C,
+`NO-CLASS`) and the meter's figures on B1's own runs.
+
+**What was executed** (CPU, read-only on B1's real run directories through a scratch directory of symlinks and a
+scratch checkout of the pin; nothing under `models/` was written; no game played). With W's three runs standing in
+for a fresh cell: the 100M plan with the banked look is ACCEPTED (K9(b) PASS on all six, the three hashes above);
+the same look is REFUSED with one hash changed, a fourth C row, a missing C row, the factor relabelled breadth,
+B1's 75M survivor look, either survivor look at 50M, the full 50M look at 100M, and a banked W. The 50M plan with
+`b1_look_50M.json` is ACCEPTED as before. `plan-gpu-time` from the accepted 100M doc refuses W as the costlier side
+(ρ 1.403) by name, and with a stand-in ρ of 0.7127 names M = 72M and C's files at 72,000,025 / 72,000,151 /
+72,000,041 (K9(b) PASS).
+
+**FINDINGs.**
+1. **The kit's command line was not run end to end on real data**, and cannot be before a card's runs exist: its
+   arm file refuses B1's own run names, and its fresh-run guard holds a fresh run to a card's argv, which B1's W
+   runs were not launched with (first attempt: refused on `allow_nonproduction_arch`). The execution above called
+   the kit's `plan` in process with the fresh side guarded by B1's own `check_run` as arm W; the banked side, the
+   look check and the record are the registered code.
+2. **A banked cell W read from a survivor look stays refused** (no card registers one). A 256-width card would need
+   its own amendment and a kit change.
+3. **The slow end-to-end rehearsal (`fresh_rehearsal_e2e_test.py`) was not run**: it plays games and needs a
+   Rust-built pin tree.
+4. Amendment items beyond the ruled text are the writer's and register nothing: why the meter (Q5-N item 3), what
+   the build does at the edges (item 4), what is closed (item 5).
+
+**Record:** the two PREREGs' §11; `measurements/q6n_policy_readout_fresh_2026-11-20/b1_look_100M.json`; the kit
+commit `d41989b96` (`src/main/b1/fresh.py`, `fresh_survivor_look_test.py`).
+View: `STATUS.md` (the Q5-N bullet), `EXPERIMENT_BACKLOG.md` (rows Q6-N, Q5-N).
+
+Tag: **REGISTRATION · Q6-N and Q5-N Amendment 1 · blind · banked C at 100M = B1's 100M survivor look's files (`rb_b1c_s5101` 100,000,127, `s5102` 100,000,172, `s5110` 100,000,025) · `b1_look_100M.json` · kit `d41989b96` · Q5-N: ρ_run = mean-of-three `step_time` ratio over 10M–50M, exact, M = ⌈ρ × 100⌉ × 1M, build `ab0048861` · no rule moves**

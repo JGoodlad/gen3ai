@@ -248,6 +248,33 @@ def test_the_kits_survivor_record_is_b1s_committed_100m_record_for_cell_c():
         assert M100 <= step < M100 + A.CHECKPOINT_EVERY and len(sha) == 64
 
 
+def test_the_look_banked_beside_the_preregs_is_the_one_the_kit_accepts():
+    """Q6-N's and Q5-N's Amendment 1 bank B1's 100M survivor ``look.json`` as the kit's ``--b1-look``: its bytes are
+    the amendments' sha256, and its rows for C are the record's, so :func:`main.b1.fresh.b1_look_problems` passes
+    it for files that hash to the record and refuses it for any other."""
+    import hashlib
+
+    from utils.paths import repo_path
+
+    banked_file = repo_path("designs/research_state/measurements/q6n_policy_readout_fresh_2026-11-20/b1_look_100M.json")
+    assert hashlib.sha256(banked_file.read_bytes()).hexdigest() == (
+        "cd074fb09fd2e9d1ae0f119b64b270ee1721f26945b8f6013667f854e5bd826c")
+    look, spec = json.loads(banked_file.read_text()), spec_of(pin=F.B1_LAUNCH_PIN)
+    rec = F.B1_SURVIVOR_RECORD["100M"]["checkpoints"]
+    disk = [{"run": run, "steps": step, "sha256": sha} for run, (step, sha) in rec.items()]
+    assert F.b1_look_problems(look, spec, "100M", disk) == []
+    assert F.b1_look_problems(look, spec, "50M", disk) != []
+    other = [dict(disk[0], sha256="0" * 64)] + disk[1:]
+    probs = F.b1_look_problems(look, spec, "100M", other)
+    assert len(probs) == 1 and probs[0].startswith("rb_b1c_s5101: its 100M file is step 100000127")
+    for text in (repo_path("designs/research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md"),
+                 repo_path("designs/research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md")):
+        amended = text.read_text()
+        assert "### Amendment 1 (2026-11-22)" in amended
+        for run, (step, sha) in rec.items():
+            assert f"`{run}` at {step:,}, sha256 `{sha}`" in amended
+
+
 def test_the_cli_has_no_flag_for_the_survivor_record(capsys):
     with pytest.raises(SystemExit):
         F.main(["plan", "--help"])

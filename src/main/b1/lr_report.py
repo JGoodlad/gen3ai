@@ -80,8 +80,8 @@ arithmetic). Per cell, the MEAN of its runs' figures; the record's ``dose_rate_r
 also ``_exact`` as ``"p/q"``) are fresh over banked. **Absence is never a zero and never refuses the label:** a meter
 with no row reads ``None``, a step time or dose that cannot be read carries its ``error``, and a ratio is ``None``
 unless every run of both cells is read. The same rho, by :func:`step_time_ratio`, prices the matched-GPU-time cross
-(``python -m main.b1.fresh plan-gpu-time``); **its use as rho_run waits on Q5-N's dated amendment registering this
-meter** (PREREG §3).
+(``python -m main.b1.fresh plan-gpu-time``); **it is rho_run's REGISTERED meter** (Q5-N PREREG, Amendment 1 of
+2026-11-22, item 2).
 """
 from __future__ import annotations
 

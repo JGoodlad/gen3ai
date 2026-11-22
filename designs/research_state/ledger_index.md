@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-32,529-line file. **The ledger itself is append-only and is never edited by this**;
+32,595-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1024 headings · 969 dated · 2026-08-01 → 2026-11-21 · ledger 32,529 lines.**
+**1025 headings · 970 dated · 2026-08-01 → 2026-11-22 · ledger 32,595 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1044,3 +1044,4 @@ rename.
   - `L32273` · `2026-11-20` · REGISTRATION · **Q5-N REGISTERED (full tier; blind: before any Q5 training step, game, look or pilot): five PPO epochs at matched dose (`--n-epochs 5 --lr 6e-4` under the live KL controller), ONE fresh three-seed cell at width 128 against BOUNDARY-1's banked cell C. A tie keeps ten epochs. After Q6-N on the card. NOT LAUNCHED**
   - `L32330` · `2026-11-20` · READ · **V-RANK look 2 (FINAL), PLAYED (200 blocks, COMPLETE, 2,340 selected states, 13,405 one-game branch and null units over both looks, exit 0): RANK-HOLDS-ON-U. β_U +0.315 [+0.153, +0.449], β_home +0.333 [+0.210, +0.447], Δβ −0.018 [−0.215, +0.167] on 1,124 U / 1,114 home positions. Per the PREREG, MF-4's leaf-value step is NOT FUNDED on this evidence; this is a meter of the model and never a statement that search pays.**
   - `L32405` · `2026-11-21` · READ · **BOUNDARY-1's survivor looks at 75M and 100M, PLAYED (two looks, 90,000 games, each exit 0): both `NO-CLASS`, as registered. W against C (width 256 against 128, three from-scratch runs each) at 100M: +0.39 [−3.55, +4.32] pp on N, −0.31 [−3.64, +3.02] on U, +1.08 [−3.52, +5.69] on home72, +0.15 [−3.07, +3.37] on forum72 (90 %, 4 df); at 75M +0.80 [−2.27, +3.86] on N. Every interval of both looks spans zero. No class is read at 100M for either factor; nothing is adopted, retired or carried forward; by Amendment 6's default the control's three runs are the candidates, and its 72-hour owner veto window starts at this 100M verdict**
+  - `L32530` · `2026-11-22` · REGISTRATION · **Q6-N and Q5-N PREREG Amendment 1 each (blind: before any Q6 or Q5 training step, pilot, card check, game or look): the banked cell C's 100M files are B1's 100M SURVIVOR look's (three named files, read by the kit at `d41989b96`), and Q5-N's ρ_run meter is registered with its build `ab0048861`. No rule, bar, class, seed or statistic moves**

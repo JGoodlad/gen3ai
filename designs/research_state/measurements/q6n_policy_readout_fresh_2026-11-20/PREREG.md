@@ -3,7 +3,8 @@
 **Status: REGISTERED 2026-11-20, FULL tier, blind: before any Q6 training step, any Q6 game, any look and the card
 check. NOTHING HAS TRAINED and this file authorises no launch.** The GPU window is the orchestrator's; its first item
 is § 7's card check. Nothing below changes after the first Q6-N run launches except by a dated amendment written
-before the look it touches, saying why.
+before the look it touches, saying why. **AMENDED 2026-11-22 (Amendment 1, § 11: the banked cell's 100M files are
+those of B1's 100M survivor look, banked here as `b1_look_100M.json`; no rule moves), also blind.**
 
 **The question.** From scratch, does an agent whose move chooser reads the attention trunk through one learned query
 (`--policy-readout trunk`) end stronger, weaker or not detectably different at 100M steps than BOUNDARY-1's (B1's)
@@ -272,3 +273,46 @@ Q6-N launch (FRAME §6 item 4).
   of `rb_q6n_*` before this read closes. **UNVERIFIED:** that a grooming plan would refuse them.
 - **F7. UNVERIFIED and priced as such:** ρ_Q6, the compile time of the new graph, the look's cost, σ of the fresh
   cell, σ at 100M.
+
+## 11. Amendments
+
+### Amendment 1 (2026-11-22): the banked cell's 100M files are B1's 100M survivor look's
+
+Written 2026-11-22 on the orchestrator's instruction, before the look it touches (the 100M look) and before every
+other Q6 event. **Blind: no Q6-N run, pilot, card check, game or look exists** (no `rb_q6n_*` directory, no GPU
+window). **It moves no rule**: no bar, class, view, panel, pair count, seed, run name, argv, pin, guard or statistic.
+It says WHICH files § 3's 100M look reads for the banked cell, which § 3 left to this amendment, and names the kit
+commit that reads them. **What was read to write it:** the plan of B1's 100M survivor look (its `look.json`, which
+holds no score) and the `checkpoints` block of B1's committed record of that look. B1's 100M outcome (W against C,
+`NO-CLASS`; the ledger's entry of 2026-11-21) is published and known to the writer; it compares W with C and says
+nothing of a Q6 run.
+
+1. **The files.** B1 played no full 100M look: breadth stopped at its 50M look, so B1's 100M look was the SURVIVOR
+   look of width (2026-11-21), which read C's and W's three runs each and nothing else. The banked cell's 100M files
+   are that look's files for C:
+   - `rb_b1c_s5101` at 100,000,127, sha256 `d833aab47f49a726753b60a35bb7d085fb70909e855b2bf9b46cef54c26db098`;
+   - `rb_b1c_s5102` at 100,000,172, sha256 `32e1a8d0587f2463600a41107a1b431990de53b085c320312ae28e2642a43148`;
+   - `rb_b1c_s5110` at 100,000,025, sha256 `21868790990e0ded79e710a2d747fa2f303a9047b8d3c41a1557a14848fa159b`.
+   That look's `look.json` is banked beside this file as [`b1_look_100M.json`](b1_look_100M.json), a byte copy of
+   `~/.cache/gen3ai/b1_aside/survlook100m_20261121T203217/look.json` (sha256
+   `cd074fb09fd2e9d1ae0f119b64b270ee1721f26945b8f6013667f854e5bd826c`); it is the kit's `--b1-look` at the 100M
+   look. The same three steps and hashes stand in B1's committed record,
+   [`../boundary1_scratch_2026-11-09/record/look_100M/verdict.json`](../boundary1_scratch_2026-11-09/record/look_100M/verdict.json)
+   (its `checkpoints`), and in B1's PREREG § 18, "The survivor looks' record".
+2. **The kit.** `python -m main.b1.fresh` at `d41989b96` reads them. Before it, the kit refused every survivor look as
+   `--b1-look`, so the 100M look could not be planned. It now accepts ONE: the look B1's record names for this look,
+   factor and banked arm (100M, width, C), and only when (a) its rows for C are exactly the banked cell's three
+   runs, none more and none fewer; (b) each file's step and sha256 are the same on disk (re-hashed by the plan), in
+   the look and in B1's record (a table in the kit, held against the committed record by a test); (c) each banked
+   run passes B1's own run guard at the look's step, K9(b) through its checkpoint included, as at any look. Every
+   other survivor look is refused (another look, factor or arm; a row or a byte that differs), and so is a plan
+   with no `--b1-look`. **The 50M look is untouched:** its `--b1-look` is B1's FULL 50M look
+   ([`b1_look_50M.json`](b1_look_50M.json)), read as before.
+3. **What this closes.** § 3's "that `look.json` is banked beside this file by a dated amendment before Q6's 100M
+   look" and § 10 F3's owed copy. § 3's "If B1 never plays C at 100M" did not occur. Retention needs nothing new:
+   the three files are in B1's run directories, which are never thinned (§ 3).
+4. **Checked by executing, read-only (2026-11-22).** On B1's real run directories, with W's three runs standing in
+   for a fresh cell (no Q6 run exists), the plan at 100M accepts `b1_look_100M.json` with K9(b) PASS on all six
+   runs and the three hashes above; it refuses the same look with a changed hash, a fourth or a missing C row,
+   another survivor factor, B1's 75M survivor look, and any survivor look at 50M. The 50M plan with
+   `b1_look_50M.json` is accepted as before. No game was played and nothing was written under `models/`.

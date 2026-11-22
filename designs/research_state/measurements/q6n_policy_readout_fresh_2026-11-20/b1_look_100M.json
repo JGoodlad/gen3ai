@@ -1,0 +1,285 @@
+{
+ "look": "100M",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "steps": {
+  "C": 100000000,
+  "W": 100000000
+ },
+ "eq_step": null,
+ "replaced_seed": null,
+ "survivor": "width",
+ "runs": {
+  "C": [
+   {
+    "arm": "C",
+    "seed": 5101,
+    "run": "rb_b1c_s5101",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_100000127_steps.zip",
+    "steps": 100000127,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5101",
+     "verdict": "PASS",
+     "upto": 100000127,
+     "last_row_step": 99910107,
+     "rows": {
+      "judged_max": 1013,
+      "p99": 1013
+     },
+     "max": {
+      "judged_max": 0.00010585784912109375,
+      "p99": 1.8336475477553904e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "d833aab47f49a726753b60a35bb7d085fb70909e855b2bf9b46cef54c26db098"
+   },
+   {
+    "arm": "C",
+    "seed": 5102,
+    "run": "rb_b1c_s5102",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_100000172_steps.zip",
+    "steps": 100000172,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5102",
+     "verdict": "PASS",
+     "upto": 100000172,
+     "last_row_step": 99909038,
+     "rows": {
+      "judged_max": 1013,
+      "p99": 1013
+     },
+     "max": {
+      "judged_max": 0.0001068115234375,
+      "p99": 1.7689466403680854e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "32e1a8d0587f2463600a41107a1b431990de53b085c320312ae28e2642a43148"
+   },
+   {
+    "arm": "C",
+    "seed": 5110,
+    "run": "rb_b1c_s5110",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_100000025_steps.zip",
+    "steps": 100000025,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5110",
+     "verdict": "PASS",
+     "upto": 100000025,
+     "last_row_step": 99911711,
+     "rows": {
+      "judged_max": 1013,
+      "p99": 1013
+     },
+     "max": {
+      "judged_max": 9.047985076904297e-05,
+      "p99": 1.732230157358572e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "21868790990e0ded79e710a2d747fa2f303a9047b8d3c41a1557a14848fa159b"
+   }
+  ],
+  "W": [
+   {
+    "arm": "W",
+    "seed": 5103,
+    "run": "rb_b1w_s5103",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_100000162_steps.zip",
+    "steps": 100000162,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1w_s5103",
+     "verdict": "PASS",
+     "upto": 100000162,
+     "last_row_step": 99925216,
+     "rows": {
+      "judged_max": 1011,
+      "p99": 1011
+     },
+     "max": {
+      "judged_max": 8.940696716308594e-05,
+      "p99": 1.803815393941477e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "c3cbd21c90a962af8b2ae18c3846118086e4f242e5e44a7eca0774ea227c0911"
+   },
+   {
+    "arm": "W",
+    "seed": 5104,
+    "run": "rb_b1w_s5104",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_100000089_steps.zip",
+    "steps": 100000089,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1w_s5104",
+     "verdict": "PASS",
+     "upto": 100000089,
+     "last_row_step": 99929915,
+     "rows": {
+      "judged_max": 1011,
+      "p99": 1011
+     },
+     "max": {
+      "judged_max": 0.00013017654418945312,
+      "p99": 2.0339488401077688e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "eb7f4c0d9897a4a8b07f4701ccd2de56b9c17e2beb7042c9f86ce64a9344d71c"
+   },
+   {
+    "arm": "W",
+    "seed": 5111,
+    "run": "rb_b1w_s5111",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_100000185_steps.zip",
+    "steps": 100000185,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1w_s5111",
+     "verdict": "PASS",
+     "upto": 100000185,
+     "last_row_step": 99928404,
+     "rows": {
+      "judged_max": 1011,
+      "p99": 1011
+     },
+     "max": {
+      "judged_max": 0.00015544891357421875,
+      "p99": 2.1879672203795053e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "6ed315c72db1f9145efa8956c70f126801a4fbd7ea34fa04ea8a52716c03469c"
+   }
+  ]
+ },
+ "cells": [
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_100000162_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_100000127_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_100000162_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_100000172_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5103/checkpoints/checkpoint_100000162_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_100000025_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_100000089_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_100000127_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_100000089_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_100000172_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5104/checkpoints/checkpoint_100000089_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_100000025_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_100000185_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_100000127_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_100000185_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_100000172_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_b1w_s5111/checkpoints/checkpoint_100000185_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_100000025_steps.zip"
+  ]
+ ],
+ "names": {
+  "home72": {
+   "family": "b1_scratch_h2h_home72",
+   "request": "b1_100m_widthonly_home72",
+   "pairs": 1000,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel home72, 1000 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  },
+  "heldout72_hpfix": {
+   "family": "b1_scratch_h2h_heldout72_hpfix",
+   "request": "b1_100m_widthonly_heldout72_hpfix",
+   "pairs": 500,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel heldout72_hpfix, 500 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  },
+  "forum72": {
+   "family": "b1_scratch_h2h_forum72",
+   "request": "b1_100m_widthonly_forum72",
+   "pairs": 500,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel forum72, 500 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  },
+  "p72": {
+   "family": "b1_scratch_h2h_p72",
+   "request": "b1_100m_widthonly_p72",
+   "pairs": 500,
+   "rule": "boundary1_scratch_2026-11-09/PREREG.md \u00a75 (pin 15136b61): the 2 x 2 cross on panel p72, 500 mirrored pairs a cell, one request a look; a factor's statistic is main.b1.cross.factor_stat (D = mean - 50, within-arm variances floored at 1.76 pp, t on 4(n-1) df, 90 % interval); classes main.b1.cross.read_look (width on N, breadth on forum72 with the net rule)"
+  }
+ }
+}
