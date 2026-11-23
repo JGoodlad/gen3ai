@@ -32775,3 +32775,68 @@ View: `STATUS.md` (§2, §3), `EXPERIMENT_BACKLOG.md` (row X35-A3, now in §3; r
 `UNDERSTANDING.md` states no A3 status and is unchanged.
 
 Tag: **READ · X35-A3 phase-boundary gate · 3 main exploiters @ +5M (FORK of P\*, pin f4b25238) × P\* · 3 cells @ 1,000 pairs, 6,000 games, greedy, on the card · 90 %, t df 2 · gate not EXPLOITS, mean edge +1.91 [−0.99, +4.81] · cells 50.10 / 52.10 / 53.53 · phase 2 and readers not launched · exploiters banked · licenses nothing about the arm; an amendment decides the exploiters' form**
+
+### 2026-11-23 · READ · **X71 the exploitability probe of the entropy arms: all three arms `NOT-MORE-BY-BAR` — the gap two fresh 5M best responders learned against an arm's final, minus the gap they learned against C0's: swap −0.59 pp [−4.12, +2.95], X67 −1.06 pp [−4.60, +2.47] (read 1, t df 3), X70 −0.67 pp [−3.76, +2.41] (read 2, t df 4); C0's responders learned +5.66 pp; the responder spread pooled to 0; 64,000 CPU games, one look each; no veto from this probe on carrying an entropy lever into the baseline, not a clean bill; nothing moves**
+
+**Question** (PREREG `335bfabca` 2026-11-16, full tier, blind, unamended; the launch kit `62c4fe050`). Does a fresh
+best responder get further against a low-entropy arm's final than against the control's? One target per arm, the
+final of its lowest registered seed (`rb_x35_c0_s3501` at `ent_coef` 0.05, `rb_x35_x67ent_s6701` at 0.0125,
+`rb_x35_ce3dswap_s7321` at 0 + magnet 0.05, `rb_x35_x70ent0_s7331` at 0); two responders each (seeds 7111, 7112):
+R0's responder cut to +5M with `--ent-coef 0.05 --magnet-kl-coef 0` typed for every target, all at pin `9e97cad5`.
+Per target the target against itself (`k0`, 8,000 games) and each responder's final against it (4,000 each), greedy
+against greedy on the Rust eval core, seed 20261020, the same teams and deals in every cell. L_t = the responders'
+mean gap − the target's own; D_a = L_a − L_c0 with the responder variance pooled into a t interval.
+`MORE-EXPLOITABLE` iff the lower end > +0.05 pp; `NOT-MORE-BY-BAR` iff the upper end < +5 pp − 0.05 pp and not
+`LESS-EXPLOITABLE`.
+
+**Verdict: `NOT-MORE-BY-BAR` for all three arms.** Read 1 (nine cells, 48,000 games, t 3.182): **swap D −0.59 pp,
+95 % interval [−4.12, +2.95]**; **X67 D −1.06 pp [−4.60, +2.47]**. Read 2 (three new cells, 16,000 games, read 1's
+nine reused; t 2.776): **X70 D −0.67 pp [−3.76, +2.41]**. SE 1.11 pp each; every interval holds 0; `near_boundary`
+empty in both. L_t: C0 **+5.66**, X67 +4.60, swap +5.08, X70 +4.99 pp. The guard held: C0's lower end
++4.12 pp > +0.05 (its responders responded). `s2r` = 0 in both reads (mean e_t −2.21e-05 / −3.21e-05), so
+`sigma_r` = 0 and the SE is game sampling alone. Cells (wins; k0 / r7111 / r7112): c0 4,174 / 2,284 / 2,343;
+x67 4,223 / 2,303 / 2,288; swap 4,225 / 2,332 / 2,299; x70 4,218 / 2,324 / 2,293; every attempted game finished
+(ties 2–19 a cell, turn-limit draws 0–3). **Re-derived by this entry:** §6 by hand from the twelve cell files, and the
+frozen `x71_rule.classify` on them, equal to both verdict JSONs field for field (`record/rederive_x71.txt`); every
+plan hash equal to the files in `models/`.
+
+**What it licenses (§10, quoted):** "no veto from this probe, at this probe's reach (§1). Not a clean bill: one
+final, one responder recipe, 5M"; "No recipe, baseline or default changes on X71's result by itself." So the three
+levers carry no veto from X71 into Q2; Q2 is not decided here and stays the orchestrator's and the owner's. Each class
+is about that one final, never the arm.
+
+**The responders** (G1 to G6 PASS as the window chain printed them; G7 never applied). Trained one at a time on the
+card 2026-11-22 14:33 to 21:58 PST (7.4 h of wall for eight, ≈ 0.93 GPU-h each against ≈ 1.05 estimated), each a
+FORK of its target at `9e97cad5` +5M (finals 305,039,965 to 305,080,986), launcher rc 0, `ent_coef` 0.05 and no
+magnet in banner and `metadata.json`, fork rate frozen 5.6e-05, K9(b) PASS, five 1M checkpoints kept.
+**The read** (RULINGS R1, R2, set 2026-11-19 before any responder): a detached checkout of main at `62c4fe050`,
+CPU, nice 19 on the agent cores, the card hidden, one cell a heavy slot (8 GB cap, peak ≤ 0.93 GB), the chunk bound
+5,875 s from a stand-in's measured 163.7 games a minute; every cell banked on its first attempt. Read 1 2026-11-22
+21:14 to 11-23 01:45:55, read 2 01:45:56 to 03:23:44 PST.
+
+**Limits that bear on it.** §1's three: one 5M offense-team responder recipe, one final per arm, exploitability mixed
+with how fast the target's weights move. C0's responders learned +5.66 pp, not the +9.0 pp §7 assumed from R0, so the
++5 pp bar is about 88 % of the control's learned gap here rather than "half again"; the width (read-1 half-width
+3.53 pp) is §7's at σ_r 0. `sigma_r` 0 is the estimator's floor: the four d_t (−1.48, +0.38, +0.83, +0.78 pp) are
+within game noise, and four pairs cannot show the spread is zero. The targets trained at two pins (C0's and X67's at
+`f4b25238`). Three arms with no multiplicity adjustment. No head-to-head and no Kakuna game: it says nothing about
+strength. **REPORTED, deciding nothing:** each responder's in-run rows against its target (pooled 105–124 of 200);
+g0 +2.2 to +2.8 pp for every target.
+
+**FINDINGs.** X71-G1: the heavy-slot reason line twice quotes a GPU lease note dated 2026-11-09 ("X60Tb s3504-3508 +
+C0b s3506-3508") under the owner 'Training Oct' while that lease served X71, A3 and Q6-N: the note is stale (an ops
+label, no effect on the read). X71-G2: the operator notes could not be written to `~/.claude/jobs/x35/x71/` by the
+read's agent and were copied there afterwards; the two copies are byte-identical. X71-G3: the record carries the
+twelve per-game cell files as byte copies (≈ 12.5 MB).
+
+**Record:** `measurements/x71_exploitability_probe_2026-11-16/` (`PREREG.md`: a READ banner and §13, appended;
+§1 to §12 unchanged) and its `record/` (58 files, `SHA256SUMS`): `read/` (`x71_verdict_read1.json` sha256
+`8d3265afcd0aa3f4fd246a313fd0d870400c3d3914c1c30e485c9cb9a721a054`, `x71_verdict_read2.json`
+`288abc7213ea9534b9b759cf758d02fa834a35a20c1fbdda28736b37fc224579`: the work directory's `verdict_read1/2.json`, renamed, both plans, `play_commit`, the driver's `run.log`,
+the wrapper and its log, `ledger/` with the twelve cells); `RULINGS.md`; `read_operator_notes.md`; `window/` (the
+chain's log, the GO marker as `x71_go_marker.txt`, `k9b/` and `arm_end/` per responder); `rederive_x71.py` and
+`rederive_x71.txt` (`7fdc0ea8d5601a42e77abc8c7d4097b453ed3a028525d15b49ebb40d90ac77ee`). The eight responders stay banked at
+`models/rb_x35_x71_{c0,x67,swap,x70}_s{7111,7112}`.
+View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (TL;DR 5, §4.15, §4.16), `EXPERIMENT_BACKLOG.md` (row X71, now in §3; row X70).
+
+Tag: **READ · X71 exploitability probe · 4 targets × 2 responders @ +5M (pin 9e97cad5) · 12 cells, 64,000 games, CPU, greedy · swap −0.59 [−4.12, +2.95], X67 −1.06 [−4.60, +2.47], X70 −0.67 [−3.76, +2.41] · all NOT-MORE-BY-BAR · L_c0 +5.66 · sigma_r 0 · no veto from this probe; not a clean bill; moves nothing**
