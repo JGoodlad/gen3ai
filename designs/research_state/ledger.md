@@ -32698,3 +32698,80 @@ eval ledger under requests `x70_swap_vs_ent0`, `x70_ent0_vs_c0` and `x70_ent0_vs
 View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (TL;DR 5, §4.15, §4.16, §6), `EXPERIMENT_BACKLOG.md` (row X70, now in §3; the CE-3d rows), `training/magnet_kl.md`, `ops/TASK_BACKLOG.md` (T56), and the four `endstate/` docs that carry the magnet row (each with a Decision-record row).
 
 Tag: **READ · X70 the ent-0 control · swap ×3 v X70 ×4, P\* + 20M forks at pin 9e97cad5 · 12 cells @ 4,000 pairs, 96,000 games, on the card · 90 %, Welch df 5.00 · `ANCHOR-ADDS` D +0.73 [+0.22, +1.23] · `ENT-BELOW-SWAP` · `LR-MOVED` ×4 · reported: v C0 +3.00 [+2.48, +3.51], v X67 +0.29 [−0.85, +1.43] · licenses REGISTERING the matched-realised-entropy arm (proposed, not registered) · no recipe moves**
+
+### 2026-11-23 · READ · **X35-A3 the phase-boundary gate: gate not EXPLOITS — the three 5M main exploiters against P\* scored a mean edge of +1.91 pp, 90 % interval [−0.99, +4.81] (t, df 2; 3 cells × 1,000 mirrored pairs, 6,000 games, greedy, on the card); "5M unpinned exploiters at P\*'s recipe did not measurably beat P\*"; it licenses nothing about the arm, an amendment decides the exploiters' form; phase 2 and the readers did not launch; the three exploiters stay banked**
+
+**Question** (PREREG `6f92bf999` 2026-11-16, full tier, blind; erratum and slot S8 at `de3a70419`; the read's build
+`6864ebd88`). X35-A3 folds main exploiters back into P\*'s training. Phase 1 trains three main exploiters of P\*
+(`rb_x26_s2601` @280,000,170, sha256 `814823c5…`): copies of P\* that train for +5M against the frozen P\* as the
+only opponent (kit arm `a3_mx`, seeds 3511–3513, side pin `f4b25238`). **§5.3's gate** holds phase 2 unless they
+measurably beat P\*: each exploiter final × P\*, one cell of 1,000 mirrored pairs, both greedy; x_i = exploiter i's
+score; m = mean(x) − 50, s² = max(var(x), the 1,000-pair cell variance), 90 % interval m ± t(0.95, 2)·√(s²/3);
+**EXPLOITS iff its lower end > 0** (`a3_rule.py gate x1 x2 x3`).
+
+**Verdict: gate not EXPLOITS.** Mean edge **+1.91 pp**, 90 % interval **[−0.99, +4.81]** (SE 0.99, df 2, t 2.920;
+the sample variance 2.96 pp² bound, not the cell floor; `near_boundary: []`). Cells (exploiter × P\*, score with
+its pair-clustered 95 % interval from the play log; W/L/D; 0 aborted): s3511 **50.10** [48.00, 52.20], 999/995/6;
+s3512 **52.10** [50.09, 54.11], 1,039/955/6; s3513 **53.53** [51.51, 55.54], 1,067/926/7. Played 2026-11-23
+01:09:10–01:21:41 PST by the A3 window chain on the card (`cuda` / `graph`, one venue), family `x35_a3_gate_h2h`,
+request `x35_a3_mx_vs_pstar`, at the play pin `333a73dd` (`cross/drive_cross.sh`), read once. **Re-derived by this
+entry, independently of the chain:** the registered rule re-run on the three cell scores prints the chain's `gate`
+block field for field (`record/gate/a3_rule_gate.txt`); each cell's score recomputed from W/L/D, n_pairs 1,000,
+2,000 games, pentanomial sum 1,000, 0 aborted, player = the registered final at its step and opponent = P\*
+@280,000,170; the three finals and P\* re-hashed equal to the plan's `shas.json`, the chain's arm-end hashes and
+`baselines.json`'s `pstar_plateau` (`record/gate/verify.txt`, ALL OK).
+
+**What it says (§10, the registered sentence):** "5M unpinned exploiters at P\*'s recipe did not measurably beat
+P\*". **What it licenses: nothing about the arm; an amendment decides the exploiters' form.** By §5.3, phase 2 does
+NOT launch under this registration; any continuation (longer exploiters, pinned exploiters, a second phase 1) is a
+dated amendment written before any phase-2 step. It is not evidence that exploiters fail to help, nor that P\* has
+no hole (R0's banked +11.1 pp at 20M stands), and E, the arm's decider, was not read. **The gate's power (§5.3,
+`power_gate.log`):** a true mean edge of +3 pp passes only 89 % of the time if the three exploiters are alike, 71 %
+if they differ by 1 pp (SD), 44 % at 2 pp; +5 pp passes 99.9 / 97 / 78 %; and a true +2 pp, the size measured here,
+passes 48 / 37 / 24 % of the time. **UNVERIFIED, as registered:** the
+size of an unpinned 5M exploiter's edge at P\*'s own recipe.
+
+**Phase 1 (§9's VOID guards: none fired).** `rb_x35_mx_s3511` (2026-11-22 22:05–23:15 PST), `s3512` (23:16–00:12),
+`s3513` (00:12–01:09), one at a time, each a FORK of P\* at pin `f4b25238`, +5M to 285,020,772 / 285,021,788 /
+285,021,349, launcher rc 0, 0 restarts, the registered `[EXPLOITER] … SOLE opponent` banner, 0 VOID lines in the
+launcher and child logs, pool-seed PASS, rate 1,627 / 1,635 / 1,635 steps/s (floor 1,000), K9(b) PASS at arm end
+(judged max 1.44e-4 / 1.36e-4 / 1.73e-4, p99 ≤ 2.9e-5; no fire, nothing near a ceiling); DOSE recorded, no bar for
+an exploiter (2.044e-08, lr_median 0.0001005, effective batch 65,536, 10 epochs: C0's); thin: none.
+**REPORTED, deciding nothing (§5.3 last bullet):** each exploiter's in-run greedy score against P\* (100 games a
+cycle, two cycles): s3511 53 → 50 % (282.0M → 284.0M), s3512 42 → 49 %, s3513 50 → 54 %; a difference of two such
+points has SE ≈ 7 pp, so no trend is readable; beside it (not registered) the training rollouts' outcome rate against
+P\* sits at 47–53 % in every 1M bin of every exploiter (`record/gate/inrun_greedy_vs_pstar.txt`). Neither series shows
+a rise. **Cost:** 3.02 GPU-h of training (estimate ≈ 3.15) and 0.21 GPU-h for the gate's 6,000 games on the card
+(751 s; the estimate ≈ 0.05 was UNVERIFIED, never played there). No phase-1 record (`phase1_a3.json`) was written:
+§8 step 2 runs only on EXPLOITS, so `stage-check --arm a3` stays PENDING.
+
+**Operational deviation, disclosed (outcome-free: before any arm trained, game or read).** The window chain's first
+arming held at 2026-11-22 21:59:32 PST on its helper's dry-run disk floor (the launcher's REQUIRED 10.92 GiB below
+the registered dry run's 11.22: the shared compile cache's headroom term had shrunk; the run's own need had not).
+That floor was the helper's identity guard, not a PREREG condition (§8 registers disk_need_gib 12.0 / 15.0). By the
+orchestrator's ruling (2026-11-22 ~22:15, the A3 window hand-off) the helper was amended (old sha256 `df4dcb7d8c62…`
+kept in the archive, new `66f28e632f6e…`: a floor on the run's own terms and a ceiling at the registered need) and
+the chain re-armed under the same script as pid 3006751, which re-passed every GO-time gate. No rule, bar, seed, arm,
+budget or gate moved (`record/gate/deviation_disk_floor.txt`).
+
+**FINDINGs.** A3-G1: §5.5's other REPORTED items (k0, read 2, the forks' series, G-F's D) need phase 2 and were not
+produced. A3-G2: the in-run greedy series has two 100-game points an exploiter; the final has no in-run eval. A3-G3:
+the tag `signal/outcome_win_rate`'s draw handling and games per point are UNVERIFIED. A3-G4: each launcher log warns
+`[MATCHUP DRIFT]` (the fork declares matchup ca4c510962, P\* recorded fb823b7177) and that the eval-cadence anchor is
+ahead (P\*'s metadata records an eval at 380,000,195); the in-run evals still ran. A3-G5: PREREG.md carries no READ
+banner from this entry (the record lives in `record/gate/`).
+
+**Record:** `measurements/x35_a3_main_exploiters_2026-11-16/record/gate/` (34 files, `SHA256SUMS`): `gate.json`
+(sha256 `83cf24ba2f94fd91a5892d5323714c00ea33eddfe44da7cee5bdf85dbdf27d98`), `cells.json`, `h.json`, `cells_plan.json`,
+`shas.json`, `run.log` (byte copies of the chain's cross); `a3_rule_gate.txt`
+(`af86e5975336b99238f9ee0131cc2ddefecbbd1e87d2567b312794850daeb72e`); `verify.txt`
+(`a76e3584f72231c601d529af29c286b82fb914702d7a2f6b17b4b8fe8ab5371e`); `inrun_greedy_vs_pstar.txt`
+(`b5eca20b6127be4d6c625c304e27e4a911a7a676f66a7ddae9b547569e954db7`); `arm_end_summary.txt`, `arm_end/` (per exploiter:
+the kit's K9(b) JSON, the chain's K9(b), dose, launch-record and final-hash reads, the launcher log);
+`chain/` (the window chain's log, its A3W / a3_mx / SBW status lines, the cross log, `gate.path`, the GO marker);
+`deviation_disk_floor.txt`. The exploiters stay banked at `models/rb_x35_mx_s3511`–`s3513` (finals `2353166b…`,
+`bee72ed4…`, `1171aaa3…`).
+View: `STATUS.md` (§2, §3), `EXPERIMENT_BACKLOG.md` (row X35-A3, now in §3; rows CE-3c and MF-7).
+`UNDERSTANDING.md` states no A3 status and is unchanged.
+
+Tag: **READ · X35-A3 phase-boundary gate · 3 main exploiters @ +5M (FORK of P\*, pin f4b25238) × P\* · 3 cells @ 1,000 pairs, 6,000 games, greedy, on the card · 90 %, t df 2 · gate not EXPLOITS, mean edge +1.91 [−0.99, +4.81] · cells 50.10 / 52.10 / 53.53 · phase 2 and readers not launched · exploiters banked · licenses nothing about the arm; an amendment decides the exploiters' form**

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-32,701-line file. **The ledger itself is append-only and is never edited by this**;
+32,778-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1026 headings · 971 dated · 2026-08-01 → 2026-11-22 · ledger 32,701 lines.**
+**1027 headings · 972 dated · 2026-08-01 → 2026-11-23 · ledger 32,778 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1046,3 +1046,4 @@ rename.
   - `L32405` · `2026-11-21` · READ · **BOUNDARY-1's survivor looks at 75M and 100M, PLAYED (two looks, 90,000 games, each exit 0): both `NO-CLASS`, as registered. W against C (width 256 against 128, three from-scratch runs each) at 100M: +0.39 [−3.55, +4.32] pp on N, −0.31 [−3.64, +3.02] on U, +1.08 [−3.52, +5.69] on home72, +0.15 [−3.07, +3.37] on forum72 (90 %, 4 df); at 75M +0.80 [−2.27, +3.86] on N. Every interval of both looks spans zero. No class is read at 100M for either factor; nothing is adopted, retired or carried forward; by Amendment 6's default the control's three runs are the candidates, and its 72-hour owner veto window starts at this 100M verdict**
   - `L32530` · `2026-11-22` · REGISTRATION · **Q6-N and Q5-N PREREG Amendment 1 each (blind: before any Q6 or Q5 training step, pilot, card check, game or look): the banked cell C's 100M files are B1's 100M SURVIVOR look's (three named files, read by the kit at `d41989b96`), and Q5-N's ρ_run meter is registered with its build `ab0048861`. No rule, bar, class, seed or statistic moves**
   - `L32596` · `2026-11-22` · READ · **X70 the ent-0 control of the trailing-magnet screen: `ANCHOR-ADDS` — the three swap forks (trailing anchor, `--ent-coef 0 --magnet-kl-coef 0.05`) beat the four X70 forks (`--ent-coef 0`, no magnet) head to head on the card, D +0.73 pp [+0.22, +1.23] (90 %, Welch df 5.00; 12 cells × 4,000 pairs, 96,000 games, one look); labels `ENT-BELOW-SWAP` (X70 ended at 0.463–0.477 nats, the swap at 0.484–0.496) and `LR-MOVED` on ALL FOUR X70 forks (`lr_median` 8.372e-05 / 7.675e-05 against the swap's 0.0001005), so the class goes to the orchestrator with both numbers; REPORTED: X70 against the C0 finals +3.00 pp [+2.48, +3.51], against X67's finals +0.29 pp [−0.85, +1.43]; it licenses REGISTERING the matched-realised-entropy arm first and nothing else; nothing is registered and no recipe moves**
+  - `L32702` · `2026-11-23` · READ · **X35-A3 the phase-boundary gate: gate not EXPLOITS — the three 5M main exploiters against P\* scored a mean edge of +1.91 pp, 90 % interval [−0.99, +4.81] (t, df 2; 3 cells × 1,000 mirrored pairs, 6,000 games, greedy, on the card); "5M unpinned exploiters at P\*'s recipe did not measurably beat P\*"; it licenses nothing about the arm, an amendment decides the exploiters' form; phase 2 and the readers did not launch; the three exploiters stay banked**
