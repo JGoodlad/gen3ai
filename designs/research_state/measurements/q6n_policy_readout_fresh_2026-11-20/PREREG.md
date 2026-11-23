@@ -316,3 +316,41 @@ nothing of a Q6 run.
    runs and the three hashes above; it refuses the same look with a changed hash, a fourth or a missing C row,
    another survivor factor, B1's 75M survivor look, and any survivor look at 50M. The 50M plan with
    `b1_look_50M.json` is accepted as before. No game was played and nothing was written under `models/`.
+
+## 12. The card check's record (2026-11-23, § 7; FRAME §6 item 4), written before the first Q6-N launch
+
+Run by the Training session under the lease, from the main checkout with the card visible, into the empty scratch
+`GEN3AI_MODELS_DIR` `~/.cache/gen3ai/q6n_2026-11-23/models` (the pilot is never a comparator and never entered
+`models/`). The seed scan for 5211, 5212, 5213, 5219 and 5299 was re-run first (main `ae68212e0`, 723 sidecars,
+4,305 directories over `models/`, the archive and the scratch directory): no hit. The dry run of § 7's argv (sha256
+`1a6f05d4d0a020347c1cab5cd5cdb4640cd3e1fd…`, token for token § 7's) exited 0 with every preflight passed, 61.36 GiB
+free against 10.32 GiB required. The pilot `q6n_pilot_s5299` ran 01:24:39 to 02:30:55 PST (66 min, about 1.1 GPU-h,
+inside the 3 GPU-h bound) to 4,527,267 steps, no restart, launcher end "Training complete — all steps done".
+
+**Verdict: PASS** (criteria 1 to 4 all hold).
+
+1. Compile parity: `[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) — R1 [fresh weights] drift loss 9.83e-05 <= 0.014, grad 1.15e-02 <= 0.68`.
+2. T2 capture: `[01:41:13] [RUST ENV] T2 up in 967.2s ... backend graph on cuda`.
+3. Startup fit (`update_fit.json`, schema `gen3_update_fit_v2`, sha256 `7f3105ef8e53be1d…`): `oom` null, headroom
+   **3,796.5 MiB** (bar 1,024.5), demand 6,974.0 MiB (update 6,958.0, canary 6,974.0; peak allocated 5,092.3 MiB;
+   card 10,770.5 MiB). B1's C pilot: demand 7,060.0, headroom 3,710.5.
+4. No parity-gate FATAL and no non-finite FATAL in the child's full log (one generation); the update-10 canary's
+   verdict is pass (the only canary row: 4.5M steps is about 46 updates). The first promotion was reached: the pool
+   was seeded at 2,000,128 and promoted at 4,000,208.
+
+**Recorded, deciding nothing:**
+
+5. **ρ_Q6 = 1.0777** (`pilot_rho.py`, rollout rows with 300,000 ≤ step < 4,000,000): the pilot 558.53 s per 1M steps
+   (38 rows, median update 44.933 s, collect 9.972 s, 98,304 steps a rollout, update share 0.818) against B1's C
+   pilot's 518.27 (38 rows, 42.014 s, 8.934 s, share 0.825). The trunk readout is about 7.8 % SLOWER a step than C
+   although it holds 40.7 % fewer parameters (a FINDING; § 8's "UNVERIFIED" ratio is now measured on one pilot).
+6. Cold start: T2 up in 967.2 s, the learner froze 21.4 min after launch; the shared compile cache MISSED
+   (`SHARED-NEW`, key `35c57028148f`). The first evaluation (2,000,128) scored 0.5525 against the bots excluding
+   random (heuristic 0.51); at 4,000,208, 0.7125.
+
+**The orchestrator's price, written before the first run (§ 7 item 5):** ρ = 1.078 is ACCEPTED. The cell to 50M is
+≈ 28.6 × 1.078 ≈ 30.8 GPU-h plus three cold starts and the look (≈ 0.7 h); on CONTINUE, 50M to 100M ≈ 30.1 × 1.078
+≈ 32.4 GPU-h. Neither is too high for this card's question. The window's scope at its GO is the three runs to 50M and
+the 50M look; the 100M leg is ruled at that look. The record of the check is `~/.claude/jobs/x35/q6n/card_check.json`
+(sha256 `68a3a0aba1c19693…`), with `pilot_rho.txt`, `update_fit_pilot.json` and `seed_scan_launchday.txt` in
+`~/.cache/gen3ai/q6n_2026-11-23/results/`. No rule, bar, class, seed, argv, pin or statistic moves.
