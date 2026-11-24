@@ -295,3 +295,51 @@ B1's own runs from that build's check (C over W, 0.7127).
 5. **What this closes.** § 3's owed amendment and § 10 F2: the rung, KL and label report and every REPORTED meter
    (`python -m main.b1.lr_report --fresh-arm`), the cross's plan (`python -m main.b1.fresh plan-gpu-time`) and its
    meter are built and registered. Nothing of this registration is owed a build.
+
+## 12. The card check's record (2026-11-24, § 7; FRAME §6 item 4), written before the first Q5-N launch
+
+Run by the Training session under the lease, from the main checkout (HEAD `15d96fcdd`) with the card visible, into
+the empty scratch `GEN3AI_MODELS_DIR` `~/.cache/gen3ai/q5n_2026-11-24/models` (the pilot is never a comparator and
+never entered `models/`). The seed scan for 5201, 5202, 5203, 5209 and 5298 was re-run first (729 sidecars over
+`models/`, the archive and the scratch directory): no hit. The dry run of § 7's argv exited 0 with every preflight
+passed, 52.79 GiB free against 10.19 GiB required. The pilot `q5n_pilot_s5298` ran 09:31:38 to 10:05:41 PST (34 min,
+about 0.57 GPU-h, inside the 3 GPU-h bound) to 2,561,280 steps, launcher rc 0, one child-log generation, launcher end
+"Training complete — all steps done".
+
+**Verdict: PASS** (criteria 1 to 5 all hold).
+
+1. Compile parity: `[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) — R1 [fresh weights] bf16 rule: drift loss 1.01e-03 <= 0.014, grad 7.40e-03 <= 0.68`.
+2. T2 capture: `[09:47:00] [RUST ENV] T2 up in 895.0s ... backend graph on cuda`.
+3. Startup fit (`update_fit.json`, sha256 `479d7728feda9827…`): `oom` null, headroom **3,710.5 MiB** (bar 1,024.5),
+   demand 7,060.0 MiB; both equal B1's C pilot's (demand 7,060.0, headroom 3,710.5).
+4. No parity-gate FATAL and no non-finite FATAL in the child's full log (one generation); the update-10 canary's
+   verdict is pass.
+5. The lever is the run's: `n_epochs` 5 and `lr` 0.0006 recorded, one pin entry, `15136b61634b667bb9da5ccc6647ff9265238829`.
+
+**Recorded, deciding nothing:**
+
+6. **ρ_Q5 = 0.5914** (§ 7 item 6's formula, rollout rows with 300,000 ≤ step < 2,000,000): the pilot 306.26 s per 1M
+   steps (18 rows, median update 21.359 s, collect 8.748 s, 98,304 steps a rollout, update share 0.709) against the
+   registered 517.86 of B1's C pilot `rb_b1pinpilot_c_s9201` (18 rows, 42.0 s, 8.908 s, share 0.825).
+7. The controller moved the LR up twice: 6e-4 → 7.2e-4 at 988,928 steps, then → 8.64e-4 at 1,775,104; no other move.
+   The last-epoch KL (`train/approx_kl_epoch_4`) went 0.0044 at 202,752 to 0.0070 at 2,561,280 (range 0.0012 to
+   0.0080 over the 25 rows before the end). The shared compile cache MISSED: `SHARED-NEW`, key `1bdf57369a43`, a new
+   entry (cold), so § 7 item 7's expected hit did not happen.
+
+**FINDINGS** (each recorded; none moves a rule):
+
+- (a) ρ_Q5 sits at the bottom of § 8's expected 0.59 to 0.86: the update's time halved (21.36 s against 42.0 s), as
+  five passes against ten predict.
+- (b) Step 2,561,280 carries two LR rows and two KL rows (0.0070 and 0.0221), probably the final update logged twice.
+  It decides nothing here, but `main.b1.lr_report`'s MOVEMENT-UNMATCHED median at 50M reads these rows.
+- (c) The expected compile-cache hit missed (item 7).
+- (d) Within a run the pace rises about 40 % from 2M to 50M in this recipe (Q6-N's and B1's C runs both showed it).
+  B1's measured 9.55 h a run already carries it, which is why the price below uses 9.55 h and not the pilot's pace.
+
+**The orchestrator's price, written before the first run (§ 7 item 6, § 8):** ρ = 0.591 is ACCEPTED. The cell to
+50M is ≈ 3 × 9.55 × 0.591 ≈ 16.9 GPU-h, plus one cold compile at the first 6 h restart (the pin's compile-key issue,
+fixed on main in `4d327c5a1` after the pin; ≈ 0.3 h) and the 50M look (≈ 0.6 h): ≈ 17.8 GPU-h. That is not too high
+for this card's question. The window's scope at its GO is the three runs `rb_q5n_s5201`–`s5203` to 50M and the 50M
+look; any later leg is ruled at that look. The record of the check is `~/.claude/jobs/x35/q5n/card_check.json`
+(sha256 `f92bb9603eced552…`), with `pilot.dryrun.txt` and `prelaunch_20261124T093133/seed_scan.txt` beside it. No
+rule, bar, class, seed, argv, pin or statistic moves.
