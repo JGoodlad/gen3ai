@@ -1,0 +1,499 @@
+{
+ "schema": "gen3_b1_fresh_look_v1",
+ "look": "50M",
+ "step": 50000000,
+ "card": "q6n",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "arm": {
+  "schema": "gen3_b1_fresh_arm_v1",
+  "card": "q6n",
+  "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+  "banked_arm": "C",
+  "lever": [
+   "--policy-readout",
+   "trunk",
+   "--allow-nonproduction-arch"
+  ],
+  "declared_keys": [
+   "allow_nonproduction_arch",
+   "policy_readout"
+  ],
+  "fresh": [
+   {
+    "seed": 5211,
+    "run": "rb_q6n_s5211"
+   },
+   {
+    "seed": 5212,
+    "run": "rb_q6n_s5212"
+   },
+   {
+    "seed": 5213,
+    "run": "rb_q6n_s5213"
+   }
+  ],
+  "prereg": "designs/research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md"
+ },
+ "arm_sha256": "347e10ca853cc475c36912159d41eacc2c90b8139c81fd66cc9d14bdd1c4d93f",
+ "banked_arm": "C",
+ "own_control": false,
+ "replaced_seed": null,
+ "replaced_fresh_seed": null,
+ "lever_check": {
+  "ok": true,
+  "problems": [],
+  "declared_keys": [
+   "allow_nonproduction_arch",
+   "policy_readout"
+  ],
+  "targets": {
+   "50000000": {
+    "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+    "runs": {
+     "rb_q6n_s5211": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5211 --device cuda --log-level periodic --run-name rb_q6n_s5211",
+      "diff": {
+       "allow_nonproduction_arch": [
+        false,
+        true
+       ],
+       "policy_readout": [
+        "tower",
+        "trunk"
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q6n_s5211"
+       ],
+       "seed": [
+        5101,
+        5211
+       ]
+      }
+     },
+     "rb_q6n_s5212": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5212 --device cuda --log-level periodic --run-name rb_q6n_s5212",
+      "diff": {
+       "allow_nonproduction_arch": [
+        false,
+        true
+       ],
+       "policy_readout": [
+        "tower",
+        "trunk"
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q6n_s5212"
+       ],
+       "seed": [
+        5101,
+        5212
+       ]
+      }
+     },
+     "rb_q6n_s5213": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 50000000 --seed 5213 --device cuda --log-level periodic --run-name rb_q6n_s5213",
+      "diff": {
+       "allow_nonproduction_arch": [
+        false,
+        true
+       ],
+       "policy_readout": [
+        "tower",
+        "trunk"
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q6n_s5213"
+       ],
+       "seed": [
+        5101,
+        5213
+       ]
+      }
+     }
+    }
+   },
+   "100000000": {
+    "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 100000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+    "runs": {
+     "rb_q6n_s5211": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 100000000 --seed 5211 --device cuda --log-level periodic --run-name rb_q6n_s5211",
+      "diff": {
+       "allow_nonproduction_arch": [
+        false,
+        true
+       ],
+       "policy_readout": [
+        "tower",
+        "trunk"
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q6n_s5211"
+       ],
+       "seed": [
+        5101,
+        5211
+       ]
+      }
+     },
+     "rb_q6n_s5212": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 100000000 --seed 5212 --device cuda --log-level periodic --run-name rb_q6n_s5212",
+      "diff": {
+       "allow_nonproduction_arch": [
+        false,
+        true
+       ],
+       "policy_readout": [
+        "tower",
+        "trunk"
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q6n_s5212"
+       ],
+       "seed": [
+        5101,
+        5212
+       ]
+      }
+     },
+     "rb_q6n_s5213": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --policy-readout trunk --allow-nonproduction-arch --checkpoint-every-steps 1000000 --steps 100000000 --seed 5213 --device cuda --log-level periodic --run-name rb_q6n_s5213",
+      "diff": {
+       "allow_nonproduction_arch": [
+        false,
+        true
+       ],
+       "policy_readout": [
+        "tower",
+        "trunk"
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q6n_s5213"
+       ],
+       "seed": [
+        5101,
+        5213
+       ]
+      }
+     }
+    }
+   }
+  },
+  "expected": {
+   "rb_q6n_s5211": {
+    "allow_nonproduction_arch": true,
+    "d_model": 128,
+    "n_epochs": 10,
+    "policy_readout": "trunk",
+    "team_mix": null,
+    "team_mix_sides": null,
+    "trunk_ffn_dim": 256
+   },
+   "rb_q6n_s5212": {
+    "allow_nonproduction_arch": true,
+    "d_model": 128,
+    "n_epochs": 10,
+    "policy_readout": "trunk",
+    "team_mix": null,
+    "team_mix_sides": null,
+    "trunk_ffn_dim": 256
+   },
+   "rb_q6n_s5213": {
+    "allow_nonproduction_arch": true,
+    "d_model": 128,
+    "n_epochs": 10,
+    "policy_readout": "trunk",
+    "team_mix": null,
+    "team_mix_sides": null,
+    "trunk_ffn_dim": 256
+   }
+  },
+  "banked_levers": {
+   "d_model": 128,
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  }
+ },
+ "banked_identity": {
+  "checked": true,
+  "b1_look": "50M",
+  "pin": "15136b61634b667bb9da5ccc6647ff9265238829"
+ },
+ "runs": {
+  "fresh": [
+   {
+    "seed": 5211,
+    "run": "rb_q6n_s5211",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_q6n_s5211/checkpoints/checkpoint_50000299_steps.zip",
+    "steps": 50000299,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_q6n_s5211",
+     "verdict": "PASS",
+     "upto": 50000299,
+     "last_row_step": 49955002,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 8.392333984375e-05,
+      "p99": 1.7927884982782416e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae"
+   },
+   {
+    "seed": 5212,
+    "run": "rb_q6n_s5212",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_q6n_s5212/checkpoints/checkpoint_50000395_steps.zip",
+    "steps": 50000395,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_q6n_s5212",
+     "verdict": "PASS",
+     "upto": 50000395,
+     "last_row_step": 49953154,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 8.821487426757812e-05,
+      "p99": 1.620411785552278e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a"
+   },
+   {
+    "seed": 5213,
+    "run": "rb_q6n_s5213",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_q6n_s5213/checkpoints/checkpoint_50000077_steps.zip",
+    "steps": 50000077,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_q6n_s5213",
+     "verdict": "PASS",
+     "upto": 50000077,
+     "last_row_step": 49954344,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 9.834766387939453e-05,
+      "p99": 1.829504981287755e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25"
+   }
+  ],
+  "banked": [
+   {
+    "arm": "C",
+    "seed": 5101,
+    "run": "rb_b1c_s5101",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip",
+    "steps": 50000412,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5101",
+     "verdict": "PASS",
+     "upto": 50000412,
+     "last_row_step": 49954753,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 9.393692016601562e-05,
+      "p99": 1.6661882909829728e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f"
+   },
+   {
+    "arm": "C",
+    "seed": 5102,
+    "run": "rb_b1c_s5102",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip",
+    "steps": 50000041,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5102",
+     "verdict": "PASS",
+     "upto": 50000041,
+     "last_row_step": 49955581,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 0.00010156631469726562,
+      "p99": 1.6157626305357553e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45"
+   },
+   {
+    "arm": "C",
+    "seed": 5110,
+    "run": "rb_b1c_s5110",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip",
+    "steps": 50000220,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5110",
+     "verdict": "PASS",
+     "upto": 50000220,
+     "last_row_step": 49954151,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 7.462501525878906e-05,
+      "p99": 1.599311872269027e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f"
+   }
+  ]
+ },
+ "cells": [
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5211/checkpoints/checkpoint_50000299_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5211/checkpoints/checkpoint_50000299_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5211/checkpoints/checkpoint_50000299_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5212/checkpoints/checkpoint_50000395_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5212/checkpoints/checkpoint_50000395_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5212/checkpoints/checkpoint_50000395_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5213/checkpoints/checkpoint_50000077_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5213/checkpoints/checkpoint_50000077_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q6n_s5213/checkpoints/checkpoint_50000077_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ]
+ ],
+ "names": {
+  "home72": {
+   "family": "b1_fresh_q6n_h2h_home72",
+   "request": "b1fresh_q6n_50m_home72",
+   "pairs": 1000,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel home72, 1000 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  },
+  "heldout72_hpfix": {
+   "family": "b1_fresh_q6n_h2h_heldout72_hpfix",
+   "request": "b1fresh_q6n_50m_heldout72_hpfix",
+   "pairs": 500,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel heldout72_hpfix, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  },
+  "forum72": {
+   "family": "b1_fresh_q6n_h2h_forum72",
+   "request": "b1fresh_q6n_50m_forum72",
+   "pairs": 500,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel forum72, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  },
+  "p72": {
+   "family": "b1_fresh_q6n_h2h_p72",
+   "request": "b1fresh_q6n_50m_p72",
+   "pairs": 500,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel p72, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  }
+ }
+}

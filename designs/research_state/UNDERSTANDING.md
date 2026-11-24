@@ -153,8 +153,10 @@ under `measurements/`. A number with no pointer is not a measurement.
 12. **The architecture is settled for now.** The end state (static per-mon tokens with the recovery and fact
     levers) passed its closing test (+0.60 pp, 90 % [−0.72, +1.92]); the bf16 (16-bit "bfloat") trunk passed its A/B (+1.06 pp, 90 %
     [−1.19, +3.31]) and trains 22.5 % faster. A small entity-and-attention toy beats production at equal wall clock
-    at 15M (+6.5 pp), but at the plateaus P\* is ahead of the toy's T\* against Kakuna. [PASS ×2 · `748f90e6f`,
-    `89d258af6`, `38d767462`, `3010c81ba`]
+    at 15M (+6.5 pp), but at the plateaus P\* is ahead of the toy's T\* against Kakuna. Retiring the flat policy
+    tower for a trunk readout, from scratch, is not ahead at 50M (Q6-N: −0.68 pp, 90 % [−3.74, +2.39]) and stopped
+    there, which is not "no effect" (§4.17). [PASS ×2 · `748f90e6f`, `89d258af6`, `38d767462`, `3010c81ba`;
+    STOPPED-AT-50M · ledger 2026-11-24]
 13. **Human data carries signal, but at matched volume it teaches our network less than our own self-play data.**
     Our intent head predicts human opponents 0.253 nats worse than our own snapshots, and a human opponent model learns
     humans (0.582 nats better than P\*) but does not help search. In X59-S, fresh students of our architecture taught by
@@ -491,7 +493,8 @@ displacement 0.067 against 0.040). The critic head is not linear as built (Layer
 Linear(128, 1)), but its trained function is 98.9 % linear in its input and 36 % of its hidden units never fire.
 Over all decisions against Kakuna its error on U is a level (U − home bias +0.054 [+0.003, +0.108], present at
 turn 1, absent against PastaMittens) with ordering equal or better (AUC 0.813 against 0.781). Whether saturation
-costs strength is UNVERIFIED: no activation A/B exists.
+costs strength is still UNVERIFIED: the one from-scratch A/B, a trunk readout in the tower's place (Q6-N, §4.17),
+stopped at 50M at −0.68 pp [−3.74, +2.39] (90 %), which is no class and not "no effect".
 [MEASURED · DESCRIPTIVE · REPORTED, no verdict · one checkpoint, banked rows, a pseudo-loss for the gradients ·
 `measurements/arch_diag_2026-11-09/`; ledger 2026-11-09 · *ARCHITECTURE DIAGNOSIS*]
 
@@ -904,7 +907,7 @@ all 24 cells above 50). Under the fresh-run seed floor the interval is [+1.35, +
 [MEASURED · in-house head to head, both arms forks at tag `ce3d-pin-9e97cad5`, played at tag `ce3d-pin-333a73dd` on the card; the crosses against C0's and X67's finals REPORTED · ledger 2026-11-22 · *X70 the ent-0 control of the trailing-magnet screen: `ANCHOR-ADDS`*]
 [MEASURED · Kakuna on F and H, engine E6 at pin `15136b616`, rule `b1_kakuna` at 0.90; C0's level DESCRIPTIVE · ledger 2026-11-18 · *The Kakuna read of the banked entropy finals, RECORDED*]
 
-### 4.17 From scratch at 50M: procedural teams in half the pool are behind in-house and stopped; width 256 is not stopped and not read (BOUNDARY-1, 2026-11-18)
+### 4.17 From scratch at 50M: procedural teams in half the pool are behind in-house and stopped; width 256 is not stopped and not read; the trunk readout is not ahead and stopped (BOUNDARY-1, 2026-11-18; Q6-N, 2026-11-24)
 
 BOUNDARY-1 trains twelve fresh runs in a 2 × 2: width (`d_model` 128 against 256) × team breadth (the pool against
 half `n1_proc_v1` procedural teams), three seeds a cell, every run at `ent_coef` 0.0125, registered to 100M. Its 50M
@@ -935,8 +938,17 @@ harm view? It reads no gain.
   not continued past 100M. By the registered default the control's three runs are the candidates and continue
   to their plateau after the owner's 72-hour veto window (it ends 2026-11-24 21:09 PST), unless the owner rules. No recipe,
   baseline or production config moves, and procedural teams as a training lever are not retired by it.
+- **The flat policy tower retired: STOPPED-AT-50M (Q6-N, 2026-11-24).** One fresh cell of three runs whose move
+  chooser reads the trunk through one learned query (`--policy-readout trunk`, 40.7 % fewer parameters) played C's
+  three banked runs at 50M (9 cells, 45,000 games): **fresh minus C on N −0.68 pp [−3.74, +2.39]** (90 %, 4 df;
+  every view's interval spans zero, H the lowest at −1.43 [−4.50, +1.63]). CONTINUE needed an estimate above +0.005 pp,
+  so the cell stops at 50M with no class; it is not HARM-AT-50M. Both cells' seed spreads sit under the 1.76 pp floor
+  (the fresh cell's ≈ 0.35 pp, as tight as C's), so the half-width is the floor's 3.06 pp. It is not a LOSS, not
+  "no effect" and not a retirement: a slow starter can still win later, nothing is read at 100M, and production's
+  tower does not move. Its step is ≈ 3–4 % slower than C's despite the smaller network.
 
 [MEASURED · in-house head to head among the twelve runs' 50M checkpoints, and among C's and W's six at 75M and at 100M, at pin `15136b616`, CUDA · ledger 2026-11-18 · *BOUNDARY-1's 50M look, PLAYED*; ledger 2026-11-21 · *BOUNDARY-1's survivor looks at 75M and 100M, PLAYED*; [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md) §18]
+[MEASURED · in-house head to head, Q6-N's three 50M checkpoints against C's, at pin `15136b616`, CUDA · ledger 2026-11-24 · *Q6-N the flat policy tower retired, the 50M look: STOPPED-AT-50M*; [`measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md`](measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md) §13]
 
 ---
 
@@ -973,7 +985,8 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16).
 BOUNDARY-1's survivor ended on 2026-11-21 (C's and W's six runs at 100M and both survivor looks, §4.17). X70's
 window (four forks and three crosses on the card) ran 2026-11-21 to 11-22 and is read (§4.16); the card then went
-to the next armed window chain (STATUS §2's rows).
+to the next armed window chains (STATUS §2's rows). Q6-N's window ran 2026-11-23 to 11-24 and is read, STOPPED-AT-50M
+(§4.17).
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)
 

@@ -1,0 +1,17 @@
+# Q6-N 50M: realised GPU time and pace, computed 2026-11-24 from the window chain's Q6W lines
+# (chain_status_q6w.txt: START -> END of each launcher, which includes every bring-up and restart)
+# and from the checkpoint zips' mtimes under /home/goodlad/dev/gen3ai/models/ (read-only).
+rb_q6n_s5211: launcher 11-23 02:34:27 -> 11-23 12:53:55  10.324 h
+rb_q6n_s5212: launcher 11-23 12:54:05 -> 11-23 22:50:52  9.946 h
+rb_q6n_s5213: launcher 11-23 22:51:03 -> 11-24 08:47:03  9.933 h
+training total 30.204 GPU-h; look play 08:47:26 -> 09:24:29 0.618 GPU-h; window total 30.822 GPU-h
+price (PREREG section 12): the cell to 50M ~ 28.6 x 1.078 = 30.8 GPU-h, plus three cold starts and the look (~0.7 h)
+
+# pace: seconds of wall per 1M steps between checkpoint zips (mtime), fresh cell against banked cell C
+rb_q6n_s5211: 1M->2M 564 s/1M; 49M->50M 747 s/1M; 1M->50M 36191 s = 738.6 s/1M
+rb_q6n_s5212: 1M->2M 555 s/1M; 49M->50M 760 s/1M; 1M->50M 34864 s = 711.5 s/1M
+rb_q6n_s5213: 1M->2M 554 s/1M; 49M->50M 757 s/1M; 1M->50M 34819 s = 710.6 s/1M
+rb_b1c_s5101: 1M->2M 549 s/1M; 49M->50M 704 s/1M; 1M->50M 33927 s = 692.4 s/1M
+rb_b1c_s5102: 1M->2M 524 s/1M; 49M->50M 715 s/1M; 1M->50M 33383 s = 681.3 s/1M
+rb_b1c_s5110: 1M->2M 524 s/1M; 49M->50M 760 s/1M; 1M->50M 33906 s = 692.0 s/1M
+rb_q6n_s5211's 1M->50M span includes one cold restart bring-up (20.7 min, the Training session's figure; FINDING Q6N-G2)

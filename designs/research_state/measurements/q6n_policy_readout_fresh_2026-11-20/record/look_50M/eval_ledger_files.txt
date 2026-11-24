@@ -1,0 +1,14 @@
+# The 50M look's eval-ledger files, listed (not copied): sha256, bytes, path under /home/goodlad/dev/gen3ai/models/_ledger/
+# The four rows/h2h/*.jsonl.gz hold the per-game rows of the four panels (home72 08:47, heldout72_hpfix 09:14, forum72 09:17, p72 09:21 PST); requests/ holds the family-register and play-many events.
+845434864aabe29d99bc40afb6cf740b1ef1029dbd277089a738ec5ddf19a5bd  17283  rows/h2h/ledger.20261124T164736Z.0-goodlad_desktop-4025651-h2h.jsonl.gz
+cf8f2b70e8c715b2ffefd779ef4e15ae405332af74fa17bdffcfcac9612d0dba  10148  rows/h2h/ledger.20261124T171411Z.0-goodlad_desktop-4099357-h2h.jsonl.gz
+1a21739795e9999c5e2968c7165e1d15839e5948aa4f9bafa6d193def8fa330c  10205  rows/h2h/ledger.20261124T171731Z.0-goodlad_desktop-4100725-h2h.jsonl.gz
+87cfc38100374ee5a42c4817a3badace6b70919e69c4bc6ce57e24f820518bce  10200  rows/h2h/ledger.20261124T172102Z.0-goodlad_desktop-4102121-h2h.jsonl.gz
+f914553ce80d51f476a67ef534f4bbf47ae2a9c548e10d737555a2ae871298a3  672  requests/events.20261124T164735Z.0-goodlad_desktop-4025633-ledger_cli.jsonl
+63a444ac2c04426699debcf000085d35b987b12cac5a5307e606cd2df6a43ecc  21981  requests/events.20261124T164736Z.0-goodlad_desktop-4025651-h2h.jsonl
+7e931c10c1b9f59536c08a09a6ea10b93bc38a0c9fd93fcbe0f93c12769695d6  689  requests/events.20261124T171411Z.0-goodlad_desktop-4099339-ledger_cli.jsonl
+61e5a717ea430eff0610e0f1102f54f07092ac731b093ae714317f25c2025dc7  11356  requests/events.20261124T171411Z.0-goodlad_desktop-4099357-h2h.jsonl
+4b10036d8206cdba27e17d7a3d78b08f7cca4afd3ec627baae41d9864eae60f1  673  requests/events.20261124T171730Z.0-goodlad_desktop-4100700-ledger_cli.jsonl
+37a46655a2101af32cb1eae90d1089d6b7da025d1a6367879efa34288fecba65  11196  requests/events.20261124T171731Z.0-goodlad_desktop-4100725-h2h.jsonl
+078b18da7582592f3b0bdf616a1a11a4e9d99375caf4f9d0c211cbc2586d0504  665  requests/events.20261124T172102Z.0-goodlad_desktop-4102101-ledger_cli.jsonl
+77cca932359d86792709b4629521bb8903f013263086d51dd992c047980cf1db  11116  requests/events.20261124T172102Z.0-goodlad_desktop-4102121-h2h.jsonl

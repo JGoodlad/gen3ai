@@ -1,0 +1,572 @@
+[2026-11-24T08:47:26-08:00] card q6n look 50M: 9 cells, play at pin 15136b61634b667bb9da5ccc6647ff9265238829 in /home/goodlad/dev/gen3ai-worktrees/b1_look_pin on cuda
+
+== rb_b1c_s5101 ==
+   run-level git_hash : 15136b61  (pin_source=pin_commit)
+   num_timesteps      : 100,008,594
+   pin_history        : 1 span(s)
+       [1] 15136b61 pin_source=pin_commit  steps 0 → 100008594
+   sidecars           : 102
+
+== rb_b1c_s5102 ==
+   run-level git_hash : 15136b61  (pin_source=pin_commit)
+   num_timesteps      : 100,007,468
+   pin_history        : 1 span(s)
+       [1] 15136b61 pin_source=pin_commit  steps 0 → 100007468
+   sidecars           : 102
+
+== rb_b1c_s5110 ==
+   run-level git_hash : 15136b61  (pin_source=pin_commit)
+   num_timesteps      : 100,008,982
+   pin_history        : 1 span(s)
+       [1] 15136b61 pin_source=pin_commit  steps 0 → 100008982
+   sidecars           : 102
+
+== rb_q6n_s5211 ==
+   run-level git_hash : 15136b61  (pin_source=pin_commit)
+   num_timesteps      : 50,053,357
+   pin_history        : 1 span(s)
+       [1] 15136b61 pin_source=pin_commit  steps 0 → 50053357
+   sidecars           : 52
+
+== rb_q6n_s5212 ==
+   run-level git_hash : 15136b61  (pin_source=pin_commit)
+   num_timesteps      : 50,052,691
+   pin_history        : 1 span(s)
+       [1] 15136b61 pin_source=pin_commit  steps 0 → 50052691
+   sidecars           : 52
+
+== rb_q6n_s5213 ==
+   run-level git_hash : 15136b61  (pin_source=pin_commit)
+   num_timesteps      : 50,052,553
+   pin_history        : 1 span(s)
+       [1] 15136b61 pin_source=pin_commit  steps 0 → 50052553
+   sidecars           : 52
+
+SUMMARY: 6 run(s) · 462 sidecar(s) · 0 differing from their run hash in 0 run(s) (0 UNEXPLAINED by any recorded span) · 0 run(s) PIN-SPLIT · 0 run(s) with no pin_history · 0 run(s) with a KNOWN-BAD reveal record
+[2026-11-24T08:47:27-08:00] REPORTED: main.sidecar_audit --strict exit 0
+checked 6 flags from /home/goodlad/dev/gen3ai/models/rb_b1c_s5101
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (15136b61)
+  accepted by the trainer parser : 4
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  resolved against the FORK PARENT: /home/goodlad/dev/gen3ai/models/rb_b1c_s5101/model_config.json
+      75 unset flag(s) INHERITED from it — the checks below read the EFFECTIVE config, not the argv
+  oracle reveal                  : off (the production observation)
+  human data                     : off (no human data)
+        [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
+  K9(b) behaviour check          : warn  (inherited from parent metadata.json:cli_args)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  [ForkLR] ✓ the fork parent (rb_b1c_s5101) did not run at a frozen LR — the inherited rate is an ordinary annealed one
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@8a9be0753ba9]
+    ✓ every ARCH-surface key matches the production mirror (42 of 51 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration)
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fork  [production_config@8a9be0753ba9]
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ♻️  --model launch (fork): every untyped recipe knob restored from the PARENT run's record — n_envs=256 [parent metadata.json:cli_args]  rollout_target_samples=98304 [parent metadata.json:cli_args]  trainee_slots=1 [parent metadata.json:cli_args]  t2_buckets=None [parent metadata.json:cli_args]  t2_lanes=0 [parent metadata.json:cli_args]  grad_accum_steps=32 [parent metadata.json:cli_args]  n_epochs=10 [parent metadata.json:cli_args]  min_lr=1e-05 [parent metadata.json:cli_args]  max_lr=None [parent metadata.json:cli_args]  anneal_lr_start_steps=None [parent metadata.json:cli_args]  weight_decay=1e-05 [parent metadata.json:cli_args]  clip_range=0.15 [parent metadata.json:cli_args]  clip_range_vf=None [parent metadata.json:cli_args]  ent_coef=0.0125 [parent metadata.json:cli_args]  self_play=True [parent metadata.json:cli_args]  vf_coef=0.5 [model_config.json]  overlap_collect=False [parent metadata.json:cli_args]
+        (--lr / --batch-size / --n-steps are INERT on a resume — SB3 restores them — and are never re-applied here)
+    ♻️  run flags (K9(b), cadence, retention, self-play schedule) restored from the PARENT run's record: behaviour_check='warn'  rust_env_refusal_budget=64  rust_env_respawn_budget=2  checkpoint_every_steps=1000000  eval_shard_games=25  n_sentinels=5  snapshot_ladder_games=100  keep_eval_snapshots=10  keep_eval_trace_steps=0  keep_stalls=50  keep_crashes=10  forensic_win_quota=5  forensic_loss_quota=10  forensic_draw_quota=5  value_sidecar='auto'  value_sidecar_fraction=0.015625  value_sidecar_seed=0  team_wr_tracking=True  adaptive_batch='off'  adaptive_batch_target=1.0  adaptive_batch_band=2.0  adaptive_batch_min_accum=1  adaptive_batch_max_accum=32  adaptive_batch_every=4  opp_belief_moves_weight=1.0  self_play_temp=1.0  pfsp_scale=0.0  pool_spread=False  team_block_episodes=1
+    ℹ️  a FORK declares its own seed and matchup: NOT carried from the parent's record — seed=5101 (type any you want kept)
+    6 of 34 RECIPE knob(s) differ from recipe.fork:
+        n_steps                  2048       (INERT on a resume: SB3 restores the checkpoint's own)   production: 384
+        batch_size               4096       (INERT on a resume: SB3 restores the checkpoint's own)   production: 2048
+        n_epochs                 10         (restored from the record)   production: 5
+        ent_coef                 0.0125     (restored from the record)   production: 0.05
+        fork_lr                  None       (untyped default)   production: 5.6e-05
+        fork_lr_freeze           False      (untyped default)   production: True
+    ℹ️  INFO only — a FORK/RESTART. Its recipe is its ARGV plus the record of the run that wrote the checkpoint (a fork: its PARENT's model_config.json + metadata.json:cli_args; a restart: its own) — recipe.fork is never applied.
+
+  ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_b1c_s5101/model_config.json (check_compatible, the trainer's own check)
+  ✓ this command still launches
+[2026-11-24T08:47:28-08:00] REPORTED: main.checkargs rb_b1c_s5101 exit 0
+checked 6 flags from /home/goodlad/dev/gen3ai/models/rb_b1c_s5102
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (15136b61)
+  accepted by the trainer parser : 4
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  resolved against the FORK PARENT: /home/goodlad/dev/gen3ai/models/rb_b1c_s5102/model_config.json
+      75 unset flag(s) INHERITED from it — the checks below read the EFFECTIVE config, not the argv
+  oracle reveal                  : off (the production observation)
+  human data                     : off (no human data)
+        [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
+  K9(b) behaviour check          : warn  (inherited from parent metadata.json:cli_args)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  [ForkLR] ✓ the fork parent (rb_b1c_s5102) did not run at a frozen LR — the inherited rate is an ordinary annealed one
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@8a9be0753ba9]
+    ✓ every ARCH-surface key matches the production mirror (42 of 51 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration)
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fork  [production_config@8a9be0753ba9]
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ♻️  --model launch (fork): every untyped recipe knob restored from the PARENT run's record — n_envs=256 [parent metadata.json:cli_args]  rollout_target_samples=98304 [parent metadata.json:cli_args]  trainee_slots=1 [parent metadata.json:cli_args]  t2_buckets=None [parent metadata.json:cli_args]  t2_lanes=0 [parent metadata.json:cli_args]  grad_accum_steps=32 [parent metadata.json:cli_args]  n_epochs=10 [parent metadata.json:cli_args]  min_lr=1e-05 [parent metadata.json:cli_args]  max_lr=None [parent metadata.json:cli_args]  anneal_lr_start_steps=None [parent metadata.json:cli_args]  weight_decay=1e-05 [parent metadata.json:cli_args]  clip_range=0.15 [parent metadata.json:cli_args]  clip_range_vf=None [parent metadata.json:cli_args]  ent_coef=0.0125 [parent metadata.json:cli_args]  self_play=True [parent metadata.json:cli_args]  vf_coef=0.5 [model_config.json]  overlap_collect=False [parent metadata.json:cli_args]
+        (--lr / --batch-size / --n-steps are INERT on a resume — SB3 restores them — and are never re-applied here)
+    ♻️  run flags (K9(b), cadence, retention, self-play schedule) restored from the PARENT run's record: behaviour_check='warn'  rust_env_refusal_budget=64  rust_env_respawn_budget=2  checkpoint_every_steps=1000000  eval_shard_games=25  n_sentinels=5  snapshot_ladder_games=100  keep_eval_snapshots=10  keep_eval_trace_steps=0  keep_stalls=50  keep_crashes=10  forensic_win_quota=5  forensic_loss_quota=10  forensic_draw_quota=5  value_sidecar='auto'  value_sidecar_fraction=0.015625  value_sidecar_seed=0  team_wr_tracking=True  adaptive_batch='off'  adaptive_batch_target=1.0  adaptive_batch_band=2.0  adaptive_batch_min_accum=1  adaptive_batch_max_accum=32  adaptive_batch_every=4  opp_belief_moves_weight=1.0  self_play_temp=1.0  pfsp_scale=0.0  pool_spread=False  team_block_episodes=1
+    ℹ️  a FORK declares its own seed and matchup: NOT carried from the parent's record — seed=5102 (type any you want kept)
+    6 of 34 RECIPE knob(s) differ from recipe.fork:
+        n_steps                  2048       (INERT on a resume: SB3 restores the checkpoint's own)   production: 384
+        batch_size               4096       (INERT on a resume: SB3 restores the checkpoint's own)   production: 2048
+        n_epochs                 10         (restored from the record)   production: 5
+        ent_coef                 0.0125     (restored from the record)   production: 0.05
+        fork_lr                  None       (untyped default)   production: 5.6e-05
+        fork_lr_freeze           False      (untyped default)   production: True
+    ℹ️  INFO only — a FORK/RESTART. Its recipe is its ARGV plus the record of the run that wrote the checkpoint (a fork: its PARENT's model_config.json + metadata.json:cli_args; a restart: its own) — recipe.fork is never applied.
+
+  ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_b1c_s5102/model_config.json (check_compatible, the trainer's own check)
+  ✓ this command still launches
+[2026-11-24T08:47:30-08:00] REPORTED: main.checkargs rb_b1c_s5102 exit 0
+checked 6 flags from /home/goodlad/dev/gen3ai/models/rb_b1c_s5110
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (15136b61)
+  accepted by the trainer parser : 4
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  resolved against the FORK PARENT: /home/goodlad/dev/gen3ai/models/rb_b1c_s5110/model_config.json
+      75 unset flag(s) INHERITED from it — the checks below read the EFFECTIVE config, not the argv
+  oracle reveal                  : off (the production observation)
+  human data                     : off (no human data)
+        [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
+  K9(b) behaviour check          : warn  (inherited from parent metadata.json:cli_args)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  [ForkLR] ✓ the fork parent (rb_b1c_s5110) did not run at a frozen LR — the inherited rate is an ordinary annealed one
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@8a9be0753ba9]
+    ✓ every ARCH-surface key matches the production mirror (42 of 51 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration)
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fork  [production_config@8a9be0753ba9]
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ♻️  --model launch (fork): every untyped recipe knob restored from the PARENT run's record — n_envs=256 [parent metadata.json:cli_args]  rollout_target_samples=98304 [parent metadata.json:cli_args]  trainee_slots=1 [parent metadata.json:cli_args]  t2_buckets=None [parent metadata.json:cli_args]  t2_lanes=0 [parent metadata.json:cli_args]  grad_accum_steps=32 [parent metadata.json:cli_args]  n_epochs=10 [parent metadata.json:cli_args]  min_lr=1e-05 [parent metadata.json:cli_args]  max_lr=None [parent metadata.json:cli_args]  anneal_lr_start_steps=None [parent metadata.json:cli_args]  weight_decay=1e-05 [parent metadata.json:cli_args]  clip_range=0.15 [parent metadata.json:cli_args]  clip_range_vf=None [parent metadata.json:cli_args]  ent_coef=0.0125 [parent metadata.json:cli_args]  self_play=True [parent metadata.json:cli_args]  vf_coef=0.5 [model_config.json]  overlap_collect=False [parent metadata.json:cli_args]
+        (--lr / --batch-size / --n-steps are INERT on a resume — SB3 restores them — and are never re-applied here)
+    ♻️  run flags (K9(b), cadence, retention, self-play schedule) restored from the PARENT run's record: behaviour_check='warn'  rust_env_refusal_budget=64  rust_env_respawn_budget=2  checkpoint_every_steps=1000000  eval_shard_games=25  n_sentinels=5  snapshot_ladder_games=100  keep_eval_snapshots=10  keep_eval_trace_steps=0  keep_stalls=50  keep_crashes=10  forensic_win_quota=5  forensic_loss_quota=10  forensic_draw_quota=5  value_sidecar='auto'  value_sidecar_fraction=0.015625  value_sidecar_seed=0  team_wr_tracking=True  adaptive_batch='off'  adaptive_batch_target=1.0  adaptive_batch_band=2.0  adaptive_batch_min_accum=1  adaptive_batch_max_accum=32  adaptive_batch_every=4  opp_belief_moves_weight=1.0  self_play_temp=1.0  pfsp_scale=0.0  pool_spread=False  team_block_episodes=1
+    ℹ️  a FORK declares its own seed and matchup: NOT carried from the parent's record — seed=5110 (type any you want kept)
+    6 of 34 RECIPE knob(s) differ from recipe.fork:
+        n_steps                  2048       (INERT on a resume: SB3 restores the checkpoint's own)   production: 384
+        batch_size               4096       (INERT on a resume: SB3 restores the checkpoint's own)   production: 2048
+        n_epochs                 10         (restored from the record)   production: 5
+        ent_coef                 0.0125     (restored from the record)   production: 0.05
+        fork_lr                  None       (untyped default)   production: 5.6e-05
+        fork_lr_freeze           False      (untyped default)   production: True
+    ℹ️  INFO only — a FORK/RESTART. Its recipe is its ARGV plus the record of the run that wrote the checkpoint (a fork: its PARENT's model_config.json + metadata.json:cli_args; a restart: its own) — recipe.fork is never applied.
+
+  ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_b1c_s5110/model_config.json (check_compatible, the trainer's own check)
+  ✓ this command still launches
+[2026-11-24T08:47:31-08:00] REPORTED: main.checkargs rb_b1c_s5110 exit 0
+checked 13 flags from /home/goodlad/dev/gen3ai/models/rb_q6n_s5211
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (15136b61)
+  accepted by the trainer parser : 11
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  human data                     : off (no human data)
+        [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
+  K9(b) behaviour check          : warn  (typed)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@8a9be0753ba9]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
+    1 of 42 ARCH-surface key(s) differs from production (42 of 51 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration):
+        policy_readout               'trunk'        (this argv, argv)   production: 'tower'
+    ℹ️  --allow-nonproduction-arch — the drift above is an EXPLICIT choice and is recorded in model_config.json's arch_source.
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@8a9be0753ba9]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    1 of 32 RECIPE knob(s) differs from recipe.fresh:
+        ent_coef                 0.0125     (TYPED)   production: 0.05
+    ℹ️  every differing knob was TYPED — a deliberate deviation, recorded in metadata.json's cli_args.
+  ✓ this command still launches
+[2026-11-24T08:47:32-08:00] REPORTED: main.checkargs rb_q6n_s5211 exit 0
+checked 13 flags from /home/goodlad/dev/gen3ai/models/rb_q6n_s5212
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (15136b61)
+  accepted by the trainer parser : 11
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  human data                     : off (no human data)
+        [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
+  K9(b) behaviour check          : warn  (typed)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@8a9be0753ba9]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
+    1 of 42 ARCH-surface key(s) differs from production (42 of 51 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration):
+        policy_readout               'trunk'        (this argv, argv)   production: 'tower'
+    ℹ️  --allow-nonproduction-arch — the drift above is an EXPLICIT choice and is recorded in model_config.json's arch_source.
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@8a9be0753ba9]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    1 of 32 RECIPE knob(s) differs from recipe.fresh:
+        ent_coef                 0.0125     (TYPED)   production: 0.05
+    ℹ️  every differing knob was TYPED — a deliberate deviation, recorded in metadata.json's cli_args.
+  ✓ this command still launches
+[2026-11-24T08:47:34-08:00] REPORTED: main.checkargs rb_q6n_s5212 exit 0
+checked 13 flags from /home/goodlad/dev/gen3ai/models/rb_q6n_s5213
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (15136b61)
+  accepted by the trainer parser : 11
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  human data                     : off (no human data)
+        [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
+  K9(b) behaviour check          : warn  (typed)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@8a9be0753ba9]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
+    1 of 42 ARCH-surface key(s) differs from production (42 of 51 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration):
+        policy_readout               'trunk'        (this argv, argv)   production: 'tower'
+    ℹ️  --allow-nonproduction-arch — the drift above is an EXPLICIT choice and is recorded in model_config.json's arch_source.
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@8a9be0753ba9]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    1 of 32 RECIPE knob(s) differs from recipe.fresh:
+        ent_coef                 0.0125     (TYPED)   production: 0.05
+    ℹ️  every differing knob was TYPED — a deliberate deviation, recorded in metadata.json's cli_args.
+  ✓ this command still launches
+[2026-11-24T08:47:35-08:00] REPORTED: main.checkargs rb_q6n_s5213 exit 0
+[2026-11-24T08:47:35-08:00] home72: family-register
+{"commit": "15136b61634b667bb9da5ccc6647ff9265238829", "decision_kind": "ab_verdict", "event": "family", "family_id": "b1_fresh_q6n_h2h_home72", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel home72, 1000 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)", "schema": "gen3_eval_request_v1", "seq": 95828, "ts": "2026-11-24T16:47:35+00:00", "writer_id": "20261124T164735Z.0-goodlad_desktop-4025633-ledger_cli"}
+[2026-11-24T08:47:35-08:00] home72: play-many
+[gpu_lock] running '/home/goodlad/dev/gen3ai-worktrees/q6n_kit_ae68212e0/scripts/ops/mem_cap.sh 32 /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.h2h play-many --' as process group 4025643 (wrapper pid 4025637): PREEMPT = kill -TERM -- -4025643 (-KILL to force), never the wrapper's pid
+[heavy_slots] a GPU job (under gpu_lock, pid 4025637) takes no CPU heavy slot: waiting for one would hold the GPU idle (D-3, core review 2026-10-20)
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4025643.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family b1_fresh_q6n_h2h_home72, request b1fresh_q6n_50m_home72, panel home72 under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_q6n_s5211@50000299 (slots ['player']); eval_b declared from rb_b1c_s5101@50000412 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 4.6s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-worktrees/b1_look_pin/src/rust_env/target/release)
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpglaimg1t/cuda_utils.c:5:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpglaimg1t/cuda_utils.c:1:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:282: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpp5nu_i97/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpp5nu_i97/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp_dhzx1ni/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp_dhzx1ni/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp6v10f1fe/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp6v10f1fe/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpoqm4gnij/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpoqm4gnij/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmppa1cyyer/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmppa1cyyer/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpjf0j0x1d/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpjf0j0x1d/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmplhwl3axm/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmplhwl3axm/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpwsy1dytm/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpwsy1dytm/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpkbcdj1uw/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpkbcdj1uw/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+[h2h] engine up in 1310.4s: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime d4de0fd7c16a2658
+[h2h] cell 1/9: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 14.4s (69.31 games/s); W/L/D 468/522/10; pair counts [118, 5, 281, 5, 91]; near-tie games 0; digest 59106acad036
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.7s (72.92 games/s); W/L/D 441/548/11; pair counts [139, 4, 266, 7, 84]; near-tie games 1; digest cad326a70d29
+[h2h] cell 2/9: rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 0.87s
+[h2h] batch 1/2: 500 pairs / 1000 games in 17.3s (57.65 games/s); W/L/D 484/498/18; pair counts [121, 5, 252, 11, 111]; near-tie games 1; digest 277f24581bd8
+[h2h] batch 2/2: 500 pairs / 1000 games in 14.9s (66.97 games/s); W/L/D 487/502/11; pair counts [117, 4, 265, 5, 109]; near-tie games 2; digest c6c9e6912964
+[h2h] cell 3/9: rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 0.85s
+[h2h] batch 1/2: 500 pairs / 1000 games in 14.9s (67.28 games/s); W/L/D 471/513/16; pair counts [125, 4, 260, 10, 101]; near-tie games 1; digest 71f05e0dcb92
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.8s (72.63 games/s); W/L/D 488/500/12; pair counts [111, 6, 273, 4, 106]; near-tie games 1; digest c2d5351d2368
+[h2h] cell 4/9: rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 1.42s
+[h2h] batch 1/2: 500 pairs / 1000 games in 16.6s (60.38 games/s); W/L/D 497/491/12; pair counts [112, 4, 264, 6, 114]; near-tie games 0; digest 81fb63e5cb4f
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.0s (66.85 games/s); W/L/D 468/521/11; pair counts [117, 4, 284, 5, 90]; near-tie games 1; digest ecc84c2c24bd
+[h2h] cell 5/9: rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 0.87s
+[h2h] batch 1/2: 500 pairs / 1000 games in 14.0s (71.25 games/s); W/L/D 484/503/13; pair counts [118, 4, 264, 7, 107]; near-tie games 1; digest c227d71d9752
+[h2h] batch 2/2: 500 pairs / 1000 games in 14.4s (69.22 games/s); W/L/D 506/484/10; pair counts [101, 3, 282, 1, 113]; near-tie games 1; digest d2c67f3a5c45
+[h2h] cell 6/9: rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 0.24s
+[h2h] batch 1/2: 500 pairs / 1000 games in 13.8s (72.68 games/s); W/L/D 479/514/7; pair counts [119, 5, 271, 2, 103]; near-tie games 2; digest ebe0b3a881cb
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.4s (74.57 games/s); W/L/D 496/492/12; pair counts [112, 8, 261, 2, 117]; near-tie games 1; digest 7ac35775c0b4
+[h2h] cell 7/9: rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 1.43s
+[h2h] batch 1/2: 500 pairs / 1000 games in 13.1s (76.15 games/s); W/L/D 484/509/7; pair counts [115, 3, 276, 4, 102]; near-tie games 1; digest 6185c81a8059
+[h2h] batch 2/2: 500 pairs / 1000 games in 12.9s (77.53 games/s); W/L/D 472/520/8; pair counts [125, 6, 264, 2, 103]; near-tie games 1; digest 4eb08d12a3ff
+[h2h] cell 8/9: rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 0.86s
+[h2h] batch 1/2: 500 pairs / 1000 games in 13.5s (74.15 games/s); W/L/D 517/469/14; pair counts [98, 5, 270, 5, 122]; near-tie games 1; digest 490ed866dd9d
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.0s (76.95 games/s); W/L/D 509/487/4; pair counts [108, 2, 269, 2, 119]; near-tie games 2; digest ef067616df72
+[h2h] cell 9/9: rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220 — 2 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_home72; swap 0.25s
+[h2h] batch 1/2: 500 pairs / 1000 games in 13.3s (75.09 games/s); W/L/D 512/477/11; pair counts [100, 6, 272, 3, 119]; near-tie games 0; digest c14b7117fe40
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.6s (73.51 games/s); W/L/D 506/483/11; pair counts [111, 3, 260, 4, 122]; near-tie games 0; digest 317798542422
+rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412: score 45.98% [43.94, 48.01] (pair-clustered 95%), SE 1.038 pp over 1000 pairs / 2000 games; W/L/D 909/1070/21; pentanomial [257, 9, 547, 12, 175]; 71.07 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041: score 49.28% [47.16, 51.39] (pair-clustered 95%), SE 1.078 pp over 1000 pairs / 2000 games; W/L/D 971/1000/29; pentanomial [238, 9, 517, 16, 220]; 61.96 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220: score 48.65% [46.58, 50.72] (pair-clustered 95%), SE 1.059 pp over 1000 pairs / 2000 games; W/L/D 959/1013/28; pentanomial [236, 10, 533, 14, 207]; 69.85 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412: score 48.83% [46.78, 50.87] (pair-clustered 95%), SE 1.046 pp over 1000 pairs / 2000 games; W/L/D 965/1012/23; pentanomial [229, 8, 548, 11, 204]; 63.45 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041: score 50.08% [48.01, 52.14] (pair-clustered 95%), SE 1.053 pp over 1000 pairs / 2000 games; W/L/D 990/987/23; pentanomial [219, 7, 546, 8, 220]; 70.22 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220: score 49.23% [47.13, 51.32] (pair-clustered 95%), SE 1.067 pp over 1000 pairs / 2000 games; W/L/D 975/1006/19; pentanomial [231, 13, 532, 4, 220]; 73.62 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412: score 48.18% [46.10, 50.25] (pair-clustered 95%), SE 1.058 pp over 1000 pairs / 2000 games; W/L/D 956/1029/15; pentanomial [240, 9, 540, 6, 205]; 76.83 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041: score 51.75% [49.67, 53.83] (pair-clustered 95%), SE 1.060 pp over 1000 pairs / 2000 games; W/L/D 1026/956/18; pentanomial [206, 7, 539, 7, 241]; 75.53 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220: score 51.45% [49.36, 53.54] (pair-clustered 95%), SE 1.067 pp over 1000 pairs / 2000 games; W/L/D 1018/960/22; pentanomial [211, 9, 532, 7, 241]; 74.29 games/s
+{"cells": [{"batches": 2, "d": 21, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 71.06815436003126, "l": 1070, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [257, 9, 547, 12, 175], "pair_sd": 0.328329465229269, "pairs": 1000, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.45975, "score_ci95": [0.4394101064924125, 0.48008989350758746], "se_pp": 1.038268933069548, "w": 909, "wall_s": 28.142000000000003, "win_rate": 0.4545}, {"batches": 2, "d": 29, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 61.963627350745114, "l": 1000, "near_tie_decisions": 3, "near_tie_games": 3, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [238, 9, 517, 16, 220], "pair_sd": 0.34077274474870134, "pairs": 1000, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.49275, "score_ci95": [0.4716392497551603, 0.5138607502448397], "se_pp": 1.0776180379130798, "w": 971, "wall_s": 32.277, "win_rate": 0.4855}, {"batches": 2, "d": 28, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 69.84947438270527, "l": 1013, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [236, 10, 533, 14, 207], "pair_sd": 0.3349327244834848, "pairs": 1000, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.4865, "score_ci95": [0.4657510369319332, 0.5072489630680668], "se_pp": 1.0591502722934547, "w": 959, "wall_s": 28.633000000000003, "win_rate": 0.4795}, {"batches": 2, "d": 23, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 63.44775077723495, "l": 1012, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [229, 8, 548, 11, 204], "pair_sd": 0.3307700807907909, "pairs": 1000, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.48825, "score_ci95": [0.4677589112270724, 0.5087410887729277], "se_pp": 1.045986837136808, "w": 965, "wall_s": 31.522, "win_rate": 0.4825}, {"batches": 2, "d": 23, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 70.21978793624044, "l": 987, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [219, 7, 546, 8, 220], "pair_sd": 0.3328629376113166, "pairs": 1000, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.50075, "score_ci95": [0.4801292594919581, 0.5213707405080419], "se_pp": 1.0526050315062874, "w": 990, "wall_s": 28.482, "win_rate": 0.495}, {"batches": 2, "d": 19, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 73.61601884570082, "l": 1006, "near_tie_decisions": 3, "near_tie_games": 3, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [231, 13, 532, 4, 220], "pair_sd": 0.33744081526069697, "pairs": 1000, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.49225, "score_ci95": [0.4713456616009978, 0.5131543383990023], "se_pp": 1.067081551727907, "w": 975, "wall_s": 27.168, "win_rate": 0.4875}, {"batches": 2, "d": 15, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 76.8314701701817, "l": 1029, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [240, 9, 540, 6, 205], "pair_sd": 0.33461381307995025, "pairs": 1000, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.48175, "score_ci95": [0.461020793379871, 0.502479206620129], "se_pp": 1.0581417858864846, "w": 956, "wall_s": 26.031, "win_rate": 0.478}, {"batches": 2, "d": 18, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 75.52870090634443, "l": 956, "near_tie_decisions": 3, "near_tie_games": 3, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [206, 7, 539, 7, 241], "pair_sd": 0.3353075918931469, "pairs": 1000, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.5175, "score_ci95": [0.49672781402933236, 0.5382721859706676], "se_pp": 1.0603357071285546, "w": 1026, "wall_s": 26.479999999999997, "win_rate": 0.513}, {"batches": 2, "d": 22, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 74.29420505200594, "l": 960, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [211, 9, 532, 7, 241], "pair_sd": 0.3374961535390495, "pairs": 1000, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "d4de0fd7c16a2658", "score": 0.5145, "score_ci95": [0.4935922334143505, 0.5354077665856494], "se_pp": 1.0672565467292934, "w": 1018, "wall_s": 26.92, "win_rate": 0.509}], "engine": {"cells": [{"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412", "load_s": 1.929, "play_s": 28.228, "rows": 2, "set_cell_s": 0.0}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041", "load_s": 1.926, "play_s": 32.358, "rows": 2, "set_cell_s": 0.869}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220", "load_s": 1.934, "play_s": 28.705, "rows": 2, "set_cell_s": 0.855}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412", "load_s": 1.931, "play_s": 31.586, "rows": 2, "set_cell_s": 1.417}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041", "load_s": 1.931, "play_s": 28.544, "rows": 2, "set_cell_s": 0.867}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220", "load_s": 1.936, "play_s": 27.256, "rows": 2, "set_cell_s": 0.245}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412", "load_s": 1.929, "play_s": 26.093, "rows": 2, "set_cell_s": 1.429}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041", "load_s": 1.926, "play_s": 26.553, "rows": 2, "set_cell_s": 0.864}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220", "load_s": 1.931, "play_s": 26.995, "rows": 2, "set_cell_s": 0.246}], "decl": {"combos": [[0, 1]], "groups": [{"fingerprint": "8f8dbd2ba4e3", "name": "eval", "roles": ["player"], "source": "rb_q6n_s5211@50000299"}, {"fingerprint": "3e906b942155", "name": "eval_b", "roles": ["opponent"], "source": "rb_b1c_s5101@50000412"}]}, "preflight_s": 4.648, "startup_s": 1310.44}}
+[mem_cap] done: gen3ai-capped-main.h2h-4025643.scope exit 0 · peak 13.78 GB of cap 32.00 GB (43%) · not OOM-killed
+[2026-11-24T09:14:11-08:00] heldout72_hpfix: family-register
+{"commit": "15136b61634b667bb9da5ccc6647ff9265238829", "decision_kind": "ab_verdict", "event": "family", "family_id": "b1_fresh_q6n_h2h_heldout72_hpfix", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel heldout72_hpfix, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)", "schema": "gen3_eval_request_v1", "seq": 95866, "ts": "2026-11-24T17:14:11+00:00", "writer_id": "20261124T171411Z.0-goodlad_desktop-4099339-ledger_cli"}
+[2026-11-24T09:14:11-08:00] heldout72_hpfix: play-many
+[gpu_lock] running '/home/goodlad/dev/gen3ai-worktrees/q6n_kit_ae68212e0/scripts/ops/mem_cap.sh 32 /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.h2h play-many --' as process group 4099349 (wrapper pid 4099343): PREEMPT = kill -TERM -- -4099349 (-KILL to force), never the wrapper's pid
+[heavy_slots] a GPU job (under gpu_lock, pid 4099343) takes no CPU heavy slot: waiting for one would hold the GPU idle (D-3, core review 2026-10-20)
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4099349.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 500 pairs in batches of 500; 9 with batches to play (9 batch(es)), 0 already recorded; purpose ab, family b1_fresh_q6n_h2h_heldout72_hpfix, request b1fresh_q6n_50m_heldout72_hpfix, panel heldout72_hpfix under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_q6n_s5211@50000299 (slots ['player']); eval_b declared from rb_b1c_s5101@50000412 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 4.4s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-worktrees/b1_look_pin/src/rust_env/target/release)
+[h2h] engine up in 57.8s: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 04c74bb478c5f351
+[h2h] cell 1/9: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 0.00s
+[h2h] batch 1/1: 500 pairs / 1000 games in 13.2s (75.97 games/s); W/L/D 460/537/3; pair counts [122, 1, 292, 2, 83]; near-tie games 1; digest 5ff4aec43a01
+[h2h] cell 2/9: rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 0.87s
+[h2h] batch 1/1: 500 pairs / 1000 games in 16.1s (61.93 games/s); W/L/D 461/535/4; pair counts [122, 2, 289, 2, 85]; near-tie games 0; digest 2b6cba55368e
+[h2h] cell 3/9: rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 0.86s
+[h2h] batch 1/1: 500 pairs / 1000 games in 13.7s (73.14 games/s); W/L/D 500/495/5; pair counts [102, 3, 288, 2, 105]; near-tie games 1; digest 0b3df6184c83
+[h2h] cell 4/9: rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 1.41s
+[h2h] batch 1/1: 500 pairs / 1000 games in 13.4s (74.90 games/s); W/L/D 498/496/6; pair counts [102, 1, 292, 3, 102]; near-tie games 0; digest fb8df2aee23a
+[h2h] cell 5/9: rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 0.86s
+[h2h] batch 1/1: 500 pairs / 1000 games in 13.1s (76.05 games/s); W/L/D 482/509/9; pair counts [113, 4, 279, 5, 99]; near-tie games 0; digest 2cae756983a5
+[h2h] cell 6/9: rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 0.24s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.5s (69.10 games/s); W/L/D 485/507/8; pair counts [111, 5, 280, 3, 101]; near-tie games 1; digest baeac9b83cc8
+[h2h] cell 7/9: rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 1.40s
+[h2h] batch 1/1: 500 pairs / 1000 games in 12.1s (82.91 games/s); W/L/D 506/491/3; pair counts [89, 1, 312, 2, 96]; near-tie games 0; digest bf34fd506b5e
+[h2h] cell 8/9: rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 0.88s
+[h2h] batch 1/1: 500 pairs / 1000 games in 15.1s (66.42 games/s); W/L/D 455/538/7; pair counts [133, 5, 267, 2, 93]; near-tie games 0; digest 8a74bdf66143
+[h2h] cell 9/9: rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_heldout72_hpfix; swap 0.25s
+[h2h] batch 1/1: 500 pairs / 1000 games in 13.1s (76.55 games/s); W/L/D 499/496/5; pair counts [112, 1, 272, 2, 113]; near-tie games 2; digest e7ace2fcd7f7
+rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412: score 46.15% [43.36, 48.94] (pair-clustered 95%), SE 1.425 pp over 500 pairs / 1000 games; W/L/D 460/537/3; pentanomial [122, 1, 292, 2, 83]; 75.97 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041: score 46.30% [43.49, 49.11] (pair-clustered 95%), SE 1.434 pp over 500 pairs / 1000 games; W/L/D 461/535/4; pentanomial [122, 2, 289, 2, 85]; 61.93 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220: score 50.25% [47.42, 53.08] (pair-clustered 95%), SE 1.444 pp over 500 pairs / 1000 games; W/L/D 500/495/5; pentanomial [102, 3, 288, 2, 105]; 73.14 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412: score 50.10% [47.29, 52.91] (pair-clustered 95%), SE 1.433 pp over 500 pairs / 1000 games; W/L/D 498/496/6; pentanomial [102, 1, 292, 3, 102]; 74.90 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041: score 48.65% [45.78, 51.52] (pair-clustered 95%), SE 1.464 pp over 500 pairs / 1000 games; W/L/D 482/509/9; pentanomial [113, 4, 279, 5, 99]; 76.05 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220: score 48.90% [46.03, 51.77] (pair-clustered 95%), SE 1.464 pp over 500 pairs / 1000 games; W/L/D 485/507/8; pentanomial [111, 5, 280, 3, 101]; 69.09 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412: score 50.75% [48.08, 53.42] (pair-clustered 95%), SE 1.364 pp over 500 pairs / 1000 games; W/L/D 506/491/3; pentanomial [89, 1, 312, 2, 96]; 82.90 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041: score 45.85% [42.91, 48.79] (pair-clustered 95%), SE 1.499 pp over 500 pairs / 1000 games; W/L/D 455/538/7; pentanomial [133, 5, 267, 2, 93]; 66.42 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220: score 50.15% [47.21, 53.09] (pair-clustered 95%), SE 1.504 pp over 500 pairs / 1000 games; W/L/D 499/496/5; pentanomial [112, 1, 272, 2, 113]; 76.55 games/s
+{"cells": [{"batches": 1, "d": 3, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 75.97052343690648, "l": 537, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [122, 1, 292, 2, 83], "pair_sd": 0.3187411832251483, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.4615, "score_ci95": [0.4335890563255199, 0.4894109436744801], "se_pp": 1.4254539058402944, "w": 460, "wall_s": 13.163, "win_rate": 0.46}, {"batches": 1, "d": 4, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 61.9271736437949, "l": 535, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [122, 2, 289, 2, 85], "pair_sd": 0.32068157625079335, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.463, "score_ci95": [0.43491914354582467, 0.4910808564541754], "se_pp": 1.434131607257112, "w": 461, "wall_s": 16.148, "win_rate": 0.461}, {"batches": 1, "d": 5, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 73.13683902581731, "l": 495, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [102, 3, 288, 2, 105], "pair_sd": 0.32299753065560616, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.5025, "score_ci95": [0.47421634429568904, 0.5307836557043109], "se_pp": 1.444488870221015, "w": 500, "wall_s": 13.673, "win_rate": 0.5}, {"batches": 1, "d": 6, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 74.90075649764061, "l": 496, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [102, 1, 292, 3, 102], "pair_sd": 0.3204752858141096, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.501, "score_ci95": [0.4729372076086502, 0.5290627923913498], "se_pp": 1.4332090483780464, "w": 498, "wall_s": 13.351, "win_rate": 0.498}, {"batches": 1, "d": 9, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 76.05141075366949, "l": 509, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [113, 4, 279, 5, 99], "pair_sd": 0.3273485361633018, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.4865, "score_ci95": [0.4578353434208606, 0.5151646565791393], "se_pp": 1.4639471583923822, "w": 482, "wall_s": 13.149, "win_rate": 0.482}, {"batches": 1, "d": 8, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 69.09417536101707, "l": 507, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [111, 5, 280, 3, 101], "pair_sd": 0.32725095320372327, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.489, "score_ci95": [0.4603438883865937, 0.5176561116134063], "se_pp": 1.4635107541302559, "w": 485, "wall_s": 14.473, "win_rate": 0.485}, {"batches": 1, "d": 3, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 82.90499088045101, "l": 491, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [89, 1, 312, 2, 96], "pair_sd": 0.3049668170785767, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.5075, "score_ci95": [0.4807952247715881, 0.5342047752284118], "se_pp": 1.3638530677388827, "w": 506, "wall_s": 12.062, "win_rate": 0.506}, {"batches": 1, "d": 7, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 66.42311524410495, "l": 538, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [133, 5, 267, 2, 93], "pair_sd": 0.3352275421411851, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.4585, "score_ci95": [0.4291454090677455, 0.48785459093225453], "se_pp": 1.4991831443157306, "w": 455, "wall_s": 15.055, "win_rate": 0.455}, {"batches": 1, "d": 5, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 76.54623392529088, "l": 496, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [112, 1, 272, 2, 113], "pair_sd": 0.3363018701937169, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "04c74bb478c5f351", "score": 0.5015, "score_ci95": [0.4720513342781035, 0.5309486657218964], "se_pp": 1.5039876854269225, "w": 499, "wall_s": 13.064, "win_rate": 0.499}], "engine": {"cells": [{"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412", "load_s": 0.968, "play_s": 13.205, "rows": 1, "set_cell_s": 0.0}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041", "load_s": 0.968, "play_s": 16.191, "rows": 1, "set_cell_s": 0.865}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220", "load_s": 0.962, "play_s": 13.716, "rows": 1, "set_cell_s": 0.861}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412", "load_s": 0.963, "play_s": 13.383, "rows": 1, "set_cell_s": 1.407}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041", "load_s": 0.961, "play_s": 13.191, "rows": 1, "set_cell_s": 0.856}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220", "load_s": 0.963, "play_s": 14.514, "rows": 1, "set_cell_s": 0.241}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412", "load_s": 0.96, "play_s": 12.105, "rows": 1, "set_cell_s": 1.403}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041", "load_s": 0.963, "play_s": 15.1, "rows": 1, "set_cell_s": 0.877}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220", "load_s": 0.965, "play_s": 13.097, "rows": 1, "set_cell_s": 0.246}], "decl": {"combos": [[0, 1]], "groups": [{"fingerprint": "8f8dbd2ba4e3", "name": "eval", "roles": ["player"], "source": "rb_q6n_s5211@50000299"}, {"fingerprint": "3e906b942155", "name": "eval_b", "roles": ["opponent"], "source": "rb_b1c_s5101@50000412"}]}, "preflight_s": 4.415, "startup_s": 57.75}}
+[mem_cap] done: gen3ai-capped-main.h2h-4099349.scope exit 0 · peak 6.15 GB of cap 32.00 GB (19%) · not OOM-killed
+[2026-11-24T09:17:30-08:00] forum72: family-register
+{"commit": "15136b61634b667bb9da5ccc6647ff9265238829", "decision_kind": "ab_verdict", "event": "family", "family_id": "b1_fresh_q6n_h2h_forum72", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel forum72, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)", "schema": "gen3_eval_request_v1", "seq": 95886, "ts": "2026-11-24T17:17:30+00:00", "writer_id": "20261124T171730Z.0-goodlad_desktop-4100700-ledger_cli"}
+[2026-11-24T09:17:30-08:00] forum72: play-many
+[gpu_lock] running '/home/goodlad/dev/gen3ai-worktrees/q6n_kit_ae68212e0/scripts/ops/mem_cap.sh 32 /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.h2h play-many --' as process group 4100717 (wrapper pid 4100710): PREEMPT = kill -TERM -- -4100717 (-KILL to force), never the wrapper's pid
+[heavy_slots] a GPU job (under gpu_lock, pid 4100710) takes no CPU heavy slot: waiting for one would hold the GPU idle (D-3, core review 2026-10-20)
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4100717.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 500 pairs in batches of 500; 9 with batches to play (9 batch(es)), 0 already recorded; purpose ab, family b1_fresh_q6n_h2h_forum72, request b1fresh_q6n_50m_forum72, panel forum72 under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_q6n_s5211@50000299 (slots ['player']); eval_b declared from rb_b1c_s5101@50000412 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 4.4s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-worktrees/b1_look_pin/src/rust_env/target/release)
+[h2h] engine up in 57.9s: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0c972bc06eab468f
+[h2h] cell 1/9: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 0.00s
+[h2h] batch 1/1: 500 pairs / 1000 games in 15.7s (63.79 games/s); W/L/D 498/493/9; pair counts [110, 3, 270, 6, 111]; near-tie games 0; digest f54534535a25
+[h2h] cell 2/9: rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 0.86s
+[h2h] batch 1/1: 500 pairs / 1000 games in 15.6s (64.08 games/s); W/L/D 476/510/14; pair counts [111, 10, 279, 2, 98]; near-tie games 0; digest ca322e78b9ae
+[h2h] cell 3/9: rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 0.86s
+[h2h] batch 1/1: 500 pairs / 1000 games in 15.9s (62.79 games/s); W/L/D 519/459/22; pair counts [100, 7, 255, 9, 129]; near-tie games 0; digest d20efd8959d4
+[h2h] cell 4/9: rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 1.40s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.5s (69.17 games/s); W/L/D 513/479/8; pair counts [106, 2, 265, 6, 121]; near-tie games 0; digest 3b4c8ed92e9d
+[h2h] cell 5/9: rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 0.87s
+[h2h] batch 1/1: 500 pairs / 1000 games in 15.0s (66.55 games/s); W/L/D 506/477/17; pair counts [97, 9, 275, 6, 113]; near-tie games 0; digest 6a4858c4d570
+[h2h] cell 6/9: rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 0.24s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.9s (67.04 games/s); W/L/D 445/544/11; pair counts [133, 6, 272, 5, 84]; near-tie games 0; digest 96009d3297fd
+[h2h] cell 7/9: rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 1.42s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.5s (68.86 games/s); W/L/D 489/505/6; pair counts [110, 2, 283, 4, 101]; near-tie games 0; digest e659bdfb369d
+[h2h] cell 8/9: rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 0.86s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.8s (67.65 games/s); W/L/D 473/520/7; pair counts [118, 4, 281, 1, 96]; near-tie games 1; digest 6d49f006faff
+[h2h] cell 9/9: rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_forum72; swap 0.24s
+[h2h] batch 1/1: 500 pairs / 1000 games in 15.5s (64.52 games/s); W/L/D 501/488/11; pair counts [113, 4, 259, 5, 119]; near-tie games 1; digest c65c3df7e638
+rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412: score 50.25% [47.32, 53.18] (pair-clustered 95%), SE 1.496 pp over 500 pairs / 1000 games; W/L/D 498/493/9; pentanomial [110, 3, 270, 6, 111]; 63.80 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041: score 48.30% [45.45, 51.15] (pair-clustered 95%), SE 1.455 pp over 500 pairs / 1000 games; W/L/D 476/510/14; pentanomial [111, 10, 279, 2, 98]; 64.08 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220: score 53.00% [50.02, 55.98] (pair-clustered 95%), SE 1.522 pp over 500 pairs / 1000 games; W/L/D 519/459/22; pentanomial [100, 7, 255, 9, 129]; 62.79 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412: score 51.70% [48.74, 54.66] (pair-clustered 95%), SE 1.513 pp over 500 pairs / 1000 games; W/L/D 513/479/8; pentanomial [106, 2, 265, 6, 121]; 69.17 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041: score 51.45% [48.59, 54.31] (pair-clustered 95%), SE 1.462 pp over 500 pairs / 1000 games; W/L/D 506/477/17; pentanomial [97, 9, 275, 6, 113]; 66.55 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220: score 45.05% [42.18, 47.92] (pair-clustered 95%), SE 1.467 pp over 500 pairs / 1000 games; W/L/D 445/544/11; pentanomial [133, 6, 272, 5, 84]; 67.04 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412: score 49.20% [46.34, 52.06] (pair-clustered 95%), SE 1.459 pp over 500 pairs / 1000 games; W/L/D 489/505/6; pentanomial [110, 2, 283, 4, 101]; 68.87 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041: score 47.65% [44.78, 50.52] (pair-clustered 95%), SE 1.465 pp over 500 pairs / 1000 games; W/L/D 473/520/7; pentanomial [118, 4, 281, 1, 96]; 67.65 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220: score 50.65% [47.65, 53.65] (pair-clustered 95%), SE 1.532 pp over 500 pairs / 1000 games; W/L/D 501/488/11; pentanomial [113, 4, 259, 5, 119]; 64.52 games/s
+{"cells": [{"batches": 1, "d": 9, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 63.795853269537474, "l": 493, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [110, 3, 270, 6, 111], "pair_sd": 0.3344285198211114, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.5025, "score_ci95": [0.4732153763896477, 0.5317846236103522], "se_pp": 1.4956098078692817, "w": 498, "wall_s": 15.675, "win_rate": 0.498}, {"batches": 1, "d": 14, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 64.07791874919903, "l": 510, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [111, 10, 279, 2, 98], "pair_sd": 0.3254579015654448, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.483, "score_ci95": [0.45450089904575935, 0.5114991009542407], "se_pp": 1.4554919834295397, "w": 476, "wall_s": 15.606, "win_rate": 0.476}, {"batches": 1, "d": 22, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 62.790405626020345, "l": 459, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [100, 7, 255, 9, 129], "pair_sd": 0.3403405108514902, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.53, "score_ci95": [0.5001976859958829, 0.5598023140041172], "se_pp": 1.5220490355218739, "w": 519, "wall_s": 15.926, "win_rate": 0.519}, {"batches": 1, "d": 8, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 69.17064397869544, "l": 479, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [106, 2, 265, 6, 121], "pair_sd": 0.33828963885924596, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.517, "score_ci95": [0.4873772729952153, 0.5466227270047848], "se_pp": 1.5128772571462568, "w": 513, "wall_s": 14.457, "win_rate": 0.513}, {"batches": 1, "d": 17, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 66.5513110608279, "l": 477, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [97, 9, 275, 6, 113], "pair_sd": 0.3269227844828623, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.5145, "score_ci95": [0.485872624863603, 0.543127375136397], "se_pp": 1.462043138994387, "w": 506, "wall_s": 15.026, "win_rate": 0.506}, {"batches": 1, "d": 11, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 67.03760809814305, "l": 544, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [133, 6, 272, 5, 84], "pair_sd": 0.32808540055924496, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.4505, "score_ci95": [0.42177081903012204, 0.479229180969878], "se_pp": 1.4672425161514386, "w": 445, "wall_s": 14.917, "win_rate": 0.445}, {"batches": 1, "d": 6, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 68.86578059362303, "l": 505, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [110, 2, 283, 4, 101], "pair_sd": 0.32618828549656775, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.492, "score_ci95": [0.46343694212448533, 0.5205630578755146], "se_pp": 1.4587583596688685, "w": 489, "wall_s": 14.521, "win_rate": 0.489}, {"batches": 1, "d": 7, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 67.64984440535787, "l": 520, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [118, 4, 281, 1, 96], "pair_sd": 0.3275474387768871, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.4765, "score_ci95": [0.4478179262813861, 0.5051820737186138], "se_pp": 1.4648366779221402, "w": 473, "wall_s": 14.782, "win_rate": 0.473}, {"batches": 1, "d": 11, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 64.52029163171817, "l": 488, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [113, 4, 259, 5, 119], "pair_sd": 0.342516254752295, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "0c972bc06eab468f", "score": 0.5065, "score_ci95": [0.4765071644421538, 0.5364928355578461], "se_pp": 1.5317792580495344, "w": 501, "wall_s": 15.499, "win_rate": 0.501}], "engine": {"cells": [{"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412", "load_s": 0.966, "play_s": 15.719, "rows": 1, "set_cell_s": 0.0}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041", "load_s": 0.96, "play_s": 15.638, "rows": 1, "set_cell_s": 0.856}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220", "load_s": 0.96, "play_s": 15.968, "rows": 1, "set_cell_s": 0.857}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412", "load_s": 0.962, "play_s": 14.487, "rows": 1, "set_cell_s": 1.404}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041", "load_s": 0.965, "play_s": 15.056, "rows": 1, "set_cell_s": 0.869}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220", "load_s": 0.962, "play_s": 14.948, "rows": 1, "set_cell_s": 0.242}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412", "load_s": 0.962, "play_s": 14.553, "rows": 1, "set_cell_s": 1.419}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041", "load_s": 0.961, "play_s": 14.815, "rows": 1, "set_cell_s": 0.863}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220", "load_s": 0.961, "play_s": 15.533, "rows": 1, "set_cell_s": 0.244}], "decl": {"combos": [[0, 1]], "groups": [{"fingerprint": "8f8dbd2ba4e3", "name": "eval", "roles": ["player"], "source": "rb_q6n_s5211@50000299"}, {"fingerprint": "3e906b942155", "name": "eval_b", "roles": ["opponent"], "source": "rb_b1c_s5101@50000412"}]}, "preflight_s": 4.428, "startup_s": 57.934}}
+[mem_cap] done: gen3ai-capped-main.h2h-4100717.scope exit 0 · peak 6.15 GB of cap 32.00 GB (19%) · not OOM-killed
+[2026-11-24T09:21:02-08:00] p72: family-register
+{"commit": "15136b61634b667bb9da5ccc6647ff9265238829", "decision_kind": "ab_verdict", "event": "family", "family_id": "b1_fresh_q6n_h2h_p72", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q6n, pin 15136b61): the fresh cell against the banked cell on panel p72, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)", "schema": "gen3_eval_request_v1", "seq": 95906, "ts": "2026-11-24T17:21:02+00:00", "writer_id": "20261124T172102Z.0-goodlad_desktop-4102101-ledger_cli"}
+[2026-11-24T09:21:02-08:00] p72: play-many
+[gpu_lock] running '/home/goodlad/dev/gen3ai-worktrees/q6n_kit_ae68212e0/scripts/ops/mem_cap.sh 32 /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.h2h play-many --' as process group 4102111 (wrapper pid 4102105): PREEMPT = kill -TERM -- -4102111 (-KILL to force), never the wrapper's pid
+[heavy_slots] a GPU job (under gpu_lock, pid 4102105) takes no CPU heavy slot: waiting for one would hold the GPU idle (D-3, core review 2026-10-20)
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4102111.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 500 pairs in batches of 500; 9 with batches to play (9 batch(es)), 0 already recorded; purpose ab, family b1_fresh_q6n_h2h_p72, request b1fresh_q6n_50m_p72, panel p72 under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_q6n_s5211@50000299 (slots ['player']); eval_b declared from rb_b1c_s5101@50000412 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 4.5s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-worktrees/b1_look_pin/src/rust_env/target/release)
+[h2h] engine up in 58.2s: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 88f0de6fbb7e15a9
+[h2h] cell 1/9: rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 0.00s
+[h2h] batch 1/1: 500 pairs / 1000 games in 16.6s (60.11 games/s); W/L/D 500/477/23; pair counts [88, 10, 294, 7, 101]; near-tie games 1; digest d03a11ea179b
+[h2h] cell 2/9: rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 0.87s
+[h2h] batch 1/1: 500 pairs / 1000 games in 15.0s (66.79 games/s); W/L/D 490/497/13; pair counts [98, 6, 297, 3, 96]; near-tie games 1; digest e1f3ec4c4f45
+[h2h] cell 3/9: rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 0.85s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.3s (69.84 games/s); W/L/D 518/470/12; pair counts [88, 4, 291, 6, 111]; near-tie games 1; digest 5afe025d271c
+[h2h] cell 4/9: rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 1.40s
+[h2h] batch 1/1: 500 pairs / 1000 games in 13.0s (76.70 games/s); W/L/D 483/508/9; pair counts [94, 3, 318, 4, 81]; near-tie games 1; digest cb9a2c8b6b61
+[h2h] cell 5/9: rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 0.87s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.4s (69.26 games/s); W/L/D 477/506/17; pair counts [105, 11, 286, 4, 94]; near-tie games 1; digest 99244b76fb47
+[h2h] cell 6/9: rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 0.24s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.9s (66.92 games/s); W/L/D 482/505/13; pair counts [112, 4, 278, 7, 99]; near-tie games 3; digest f38cd746f76b
+[h2h] cell 7/9: rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 1.41s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.1s (71.00 games/s); W/L/D 499/492/9; pair counts [81, 6, 325, 1, 87]; near-tie games 1; digest a8437666aae6
+[h2h] cell 8/9: rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 0.87s
+[h2h] batch 1/1: 500 pairs / 1000 games in 14.4s (69.36 games/s); W/L/D 493/495/12; pair counts [104, 8, 279, 4, 105]; near-tie games 0; digest 8f176988a13b
+[h2h] cell 9/9: rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220 — 1 batch(es) to play, 0 recorded; request b1fresh_q6n_50m_p72; swap 0.25s
+[h2h] batch 1/1: 500 pairs / 1000 games in 13.8s (72.41 games/s); W/L/D 488/503/9; pair counts [97, 4, 306, 3, 90]; near-tie games 1; digest 304c571aadd5
+rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412: score 51.15% [48.43, 53.87] (pair-clustered 95%), SE 1.391 pp over 500 pairs / 1000 games; W/L/D 500/477/23; pentanomial [88, 10, 294, 7, 101]; 60.11 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041: score 49.65% [46.90, 52.40] (pair-clustered 95%), SE 1.402 pp over 500 pairs / 1000 games; W/L/D 490/497/13; pentanomial [98, 6, 297, 3, 96]; 66.80 games/s
+rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220: score 52.40% [49.63, 55.17] (pair-clustered 95%), SE 1.417 pp over 500 pairs / 1000 games; W/L/D 518/470/12; pentanomial [88, 4, 291, 6, 111]; 69.84 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412: score 48.75% [46.15, 51.35] (pair-clustered 95%), SE 1.330 pp over 500 pairs / 1000 games; W/L/D 483/508/9; pentanomial [94, 3, 318, 4, 81]; 76.70 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041: score 48.55% [45.76, 51.34] (pair-clustered 95%), SE 1.424 pp over 500 pairs / 1000 games; W/L/D 477/506/17; pentanomial [105, 11, 286, 4, 94]; 69.27 games/s
+rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220: score 48.85% [45.99, 51.71] (pair-clustered 95%), SE 1.463 pp over 500 pairs / 1000 games; W/L/D 482/505/13; pentanomial [112, 4, 278, 7, 99]; 66.92 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412: score 50.35% [47.80, 52.90] (pair-clustered 95%), SE 1.304 pp over 500 pairs / 1000 games; W/L/D 499/492/9; pentanomial [81, 6, 325, 1, 87]; 71.00 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041: score 49.90% [47.05, 52.75] (pair-clustered 95%), SE 1.457 pp over 500 pairs / 1000 games; W/L/D 493/495/12; pentanomial [104, 8, 279, 4, 105]; 69.36 games/s
+rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220: score 49.25% [46.56, 51.94] (pair-clustered 95%), SE 1.375 pp over 500 pairs / 1000 games; W/L/D 488/503/9; pentanomial [97, 4, 306, 3, 90]; 72.41 games/s
+{"cells": [{"batches": 1, "d": 23, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 60.11421701232341, "l": 477, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [88, 10, 294, 7, 101], "pair_sd": 0.31094392138211835, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.5115, "score_ci95": [0.4842718326580726, 0.5387281673419273], "se_pp": 1.390583490801534, "w": 500, "wall_s": 16.635, "win_rate": 0.5}, {"batches": 1, "d": 13, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 66.79580522343197, "l": 497, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [98, 6, 297, 3, 96], "pair_sd": 0.3135432485917612, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.4965, "score_ci95": [0.469044219537591, 0.523955780462409], "se_pp": 1.4022080354745863, "w": 490, "wall_s": 14.971, "win_rate": 0.49}, {"batches": 1, "d": 12, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 69.83727913960472, "l": 470, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [88, 4, 291, 6, 111], "pair_sd": 0.31681974291227183, "pairs": 500, "player": "rb_q6n_s5211@50000299", "player_sha256": "e166b8810d8ba307941c9e5fbfce8a9e9070a9c7e0d019bd0a25276f3b81e8ae", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.524, "score_ci95": [0.4962573094888041, 0.551742690511196], "se_pp": 1.416860963531694, "w": 518, "wall_s": 14.319, "win_rate": 0.518}, {"batches": 1, "d": 9, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 76.69888019634914, "l": 508, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [94, 3, 318, 4, 81], "pair_sd": 0.2973138763700146, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.4875, "score_ci95": [0.4614653634555809, 0.513534636544419], "se_pp": 1.3296280764346422, "w": 483, "wall_s": 13.038, "win_rate": 0.483}, {"batches": 1, "d": 17, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 69.26646810279144, "l": 506, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [105, 11, 286, 4, 94], "pair_sd": 0.3183826078320546, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.4855, "score_ci95": [0.45762045539826735, 0.5133795446017326], "se_pp": 1.4238503079322622, "w": 477, "wall_s": 14.437, "win_rate": 0.477}, {"batches": 1, "d": 13, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 66.91648822269806, "l": 505, "near_tie_decisions": 3, "near_tie_games": 3, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [112, 4, 278, 7, 99], "pair_sd": 0.32704229592921663, "pairs": 500, "player": "rb_q6n_s5212@50000395", "player_sha256": "a6c5b687a5ed4e3123ad9ed68ce40395c3cb1481d0036b7b929ebe0cfc0ce25a", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.4885, "score_ci95": [0.45986215970433525, 0.5171378402956648], "se_pp": 1.4625776104306625, "w": 482, "wall_s": 14.944, "win_rate": 0.482}, {"batches": 1, "d": 9, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 70.99751508697196, "l": 492, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5101@50000412", "opponent_sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f", "pair_counts": [81, 6, 325, 1, 87], "pair_sd": 0.29160386765484186, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.5035, "score_ci95": [0.477965367032205, 0.5290346329677948], "se_pp": 1.3040921411561572, "w": 499, "wall_s": 14.085, "win_rate": 0.499}, {"batches": 1, "d": 12, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 69.3625580911424, "l": 495, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_b1c_s5102@50000041", "opponent_sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45", "pair_counts": [104, 8, 279, 4, 105], "pair_sd": 0.325900940234439, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.499, "score_ci95": [0.47046210384769055, 0.5275378961523095], "se_pp": 1.4574733125906036, "w": 493, "wall_s": 14.417, "win_rate": 0.493}, {"batches": 1, "d": 9, "devices": ["cuda/graph"], "games": 1000, "games_per_s": 72.4112961622013, "l": 503, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_b1c_s5110@50000220", "opponent_sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f", "pair_counts": [97, 4, 306, 3, 90], "pair_sd": 0.30742115335653486, "pairs": 500, "player": "rb_q6n_s5213@50000077", "player_sha256": "861606e410d0befe9603aa6b342105d8b4816f36581b98eab945629a18ec5e25", "purpose": ["ab"], "regime_id": "88f0de6fbb7e15a9", "score": 0.4925, "score_ci95": [0.46558030795124133, 0.5194196920487586], "se_pp": 1.3748291932531993, "w": 488, "wall_s": 13.81, "win_rate": 0.488}], "engine": {"cells": [{"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5101@50000412", "load_s": 0.966, "play_s": 16.677, "rows": 1, "set_cell_s": 0.0}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5102@50000041", "load_s": 0.96, "play_s": 15.005, "rows": 1, "set_cell_s": 0.867}, {"cell": "rb_q6n_s5211@50000299 vs rb_b1c_s5110@50000220", "load_s": 0.96, "play_s": 14.36, "rows": 1, "set_cell_s": 0.853}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5101@50000412", "load_s": 0.96, "play_s": 13.08, "rows": 1, "set_cell_s": 1.402}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5102@50000041", "load_s": 0.961, "play_s": 14.468, "rows": 1, "set_cell_s": 0.869}, {"cell": "rb_q6n_s5212@50000395 vs rb_b1c_s5110@50000220", "load_s": 0.96, "play_s": 14.986, "rows": 1, "set_cell_s": 0.242}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5101@50000412", "load_s": 0.962, "play_s": 14.117, "rows": 1, "set_cell_s": 1.413}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5102@50000041", "load_s": 0.962, "play_s": 14.448, "rows": 1, "set_cell_s": 0.871}, {"cell": "rb_q6n_s5213@50000077 vs rb_b1c_s5110@50000220", "load_s": 0.963, "play_s": 13.855, "rows": 1, "set_cell_s": 0.245}], "decl": {"combos": [[0, 1]], "groups": [{"fingerprint": "8f8dbd2ba4e3", "name": "eval", "roles": ["player"], "source": "rb_q6n_s5211@50000299"}, {"fingerprint": "3e906b942155", "name": "eval_b", "roles": ["opponent"], "source": "rb_b1c_s5101@50000412"}]}, "preflight_s": 4.454, "startup_s": 58.225}}
+[mem_cap] done: gen3ai-capped-main.h2h-4102111.scope exit 0 · peak 6.20 GB of cap 32.00 GB (19%) · not OOM-killed
+[2026-11-24T09:24:28-08:00] played

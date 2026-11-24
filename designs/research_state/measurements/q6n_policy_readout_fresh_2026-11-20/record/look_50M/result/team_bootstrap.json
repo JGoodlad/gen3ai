@@ -1,0 +1,231 @@
+{
+ "what": "team-cluster bootstrap of the fresh-cell statistic",
+ "status": "REPORTED",
+ "decides": null,
+ "card": "q6n",
+ "look": "50M",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "draws": 10000,
+ "seed": 20261110,
+ "n_per_side": 3,
+ "teams": {
+  "home72": 71,
+  "heldout72_hpfix": 72,
+  "forum72": 72,
+  "p72": 72
+ },
+ "read_on": "N",
+ "outcome_registered": "STOPPED-AT-50M",
+ "class_with_team_variance": "STOPPED-AT-50M",
+ "class_moves": false,
+ "views": {
+  "N": {
+   "estimate_pp": -0.6777777777777843,
+   "registered": {
+    "se_pp": 1.4370339824327978,
+    "df": 4,
+    "interval_pp": [
+     -3.741314055069331,
+     2.3857584995137624
+    ],
+    "class": "STOPPED-AT-50M"
+   },
+   "team": {
+    "se_pp": 0.18989012509978703,
+    "bias_pp": -0.003805602538731079,
+    "percentile_interval_pp": [
+     -0.9920102778258405,
+     -0.3653973949948581
+    ]
+   },
+   "combined": {
+    "se_pp": 1.4495257590940147,
+    "interval_pp": [
+     -3.7679446090000566,
+     2.412389053444488
+    ],
+    "class": "STOPPED-AT-50M",
+    "team_share_of_variance": 0.017161406806164223
+   }
+  },
+  "home72": {
+   "estimate_pp": -0.7333333333333272,
+   "registered": {
+    "se_pp": 1.4370339824327978,
+    "df": 4,
+    "interval_pp": [
+     -3.796869610624874,
+     2.3302029439582195
+    ],
+    "class": "STOPPED-AT-50M"
+   },
+   "team": {
+    "se_pp": 0.3086225521605693,
+    "bias_pp": -0.0021551438911365794,
+    "percentile_interval_pp": [
+     -1.241436913191047,
+     -0.22666378878215696
+    ]
+   },
+   "combined": {
+    "se_pp": 1.46980085262214,
+    "interval_pp": [
+     -3.8667235575360057,
+     2.4000568908693514
+    ],
+    "class": "STOPPED-AT-50M",
+    "team_share_of_variance": 0.04408982009689449
+   }
+  },
+  "U": {
+   "estimate_pp": -0.6222222222222271,
+   "registered": {
+    "se_pp": 1.4370339824327978,
+    "df": 4,
+    "interval_pp": [
+     -3.6857584995137738,
+     2.4413140550693195
+    ],
+    "class": "STOPPED-AT-50M"
+   },
+   "team": {
+    "se_pp": 0.21697058549091558,
+    "bias_pp": -0.005456061186340011,
+    "percentile_interval_pp": [
+     -0.9860963598733447,
+     -0.2698034646022021
+    ]
+   },
+   "combined": {
+    "se_pp": 1.453321334610807,
+    "interval_pp": [
+     -3.720480638912233,
+     2.476036194467779
+    ],
+    "class": "STOPPED-AT-50M",
+    "team_share_of_variance": 0.02228837591047017
+   }
+  },
+  "heldout72_hpfix": {
+   "estimate_pp": -1.4333333333333371,
+   "registered": {
+    "se_pp": 1.4370339824327978,
+    "df": 4,
+    "interval_pp": [
+     -4.496869610624884,
+     1.6302029439582095
+    ],
+    "class": "STOPPED-AT-50M"
+   },
+   "team": {
+    "se_pp": 0.3693073573175471,
+    "bias_pp": -0.005023643320340776,
+    "percentile_interval_pp": [
+     -2.0527998562546315,
+     -0.8268614758743532
+    ]
+   },
+   "combined": {
+    "se_pp": 1.4837299588656747,
+    "interval_pp": [
+     -4.596418277917698,
+     1.7297516112510234
+    ],
+    "class": "STOPPED-AT-50M",
+    "team_share_of_variance": 0.061953548683966235
+   }
+  },
+  "forum72": {
+   "estimate_pp": -0.30555555555555003,
+   "registered": {
+    "se_pp": 1.4370339824327978,
+    "df": 4,
+    "interval_pp": [
+     -3.3690918328470967,
+     2.7579807217359966
+    ],
+    "class": "STOPPED-AT-50M"
+   },
+   "team": {
+    "se_pp": 0.3599397948152129,
+    "bias_pp": -0.006721460746518082,
+    "percentile_interval_pp": [
+     -0.910465401596515,
+     0.2867694039246146
+    ]
+   },
+   "combined": {
+    "se_pp": 1.4814261110694262,
+    "interval_pp": [
+     -3.4637290496192925,
+     2.8526179385081925
+    ],
+    "class": "STOPPED-AT-50M",
+    "team_share_of_variance": 0.059033664027862726
+   }
+  },
+  "p72": {
+   "estimate_pp": -0.12777777777777288,
+   "registered": {
+    "se_pp": 1.4370339824327978,
+    "df": 4,
+    "interval_pp": [
+     -3.1913140550693195,
+     2.9357584995137738
+    ],
+    "class": "STOPPED-AT-50M"
+   },
+   "team": {
+    "se_pp": 0.38996628618337487,
+    "bias_pp": -0.004623079492182547,
+    "percentile_interval_pp": [
+     -0.7928034384329626,
+     0.5002191240541884
+    ]
+   },
+   "combined": {
+    "se_pp": 1.4890065046957721,
+    "interval_pp": [
+     -3.302111509632932,
+     3.046555954077386
+    ],
+    "class": "STOPPED-AT-50M",
+    "team_share_of_variance": 0.06859002088769801
+   }
+  },
+  "HF": {
+   "estimate_pp": -0.5194444444444457,
+   "registered": {
+    "se_pp": 1.4370339824327978,
+    "df": 4,
+    "interval_pp": [
+     -3.5829807217359924,
+     2.544091832847101
+    ],
+    "class": "STOPPED-AT-50M"
+   },
+   "team": {
+    "se_pp": 0.23728858905470054,
+    "bias_pp": -0.004438302318820253,
+    "percentile_interval_pp": [
+     -0.9129534819454571,
+     -0.132538786717654
+    ]
+   },
+   "combined": {
+    "se_pp": 1.456493234162877,
+    "interval_pp": [
+     -3.624464865001083,
+     2.5855759761121915
+    ],
+    "class": "STOPPED-AT-50M",
+    "team_share_of_variance": 0.026542190682227945
+   }
+  }
+ },
+ "notes": [
+  "REPORTED: no class is read from this file; the look's verdict is result/verdict.json",
+  "the combined interval adds the team variance at the registered df: an upper bound (both terms hold the game noise)",
+  "one-way clusters (the winning pilot's team); the runs are fixed"
+ ]
+}

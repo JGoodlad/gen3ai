@@ -32840,3 +32840,60 @@ chain's log, the GO marker as `x71_go_marker.txt`, `k9b/` and `arm_end/` per res
 View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (TL;DR 5, §4.15, §4.16), `EXPERIMENT_BACKLOG.md` (row X71, now in §3; row X70).
 
 Tag: **READ · X71 exploitability probe · 4 targets × 2 responders @ +5M (pin 9e97cad5) · 12 cells, 64,000 games, CPU, greedy · swap −0.59 [−4.12, +2.95], X67 −1.06 [−4.60, +2.47], X70 −0.67 [−3.76, +2.41] · all NOT-MORE-BY-BAR · L_c0 +5.66 · sigma_r 0 · no veto from this probe; not a clean bill; moves nothing**
+
+### 2026-11-24 · READ · **Q6-N the flat policy tower retired, the 50M look: STOPPED-AT-50M — three fresh runs whose move chooser reads the trunk through one learned query (`--policy-readout trunk`) against BOUNDARY-1's banked cell C (the flat tower), fresh minus banked on N −0.68 pp, 90 % interval [−3.74, +2.39] (4 df, both sides at the floor); not HARM-AT-50M; not continued, no class, never "no effect"; the 100M leg is not run**
+
+**Question** (PREREG 2026-11-20, full tier, blind; Amendment 1 2026-11-22, blind; the card check's record §12,
+`681bc74e8`). From scratch, does an agent whose policy reads the attention trunk through one learned query end
+stronger, weaker or not detectably different than B1's cell C, which keeps production's flat policy tower? One cell
+of three fresh runs at width 128 (`rb_q6n_s5211`–`s5213`: C's argv plus `--policy-readout trunk
+--allow-nonproduction-arch`, the launch pin `15136b61`) read against C's three banked runs (`rb_b1c_s5101` /
+`s5102` / `s5110`) by the fresh-cell frame: a 3 × 3 cross, 45,000 games, greedy, rule `b1_fresh_cell`. The 50M look:
+CONTINUE iff the estimate on N > +0.005 pp, else STOPPED-AT-50M, reported with its interval and no class.
+
+**Verdict: STOPPED-AT-50M.** On N (½ home72 + ⅙ H + ⅙ F + ⅙ P72): **−0.68 pp [−3.74, +2.39]** (90 %, 4 df). Every
+row and column variance is under the 1.76² floor (on N raw 0.275 fresh, 0.290 banked), so SE 1.437 and the
+half-width is the registered minimum, 3.06. `at_boundary` empty. Not HARM-AT-50M (the upper end is above −2.0).
+REPORTED: home72 −0.73 [−3.80, +2.33], H −1.43 [−4.50, +1.63], F −0.31 [−3.37, +2.76], P72 −0.13 [−3.19, +2.94],
+U −0.62 [−3.69, +2.44]; the team bootstrap on N [−3.77, +2.41], also STOPPED-AT-50M. Every interval spans zero. The
+fresh cell's seed spread, unknown at registration, measured ≈ 0.35 pp on N (2 df), as tight as C's. **Re-derived by
+this entry:** `main.b1.fresh recheck` on the record re-decides it from `inputs.json` with the same words; the
+interval by hand equals `verdict.json`'s; the six look files re-hashed in `models/` equal the plan's.
+
+**What it licenses (PREREG §3 and FRAME §5, quoted):** "Not continued. Reported with its interval; no class";
+"NO-USEFUL-GAIN and STOPPED-AT-50M are never \"no effect\""; "production's `tower` does not move on any outcome of
+this cell". It is "never a LOSS, never \"no effect\", never retired" (FRAME §4), and "a slow starter can be
+STOPPED-AT-50M or UNDECIDED and still win later" (§9). So the trunk readout is neither a candidate for the next fresh
+lineage nor retired; no recipe, architecture, production config or baseline moves; nothing is said about 100M, the
+plateau, width 256 or another recipe. Whether the saturated tower costs strength stays UNVERIFIED.
+
+**The runs and the look.** One at a time on the card under the Training session's lease and the GO marker
+(`rho=1.078`, `scope=50M`), each launcher rc 0, early check and `check-run --step 50000000` PASS: s5211 11-23 02:34 to
+12:53 PST (10.32 h, one cold restart), s5212 12:54 to 22:50 (9.95 h, warm), s5213 22:51 to 11-24 08:47 (9.93 h, warm);
+look files 50,000,299 / 50,000,395 / 50,000,077. The look: plan PASS (`b1_look_50M.json`, 9 cells), played 08:47 to
+09:24 PST on the card at the pin. **The 100M leg is NOT run:** the window chain stopped at the look, and the phase-2
+chain, which waited for a CONTINUE line, ended without launching (no `GO_Q6N_100M`).
+
+**Cost.** Realised ≈ 30.2 GPU-h of training (each launcher's START → END, bring-ups and restarts included) + 0.62 h
+for the look ≈ 30.8, plus the card check's ≈ 1.1; the price accepted before the first run (§12) was ≈ 30.8 + ≈ 0.7.
+
+**FINDINGs.** Q6N-G1: the pace rises within a run (554–564 → 747–760 s per 1M steps, 1M→2M against 49M→50M), as C's
+did (524–549 → 704–760): the recipe's shape, inside the price; over 1M → 50M the fresh runs ran ≈ 3–4 % slower than
+C, under the pilot's ρ 1.078. Q6N-G2: s5211's one cold restart (20.7 min, the Training session's figure) came from
+the pin: its shared compile-cache key holds the command line's batch size, which a restart (no `--arch`) reads as
+4,096 against 2,048, so a second entry `fe4617e38ac4…` was made beside the launches' `35c57028148f…`; fixed on main by
+`4d327c5a1`, which postdates the pin. Q6N-G3: the chain's DONE line printed an empty "engine up:"; the engine came up
+once a panel, 1,310.4 s cold, then ≈ 58 s (in `run.log`); the look cost 0.62 h against §8's UNVERIFIED ≈ 0.33 plus a
+cold start. Q6N-G4: the retention hold on `rb_q6n_*` (`tiers.OPEN_FRESH_CELLS`) is not released by this entry, though
+`models_retention_policy.md` says the recording commit moves it; the runs stay protected until a later commit does.
+
+**Record:** `measurements/q6n_policy_readout_fresh_2026-11-20/` (`PREREG.md`: a READ banner and §13, appended; §1 to
+§12 unchanged) and its `record/look_50M/` (10 files, `SHA256SUMS`): byte copies of the look's `cells_plan.json`,
+`look.json`, `run.log`, `play.out`, `result/verdict.json` (sha256
+`5017f1aa8e1bd18d7fe0d77f9949f7b4bd069df19635042efd18ccd3f0fcc52a`), `result/inputs.json`,
+`result/team_bootstrap.json`; the chain's Q6W / Q6P lines (`chain_status_q6w.txt`); `cost_and_pace.txt`; and
+`eval_ledger_files.txt` (the eval ledger's 12 row and event files, by sha256, not copied). The runs stay at
+`models/rb_q6n_s5211`–`s5213`.
+View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (TL;DR 12, §4.4, §4.17), `EXPERIMENT_BACKLOG.md` (row Q6-N, now in §3; row Q5-N; MF-2's passenger line).
+
+Tag: **READ · Q6-N fresh cell (trunk readout, width 128, pin 15136b61) × banked C · 50M look · 9 cells, 45,000 games, greedy, on the card · 90 %, 4 df · STOPPED-AT-50M, N −0.68 [−3.74, +2.39] · not HARM-AT-50M · 100M not run · ≈ 30.8 GPU-h at the price · no class, never "no effect"; the tower does not move**

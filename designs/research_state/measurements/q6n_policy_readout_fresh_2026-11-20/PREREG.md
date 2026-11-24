@@ -1,5 +1,13 @@
 # Q6-N — the flat policy tower retired, one fresh cell against BOUNDARY-1's banked cell C: PRE-REGISTRATION (2026-11-20)
 
+**READ 2026-11-24 (§13): STOPPED-AT-50M.** The three fresh runs trained to 50M on the launch pin (each launcher rc 0,
+each `check-run --step 50000000` PASS) and the 50M look was played once on the card, 45,000 games. On N, **fresh minus
+banked = −0.68 pp, 90 % interval [−3.74, +2.39]** (4 df; both sides floored at 1.76; no bound near a threshold).
+CONTINUE needed an estimate above +0.005 pp. It is not HARM-AT-50M (the upper end is above −2.0 pp). Per §3 and FRAME
+§5 it is "Not continued. Reported with its interval; no class", and it is never "no effect": the 100M leg is not run
+and production's `tower` does not move. The status paragraph below is the registration's own, as it stood before any
+Q6 step; §1 to §12 are unchanged.
+
 **Status: REGISTERED 2026-11-20, FULL tier, blind: before any Q6 training step, any Q6 game, any look and the card
 check. NOTHING HAS TRAINED and this file authorises no launch.** The GPU window is the orchestrator's; its first item
 is § 7's card check. Nothing below changes after the first Q6-N run launches except by a dated amendment written
@@ -354,3 +362,115 @@ inside the 3 GPU-h bound) to 4,527,267 steps, no restart, launcher end "Training
 the 50M look; the 100M leg is ruled at that look. The record of the check is `~/.claude/jobs/x35/q6n/card_check.json`
 (sha256 `68a3a0aba1c19693…`), with `pilot_rho.txt`, `update_fit_pilot.json` and `seed_scan_launchday.txt` in
 `~/.cache/gen3ai/q6n_2026-11-23/results/`. No rule, bar, class, seed, argv, pin or statistic moves.
+
+## 13. The READ: the 50M look (2026-11-24)
+
+Written after the 50M look was played and read, once (§3). Nothing in §1 to §12 is changed by it. Every number below
+is in [`record/look_50M/`](record/look_50M/) ([`SHA256SUMS`](record/look_50M/SHA256SUMS)): byte copies of the look's
+work directory `~/.cache/gen3ai/q6n_2026-11-23/look50_20261124T084708/` (`cells_plan.json`, `look.json`, `run.log`,
+`result/verdict.json`, `result/inputs.json`, `result/team_bootstrap.json`), the play wrapper's log (`play.out`), the
+window chain's Q6W and Q6P status lines (`chain_status_q6w.txt`, from `~/.claude/jobs/x35/status.txt`), the realised
+cost and pace (`cost_and_pace.txt`), and the eval ledger's per-batch row files under `models/_ledger/`, listed by
+sha256 and size and not copied (`eval_ledger_files.txt`). No file is renamed: no guard of this kit refuses a file
+named like a verdict or a GO marker in this directory. **Re-derived:** `python -m main.b1.fresh recheck` on a copy of
+the record re-decides STOPPED-AT-50M from `inputs.json` alone, with the same words; the estimate and the interval by
+hand (the mean of the fresh rows − 50; SE √(2 × 3.0976 / 3) = 1.437; t₀.₉₅,₄ = 2.132) equal `verdict.json`'s; the six
+look files re-hashed in `models/` equal the plan's (`e166b881…`, `a6c5b687…`, `861606e4…` for s5211 / s5212 / s5213;
+`f706243d…`, `c46ddab8…`, `cbcccec7…` for C, as §3 fixed them). Read on the CPU from main `15d96fcdd`'s code, no
+GPU lease.
+
+### 13.1 The runs (§2, §4)
+
+The Q6-N window chain trained the three runs one at a time on the card under the Training session's lease and the
+orchestrator's GO marker (`commit=681bc74e8…`, `card_check=PASS`, `rho=1.078`, `scope=50M`), after its pre-launch
+checks PASS (FRAME §6 item 2: describe equal to the registered argvs, `checkargs` × 3 exit 0, `lever-check` ok, the
+seed scan no hit). Each argv is §2's, token for token.
+
+| run | launcher | wall | restarts | look file (step) |
+|---|---|---:|---|---:|
+| `rb_q6n_s5211` | 11-23 02:34:27 → 12:53:55 PST | 10.32 h | one, cold (FINDING Q6N-G2) | 50,000,299 |
+| `rb_q6n_s5212` | 11-23 12:54:05 → 22:50:52 | 9.95 h | one, warm | 50,000,395 |
+| `rb_q6n_s5213` | 11-23 22:51:03 → 11-24 08:47:03 | 9.93 h | one, warm | 50,000,077 |
+
+Each launcher rc 0, the early check PASS at the first checkpoint (1,000,192), and `check-run --step 50000000` PASS at
+the end. No run was lost or replaced (§4); the spare 5219 was not used.
+
+### 13.2 The look (§3)
+
+Planned at 08:47:26 PST with `--b1-look b1_look_50M.json` (sha256 `925bfb32c30f…`): 9 cells, the plan PASS. Played
+08:47:26 to 09:24:29 PST on the card at the pin, from the detached pin checkout `~/dev/gen3ai-worktrees/b1_look_pin`,
+with a fresh inductor cache; 45,000 games (home72 1,000 mirrored pairs a cell, H, F and P72 500 each), both sides
+greedy. The `sidecar_audit --strict` and the six `checkargs` exited 0 first (REPORTED). Draws 0.6 % to 1.3 % of a
+panel's games (the worst cell 2.3 %, P72).
+
+**The decision (N decides; §3):**
+
+| view | fresh − banked (pp) | 90 % interval (4 df) | fresh row means | banked column means |
+|---|---:|---|---|---|
+| **N** | **−0.68** | **[−3.74, +2.39]** | 48.84 / 49.24 / 49.88 | 48.74 / 49.42 / 49.80 |
+| home72 | −0.73 | [−3.80, +2.33] | 47.97 / 49.38 / 50.46 | 47.66 / 50.37 / 49.77 |
+| H (`heldout72_hpfix`) | −1.43 | [−4.50, +1.63] | 47.57 / 49.22 / 48.92 | 49.00 / 46.93 / 49.77 |
+| F (`forum72`) | −0.31 | [−3.37, +2.76] | 50.52 / 49.40 / 49.17 | 50.38 / 49.13 / 49.57 |
+| P72 | −0.13 | [−3.19, +2.94] | 51.07 / 48.72 / 49.83 | 50.08 / 49.37 / 50.17 |
+| U | −0.62 | [−3.69, +2.44] | — | — |
+| HF | −0.52 | [−3.58, +2.54] | — | — |
+
+Every view's SE is 1.437 pp: every row and column variance is under the floor (on N, raw 0.275 fresh and 0.290
+banked against 3.0976), so both sides were floored and the half-width is 3.06 pp, the registered minimum. Cells on N
+(fresh row × banked column): s5211 47.58 / 48.68 / 50.27; s5212 49.50 / 49.81 / 48.41; s5213 49.14 / 49.78 / 50.73.
+
+**Outcome: STOPPED-AT-50M** (`verdict.json`: "STOPPED-AT-50M on N: fresh - banked = -0.68 pp [-3.74, +2.39] (90 %,
+4 df)"; `at_boundary` empty, no label, no reason). CONTINUE needed an estimate above +0.005 pp. **HARM-AT-50M is not
+written beside it:** the upper end, +2.39, is not below −2.0 pp. **REPORTED, deciding nothing:** the team-cluster
+bootstrap (10,000 draws) adds 1.7 % to the variance on N and gives [−3.77, +2.41], also STOPPED-AT-50M (`class_moves`
+false); every view's interval spans zero by both methods. The fresh cell's own seed spread, §5's unknown, measured
+about as tight as C's on N (raw variance 0.275 of the run means, against cell noise ≈ 0.154: σ_fresh ≈ 0.35 pp, one
+estimate on 2 df).
+
+### 13.3 What it licenses, and what it does not
+
+In the registration's words (§3, FRAME §5): a STOPPED-AT-50M arm is "Not continued. Reported with its interval; no
+class"; "NO-USEFUL-GAIN and STOPPED-AT-50M are never \"no effect\""; and "production's `tower` does not move on any
+outcome of this cell". FRAME §4: it "carries NO class: it is never a LOSS, never \"no effect\", never retired". §9:
+"It reads at 100M from scratch, not at the plateau: a slow starter can be STOPPED-AT-50M or UNDECIDED and still win
+later. None of those is a retirement", and "a cheaper, smaller network that reads NO-USEFUL-GAIN or UNDECIDED is NOT
+adopted for its size or its speed by this cell".
+
+So: the trunk readout is not continued to 100M in this cell, not a candidate for the next fresh lineage, not retired
+and not adopted; no recipe, architecture, `designs/production_config.json` or baseline moves. The interval holds
+both a 3.7 pp loss and a 2.4 pp gain at 50M; it says nothing about 100M, the plateau, width 256 or another recipe.
+
+**The 100M leg is NOT run.** The window chain ended at the look ("phase 2 (100M) is the orchestrator's ruling;
+nothing launches from here"), and the phase-2 chain, which waited for a `50M look: CONTINUE` line, saw none and
+ended without launching anything (Q6P, 09:24:38 PST). No `GO_Q6N_100M` marker was written.
+
+### 13.4 The cost against the price (§8, §12)
+
+**Realised: ≈ 30.2 GPU-h of training + 0.62 GPU-h for the look = ≈ 30.8 GPU-h** (plus §12's card check, about
+1.1 GPU-h). Method: each launcher's START → END in the chain's lines, which includes every bring-up and restart
+(10.32 + 9.95 + 9.93 = 30.20 h), and the look's play start → DONE (2,223 s of wall; the chain printed 2222 s)
+(`cost_and_pace.txt`). **Price** (§12, accepted before the first run): ≈ 30.8 GPU-h to 50M plus three cold starts and
+the look (≈ 0.7 h), ≈ 31.5 in all. The window came in at the price.
+
+### 13.5 FINDINGs
+
+- **Q6N-G1. The pace rises within a run, and it is the recipe's shape.** Checkpoint to checkpoint, the fresh runs
+  went 554–564 s per 1M steps at 1M → 2M to 747–760 at 49M → 50M; C's three went 524–549 to 704–760 over the same
+  steps (`cost_and_pace.txt`). Over 1M → 50M the warm fresh runs averaged 711 s per 1M (s5211 713 net of its cold
+  bring-up) against C's 681–692, ≈ 3–4 % slower: under the pilot's ρ_Q6 1.078 (§12), and inside the price, which
+  already carries B1's measured 9.55 h a run.
+- **Q6N-G2. The cold first restart of s5211 came from the pin.** At pin `15136b61` the shared compile cache's key
+  holds the command line's batch size; a restart drops `--arch`, so the key read 4,096 against the launch's 2,048 (the
+  Training session's diagnosis; this read did not re-derive the key). On disk: the launches keyed `35c57028148f…` (the pilot's entry), and s5211's restart created a second entry,
+  `fe4617e38ac4…` (`compile_shared/`, created 11-23 08:39 PST, s5211's `compile_cache/stamp.json`), which s5212's and
+  s5213's restarts then hit warm. It cost one cold bring-up, 20.7 min (the Training session's figure; this read did
+  not re-time it). Main fixed the key in `4d327c5a1` (the batch size the learner really holds), which postdates the
+  pin; the pin does not move (§2), so the 100M leg or any later run on this pin would pay it once again.
+- **Q6N-G3. The chain's DONE line printed an empty "engine up:".** The engine's start times are only in `run.log`:
+  1,310.4 s cold for the first PANEL (home72), then 57.8 / 57.9 / 58.2 s for the next three panels (the engine
+  starts once a panel, not once a cell). §8's look cost (≈ 0.33 h plus a cold start, UNVERIFIED) is now measured:
+  0.62 h, the cold start 0.36 h of it. Reading `run.log` in the next chain is the Training session's fix.
+- **Q6N-G4. The retention hold on `rb_q6n_*` is still OPEN.** `models_retention_policy.md` and
+  `tiers.OPEN_FRESH_CELLS` say the commit that records a card's STOPPED-AT-50M moves its prefix to
+  `RELEASED_FRESH_CELLS`. This record is docs only and does not move it (a code and test change, outside this unit):
+  the runs stay protected from every grooming plan until a later commit releases them. Deleting them stays the owner's.
