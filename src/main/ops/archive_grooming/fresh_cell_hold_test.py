@@ -21,9 +21,10 @@ from main.ops.archive_grooming.thin_run_test import check, make_fork, plan, zips
 from main.ops.archive_grooming.tiered_test import _stamp_old, census
 from utils.paths import repo_path
 
-#: The registered runs of Q6-N and Q5-N, and each card's spare-seed replacement (their PREREGs' §2 and §4).
-HELD = ["rb_q6n_s5211", "rb_q6n_s5212", "rb_q6n_s5213", "rb_q6n_s5219",
-        "rb_q5n_s5201", "rb_q5n_s5202", "rb_q5n_s5203", "rb_q5n_s5209"]
+#: The registered runs of the OPEN card (Q5-N) and its spare-seed replacement (its PREREG's §2 and §4).
+HELD = ["rb_q5n_s5201", "rb_q5n_s5202", "rb_q5n_s5203", "rb_q5n_s5209"]
+#: Q6-N's runs and its spare: RELEASED by its STOPPED-AT-50M read (ledger 2026-11-24), back under the ordinary policies.
+RELEASED = ["rb_q6n_s5211", "rb_q6n_s5212", "rb_q6n_s5213", "rb_q6n_s5219"]
 #: Same-shaped runs outside the hold: the DROPPED wide arms and a pilot. Each test's control (a non-vacuous plan).
 NEIGHBOURS = ["rb_q6w_s5214", "rb_q5w_s5204", "q6n_pilot_s5299"]
 MEASUREMENTS = os.path.join("designs", "research_state", "measurements")
@@ -59,7 +60,8 @@ def test_every_run_a_registered_fresh_arm_file_names_is_held_or_released():
 
 
 def test_each_open_cell_names_its_prereg_and_each_release_its_record():
-    assert set(tiers.OPEN_FRESH_CELLS) == {"rb_q6n_", "rb_q5n_"}       # edited only with a recorded release
+    assert set(tiers.OPEN_FRESH_CELLS) == {"rb_q5n_"}                  # edited only with a recorded release
+    assert set(tiers.RELEASED_FRESH_CELLS) == {"rb_q6n_"}
     for prefix, prereg in tiers.OPEN_FRESH_CELLS.items():
         assert prefix.endswith("_") and os.path.isfile(str(repo_path(prereg))), (prefix, prereg)
     assert not set(tiers.OPEN_FRESH_CELLS) & set(tiers.RELEASED_FRESH_CELLS)
@@ -70,6 +72,14 @@ def test_each_open_cell_names_its_prereg_and_each_release_its_record():
 def test_the_hold_covers_the_registered_runs_and_the_spares(name):
     assert "registered fresh cell" in (tiers.fresh_cell_hold(name) or "")
     assert tiers.retention_hold(name) == tiers.fresh_cell_hold(name)
+
+
+@pytest.mark.parametrize("name", RELEASED)
+def test_a_released_cell_is_no_longer_held(name):
+    """Q6-N's STOPPED-AT-50M read released its prefix: fails if ``rb_q6n_`` returns to ``OPEN_FRESH_CELLS``."""
+    assert tiers.fresh_cell_hold(name) is None and tiers.retention_hold(name) is None
+    where = tiers.RELEASED_FRESH_CELLS["rb_q6n_"]
+    assert "ledger.md" in where and "STOPPED-AT-50M" in where
 
 
 @pytest.mark.parametrize("name", NEIGHBOURS + ["rb_q6n", "rb_q6nx_s1", "xrb_q6n_s5211"])
@@ -105,12 +115,12 @@ def test_thin_run_still_plans_a_neighbour(tmp_path):
 
 def test_the_thin_run_cli_exits_3_and_deletes_nothing(tmp_path, capsys):
     models = tmp_path / "models"
-    run = make_fork(str(models), "rb_q6n_s5212")
+    run = make_fork(str(models), "rb_q5n_s5202")
     before = zips(run)
     x35 = tmp_path / "x35"
     x35.mkdir()
     (x35 / "reference_population_none.json").write_text(json.dumps({"a_block": []}))
-    rc = ag.main(["--thin-run", "rb_q6n_s5212", "--models-dir", str(models), "--repo-root", str(tmp_path),
+    rc = ag.main(["--thin-run", "rb_q5n_s5202", "--models-dir", str(models), "--repo-root", str(tmp_path),
                   "--x35-dir", str(x35), "--log-dir", str(tmp_path / "log"), "--apply"])
     assert rc == 3 and "registered fresh cell" in capsys.readouterr().err
     assert zips(run) == before and not (tmp_path / "log").exists()
@@ -169,7 +179,7 @@ def test_apply_plan_refuses_a_plan_that_names_a_held_run(tmp_path, policy):
     assert _files(models) == before
 
 
-@pytest.mark.parametrize("name", ["rb_q6n_s5211", "rb_b1w_s5103"])
+@pytest.mark.parametrize("name", ["rb_q5n_s5201", "rb_b1w_s5103"])
 def test_apply_thin_run_refuses_a_plan_for_a_held_run(tmp_path, name):
     run = make_fork(str(tmp_path), name)
     p = plan(run)                                        # the planner itself has no hold: the refusal is the check's

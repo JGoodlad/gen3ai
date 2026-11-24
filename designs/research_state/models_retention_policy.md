@@ -15,7 +15,7 @@ and their reports are committed beside them; the `--apply` commands are in §7.*
 
 ## A REGISTERED fresh cell's runs are PROTECTED until its read is recorded (rule written 2026-11-20)
 
-**The runs:** every run whose name starts with a prefix in `tiers.OPEN_FRESH_CELLS` (`src/main/ops/archive_grooming/tiers.py`): today `rb_q6n_` (Q6-N: `rb_q6n_s5211`–`s5213` and the spare `rb_q6n_s5219`) and `rb_q5n_` (Q5-N: `rb_q5n_s5201`–`s5203` and the spare `rb_q5n_s5209`). Each entry names the PREREG that keeps the runs. **What is protected:** each run dir whole, so every checkpoint the PREREG keeps (the 50M and 100M look checkpoints with their sidecars, the finals, the training curves the reported items read) is kept. The card-check pilots (`q6n_pilot_s5299`, `q5n_pilot_s5298`) are NOT held: no look reads them.
+**The runs:** every run whose name starts with a prefix in `tiers.OPEN_FRESH_CELLS` (`src/main/ops/archive_grooming/tiers.py`): today `rb_q5n_` (Q5-N: `rb_q5n_s5201`–`s5203` and the spare `rb_q5n_s5209`). Q6-N's `rb_q6n_` (`rb_q6n_s5211`–`s5213`, spare `rb_q6n_s5219`) was RELEASED by its STOPPED-AT-50M read (`tiers.RELEASED_FRESH_CELLS`; the 100M leg is not run). Each entry names the PREREG that keeps the runs. **What is protected:** each run dir whole, so every checkpoint the PREREG keeps (the 50M and 100M look checkpoints with their sidecars, the finals, the training curves the reported items read) is kept. The card-check pilots (`q6n_pilot_s5299`, `q5n_pilot_s5298`) are NOT held: no look reads them.
 
 **Why:** a look reads a named checkpoint of each run, a lost one costs the card its one replacement (PREREG §4), and both PREREGs recorded that nothing in code refused a grooming plan for these names (Q6-N §10 F6, Q5-N §10 F5).
 

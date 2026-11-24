@@ -191,17 +191,18 @@ BANKED_B1_REASON = ("BOUNDARY-1 banked cell: the control of every later fresh-ce
 #: THE RETENTION RULE for REGISTERED FRESH CELLS whose read is not yet recorded (`models_retention_policy.md`, its
 #: second section; `fresh_cell_frame_2026-11-17/FRAME.md` §2 item 6, "every other checkpoint a registered card
 #: names"): run-name prefix -> the PREREG that keeps the runs. A card's three runs AND its spare-seed replacement
-#: (`rb_q6n_s5219`, `rb_q5n_s5209`) carry the prefix. Same force as :data:`BANKED_B1_PREFIXES`: no plan by the
+#: (`rb_q5n_s5209`; Q6-N's `rb_q6n_s5219` was one) carry the prefix. Same force as :data:`BANKED_B1_PREFIXES`: no plan by the
 #: standing policy, the tiered policy or `--thin-run`. The one source: every site reads :func:`fresh_cell_hold`.
 #: RELEASE: the commit that RECORDS the card's closing read (its 100M class, or its STOPPED-AT-50M) moves the entry to
 #: :data:`RELEASED_FRESH_CELLS` with the ledger citation. `fresh_cell_hold_test.py` fails while a registered
 #: `fresh_arm_*.json` names a run that is in neither dict, so an entry cannot be dropped silently.
 OPEN_FRESH_CELLS: "dict[str, str]" = {
-    "rb_q6n_": "designs/research_state/measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md",
     "rb_q5n_": "designs/research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md",
 }
 #: prefix -> where the closing read is recorded (a ledger heading). Deleting the runs stays the owner's alone.
-RELEASED_FRESH_CELLS: "dict[str, str]" = {}
+RELEASED_FRESH_CELLS: "dict[str, str]" = {
+    "rb_q6n_": "designs/research_state/ledger.md, 2026-11-24 READ, Q6-N the 50M look: STOPPED-AT-50M (no 100M leg)",
+}
 
 
 def fresh_cell_hold(name: str) -> "str | None":
