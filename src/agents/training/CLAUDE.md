@@ -44,6 +44,9 @@ changes in the same commit as the code.
 - **A tag whose source is absent is not emitted**, so a gap means no source, never zero; `edge/*`, `cell/*` liveness
   and `grad/*_share` are not effect sizes (`telemetry_scalars.md` "ERA RELEVANCE").
 - A callback that publishes a quantity another callback's decision changes registers after it (`build_callbacks`).
+- **A launch's last step carries TWO rows of every tag an update records**: update k-1's, then update k's
+  (`loop._final_dump`). They are two updates, never a re-log or an extra one; a reader keyed by step says which it
+  keeps (`telemetry_scalars.md` "A launch's LAST step").
 
 ## The PPO step (`instrumented_ppo/`)
 

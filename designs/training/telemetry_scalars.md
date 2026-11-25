@@ -474,6 +474,36 @@ reading the code; all three are fixed, and the class is now guarded in the logge
   (the term is `move_latent` now) and `grad/win_prob_*` (de-duplicated into `grad/value_*` under the win-prob critic by
   design, `grad_balance_metrics`); no run produces either.
 
+## A launch's LAST step carries TWO update rows (`gen3_final_update_dump_v1`)
+
+The loop dumps BEFORE each update (`instrumented_ppo/loop.py`, `LOOP_PHASES`; [`ppo_step.md`](ppo_step.md)), so
+what `train()` records for update k is written at the step after rollout k+1. A process's last update has no later
+rollout, so `learn()`'s `final_dump` writes it at the step the last dump already used. On a normal end (the step
+budget reached) the final step therefore holds two rows of every tag an update records (`train/*`, `behaviour/*`,
+`belief/*`, `win_prob/*`, `staleness/*`, ...): update k-1's, then update k's, one update's wall time apart in the
+event file. A tag the collection or the dump records (`rollout/*`, `time/fps`, `rust_env/*`, `reward/*`) has one.
+
+- **The two rows are two updates, each on its own rollout.** Nothing is logged twice and no update is extra: the
+  raw `train/approx_kl` rows of a run's event files number `final_model.zip`'s `_n_updates / n_epochs`, and each
+  process logs one update a completed rollout. Measured 2026-11-25 by an `EventFileLoader` walk of each `tb/` and
+  the zip's `data`: `rb_q5n_s5201` 471 + 37 = 508 rows = 2,540 / 5; `rb_b1c_s5101` (to 100M) 334 + 174 + 285 + 222
+  = 1,015 = 10,150 / 10; the root smoke 5 rows on 4 steps for 5 rollouts, its stdout table's `n_updates` 20 then 25
+  at step 10,288. (A resume from a checkpoint EARLIER than the stop would leave the discarded updates' rows in the
+  older file; neither run has one.)
+- **So `final_model.zip` holds one update per completed rollout, the last included**: the weights an uninterrupted
+  run would collect its next rollout with. A checkpoint a callback saves inside rollout j holds j-1 updates
+  (`rb_q5n_s5201`, read the same day: `checkpoint_50000311_steps.zip` `_n_updates` 2,535, saved inside rollout
+  508; `final_model.zip` 2,540 at step 50,052,231).
+- **A graceful restart or an abort stops inside a collection**: its `dump_logs()` writes the pending update at
+  the step the collection had reached, so that step has ONE row of each tag, and that event file has one more
+  `time/fps` row than update rows.
+- **A reader that keys rows by step keeps one of the two, and must say which.** Count rows, or keep
+  `(step, wall_time)`. `main.b1.lr_report.load_tags` keeps the LAST (update k's) and drops update k-1's without
+  counting it; X35's K9(b) reader counts rows (`rust_collector.md` "Overlap (X14)").
+
+The pair has been misread as a double log or an extra update twice (X35's arm-end reader, 2026-10-21; the Q5-N
+read's FINDING Q5N-G1, 2026-11-24). `owned_loop_test.py` pins the order and the final dump.
+
 ## TensorBoard export census — the counts, the group table and the ERA-RELEVANCE classification
 
 > The census's currency table and its `gen3_tb_relevance_v1` headline are in "From the training leaf"
