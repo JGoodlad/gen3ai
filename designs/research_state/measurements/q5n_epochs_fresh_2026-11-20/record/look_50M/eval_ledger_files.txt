@@ -1,0 +1,14 @@
+# The 50M look's eval-ledger files, listed (not copied): sha256, bytes, path under /home/goodlad/dev/gen3ai/models/_ledger/
+# The four rows/h2h/*.jsonl.gz hold the per-game rows of the four panels (home72 07:28, heldout72_hpfix 07:44, forum72 07:46, p72 07:50 PST); requests/ holds the family-register and play-many events.
+15eae327f1eb6c2c6ceb0317caa66c21d03cf64ed6a3035e7df3945ce2515f16  17321  rows/h2h/ledger.20261125T152839Z.0-goodlad_desktop-813826-h2h.jsonl.gz
+5b6b6d7f26546db3023a28c323b8393844da6b4b1c9c227be220601a374c4822  10001  rows/h2h/ledger.20261125T154407Z.0-goodlad_desktop-851973-h2h.jsonl.gz
+15a383389ea40ed67f4293601f6cd52fae14d96479880e5447e8e9c2bb94cae7  10198  rows/h2h/ledger.20261125T154658Z.0-goodlad_desktop-853134-h2h.jsonl.gz
+938a351ece77b16b66ea91fb8ea9f401ba93cb631eca748042c2d291a2177b0d  10175  rows/h2h/ledger.20261125T155012Z.0-goodlad_desktop-854377-h2h.jsonl.gz
+ce233b5b2f632d13142eb608d1f4d0a4dab1059cdfbd63cc2de378329dfa21d5  671  requests/events.20261125T152839Z.0-goodlad_desktop-813808-ledger_cli.jsonl
+eed809407999e64e8ef2033a45f9ae6d6b15a0784df8bb9fb2b3135e524d8fc2  21910  requests/events.20261125T152839Z.0-goodlad_desktop-813826-h2h.jsonl
+307db5dbe807611d46668c981120fb2eea3e65eeb6efb518c9747c8caade234a  688  requests/events.20261125T154407Z.0-goodlad_desktop-851954-ledger_cli.jsonl
+7a9969c03c469daec563fd529303f51f064b9f9b0f497fa10b54747e75076fc1  11319  requests/events.20261125T154407Z.0-goodlad_desktop-851973-h2h.jsonl
+92c142838188063ed43d7f5898104016cc2080ce32d5487edd8d9746fae002b8  672  requests/events.20261125T154658Z.0-goodlad_desktop-853116-ledger_cli.jsonl
+64f6759a4eb47a92952f8169a520f637cc267764bb6f0086bed7085990c0c742  11159  requests/events.20261125T154658Z.0-goodlad_desktop-853134-h2h.jsonl
+8d9584e353883d4d69a448cece93defb7a412a09598966ba3f052f8ddcee8d67  664  requests/events.20261125T155012Z.0-goodlad_desktop-854359-ledger_cli.jsonl
+56c9c979ea66f3436605d3143a03990222587f92fb6e9f96c1b35f48f578799e  11079  requests/events.20261125T155012Z.0-goodlad_desktop-854377-h2h.jsonl

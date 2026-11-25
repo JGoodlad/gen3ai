@@ -32897,3 +32897,77 @@ cold start. Q6N-G4: the retention hold on `rb_q6n_*` (`tiers.OPEN_FRESH_CELLS`) 
 View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (TL;DR 12, §4.4, §4.17), `EXPERIMENT_BACKLOG.md` (row Q6-N, now in §3; row Q5-N; MF-2's passenger line).
 
 Tag: **READ · Q6-N fresh cell (trunk readout, width 128, pin 15136b61) × banked C · 50M look · 9 cells, 45,000 games, greedy, on the card · 90 %, 4 df · STOPPED-AT-50M, N −0.68 [−3.74, +2.39] · not HARM-AT-50M · 100M not run · ≈ 30.8 GPU-h at the price · no class, never "no effect"; the tower does not move**
+
+### 2026-11-25 · READ · **Q5-N five PPO epochs at matched dose, the 50M look: STOPPED-AT-50M — three fresh runs with five passes at twice the starting LR (`--n-epochs 5 --lr 6e-4`, the live KL controller) against BOUNDARY-1's banked cell C (ten passes at 3e-4), fresh minus banked on N −1.54 pp, 90 % interval [−4.99, +1.91] (4 df, the banked side at the floor, the fresh side's own spread above it); not HARM-AT-50M; not continued, no class, never "no effect"; a tie keeps ten epochs; the 100M leg is not run**
+
+**Question** (PREREG 2026-11-20, full tier, blind; Amendment 1 2026-11-22, blind; the card check's record §12,
+`aa87519ff`). From scratch under the production KL controller, do five passes over each rollout at the same starting
+dose end stronger, weaker or not detectably different than B1's cell C, which makes ten? One cell of three fresh
+runs at width 128 (`rb_q5n_s5201`–`s5203`: C's argv plus `--n-epochs 5 --lr 6e-4`, the launch pin `15136b61`) read
+against C's three banked runs (`rb_b1c_s5101` / `s5102` / `s5110`) by the fresh-cell frame: a 3 × 3 cross, 45,000
+games, greedy, rule `b1_fresh_cell`. The 50M look: CONTINUE iff the estimate on N > +0.005 pp, else STOPPED-AT-50M,
+reported with its interval and no class.
+
+**Verdict: STOPPED-AT-50M.** On N (½ home72 + ⅙ H + ⅙ F + ⅙ P72): **−1.54 pp [−4.99, +1.91]** (90 %, 4 df). The
+banked side's variance is under the 1.76² floor (raw 0.800); **the fresh side's is above it** (raw 4.754: run means
+50.81 / 48.05 / 46.51, SD 2.18 pp), so SE 1.618 and the half-width is 3.45, not the registered minimum 3.06.
+`at_boundary` empty. Not HARM-AT-50M (the upper end, +1.91, is above −2.0). REPORTED: home72 −2.57 [−6.79, +1.65],
+H −1.73 [−5.02, +1.56], F −0.29 [−3.36, +2.77], P72 +0.47 [−2.92, +3.86], U −0.52 [−3.58, +2.55]; the team bootstrap
+on N [−5.02, +1.93], also STOPPED-AT-50M. Every interval spans zero. **Re-derived by this entry:** `main.b1.fresh
+recheck` on the record re-decides it from `inputs.json` with the same words and rewrites `verdict.json` byte for
+byte; the interval by hand equals `verdict.json`'s; the six look files re-hashed in `models/` equal the plan's.
+
+**REPORTED meters, never deciding** (`main.b1.lr_report --look 50M --fresh-arm`). The label MOVEMENT-UNMATCHED is
+not printed: the fresh cell's KL median over 10M to 50M is 0.016520, inside [0.005, 0.02] (C's 0.017498). Dose
+matched: `dose_rate` cell means 3.768e-08 both, fresh / banked = 1; LR at the look 3.4722e-04 against 1.7361e-04,
+rung −3 of each ladder; no floor or ceiling touch. Clip fraction 0.123 against 0.145. Entropy, an outcome: 0.507
+against C's 0.578 over 10M to 50M (the five-epoch runs ended sharper). Step time over 10M to 50M: 470.2 against
+677.0 s per 1M steps, **ρ_run 0.6946**; the card check's ρ_Q5 on 0.3M to 2M was 0.5914.
+
+**What it licenses (PREREG §3 and FRAME §5, quoted):** "Not continued. Reported with its interval; no class"; "**a
+tie keeps ten epochs.** A NO-USEFUL-GAIN, an UNDECIDED or a STOPPED-AT-50M leaves the recipe at ten passes. This cell
+CANNOT adopt five epochs for their speed alone"; "`designs/production_config.json` does not move on any outcome of
+this cell". It is "never a LOSS, never \"no effect\", never retired" (FRAME §4), and "a STOPPED-AT-50M,
+NO-USEFUL-GAIN or UNDECIDED retires nothing" (§9). So five epochs at twice the LR is neither a candidate for the next
+fresh lineage nor retired nor adopted for its 0.69 step time; no recipe, production config or baseline moves; nothing
+is said about 100M, the plateau, `--n-epochs 5` alone, a frozen LR or width 256. Whether five passes cost strength
+stays UNVERIFIED.
+
+**The runs and the look.** One at a time on the card under the Training session's lease and the GO marker
+(`rho=0.591`, `scope=50M`), each launcher rc 0, early check and `check-run --step 50000000` PASS: s5201 11-24 11:23 to
+18:06 PST (6.72 h), s5202 18:06 to 11-25 00:47 (6.68 h), s5203 00:47 to 07:28 (6.67 h), one warm 6 h restart each;
+look files 50,000,311 / 50,000,144 / 50,000,092. The look: plan PASS (`b1_look_50M.json`, 9 cells), played 07:28 to
+07:53 PST on the card at the pin. **The 100M leg is NOT run:** the window chain stopped at the look, and the phase-2
+chain, which waited for a CONTINUE line, ended without launching (no `GO_Q5N_100M`). **The matched-GPU-time cross is
+NOT played:** it is §3's REPORTED item at 100M and reads 100M files that do not exist.
+
+**Cost.** Realised ≈ 20.07 GPU-h of training (each launcher's START → END, bring-ups and restarts included) + 0.41 h
+for the look ≈ 20.5, plus the card check's ≈ 0.57; the price accepted before the first run (§12) was ≈ 17.8 (16.9 at
+ρ 0.591 + 0.3 for a cold compile + 0.6 for the look). **≈ 2.7 GPU-h (15 %) over the price, inside §8's registered
+16.9 to 24.7 GPU-h**; the orchestrator ruled on 11-24 that the window is not re-priced inside that range.
+
+**FINDINGs.** Q5N-G1: every run at this pin logs TWO update rows at its last step (the fresh runs' 21.3–21.4 s
+apart, C's 42.1–43.5 s: one update's wall; the two KL values differ, the two LR values are equal), and
+`main.b1.lr_report.load_tags` keeps the last silently; none lies in 10M to 50M, so no figure or label here reads
+one, and it is the same in both cells; not fixed by this entry (**UNVERIFIED:** that it is a second update on the
+last rollout; the trainer's code was not read). Q5N-G2: the price was low because ρ was measured where a step is
+mostly update: the update's wall is flat (≈ 21.3 s a rollout, C's ≈ 42.1) while the collect grows alike in both cells
+(≈ 8.7 → ≈ 24.9 s), so the ratio climbs 0.591 → 0.695 → 0.70 for the whole run; price a later five-epoch run with
+0.695. A second cause the orchestrator named, overlapping snapshot-ladder promotions at 24M and 26M in run 1, does not show in
+the pace. Q5N-G3: the priced cold compile did not happen (every launch and restart hit the shared cache warm).
+Q5N-G4: the fresh cell's seeds spread wider than the floor (SD 2.18 pp on N against C's 0.89 and Q6-N's 0.52; 2 df,
+not evidence about the lever), so this look had less power than §5's tables state. Q5N-G5: the retention hold on
+`rb_q5n_*` is RELEASED by this entry's commit (`tiers.RELEASED_FRESH_CELLS`; `models_retention_policy.md`'s rule
+applies as written); no fresh-cell card is open after it; deleting run data stays the owner's. Q5N-G6: the chain's
+lr-report line reads "label;" with nothing after it: the report's label is null, no label.
+
+**Record:** `measurements/q5n_epochs_fresh_2026-11-20/` (`PREREG.md`: a READ banner and §13, appended; §1 to §12
+unchanged) and its `record/look_50M/` (13 files, `SHA256SUMS`): byte copies of the look's `cells_plan.json`,
+`look.json`, `run.log`, `play.out`, `result/verdict.json` (sha256
+`1450535292c8132b3651946a75c2d7bb8c50930efee7753f8429bc4859eb2fd0`), `result/inputs.json`,
+`result/team_bootstrap.json`; the REPORTED meters (`look50_lr_report.out` / `.json`, `look50_kl_dups.json`); the
+chain's Q5W / Q5P / Q5D lines (`chain_status_q5w.txt`); `cost_and_pace.txt`; and `eval_ledger_files.txt` (the eval
+ledger's 12 row and event files, by sha256, not copied). The runs stay at `models/rb_q5n_s5201`–`s5203`.
+View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (§4.17, §6), `EXPERIMENT_BACKLOG.md` (row Q5-N, now in §3; row 18), `models_retention_policy.md` (the fresh-cell hold).
+
+Tag: **READ · Q5-N fresh cell (five epochs, LR 6e-4, width 128, pin 15136b61) × banked C · 50M look · 9 cells, 45,000 games, greedy, on the card · 90 %, 4 df · STOPPED-AT-50M, N −1.54 [−4.99, +1.91] · not HARM-AT-50M · 100M not run, the matched-GPU-time cross not played · ≈ 20.5 GPU-h against a price of ≈ 17.8, inside the registered range · no class, never "no effect"; a tie keeps ten epochs**

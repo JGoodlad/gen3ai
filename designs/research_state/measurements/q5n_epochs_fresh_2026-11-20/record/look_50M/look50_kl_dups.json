@@ -1,0 +1,249 @@
+{
+ "rb_q5n_s5201": {
+  "train/approx_kl": {
+   "n": 1,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1795570405.goodlad-desktop.538446.0",
+     "step": 50052231,
+     "in_window": false,
+     "kept_last": 0.0239491,
+     "dropped": [
+      0.01816831
+     ]
+    }
+   ]
+  },
+  "train/learning_rate": {
+   "n": 1,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1795570405.goodlad-desktop.538446.0",
+     "step": 50052231,
+     "in_window": false,
+     "kept_last": 0.00034722,
+     "dropped": [
+      0.00034722
+     ]
+    }
+   ]
+  }
+ },
+ "rb_q5n_s5202": {
+  "train/approx_kl": {
+   "n": 1,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1795594567.goodlad-desktop.661578.0",
+     "step": 50055123,
+     "in_window": false,
+     "kept_last": 0.02118876,
+     "dropped": [
+      0.01821273
+     ]
+    }
+   ]
+  },
+  "train/learning_rate": {
+   "n": 1,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1795594567.goodlad-desktop.661578.0",
+     "step": 50055123,
+     "in_window": false,
+     "kept_last": 0.00034722,
+     "dropped": [
+      0.00034722
+     ]
+    }
+   ]
+  }
+ },
+ "rb_q5n_s5203": {
+  "train/approx_kl": {
+   "n": 1,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1795618636.goodlad-desktop.800692.0",
+     "step": 50055268,
+     "in_window": false,
+     "kept_last": 0.01729405,
+     "dropped": [
+      0.01935417
+     ]
+    }
+   ]
+  },
+  "train/learning_rate": {
+   "n": 1,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1795618636.goodlad-desktop.800692.0",
+     "step": 50055268,
+     "in_window": false,
+     "kept_last": 0.00034722,
+     "dropped": [
+      0.00034722
+     ]
+    }
+   ]
+  }
+ },
+ "rb_b1c_s5101": {
+  "train/approx_kl": {
+   "n": 2,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1794562543.goodlad-desktop.1664448.0",
+     "step": 50053315,
+     "in_window": false,
+     "kept_last": 0.01961441,
+     "dropped": [
+      0.01879472
+     ]
+    },
+    {
+     "file": "events.out.tfevents.1795066551.goodlad-desktop.2591456.0",
+     "step": 100008594,
+     "in_window": false,
+     "kept_last": 0.01632494,
+     "dropped": [
+      0.01465334
+     ]
+    }
+   ]
+  },
+  "train/learning_rate": {
+   "n": 2,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1794562543.goodlad-desktop.1664448.0",
+     "step": 50053315,
+     "in_window": false,
+     "kept_last": 0.00017361,
+     "dropped": [
+      0.00017361
+     ]
+    },
+    {
+     "file": "events.out.tfevents.1795066551.goodlad-desktop.2591456.0",
+     "step": 100008594,
+     "in_window": false,
+     "kept_last": 0.00012056,
+     "dropped": [
+      0.00012056
+     ]
+    }
+   ]
+  }
+ },
+ "rb_b1c_s5102": {
+  "train/approx_kl": {
+   "n": 2,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1794726883.goodlad-desktop.2758517.0",
+     "step": 50052806,
+     "in_window": false,
+     "kept_last": 0.01669553,
+     "dropped": [
+      0.01802536
+     ]
+    },
+    {
+     "file": "events.out.tfevents.1795159048.goodlad-desktop.4054818.0",
+     "step": 100007468,
+     "in_window": false,
+     "kept_last": 0.01905911,
+     "dropped": [
+      0.01875317
+     ]
+    }
+   ]
+  },
+  "train/learning_rate": {
+   "n": 2,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1794726883.goodlad-desktop.2758517.0",
+     "step": 50052806,
+     "in_window": false,
+     "kept_last": 0.00017361,
+     "dropped": [
+      0.00017361
+     ]
+    },
+    {
+     "file": "events.out.tfevents.1795159048.goodlad-desktop.4054818.0",
+     "step": 100007468,
+     "in_window": false,
+     "kept_last": 0.00014468,
+     "dropped": [
+      0.00014468
+     ]
+    }
+   ]
+  }
+ },
+ "rb_b1c_s5110": {
+  "train/approx_kl": {
+   "n": 2,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1794888841.goodlad-desktop.3517752.0",
+     "step": 50053071,
+     "in_window": false,
+     "kept_last": 0.0204387,
+     "dropped": [
+      0.02136122
+     ]
+    },
+    {
+     "file": "events.out.tfevents.1795251975.goodlad-desktop.1715527.0",
+     "step": 100008982,
+     "in_window": false,
+     "kept_last": 0.01719483,
+     "dropped": [
+      0.01906809
+     ]
+    }
+   ]
+  },
+  "train/learning_rate": {
+   "n": 2,
+   "in_window": 0,
+   "rows": [
+    {
+     "file": "events.out.tfevents.1794888841.goodlad-desktop.3517752.0",
+     "step": 50053071,
+     "in_window": false,
+     "kept_last": 0.00017361,
+     "dropped": [
+      0.00017361
+     ]
+    },
+    {
+     "file": "events.out.tfevents.1795251975.goodlad-desktop.1715527.0",
+     "step": 100008982,
+     "in_window": false,
+     "kept_last": 0.00012056,
+     "dropped": [
+      0.00012056
+     ]
+    }
+   ]
+  }
+ }
+}
+SUMMARY: rb_q5n_s5201: KL dup steps 1 (0 in [10M, 50M]); rb_q5n_s5202: KL dup steps 1 (0 in [10M, 50M]); rb_q5n_s5203: KL dup steps 1 (0 in [10M, 50M]); rb_b1c_s5101: KL dup steps 2 (0 in [10M, 50M]); rb_b1c_s5102: KL dup steps 2 (0 in [10M, 50M]); rb_b1c_s5110: KL dup steps 2 (0 in [10M, 50M])

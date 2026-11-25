@@ -2,6 +2,10 @@
 SYNTHETIC tree: no planner plans a deletion in one of their runs, no ``--apply`` path executes one, and a registered
 card cannot be left out of the hold. Each test fails when its part of the hold is removed.
 
+No card is open since 2026-11-25 (Q6-N and Q5-N are both read and released), so the tests of the hold's FORCE open a
+synthetic card (the ``open_card`` fixture: one entry put into the real dict for the test); the registry tests read
+the dicts as committed.
+
     python -m pytest src/main/ops/archive_grooming/fresh_cell_hold_test.py -q
 
 (in a linked worktree, first: export PYTHONPATH=$PWD/src)
@@ -21,13 +25,24 @@ from main.ops.archive_grooming.thin_run_test import check, make_fork, plan, zips
 from main.ops.archive_grooming.tiered_test import _stamp_old, census
 from utils.paths import repo_path
 
-#: The registered runs of the OPEN card (Q5-N) and its spare-seed replacement (its PREREG's §2 and §4).
-HELD = ["rb_q5n_s5201", "rb_q5n_s5202", "rb_q5n_s5203", "rb_q5n_s5209"]
-#: Q6-N's runs and its spare: RELEASED by its STOPPED-AT-50M read (ledger 2026-11-24), back under the ordinary policies.
-RELEASED = ["rb_q6n_s5211", "rb_q6n_s5212", "rb_q6n_s5213", "rb_q6n_s5219"]
+#: The synthetic OPEN card ``open_card`` registers: three runs and a spare-seed replacement, shaped as a real card's.
+OPEN_PREFIX = "rb_q9n_"
+OPEN_PREREG = os.path.join("designs", "research_state", "measurements", "q5n_epochs_fresh_2026-11-20", "PREREG.md")
+HELD = ["rb_q9n_s5901", "rb_q9n_s5902", "rb_q9n_s5903", "rb_q9n_s5909"]
+#: Q6-N's and Q5-N's runs and spares: each RELEASED by its STOPPED-AT-50M read (ledger 2026-11-24 and 2026-11-25),
+#: back under the ordinary policies.
+RELEASED = ["rb_q6n_s5211", "rb_q6n_s5212", "rb_q6n_s5213", "rb_q6n_s5219",
+            "rb_q5n_s5201", "rb_q5n_s5202", "rb_q5n_s5203", "rb_q5n_s5209"]
 #: Same-shaped runs outside the hold: the DROPPED wide arms and a pilot. Each test's control (a non-vacuous plan).
 NEIGHBOURS = ["rb_q6w_s5214", "rb_q5w_s5204", "q6n_pilot_s5299"]
 MEASUREMENTS = os.path.join("designs", "research_state", "measurements")
+
+
+@pytest.fixture
+def open_card(monkeypatch):
+    """One OPEN card for the test: an entry in the real ``tiers.OPEN_FRESH_CELLS``, removed again at teardown."""
+    monkeypatch.setitem(tiers.OPEN_FRESH_CELLS, OPEN_PREFIX, OPEN_PREREG)
+    return OPEN_PREFIX
 
 
 def registered_arm_files() -> "list[str]":
@@ -60,30 +75,43 @@ def test_every_run_a_registered_fresh_arm_file_names_is_held_or_released():
 
 
 def test_each_open_cell_names_its_prereg_and_each_release_its_record():
-    assert set(tiers.OPEN_FRESH_CELLS) == {"rb_q5n_"}                  # edited only with a recorded release
-    assert set(tiers.RELEASED_FRESH_CELLS) == {"rb_q6n_"}
+    assert set(tiers.OPEN_FRESH_CELLS) == set()                        # edited only with a recorded release
+    assert set(tiers.RELEASED_FRESH_CELLS) == {"rb_q6n_", "rb_q5n_"}
     for prefix, prereg in tiers.OPEN_FRESH_CELLS.items():
         assert prefix.endswith("_") and os.path.isfile(str(repo_path(prereg))), (prefix, prereg)
     assert not set(tiers.OPEN_FRESH_CELLS) & set(tiers.RELEASED_FRESH_CELLS)
     assert all(where.strip() for where in tiers.RELEASED_FRESH_CELLS.values())
 
 
+def test_the_synthetic_open_card_is_shaped_as_a_registered_one(open_card):
+    """The fixture's entry passes the checks a committed entry must pass, and collides with no real card."""
+    assert open_card.endswith("_") and os.path.isfile(str(repo_path(OPEN_PREREG)))
+    assert open_card not in tiers.RELEASED_FRESH_CELLS and not open_card.startswith(tiers.BANKED_B1_PREFIXES)
+    assert set(tiers.OPEN_FRESH_CELLS) == {open_card}
+
+
 @pytest.mark.parametrize("name", HELD)
-def test_the_hold_covers_the_registered_runs_and_the_spares(name):
+def test_the_hold_covers_the_registered_runs_and_the_spares(open_card, name):
     assert "registered fresh cell" in (tiers.fresh_cell_hold(name) or "")
     assert tiers.retention_hold(name) == tiers.fresh_cell_hold(name)
 
 
 @pytest.mark.parametrize("name", RELEASED)
 def test_a_released_cell_is_no_longer_held(name):
-    """Q6-N's STOPPED-AT-50M read released its prefix: fails if ``rb_q6n_`` returns to ``OPEN_FRESH_CELLS``."""
+    """A STOPPED-AT-50M read released each prefix: fails if ``rb_q6n_`` or ``rb_q5n_`` returns to
+    ``OPEN_FRESH_CELLS``."""
     assert tiers.fresh_cell_hold(name) is None and tiers.retention_hold(name) is None
-    where = tiers.RELEASED_FRESH_CELLS["rb_q6n_"]
+    where = tiers.RELEASED_FRESH_CELLS[name[:len("rb_q6n_")]]
     assert "ledger.md" in where and "STOPPED-AT-50M" in where
 
 
-@pytest.mark.parametrize("name", NEIGHBOURS + ["rb_q6n", "rb_q6nx_s1", "xrb_q6n_s5211"])
-def test_the_hold_is_the_prefix_and_nothing_wider(name):
+@pytest.mark.parametrize("name", RELEASED)
+def test_an_open_card_does_not_hold_a_released_one(open_card, name):
+    assert tiers.fresh_cell_hold(name) is None and tiers.retention_hold(name) is None
+
+
+@pytest.mark.parametrize("name", NEIGHBOURS + ["rb_q9n", "rb_q9nx_s1", "xrb_q9n_s5901"])
+def test_the_hold_is_the_prefix_and_nothing_wider(open_card, name):
     assert tiers.fresh_cell_hold(name) is None and tiers.retention_hold(name) is None
 
 
@@ -94,13 +122,13 @@ def test_retention_hold_is_also_the_banked_b1_rule():
 
 # ------------------------------------------------------------------------------------- the three planners
 @pytest.mark.parametrize("name", HELD)
-def test_thin_run_refuses_a_fresh_cell_run(tmp_path, name):
+def test_thin_run_refuses_a_fresh_cell_run(open_card, tmp_path, name):
     with pytest.raises(ag.ThinRefused, match="registered fresh cell"):
         check(make_fork(str(tmp_path), name), tmp_path)
 
 
-def test_thin_run_refuses_a_fresh_cell_run_reached_through_a_symlink(tmp_path):
-    real = make_fork(str(tmp_path / "elsewhere"), "rb_q5n_s5202")
+def test_thin_run_refuses_a_fresh_cell_run_reached_through_a_symlink(open_card, tmp_path):
+    real = make_fork(str(tmp_path / "elsewhere"), "rb_q9n_s5902")
     link = tmp_path / "rb_x35_alias_s1"
     os.symlink(real, link)
     with pytest.raises(ag.ThinRefused, match="registered fresh cell"):
@@ -113,14 +141,14 @@ def test_thin_run_still_plans_a_neighbour(tmp_path):
     assert plan(run)["delete"]
 
 
-def test_the_thin_run_cli_exits_3_and_deletes_nothing(tmp_path, capsys):
+def test_the_thin_run_cli_exits_3_and_deletes_nothing(open_card, tmp_path, capsys):
     models = tmp_path / "models"
-    run = make_fork(str(models), "rb_q5n_s5202")
+    run = make_fork(str(models), "rb_q9n_s5902")
     before = zips(run)
     x35 = tmp_path / "x35"
     x35.mkdir()
     (x35 / "reference_population_none.json").write_text(json.dumps({"a_block": []}))
-    rc = ag.main(["--thin-run", "rb_q5n_s5202", "--models-dir", str(models), "--repo-root", str(tmp_path),
+    rc = ag.main(["--thin-run", "rb_q9n_s5902", "--models-dir", str(models), "--repo-root", str(tmp_path),
                   "--x35-dir", str(x35), "--log-dir", str(tmp_path / "log"), "--apply"])
     assert rc == 3 and "registered fresh cell" in capsys.readouterr().err
     assert zips(run) == before and not (tmp_path / "log").exists()
@@ -137,7 +165,7 @@ def _old_tree(tmp_path, runs):
     return str(models), str(repo)
 
 
-def test_the_standing_policy_never_closes_a_fresh_cell_run(tmp_path):
+def test_the_standing_policy_never_closes_a_fresh_cell_run(open_card, tmp_path):
     models, repo = _old_tree(tmp_path, HELD + NEIGHBOURS)
     c = ag.build_census(models, repo, recent_days=0)
     for run in HELD:
@@ -148,7 +176,7 @@ def test_the_standing_policy_never_closes_a_fresh_cell_run(tmp_path):
         assert c["runs"][run]["status"] == "CLOSED" and c["runs"][run]["plan"]["delete"], run
 
 
-def test_the_tiered_policy_gives_a_fresh_cell_run_no_plan(tmp_path):
+def test_the_tiered_policy_gives_a_fresh_cell_run_no_plan(open_card, tmp_path):
     models, repo = _old_tree(tmp_path, HELD + NEIGHBOURS)
     c = census(models, repo)
     for run in HELD:
@@ -165,22 +193,22 @@ def _files(root: str) -> "list[str]":
 
 
 @pytest.mark.parametrize("policy", ["standing", "tiered"])
-def test_apply_plan_refuses_a_plan_that_names_a_held_run(tmp_path, policy):
+def test_apply_plan_refuses_a_plan_that_names_a_held_run(open_card, tmp_path, policy):
     """The execution-time re-check: a plan for a held run (forged here from a neighbour's) deletes NOTHING."""
-    models, repo = _old_tree(tmp_path, ["rb_q5n_s5203", "rb_q6w_s5214"])
+    models, repo = _old_tree(tmp_path, ["rb_q9n_s5903", "rb_q6w_s5214"])
     c = ag.build_census(models, repo, recent_days=0) if policy == "standing" else census(models, repo)
     forged = c["runs"]["rb_q6w_s5214"]["plan"]["delete"]
     assert forged
-    c["runs"]["rb_q5n_s5203"]["plan"]["delete"] = list(forged)
-    c["runs"] = {"rb_q5n_s5203": c["runs"]["rb_q5n_s5203"], "rb_q6w_s5214": c["runs"]["rb_q6w_s5214"]}
+    c["runs"]["rb_q9n_s5903"]["plan"]["delete"] = list(forged)
+    c["runs"] = {"rb_q9n_s5903": c["runs"]["rb_q9n_s5903"], "rb_q6w_s5214": c["runs"]["rb_q6w_s5214"]}
     before = _files(models)
     with pytest.raises(ag.UnsafeDeletion, match="HELD"):
         ag.apply_plan(c)
     assert _files(models) == before
 
 
-@pytest.mark.parametrize("name", ["rb_q5n_s5201", "rb_b1w_s5103"])
-def test_apply_thin_run_refuses_a_plan_for_a_held_run(tmp_path, name):
+@pytest.mark.parametrize("name", ["rb_q9n_s5901", "rb_b1w_s5103"])
+def test_apply_thin_run_refuses_a_plan_for_a_held_run(open_card, tmp_path, name):
     run = make_fork(str(tmp_path), name)
     p = plan(run)                                        # the planner itself has no hold: the refusal is the check's
     assert p["delete"]

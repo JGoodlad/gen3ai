@@ -1,0 +1,17 @@
+[2026-11-25T07:28:27-08:00] card q5n look 50M: 9 cells, play at pin 15136b61634b667bb9da5ccc6647ff9265238829 in /home/goodlad/dev/gen3ai-worktrees/b1_look_pin on cuda
+[2026-11-25T07:28:28-08:00] REPORTED: main.sidecar_audit --strict exit 0
+[2026-11-25T07:28:30-08:00] REPORTED: main.checkargs rb_b1c_s5101 exit 0
+[2026-11-25T07:28:32-08:00] REPORTED: main.checkargs rb_b1c_s5102 exit 0
+[2026-11-25T07:28:34-08:00] REPORTED: main.checkargs rb_b1c_s5110 exit 0
+[2026-11-25T07:28:35-08:00] REPORTED: main.checkargs rb_q5n_s5201 exit 0
+[2026-11-25T07:28:37-08:00] REPORTED: main.checkargs rb_q5n_s5202 exit 0
+[2026-11-25T07:28:38-08:00] REPORTED: main.checkargs rb_q5n_s5203 exit 0
+[2026-11-25T07:28:38-08:00] home72: family-register
+[2026-11-25T07:28:39-08:00] home72: play-many
+[2026-11-25T07:44:07-08:00] heldout72_hpfix: family-register
+[2026-11-25T07:44:07-08:00] heldout72_hpfix: play-many
+[2026-11-25T07:46:58-08:00] forum72: family-register
+[2026-11-25T07:46:58-08:00] forum72: play-many
+[2026-11-25T07:50:12-08:00] p72: family-register
+[2026-11-25T07:50:12-08:00] p72: play-many
+[2026-11-25T07:53:12-08:00] played

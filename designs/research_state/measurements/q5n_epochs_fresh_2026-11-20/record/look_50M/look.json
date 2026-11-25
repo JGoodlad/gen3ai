@@ -1,0 +1,497 @@
+{
+ "schema": "gen3_b1_fresh_look_v1",
+ "look": "50M",
+ "step": 50000000,
+ "card": "q5n",
+ "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+ "arm": {
+  "schema": "gen3_b1_fresh_arm_v1",
+  "card": "q5n",
+  "pin": "15136b61634b667bb9da5ccc6647ff9265238829",
+  "banked_arm": "C",
+  "lever": [
+   "--n-epochs",
+   "5",
+   "--lr",
+   "6e-4"
+  ],
+  "declared_keys": [
+   "lr",
+   "n_epochs"
+  ],
+  "fresh": [
+   {
+    "seed": 5201,
+    "run": "rb_q5n_s5201"
+   },
+   {
+    "seed": 5202,
+    "run": "rb_q5n_s5202"
+   },
+   {
+    "seed": 5203,
+    "run": "rb_q5n_s5203"
+   }
+  ],
+  "prereg": "designs/research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md"
+ },
+ "arm_sha256": "89f613fc65d51e8828d4a4163551d9cb8b4b54158b884e5a863df6be65873ff8",
+ "banked_arm": "C",
+ "own_control": false,
+ "replaced_seed": null,
+ "replaced_fresh_seed": null,
+ "lever_check": {
+  "ok": true,
+  "problems": [],
+  "declared_keys": [
+   "lr",
+   "n_epochs"
+  ],
+  "targets": {
+   "50000000": {
+    "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 50000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+    "runs": {
+     "rb_q5n_s5201": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 50000000 --seed 5201 --device cuda --log-level periodic --run-name rb_q5n_s5201",
+      "diff": {
+       "lr": [
+        0.0003,
+        0.0006
+       ],
+       "n_epochs": [
+        10,
+        5
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q5n_s5201"
+       ],
+       "seed": [
+        5101,
+        5201
+       ]
+      }
+     },
+     "rb_q5n_s5202": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 50000000 --seed 5202 --device cuda --log-level periodic --run-name rb_q5n_s5202",
+      "diff": {
+       "lr": [
+        0.0003,
+        0.0006
+       ],
+       "n_epochs": [
+        10,
+        5
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q5n_s5202"
+       ],
+       "seed": [
+        5101,
+        5202
+       ]
+      }
+     },
+     "rb_q5n_s5203": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 50000000 --seed 5203 --device cuda --log-level periodic --run-name rb_q5n_s5203",
+      "diff": {
+       "lr": [
+        0.0003,
+        0.0006
+       ],
+       "n_epochs": [
+        10,
+        5
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q5n_s5203"
+       ],
+       "seed": [
+        5101,
+        5203
+       ]
+      }
+     }
+    }
+   },
+   "100000000": {
+    "control_argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --checkpoint-every-steps 1000000 --steps 100000000 --seed 5101 --device cuda --log-level periodic --run-name rb_b1c_s5101",
+    "runs": {
+     "rb_q5n_s5201": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 100000000 --seed 5201 --device cuda --log-level periodic --run-name rb_q5n_s5201",
+      "diff": {
+       "lr": [
+        0.0003,
+        0.0006
+       ],
+       "n_epochs": [
+        10,
+        5
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q5n_s5201"
+       ],
+       "seed": [
+        5101,
+        5201
+       ]
+      }
+     },
+     "rb_q5n_s5202": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 100000000 --seed 5202 --device cuda --log-level periodic --run-name rb_q5n_s5202",
+      "diff": {
+       "lr": [
+        0.0003,
+        0.0006
+       ],
+       "n_epochs": [
+        10,
+        5
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q5n_s5202"
+       ],
+       "seed": [
+        5101,
+        5202
+       ]
+      }
+     },
+     "rb_q5n_s5203": {
+      "argv": "--restart-interval-hours 6 --pin-commit 15136b61634b667bb9da5ccc6647ff9265238829 --arch production --ent-coef 0.0125 --behaviour-check warn --n-epochs 5 --lr 6e-4 --checkpoint-every-steps 1000000 --steps 100000000 --seed 5203 --device cuda --log-level periodic --run-name rb_q5n_s5203",
+      "diff": {
+       "lr": [
+        0.0003,
+        0.0006
+       ],
+       "n_epochs": [
+        10,
+        5
+       ],
+       "run_name": [
+        "rb_b1c_s5101",
+        "rb_q5n_s5203"
+       ],
+       "seed": [
+        5101,
+        5203
+       ]
+      }
+     }
+    }
+   }
+  },
+  "expected": {
+   "rb_q5n_s5201": {
+    "d_model": 128,
+    "lr": 0.0006,
+    "n_epochs": 5,
+    "team_mix": null,
+    "team_mix_sides": null,
+    "trunk_ffn_dim": 256
+   },
+   "rb_q5n_s5202": {
+    "d_model": 128,
+    "lr": 0.0006,
+    "n_epochs": 5,
+    "team_mix": null,
+    "team_mix_sides": null,
+    "trunk_ffn_dim": 256
+   },
+   "rb_q5n_s5203": {
+    "d_model": 128,
+    "lr": 0.0006,
+    "n_epochs": 5,
+    "team_mix": null,
+    "team_mix_sides": null,
+    "trunk_ffn_dim": 256
+   }
+  },
+  "banked_levers": {
+   "d_model": 128,
+   "team_mix": null,
+   "team_mix_sides": null,
+   "trunk_ffn_dim": 256
+  }
+ },
+ "banked_identity": {
+  "checked": true,
+  "b1_look": "50M",
+  "pin": "15136b61634b667bb9da5ccc6647ff9265238829"
+ },
+ "runs": {
+  "fresh": [
+   {
+    "seed": 5201,
+    "run": "rb_q5n_s5201",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_q5n_s5201/checkpoints/checkpoint_50000311_steps.zip",
+    "steps": 50000311,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_q5n_s5201",
+     "verdict": "PASS",
+     "upto": 50000311,
+     "last_row_step": 49954261,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 7.152557373046875e-05,
+      "p99": 1.2655258615268394e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "af50a4bfbae49cfe739195cb0253de8af8fbc51bf78ca085ddabdde1bfb84915"
+   },
+   {
+    "seed": 5202,
+    "run": "rb_q5n_s5202",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_q5n_s5202/checkpoints/checkpoint_50000144_steps.zip",
+    "steps": 50000144,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_q5n_s5202",
+     "verdict": "PASS",
+     "upto": 50000144,
+     "last_row_step": 49956597,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 8.749961853027344e-05,
+      "p99": 1.3562440472014714e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "a40f7665aa8eba109303f6dd80054613b4ea6790fc06a461de9a16319ae38214"
+   },
+   {
+    "seed": 5203,
+    "run": "rb_q5n_s5203",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_q5n_s5203/checkpoints/checkpoint_50000092_steps.zip",
+    "steps": 50000092,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_q5n_s5203",
+     "verdict": "PASS",
+     "upto": 50000092,
+     "last_row_step": 49955209,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 5.364418029785156e-05,
+      "p99": 1.272916779271327e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "4b12f84184843bfdc725429487ad4477a233dfc1f3fda630ba28161df6c0a29b"
+   }
+  ],
+  "banked": [
+   {
+    "arm": "C",
+    "seed": 5101,
+    "run": "rb_b1c_s5101",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip",
+    "steps": 50000412,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5101",
+     "verdict": "PASS",
+     "upto": 50000412,
+     "last_row_step": 49954753,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 9.393692016601562e-05,
+      "p99": 1.6661882909829728e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "f706243d811a3767ff7cc107eb09ced8d71e2e646c8a0c8902fee7fd4fdbbf8f"
+   },
+   {
+    "arm": "C",
+    "seed": 5102,
+    "run": "rb_b1c_s5102",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip",
+    "steps": 50000041,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5102",
+     "verdict": "PASS",
+     "upto": 50000041,
+     "last_row_step": 49955581,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 0.00010156631469726562,
+      "p99": 1.6157626305357553e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "c46ddab83c0b6473ea2e0a040bc321717cd89177271fd47977a7f771bfcacb45"
+   },
+   {
+    "arm": "C",
+    "seed": 5110,
+    "run": "rb_b1c_s5110",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip",
+    "steps": 50000220,
+    "k9b": {
+     "schema": "b1_k9b_look_v1",
+     "run": "rb_b1c_s5110",
+     "verdict": "PASS",
+     "upto": 50000220,
+     "last_row_step": 49954151,
+     "rows": {
+      "judged_max": 506,
+      "p99": 506
+     },
+     "max": {
+      "judged_max": 7.462501525878906e-05,
+      "p99": 1.599311872269027e-05
+     },
+     "ceilings": {
+      "judged_max": 0.001,
+      "p99": 0.0001
+     },
+     "fires": [],
+     "near_ceiling": [],
+     "reasons": [],
+     "overlap": false,
+     "required_family": "behaviour"
+    },
+    "torch_version": "2.8.0+cu126",
+    "init_num_threads": 1,
+    "sha256": "cbcccec7e4822a034f36586e11b47d2154b26b8d2fc046e0845753efb9bc171f"
+   }
+  ]
+ },
+ "cells": [
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5201/checkpoints/checkpoint_50000311_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5201/checkpoints/checkpoint_50000311_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5201/checkpoints/checkpoint_50000311_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5202/checkpoints/checkpoint_50000144_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5202/checkpoints/checkpoint_50000144_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5202/checkpoints/checkpoint_50000144_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5203/checkpoints/checkpoint_50000092_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5101/checkpoints/checkpoint_50000412_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5203/checkpoints/checkpoint_50000092_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5102/checkpoints/checkpoint_50000041_steps.zip"
+  ],
+  [
+   "/home/goodlad/dev/gen3ai/models/rb_q5n_s5203/checkpoints/checkpoint_50000092_steps.zip",
+   "/home/goodlad/dev/gen3ai/models/rb_b1c_s5110/checkpoints/checkpoint_50000220_steps.zip"
+  ]
+ ],
+ "names": {
+  "home72": {
+   "family": "b1_fresh_q5n_h2h_home72",
+   "request": "b1fresh_q5n_50m_home72",
+   "pairs": 1000,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q5n, pin 15136b61): the fresh cell against the banked cell on panel home72, 1000 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  },
+  "heldout72_hpfix": {
+   "family": "b1_fresh_q5n_h2h_heldout72_hpfix",
+   "request": "b1fresh_q5n_50m_heldout72_hpfix",
+   "pairs": 500,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q5n, pin 15136b61): the fresh cell against the banked cell on panel heldout72_hpfix, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  },
+  "forum72": {
+   "family": "b1_fresh_q5n_h2h_forum72",
+   "request": "b1fresh_q5n_50m_forum72",
+   "pairs": 500,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q5n, pin 15136b61): the fresh cell against the banked cell on panel forum72, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  },
+  "p72": {
+   "family": "b1_fresh_q5n_h2h_p72",
+   "request": "b1fresh_q5n_50m_p72",
+   "pairs": 500,
+   "rule": "fresh_cell_frame_2026-11-17/FRAME.md \u00a73 (card q5n, pin 15136b61): the fresh cell against the banked cell on panel p72, 500 mirrored pairs a cell, one request a look; the rule is main.reads' b1_fresh_cell (main.b1.fresh_rule: main.b1.cross.simple_effect on N, within-side variances floored at 1.76 pp, t on 2(n-1) df, 90 % interval)"
+  }
+ }
+}

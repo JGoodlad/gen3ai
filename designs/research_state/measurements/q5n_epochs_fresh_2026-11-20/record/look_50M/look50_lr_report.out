@@ -1,0 +1,76 @@
+Fresh-cell learning-rate report, card q5n at the 50M look (REPORTED; 6 runs; rungs over every row up to each run's first row at or after 50,000,000; KL median over rows with 10,000,000 <= step <= 50,000,000)
+run             side       base  rows  LR at look  rung  geomean LR 2nd  KL median  rows  rung histogram to the look
+rb_q5n_s5201    fresh   6.0e-04   507  3.4722e-04    -3      3.7846e-04   0.016734   406  -3:134  -2:238  -1:46  +0:21  +1:22  +2:46  off:0
+rb_q5n_s5202    fresh   6.0e-04   507  3.4722e-04    -3      3.4722e-04   0.016520   406  -3:276  -2:15  -1:86  +0:61  +1:35  +2:34  off:0
+rb_q5n_s5203    fresh   6.0e-04   507  3.4722e-04    -3      3.4722e-04   0.015894   406  -3:340  -2:27  -1:36  +0:22  +1:27  +2:55  off:0
+rb_b1c_s5101    banked  3.0e-04   507  1.7361e-04    -3      1.7361e-04   0.017498   406  -3:267  -2:82  -1:31  +0:39  +1:31  +2:57  off:0
+rb_b1c_s5102    banked  3.0e-04   507  1.7361e-04    -3      1.8493e-04   0.017687   406  -3:166  -2:94  -1:122  +0:31  +1:49  +2:45  off:0
+rb_b1c_s5110    banked  3.0e-04   507  1.7361e-04    -3      1.7361e-04   0.017274   406  -3:258  -2:95  -1:54  +0:27  +1:73  off:0
+cell fresh   base 6.0e-04  median of its runs' KL medians 0.016520  rungs -3:750  -2:280  -1:168  +0:104  +1:84  +2:135  off:0
+cell banked  base 3.0e-04  median of its runs' KL medians 0.017498  rungs -3:691  -2:271  -1:207  +0:97  +1:153  +2:102  off:0
+fresh cell's figure 0.016520; inside the band (0.005 + 1e-06 < figure < 0.02 - 1e-06): yes, no label
+REPORTED meters, never deciding: the median of a run's rows in each 5,000,000-step window below the look ('-': no row), and over 10,000,000 <= step <= 50,000,000; a cell's line is the MEAN of its runs
+clip_fraction (train/clip_fraction)
+                       0-5M    5-10M   10-15M   15-20M   20-25M   25-30M   30-35M   35-40M   40-45M   45-50M   10M-50M
+  rb_q5n_s5201       0.1432   0.1541   0.1355   0.1238   0.1269   0.1259   0.1284   0.1253   0.1194   0.1208    0.1256
+  rb_q5n_s5202         0.12   0.1424   0.1289   0.1316   0.1248   0.1151   0.1219   0.1202    0.119   0.1222    0.1222
+  rb_q5n_s5203      0.09828   0.1373   0.1332     0.12   0.1143   0.1188   0.1182   0.1179   0.1228   0.1243    0.1207
+  rb_b1c_s5101       0.1391    0.177   0.1588   0.1407   0.1476   0.1378   0.1411   0.1447   0.1409   0.1435     0.143
+  rb_b1c_s5102       0.1218   0.1866   0.1568   0.1538   0.1544   0.1448   0.1463    0.135   0.1375   0.1424    0.1465
+  rb_b1c_s5110       0.1227   0.1641   0.1606   0.1451   0.1522   0.1401   0.1388    0.139   0.1455   0.1411     0.144
+  cell fresh         0.1205   0.1446   0.1325   0.1251    0.122     0.12   0.1228   0.1211   0.1204   0.1224    0.1228
+  cell banked        0.1279   0.1759   0.1588   0.1465   0.1514   0.1409   0.1421   0.1396   0.1413   0.1423    0.1445
+clip_fraction_last_epoch (train/clip_fraction_epoch_<last k>; last epochs seen [4, 9])
+                       0-5M    5-10M   10-15M   15-20M   20-25M   25-30M   30-35M   35-40M   40-45M   45-50M   10M-50M
+  rb_q5n_s5201       0.1921   0.2108   0.1858   0.1725    0.175   0.1735   0.1781   0.1727   0.1675    0.169    0.1739
+  rb_q5n_s5202       0.1588   0.1836   0.1748    0.176   0.1716   0.1617   0.1648   0.1652   0.1658   0.1707    0.1689
+  rb_q5n_s5203       0.1396   0.1769   0.1809   0.1679   0.1636   0.1629   0.1653   0.1661   0.1717   0.1735    0.1684
+  rb_b1c_s5101       0.1634   0.2161   0.2052   0.1863   0.1987   0.1848   0.1879   0.1891   0.1863   0.1908    0.1897
+  rb_b1c_s5102       0.1628   0.2337   0.2083   0.2024   0.2021   0.1928   0.1957   0.1858    0.186   0.1928    0.1954
+  rb_b1c_s5110       0.1661   0.2125   0.2042   0.1899   0.1975   0.1851    0.185    0.187   0.1922   0.1914    0.1914
+  cell fresh         0.1635   0.1905   0.1805   0.1721   0.1701    0.166   0.1694    0.168   0.1683   0.1711    0.1704
+  cell banked        0.1641   0.2208   0.2059   0.1928   0.1994   0.1876   0.1895   0.1873   0.1881   0.1917    0.1922
+entropy (-train/entropy_loss)
+                       0-5M    5-10M   10-15M   15-20M   20-25M   25-30M   30-35M   35-40M   40-45M   45-50M   10M-50M
+  rb_q5n_s5201        1.193   0.6541   0.5315   0.5062   0.5111   0.5054   0.5577   0.5214   0.5079   0.4716    0.5121
+  rb_q5n_s5202        1.273   0.6087   0.5181   0.5256   0.5307      0.5   0.4932    0.505   0.5187     0.51    0.5135
+  rb_q5n_s5203        1.146   0.6101   0.5173   0.4958   0.4754   0.4783   0.4965   0.4994   0.5177    0.513    0.4941
+  rb_b1c_s5101        1.283   0.6769   0.5968   0.5678   0.5925   0.5796   0.5827   0.5876   0.5769   0.5639    0.5796
+  rb_b1c_s5102        1.135   0.7337   0.5792   0.5759   0.6021    0.581   0.5773    0.576   0.5853   0.5837    0.5818
+  rb_b1c_s5110        1.126   0.6296   0.5988    0.559   0.5849   0.5657   0.5724   0.5796   0.5718   0.5626    0.5728
+  cell fresh          1.204   0.6243   0.5223   0.5092   0.5057   0.4946   0.5158   0.5086   0.5148   0.4982    0.5066
+  cell banked         1.181   0.6801   0.5916   0.5676   0.5932   0.5754   0.5775    0.581    0.578   0.5701    0.5781
+value_loss (train/value_loss)
+                       0-5M    5-10M   10-15M   15-20M   20-25M   25-30M   30-35M   35-40M   40-45M   45-50M   10M-50M
+  rb_q5n_s5201      0.02383  0.02014  0.01764  0.01668  0.01719  0.01689   0.0167  0.01677  0.01624  0.01695   0.01688
+  rb_q5n_s5202      0.02382  0.02008  0.01812  0.01718  0.01626  0.01533  0.01564  0.01596  0.01605  0.01594   0.01629
+  rb_q5n_s5203      0.02494  0.01984   0.0172  0.01593  0.01631  0.01612  0.01618  0.01584   0.0155  0.01598   0.01612
+  rb_b1c_s5101       0.0254  0.02233  0.01852  0.01768  0.01702  0.01718  0.01703  0.01711  0.01715  0.01786   0.01736
+  rb_b1c_s5102      0.02699  0.02067  0.01876  0.01807  0.01854  0.01849  0.01772  0.01748  0.01727  0.01781   0.01799
+  rb_b1c_s5110      0.02677  0.02253  0.01876  0.01876  0.01749  0.01683  0.01737  0.01743  0.01702  0.01774   0.01762
+  cell fresh         0.0242  0.02002  0.01765  0.01659  0.01659  0.01611  0.01617  0.01619  0.01593  0.01629   0.01643
+  cell banked       0.02639  0.02184  0.01868  0.01817  0.01768   0.0175  0.01737  0.01734  0.01715   0.0178   0.01766
+LR floor / ceiling, rows up to the look (at = within float error; beyond = past the bound):
+  rb_q5n_s5201     floor 1.0e-05: 0 at (first None), 0 below; ceiling 1.2e-03: 0 at (first None), 0 above
+  rb_q5n_s5202     floor 1.0e-05: 0 at (first None), 0 below; ceiling 1.2e-03: 0 at (first None), 0 above
+  rb_q5n_s5203     floor 1.0e-05: 0 at (first None), 0 below; ceiling 1.2e-03: 0 at (first None), 0 above
+  rb_b1c_s5101     floor 1.0e-05: 0 at (first None), 0 below; ceiling 6.0e-04: 0 at (first None), 0 above
+  rb_b1c_s5102     floor 1.0e-05: 0 at (first None), 0 below; ceiling 6.0e-04: 0 at (first None), 0 above
+  rb_b1c_s5110     floor 1.0e-05: 0 at (first None), 0 below; ceiling 6.0e-04: 0 at (first None), 0 above
+dose_rate to the look (main.dose, the rows at or before each run's look checkpoint):
+  rb_q5n_s5201     4.239e-08 (lr median 0.0004167 over 50 sidecars rows, 5 epochs, to step 50000311)
+  rb_q5n_s5202     3.532e-08 (lr median 0.0003472 over 50 sidecars rows, 5 epochs, to step 50000144)
+  rb_q5n_s5203     3.532e-08 (lr median 0.0003472 over 50 sidecars rows, 5 epochs, to step 50000092)
+  rb_b1c_s5101     3.532e-08 (lr median 0.0001736 over 50 sidecars rows, 10 epochs, to step 50000412)
+  rb_b1c_s5102     4.239e-08 (lr median 0.0002083 over 50 sidecars rows, 10 epochs, to step 50000041)
+  rb_b1c_s5110     3.532e-08 (lr median 0.0001736 over 50 sidecars rows, 10 epochs, to step 50000220)
+  cell means: fresh 3.768e-08, banked 3.768e-08; fresh / banked 1
+step time over 10,000,000 <= step <= 50,000,000 (the card check's formula; s per 1M steps):
+  rb_q5n_s5201       471.30  (update 21.364 s + collect 24.967 s per 98,304 steps, 405 rows, update share 0.461; train_ms alone 217.3)
+  rb_q5n_s5202       469.81  (update 21.323 s + collect 24.868 s per 98,319 steps, 405 rows, update share 0.462; train_ms alone 216.9)
+  rb_q5n_s5203       469.62  (update 21.298 s + collect 24.872 s per 98,312 steps, 405 rows, update share 0.461; train_ms alone 216.6)
+  rb_b1c_s5101       676.96  (update 42.054 s + collect 24.502 s per 98,316 steps, 405 rows, update share 0.632; train_ms alone 427.7)
+  rb_b1c_s5102       673.93  (update 42.026 s + collect 24.264 s per 98,363 steps, 405 rows, update share 0.634; train_ms alone 427.3)
+  rb_b1c_s5110       680.20  (update 42.145 s + collect 24.723 s per 98,306 steps, 405 rows, update share 0.630; train_ms alone 428.7)
+  cell means: fresh 470.2, banked 677; fresh / banked (rho) 0.6946 = 48918586570298457867130348925/70430423640550054812457869312
+wrote /home/goodlad/.claude/jobs/x35/q5n/look50_lr_report.json

@@ -1,5 +1,14 @@
 # Q5-N — five PPO epochs at matched dose, one fresh cell against BOUNDARY-1's banked cell C: PRE-REGISTRATION (2026-11-20)
 
+**READ 2026-11-25 (§13): STOPPED-AT-50M.** The three fresh runs trained to 50M on the launch pin (each launcher rc 0,
+each `check-run --step 50000000` PASS) and the 50M look was played once on the card, 45,000 games. On N, **fresh minus
+banked = −1.54 pp, 90 % interval [−4.99, +1.91]** (4 df; the banked side floored at 1.76, the fresh side's own spread
+above the floor; no bound near a threshold). CONTINUE needed an estimate above +0.005 pp. It is not HARM-AT-50M (the
+upper end is above −2.0 pp). Per §3 and FRAME §5 it is "Not continued. Reported with its interval; no class", and it
+is never "no effect": the 100M leg is not run, the matched-GPU-time cross (a 100M item) is not played, and the recipe
+stays at ten epochs ("a tie keeps ten epochs"). The status paragraph below is the registration's own, as it stood
+before any Q5 event.
+
 **Status: REGISTERED 2026-11-20, FULL tier, blind: before any Q5 training step, any Q5 game, any look and the card
 check. NOTHING HAS TRAINED and this file authorises no launch.** The GPU window is the orchestrator's and comes AFTER
 Q6-N's ([`../q6n_policy_readout_fresh_2026-11-20/PREREG.md`](../q6n_policy_readout_fresh_2026-11-20/PREREG.md), its
@@ -343,3 +352,176 @@ for this card's question. The window's scope at its GO is the three runs `rb_q5n
 look; any later leg is ruled at that look. The record of the check is `~/.claude/jobs/x35/q5n/card_check.json`
 (sha256 `f92bb9603eced552…`), with `pilot.dryrun.txt` and `prelaunch_20261124T093133/seed_scan.txt` beside it. No
 rule, bar, class, seed, argv, pin or statistic moves.
+
+## 13. The READ: the 50M look (2026-11-25)
+
+Written after the 50M look was played and read, once (§3). Nothing in §1 to §12 is changed by it. Every number below
+is in [`record/look_50M/`](record/look_50M/) ([`SHA256SUMS`](record/look_50M/SHA256SUMS)): byte copies of the look's
+work directory `~/.cache/gen3ai/q5n_2026-11-24/look50_20261125T072808/` (`cells_plan.json`, `look.json`, `run.log`,
+`result/verdict.json`, `result/inputs.json`, `result/team_bootstrap.json`), the play wrapper's log (`play.out`), the
+REPORTED meters' report (`look50_lr_report.out` and `.json`, `python -m main.b1.lr_report --look 50M --fresh-arm`)
+and its duplicate-row count (`look50_kl_dups.json`: a JSON object followed by one `SUMMARY:` text line, copied as
+written), the window chain's Q5W, Q5P and Q5D status lines (`chain_status_q5w.txt`, from
+`~/.claude/jobs/x35/status.txt`), the realised cost and pace (`cost_and_pace.txt`), and the eval ledger's per-batch
+row files under `models/_ledger/`, listed by sha256 and size and not copied (`eval_ledger_files.txt`). No file is
+renamed: no guard of this kit refuses a file named like a verdict or a GO marker in this directory. **Re-derived:**
+`python -m main.b1.fresh recheck` on a copy of the record re-decides STOPPED-AT-50M from `inputs.json` alone, with
+the same words, and rewrites `verdict.json` byte for byte; the estimate and the interval by hand (the mean of the
+fresh rows − 50; SE √((4.7535 + 3.0976) / 3) = 1.6177; t₀.₉₅,₄ = 2.132) equal `verdict.json`'s; the six look files
+re-hashed in `models/` equal the plan's (`af50a4bf…`, `a40f7665…`, `4b12f841…` for s5201 / s5202 / s5203;
+`f706243d…`, `c46ddab8…`, `cbcccec7…` for C, as §3 fixed them). Read on the CPU from main `cc426ac42`'s code, no
+GPU lease.
+
+### 13.1 The runs (§2, §4)
+
+The Q5-N window chain trained the three runs one at a time on the card under the Training session's lease and the
+orchestrator's GO marker (`commit=aa87519ff…`, `card_check=PASS`, `rho=0.591`, `scope=50M`), after its pre-launch
+checks PASS (FRAME §6 item 2: describe equal to the registered argvs, `checkargs` × 3 exit 0, `lever-check` ok, the
+seed scan no hit). Each argv is §2's, token for token.
+
+| run | launcher | wall | restarts | look file (step) |
+|---|---|---:|---|---:|
+| `rb_q5n_s5201` | 11-24 11:23:33 → 18:06:28 PST | 6.72 h | one, warm | 50,000,311 |
+| `rb_q5n_s5202` | 11-24 18:06:38 → 11-25 00:47:34 | 6.68 h | one, warm | 50,000,144 |
+| `rb_q5n_s5203` | 11-25 00:47:44 → 07:28:03 | 6.67 h | one, warm | 50,000,092 |
+
+Each launcher rc 0, the early check PASS at the first checkpoint (1,000,192), and `check-run --step 50000000` PASS at
+the end. No run was lost or replaced (§4); the spare 5209 was not used.
+
+### 13.2 The look (§3)
+
+Planned at 07:28:27 PST with `--b1-look b1_look_50M.json` (sha256 `925bfb32c30f…`): 9 cells, the plan PASS. Played
+07:28:27 to 07:53:13 PST on the card at the pin, from the detached pin checkout `~/dev/gen3ai-worktrees/b1_look_pin`,
+with a fresh inductor cache; 45,000 games (home72 1,000 mirrored pairs a cell, H, F and P72 500 each), both sides
+greedy. The `sidecar_audit --strict` and the six `checkargs` exited 0 first (REPORTED). Draws 0.5 % to 1.1 % of a
+panel's games (the worst cell 1.7 %, F and P72).
+
+**The decision (N decides; §3):**
+
+| view | fresh − banked (pp) | 90 % interval (4 df) | fresh row means | banked column means |
+|---|---:|---|---|---|
+| **N** | **−1.54** | **[−4.99, +1.91]** | 50.81 / 48.05 / 46.51 | 47.56 / 48.45 / 49.35 |
+| home72 | −2.57 | [−6.79, +1.65] | 50.66 / 46.73 / 44.91 | 46.10 / 47.99 / 48.20 |
+| H (`heldout72_hpfix`) | −1.73 | [−5.02, +1.56] | 50.52 / 47.67 / 46.63 | 48.45 / 48.40 / 47.97 |
+| F (`forum72`) | −0.29 | [−3.36, +2.77] | 51.20 / 49.73 / 48.18 | 49.00 / 49.45 / 50.67 |
+| P72 | +0.47 | [−2.92, +3.86] | 51.18 / 50.72 / 49.52 | 49.63 / 48.90 / 52.88 |
+| U | −0.52 | [−3.58, +2.55] | 50.97 / 49.37 / 48.11 | 49.03 / 48.92 / 50.51 |
+| HF | −1.43 | [−4.91, +2.05] | 50.93 / 48.23 / 46.55 | 47.55 / 48.72 / 49.43 |
+
+On N the SE is 1.618 pp and the half-width 3.45 pp, above the registered minimum of 3.06: the banked side's variance
+(raw 0.800) is floored to 3.0976, and **the fresh side's is NOT floored** (raw 4.754 of the three run means, an SD
+of 2.18 pp against the floor's 1.76). The same holds on home72 (raw 8.639, SE 1.978), H (4.045) and HF (4.890); on
+F and U both sides are floored (SE 1.437); on P72 the fresh side is floored and the banked side is not (raw 4.495,
+SE 1.591). Cells on N (fresh row × banked column): s5201 49.82 / 50.68 / 51.95; s5202 47.13 / 47.99 / 49.03; s5203
+45.75 / 46.70 / 47.08.
+
+**Outcome: STOPPED-AT-50M** (`verdict.json`: "STOPPED-AT-50M on N: fresh - banked = -1.54 pp [-4.99, +1.91] (90 %,
+4 df)"; `at_boundary` empty, no label, no reason). CONTINUE needed an estimate above +0.005 pp. **HARM-AT-50M is not
+written beside it:** the upper end, +1.91, is not below −2.0 pp. **REPORTED, deciding nothing:** the team-cluster
+bootstrap (10,000 draws) adds 1.6 % to the variance on N and gives [−5.02, +1.93], also STOPPED-AT-50M (`class_moves`
+false); every view's interval spans zero by both methods.
+
+**REPORTED beside the look, never deciding (§3; `look50_lr_report.out`):**
+
+- **The label MOVEMENT-UNMATCHED is NOT printed.** The KL median over 10M ≤ step ≤ 50M (406 rows a run) is 0.016734 /
+  0.016520 / 0.015894 for s5201 / s5202 / s5203; the cell's figure, the median of three, is 0.016520, inside
+  0.005 + 1e-6 < figure < 0.02 − 1e-6. C's three read 0.017498 / 0.017687 / 0.017274.
+- **Dose: matched.** `dose_rate` to each look checkpoint is 4.239e-08 / 3.532e-08 / 3.532e-08 for the fresh runs and
+  3.532e-08 / 4.239e-08 / 3.532e-08 for C's; the cell means are both 3.768e-08, **fresh / banked = 1**. At the look
+  every fresh run's LR is 3.4722e-04 (rung −3 of `6e-4 × 1.2^k`) and every C run's 1.7361e-04 (rung −3 of
+  `3e-4 × 1.2^k`): twice the rate at half the passes.
+- **Rungs** (rows to the look, the cell's three runs summed): fresh −3: 750, −2: 280, −1: 168, 0: 104, +1: 84,
+  +2: 135, off the ladder 0; C −3: 691, −2: 271, −1: 207, 0: 97, +1: 153, +2: 102, off 0. No run touched the LR
+  floor (1e-5) or its ceiling (1.2e-3 fresh, 6e-4 C).
+- **Clip fraction** over 10M to 50M (cell mean of the runs' medians): fresh 0.1228, C 0.1445; of the last epoch
+  0.1704 against 0.1922. **Value loss:** 0.01643 against 0.01766.
+- **Entropy, an outcome and not a dose** (FRAME §8): 0.5121 / 0.5135 / 0.4941 for the fresh runs over 10M to 50M
+  (cell 0.5066) against C's 0.5796 / 0.5818 / 0.5728 (cell 0.5781); the fresh cell is the lower in every 5M window
+  from 5M on (0.498 against 0.570 in the last). The five-epoch runs ended sharper, not blunter; §9's sentence named
+  the other direction as possible. Reported, not matched.
+- **The step-time ratio (§11 item 2's meter):** 471.30 / 469.81 / 469.62 s per 1M steps for the fresh runs over
+  10M ≤ step ≤ 50M (cell mean 470.2) against C's 676.96 / 673.93 / 680.20 (677.0): **ρ_run = 0.6946**
+  (`48918586570298457867130348925/70430423640550054812457869312`, exact). The card check's ρ_Q5, on 0.3M to 2M of
+  the pilot, was 0.5914 (§12; FINDING Q5N-G2 below).
+
+### 13.3 What it licenses, and what it does not
+
+In the registration's words (§3, FRAME §5): a STOPPED-AT-50M arm is "Not continued. Reported with its interval; no
+class"; "**a tie keeps ten epochs.** A NO-USEFUL-GAIN, an UNDECIDED or a STOPPED-AT-50M leaves the recipe at ten
+passes. This cell CANNOT adopt five epochs for their speed alone"; and "`designs/production_config.json` does not
+move on any outcome of this cell". FRAME §4: it "carries NO class: it is never a LOSS, never \"no effect\", never
+retired". §9: "It reads at 100M from scratch, not at the plateau; a STOPPED-AT-50M, NO-USEFUL-GAIN or UNDECIDED
+retires nothing", and "It cannot adopt five epochs for speed: \"no worse\" is beyond three runs against three".
+
+So: five epochs at twice the starting LR is not continued to 100M in this cell, not a candidate for the next fresh
+lineage, not retired and not adopted; the recipe stays at ten passes, and no recipe, `designs/production_config.json`
+or baseline moves. The interval holds both a 5.0 pp loss and a 1.9 pp gain at 50M; it says nothing about 100M, the
+plateau, `--n-epochs 5` alone, a frozen LR, another controller or width 256 (§9). The runs took 0.69 of C's GPU time
+a step at the matched dose, and that is not a reason to adopt them: this cell cannot show "no worse" (§3).
+
+**The 100M leg is NOT run, and the matched-GPU-time cross is NOT played.** The window chain ended at the look
+("phase 2 (100M) is the orchestrator's ruling; nothing launches from here"), and the phase-2 chain, which waited for
+a `50M look: CONTINUE` line, saw none and ended without launching anything (Q5P, 07:54:06 PST; its first copy had
+been stopped and re-armed by the Training session at 06:40 with nothing launched). No `GO_Q5N_100M` marker was
+written. The matched-GPU-time cross is §3's REPORTED item "at 100M": it reads the arm's 100M files, which do not
+exist, so it is neither planned nor owed.
+
+### 13.4 The cost against the price (§8, §12)
+
+**Realised: ≈ 20.07 GPU-h of training + 0.41 GPU-h for the look = ≈ 20.5 GPU-h** (plus §12's card check, about
+0.57 GPU-h). Method: each launcher's START → END in the chain's lines, which includes every bring-up and restart
+(6.715 + 6.682 + 6.672 = 20.069 h), and the look's play start → DONE (1,486 s of wall; the chain printed 1485 s)
+(`cost_and_pace.txt`). **Price** (§12, accepted before the first run): ≈ 16.9 GPU-h to 50M at ρ 0.591, plus one cold
+compile at the first restart (≈ 0.3 h) and the look (≈ 0.6 h), ≈ 17.8 in all. **The window ran ≈ 2.7 GPU-h (15 %)
+over the accepted price and inside §8's registered range** for the cell to 50M (≈ 16.9 to 24.7 GPU-h at ρ 0.59 to
+0.86): training alone is 0.70 of B1's 3 × 9.55 h. The orchestrator ruled on 2026-11-24, while run 1 was training,
+that the window is not re-priced because it stays inside that range (the ruling as the orchestrator stated it to
+this record's writer; no file carrying it was found). Why the price was low is FINDING Q5N-G2.
+
+### 13.5 FINDINGs
+
+- **Q5N-G1. Every run's last step carries TWO update rows, and `main.b1.lr_report` keeps the last one silently.**
+  `look50_kl_dups.json` (the Training session's reporter, Q5D): each fresh run has one duplicated step, its last
+  (50,052,231 / 50,055,123 / 50,055,268), and each C run two (its last row of the 50M leg and of the 100M leg). The
+  two `train/approx_kl` values differ (s5201 0.0182 then 0.0239; s5202 0.0182 then 0.0212; s5203 0.0194 then 0.0173)
+  and the two LR values are equal. This read timed them in the event files: the two rows are 21.3 to 21.4 s apart
+  in the fresh runs and 42.1 to 43.5 s apart in C's at 50M, one update's wall in each cell, and 255 of the step's
+  331 tags are doubled. So it reads as a second UPDATE on the last rollout at the end of a launch, not one row
+  written twice (**UNVERIFIED:** the trainer's code at the pin was not read). **What it touches here: nothing that
+  decides or labels.** No duplicated step lies in 10M ≤ step ≤ 50M, so the MOVEMENT-UNMATCHED figure never reads
+  one; the rung histogram's last row is the duplicated step, where both LR rows are equal; the look files
+  (`checkpoint_50000311_steps.zip` and its like) were saved before it; and it is the same in both cells. It closes
+  §12's FINDING (b) as a property of every run at this pin. **Not fixed in this record** (the kit and the trainer
+  are outside it): `lr_report.load_tags` should refuse or report a duplicated step, and a `final_model.zip` at this
+  pin holds one update more than the run's last logged step count implies, in C's runs as in these.
+- **Q5N-G2. The accepted price was 15 % low, because ρ was measured where a step is mostly update.** The update's
+  wall is flat within a run (21.3 to 21.4 s a rollout in the pilot and over 10M to 50M; C's 42.0 to 42.1), while the
+  collect's wall grows the same way in both cells (≈ 8.7 s a rollout at 0.3M to 2M, ≈ 24.9 s over 10M to 50M; C's
+  8.9 → 24.5). Halving the update therefore saves a fixed ≈ 21 s a rollout, and the ratio climbs as the collect
+  grows: 0.591 at 0.3M to 2M, 0.695 over 10M to 50M, 0.70 for the whole run against B1's 9.55 h. Checkpoint to
+  checkpoint the fresh runs went 315 s per 1M steps at 1M → 2M to 499–511 at 49M → 50M (+60 %); C's 524–549 to
+  704–760 (+35 %) (`cost_and_pace.txt`). §12's price multiplied B1's whole-run 9.55 h by the early ratio. A 100M
+  leg or a later five-epoch card is priced with ρ_run 0.695, not 0.591. Two causes the orchestrator's brief named
+  were checked: "the update share rising faster than C's" is the same fact seen from the other side (the update's
+  share FALLS, 0.709 → 0.461, C's 0.825 → 0.632); "overlapping snapshot-ladder promotions at 24M and 26M in run 1"
+  does not show in the pace (s5201's intervals ending at 24M and 26M took 475 and 458 s, s5202's 476 and 459,
+  s5203's 472 and 456) and was not otherwise re-derived.
+- **Q5N-G3. The cold compile the price carried did not happen.** Every launch hit the shared compile cache warm
+  (`SHARED-HIT`, key `1bdf57369a43`, the card-check pilot's entry; T2 up in 136.5 to 139.9 s), and every 6 h restart
+  too (key `70105b399543`, an entry from 2026-11-12; T2 up in 125.6 to 129.9 s). The restart's interval (46M → 47M)
+  cost ≈ 300 s more than its neighbours in each run. ≈ 0.3 GPU-h priced and not spent; the overrun of G2 is net of it.
+- **Q5N-G4. The fresh cell's seeds spread wider than the floor.** The three run means on N are 50.81 / 48.05 / 46.51
+  (SD 2.18 pp; 2.94 on home72), against C's 0.89 under the same nine cells and Q6-N's fresh cell's 0.52. s5201 is at
+  or above 50 against two of C's three runs and s5203 below 47.1 against all three. One estimate on 2 df: it is not
+  evidence that five epochs widen the seed spread, and §5's power tables assumed the floor on both sides, so this
+  look had less power than they state (half-width 3.45 against 3.06). The rule is unchanged by it.
+- **Q5N-G5. The retention hold on `rb_q5n_*` is RELEASED by this record's commit.**
+  `models_retention_policy.md`'s rule ("the commit that RECORDS the card's closing read (its 100M class, or
+  STOPPED-AT-50M) moves the prefix") applies as written: the 100M leg is not run, so no later look reads these runs
+  (§10 F5's "before this read closes"). The commit moves `rb_q5n_` from `tiers.OPEN_FRESH_CELLS` to
+  `tiers.RELEASED_FRESH_CELLS` with the ledger heading. No card is open after it, so the hold's tests open a
+  synthetic card. Release only returns the runs to the ordinary policies; nothing under `models/` was touched, and
+  deleting run data stays the owner's.
+- **Q5N-G6. The chain's lr-report line reads "label;" with nothing after the word.** The report's `label` is null,
+  which is "no label" (`look50_lr_report.json`; the text report's line ends "yes, no label"). The chain's
+  wording is the Training session's; it is not changed by this record.

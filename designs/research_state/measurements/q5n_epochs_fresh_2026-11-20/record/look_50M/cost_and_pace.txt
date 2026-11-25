@@ -1,0 +1,30 @@
+# Q5-N 50M: realised GPU time and pace, computed 2026-11-25 from the window chain's Q5W lines
+# (chain_status_q5w.txt: START -> END of each launcher, which includes every bring-up and restart)
+# and from the checkpoint zips' mtimes under /home/goodlad/dev/gen3ai/models/ (read-only).
+rb_q5n_s5201: launcher 11-24 11:23:33 -> 11-24 18:06:28  6.715 h
+rb_q5n_s5202: launcher 11-24 18:06:38 -> 11-25 00:47:34  6.682 h
+rb_q5n_s5203: launcher 11-25 00:47:44 -> 11-25 07:28:03  6.672 h
+training total 20.069 GPU-h; look play 07:28:27 -> 07:53:13 0.413 GPU-h (1486 s; the chain printed 1485s); window total 20.482 GPU-h
+price (PREREG section 12, accepted before the first run): the cell to 50M ~ 3 x 9.55 x 0.591 = 16.9 GPU-h, plus one cold compile at the first 6 h restart (~0.3 h) and the look (~0.6 h): ~17.8 GPU-h
+realised minus price: +2.68 GPU-h (+15.1 %); training alone 20.07 against 16.9 + 0.3 = 17.2 (+2.87); the look 0.41 against 0.6
+registered envelope (PREREG section 8): the cell to 50M ~ 16.9 to 24.7 GPU-h at rho 0.59 to 0.86; realised training / (3 x 9.55 h) = 0.7005
+the REPORTED step-time ratio over 10M <= step <= 50M (look50_lr_report.out, PREREG section 11 item 2's meter): rho_run 0.6946; the card check's rho_Q5 over 0.3M to 2M was 0.5914
+
+# pace: seconds of wall per 1M steps between checkpoint zips (mtime), fresh cell against banked cell C
+rb_q5n_s5201: 1M->2M 315 s/1M; 49M->50M 499 s/1M; 1M->50M 23502 s = 479.6 s/1M
+rb_q5n_s5202: 1M->2M 315 s/1M; 49M->50M 511 s/1M; 1M->50M 23374 s = 477.0 s/1M
+rb_q5n_s5203: 1M->2M 315 s/1M; 49M->50M 509 s/1M; 1M->50M 23339 s = 476.3 s/1M
+rb_b1c_s5101: 1M->2M 549 s/1M; 49M->50M 704 s/1M; 1M->50M 33927 s = 692.4 s/1M
+rb_b1c_s5102: 1M->2M 524 s/1M; 49M->50M 715 s/1M; 1M->50M 33383 s = 681.3 s/1M
+rb_b1c_s5110: 1M->2M 524 s/1M; 49M->50M 760 s/1M; 1M->50M 33906 s = 692.0 s/1M
+each fresh run's 1M->50M span includes its one warm 6 h restart (the 46M->47M interval: 839 / 830 / 852 s per 1M against ~540 beside it); C's spans include theirs
+
+# every 1M interval to 50M (the interval ending at <N>M: s per 1M), for the pace's shape within a run
+rb_q5n_s5201: 2:315 3:328 4:317 5:404 6:395 7:430 8:387 9:417 10:384 11:415 12:373 13:450 14:384 15:434 16:403 17:442 18:438 19:453 20:427 21:482 22:441 23:481 24:475 25:496 26:458 27:518 28:465 29:513 30:500 31:535 32:477 33:541 34:478 35:550 36:513 37:568 38:513 39:571 40:533 41:570 42:556 43:574 44:546 45:579 46:531 47:839 48:555 49:550 50:499
+rb_q5n_s5202: 2:315 3:331 4:318 5:393 6:380 7:433 8:387 9:425 10:392 11:418 12:393 13:425 14:381 15:435 16:398 17:443 18:432 19:450 20:427 21:474 22:441 23:485 24:476 25:498 26:459 27:514 28:465 29:528 30:497 31:529 32:476 33:535 34:477 35:539 36:509 37:561 38:518 39:561 40:527 41:568 42:539 43:568 44:523 45:566 46:520 47:830 48:545 49:560 50:511
+rb_q5n_s5203: 2:315 3:327 4:316 5:383 6:370 7:431 8:382 9:417 10:386 11:418 12:392 13:426 14:382 15:432 16:393 17:441 18:428 19:447 20:423 21:467 22:440 23:478 24:472 25:497 26:456 27:500 28:463 29:532 30:495 31:526 32:474 33:542 34:486 35:541 36:507 37:571 38:515 39:564 40:517 41:576 42:548 43:576 44:526 45:556 46:526 47:852 48:559 49:558 50:509
+rb_b1c_s5101: 2:549 3:565 4:550 5:628 6:618 7:688 8:617 9:643 10:611 11:647 12:596 13:707 14:604 15:676 16:617 17:685 18:676 19:690 20:647 21:711 22:665 23:718 24:709 25:699 26:673 27:704 28:670 29:707 30:727 31:711 32:674 33:925 34:729 35:745 36:737 37:758 38:705 39:755 40:710 41:760 42:765 43:772 44:716 45:768 46:707 47:773 48:753 49:764 50:704
+
+# the step's two parts, medians per rollout (look50_lr_report.out; PREREG section 12 item 6 for the pilots)
+fresh, card-check pilot (0.3M to 2M): update 21.359 s + collect 8.748 s, update share 0.709; fresh runs (10M to 50M): update 21.30 to 21.36 s + collect 24.87 to 24.97 s, update share 0.461 to 0.462
+C, B1's pilot (0.3M to 2M): update 42.0 s + collect 8.908 s, update share 0.825; C's runs (10M to 50M): update 42.03 to 42.15 s + collect 24.26 to 24.72 s, update share 0.630 to 0.634

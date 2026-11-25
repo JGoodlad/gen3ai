@@ -907,7 +907,7 @@ all 24 cells above 50). Under the fresh-run seed floor the interval is [+1.35, +
 [MEASURED · in-house head to head, both arms forks at tag `ce3d-pin-9e97cad5`, played at tag `ce3d-pin-333a73dd` on the card; the crosses against C0's and X67's finals REPORTED · ledger 2026-11-22 · *X70 the ent-0 control of the trailing-magnet screen: `ANCHOR-ADDS`*]
 [MEASURED · Kakuna on F and H, engine E6 at pin `15136b616`, rule `b1_kakuna` at 0.90; C0's level DESCRIPTIVE · ledger 2026-11-18 · *The Kakuna read of the banked entropy finals, RECORDED*]
 
-### 4.17 From scratch at 50M: procedural teams in half the pool are behind in-house and stopped; width 256 is not stopped and not read; the trunk readout is not ahead and stopped (BOUNDARY-1, 2026-11-18; Q6-N, 2026-11-24)
+### 4.17 From scratch at 50M: procedural teams in half the pool are behind in-house and stopped; width 256 is not stopped and not read; the trunk readout and five epochs at matched dose are each not ahead and stopped (BOUNDARY-1, 2026-11-18; Q6-N, 2026-11-24; Q5-N, 2026-11-25)
 
 BOUNDARY-1 trains twelve fresh runs in a 2 × 2: width (`d_model` 128 against 256) × team breadth (the pool against
 half `n1_proc_v1` procedural teams), three seeds a cell, every run at `ent_coef` 0.0125, registered to 100M. Its 50M
@@ -947,9 +947,24 @@ harm view? It reads no gain.
   (the fresh cell's ≈ 0.35 pp, as tight as C's), so the half-width is the floor's 3.06 pp. It is not a LOSS, not
   "no effect" and not a retirement: a slow starter can still win later, nothing is read at 100M, and production's
   tower does not move. Its step is ≈ 3–4 % slower than C's despite the smaller network.
+- **Five PPO epochs at matched dose: STOPPED-AT-50M (Q5-N, 2026-11-25).** One fresh cell of three runs making five
+  passes over each rollout at twice the starting learning rate (`--n-epochs 5 --lr 6e-4`: the control's starting
+  dose, under the same live KL controller) played C's three banked runs at 50M (9 cells, 45,000 games): **fresh
+  minus C on N −1.54 pp [−4.99, +1.91]** (90 %, 4 df; every view's interval spans zero, home72 the lowest at −2.57
+  [−6.79, +1.65], P72 the one above zero at +0.47). CONTINUE needed an estimate above +0.005 pp, so the cell stops
+  at 50M with no class; it is not HARM-AT-50M. Unlike Q6-N's, this cell's three seeds spread wider than the 1.76 pp
+  floor (run means 50.8 / 48.1 / 46.5 on N, SD 2.18 pp on 2 df: not evidence about the lever), so the half-width is
+  3.45 pp. The movement matched as registered: the dose ratio is 1, the last-epoch KL sits inside the controller's
+  band, and both cells end three rungs under their starting rate. Realised entropy, an outcome, is lower (0.507
+  against C's 0.578 nats over 10M to 50M). A step costs 0.69 of C's over 10M to 50M, not the 0.59 its first 2M
+  showed: halving the update saves a fixed ≈ 21 s a rollout while the collect grows. It is not a LOSS, not "no
+  effect" and not a retirement: **a tie keeps ten epochs**, the cell cannot adopt five for their speed (showing "no
+  worse within 2 pp" needs about ten runs an arm), nothing is read at 100M, and the matched-GPU-time cross, a 100M
+  item, is not played.
 
 [MEASURED · in-house head to head among the twelve runs' 50M checkpoints, and among C's and W's six at 75M and at 100M, at pin `15136b616`, CUDA · ledger 2026-11-18 · *BOUNDARY-1's 50M look, PLAYED*; ledger 2026-11-21 · *BOUNDARY-1's survivor looks at 75M and 100M, PLAYED*; [`measurements/boundary1_scratch_2026-11-09/PREREG.md`](measurements/boundary1_scratch_2026-11-09/PREREG.md) §18]
 [MEASURED · in-house head to head, Q6-N's three 50M checkpoints against C's, at pin `15136b616`, CUDA · ledger 2026-11-24 · *Q6-N the flat policy tower retired, the 50M look: STOPPED-AT-50M*; [`measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md`](measurements/q6n_policy_readout_fresh_2026-11-20/PREREG.md) §13]
+[MEASURED · in-house head to head, Q5-N's three 50M checkpoints against C's, at pin `15136b616`, CUDA; the meters REPORTED from the runs' own logs · ledger 2026-11-25 · *Q5-N five PPO epochs at matched dose, the 50M look: STOPPED-AT-50M*; [`measurements/q5n_epochs_fresh_2026-11-20/PREREG.md`](measurements/q5n_epochs_fresh_2026-11-20/PREREG.md) §13]
 
 ---
 
@@ -986,8 +1001,9 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 No read is on the CPU play lanes: the Kakuna read of the entropy finals finished 2026-11-18 (§4.15, §4.16).
 BOUNDARY-1's survivor ended on 2026-11-21 (C's and W's six runs at 100M and both survivor looks, §4.17). X70's
 window (four forks and three crosses on the card) ran 2026-11-21 to 11-22 and is read (§4.16); the card then went
-to the next armed window chains (STATUS §2's rows). Q6-N's window ran 2026-11-23 to 11-24 and is read, STOPPED-AT-50M
-(§4.17).
+to the next armed window chains (STATUS §2's rows). Q6-N's window ran 2026-11-23 to 11-24 and Q5-N's 2026-11-24 to 11-25; both are
+read, STOPPED-AT-50M (§4.17). On the card since 2026-11-25: Segment B, the continuation of BOUNDARY-1's control runs
+to their plateau.
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)
 
