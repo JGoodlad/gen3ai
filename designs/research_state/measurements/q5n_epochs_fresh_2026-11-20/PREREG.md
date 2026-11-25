@@ -494,6 +494,12 @@ this record's writer; no file carrying it was found). Why the price was low is F
   §12's FINDING (b) as a property of every run at this pin. **Not fixed in this record** (the kit and the trainer
   are outside it): `lr_report.load_tags` should refuse or report a duplicated step, and a `final_model.zip` at this
   pin holds one update more than the run's last logged step count implies, in C's runs as in these.
+  **Erratum (2026-11-25, after this record; `4b6e52f0c`):** the trainer's code was read and the second row is by
+  design, not a second update. The loop dumps before each update, so the last update of a launch is written by a
+  final dump at the step the previous dump already used (`OwnedLoop._final_dump`, `instrumented_ppo/loop.py`,
+  byte-identical at the pin); the two rows are updates k−1 and k. Nothing trains twice on a rollout, and
+  `final_model.zip` holds exactly one update a completed rollout (`rb_q5n_s5201`: 508 rollouts, 2,540 updates at
+  5 epochs). The sentence above about `final_model.zip` is wrong; the rest of Q5N-G1 stands, and nothing here moves.
 - **Q5N-G2. The accepted price was 15 % low, because ρ was measured where a step is mostly update.** The update's
   wall is flat within a run (21.3 to 21.4 s a rollout in the pilot and over 10M to 50M; C's 42.0 to 42.1), while the
   collect's wall grows the same way in both cells (≈ 8.7 s a rollout at 0.3M to 2M, ≈ 24.9 s over 10M to 50M; C's
