@@ -48,17 +48,19 @@ The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-
 
 ## 2. Running now (as of 2026-11-24)
 
-Read at 10:10 PST on 2026-11-24 from the Q5-N card check's record (`~/.claude/jobs/x35/q5n/card_check.json`) and
-the Training session's report of it; the status file, slot S8's pending notes,
-the other window hand-offs under `~/.cache/gen3ai/handoffs/` and the CPU lanes' own logs were not read again and
-stand as read on 2026-11-20 to 11-23. **Q5-N's card check is done: PASS** (pilot `q5n_pilot_s5298`, 09:31 to 10:05
-PST, ρ_Q5 0.5914; [PREREG §12](research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md)). **On the card
-since 10:06 PST: the GPU-only slow test tier.** Next, Q5-N's window (its three runs to 50M, then the 50M look,
-≈ 17.8 GPU-h accepted) on the orchestrator's GO; Segment B after it, on its GO marker after the owner's veto window.
+Read at 21:15 PST on 2026-11-24 from the status file's Q5W lines, the run directories and the Training session's
+reports; slot S8's pending notes, the other window hand-offs under `~/.cache/gen3ai/handoffs/` and the CPU lanes' own
+logs were not read again and stand as read on 2026-11-20 to 11-23. **On the card since 11:23 PST: Q5-N's window**
+(its three runs to 50M, then the 50M look; [PREREG §12](research_state/measurements/q5n_epochs_fresh_2026-11-20/PREREG.md)).
+`rb_q5n_s5201` ended at 50M at 18:06 (403 min, one warm restart); `rb_q5n_s5202` runs since 18:06; the window should
+end about 07:40 PST on 11-25. The cumulative step-time ratio over run 1 is 0.694 against the 0.591 accepted, inside
+the registered 0.59 to 0.86, so the cell costs about 20.8 GPU-h against 17.8 accepted. **BOUNDARY-1's veto window
+ended at 21:13 PST with no owner ruling, and its default acted** (slot S9). Segment B runs after Q5-N's window, on
+its GO marker.
 
 | where | job | what decision it drives |
 |---|---|---|
-| GPU 2026-11-18 15:25 to 2026-11-21 21:09 PST (ended) | **BOUNDARY-1's survivor has ENDED: phase 2 is COMPLETE and both survivor looks are PLAYED, each `NO-CLASS`. Nothing of BOUNDARY-1's runs until the owner's veto window ends.** C's and W's six runs reached 100M one at a time under driver pid 2244315 (11-18 15:25:14 to 11-21 19:51:48 PST, 76.4 h of wall), each launcher rc 0 with an early check PASS at 51M and an arm-end check PASS (K9(b)) at 100M: [1] `rb_b1c_s5101` (11-19 02:21 PST, checkpoint 100,000,127), [2] `rb_b1w_s5103` (11-19 17:05, 100,000,162), [3] `rb_b1c_s5102` (11-20 03:59, 100,000,172), [4] `rb_b1w_s5104` (11-20 18:55, 100,000,089), [5] `rb_b1c_s5110` (11-21 05:33, 100,000,025), [6] `rb_b1w_s5111` (11-21 19:51, 100,000,185); every restart warm, on the launch pin `15136b616`. The chain B1S (pid 2246182, armed 11-18 15:27) then played **the 75M and the 100M survivor looks on CUDA** with `--survivor width` (W against C, 9 cells a panel, 45,000 games a look; 19:53 to 21:09 PST); their numbers are the second row of "Landed" below. **The 100M verdict exists since 2026-11-21 21:09 PST: the owner's 72 h veto window is counted from it and ends 2026-11-24 21:09 PST.** **Why six and not twelve:** the 50M look (below) read breadth STOP-HARM, so by the PREREG's §8 the six breadth runs (Br, WB) got no phase 2 and stay as they are on disk, and no class is read at 100M for either factor. **The PREREG is through Amendment 8** (7 at `de3a70419`, 8 at `524ae8490`; 6 at `3abdcf118`), each written before any look; their terms are in §3 (MF-5), and from the 50M look on its §5, §6, §8 and §9 change only by the owner. Two operating amendments are not there: Amendment 4 (the early check and every look are read from the kit at `1d592e6cd`, while every run trains and every game plays at the launch pin) and Amendment 5 (`cf9258ab6`: at the launch pin a stop signal inside a compiled update saves nothing; it is no FATAL, VOID or replacement cause, and the run resumes on the same pin from `latest.txt`'s checkpoint). | MF-5 (§3): nothing by class. The survivor's comparison went to the owner's row with its interval (§6 item 8). Unless the owner rules inside the window, the default acts: C's three runs are the candidates and continue to their plateau (Segment B, next row); no width is adopted or retired. |
+| GPU 2026-11-18 15:25 to 2026-11-21 21:09 PST (ended) | **BOUNDARY-1's survivor has ENDED: phase 2 is COMPLETE and both survivor looks are PLAYED, each `NO-CLASS`. Its veto window ended 2026-11-24 21:13 PST with no owner ruling, and the default acted (slot S9).** C's and W's six runs reached 100M one at a time under driver pid 2244315 (11-18 15:25:14 to 11-21 19:51:48 PST, 76.4 h of wall), each launcher rc 0 with an early check PASS at 51M and an arm-end check PASS (K9(b)) at 100M: [1] `rb_b1c_s5101` (11-19 02:21 PST, checkpoint 100,000,127), [2] `rb_b1w_s5103` (11-19 17:05, 100,000,162), [3] `rb_b1c_s5102` (11-20 03:59, 100,000,172), [4] `rb_b1w_s5104` (11-20 18:55, 100,000,089), [5] `rb_b1c_s5110` (11-21 05:33, 100,000,025), [6] `rb_b1w_s5111` (11-21 19:51, 100,000,185); every restart warm, on the launch pin `15136b616`. The chain B1S (pid 2246182, armed 11-18 15:27) then played **the 75M and the 100M survivor looks on CUDA** with `--survivor width` (W against C, 9 cells a panel, 45,000 games a look; 19:53 to 21:09 PST); their numbers are the second row of "Landed" below. **The 100M verdict exists since 2026-11-21 21:09 PST and the owner was notified at 21:12:54 PST; the 72 h window ran to the later end, 2026-11-24 21:13 PST.** **Why six and not twelve:** the 50M look (below) read breadth STOP-HARM, so by the PREREG's §8 the six breadth runs (Br, WB) got no phase 2 and stay as they are on disk, and no class is read at 100M for either factor. **The PREREG is through Amendment 8** (7 at `de3a70419`, 8 at `524ae8490`; 6 at `3abdcf118`), each written before any look; their terms are in §3 (MF-5), and from the 50M look on its §5, §6, §8 and §9 change only by the owner. Two operating amendments are not there: Amendment 4 (the early check and every look are read from the kit at `1d592e6cd`, while every run trains and every game plays at the launch pin) and Amendment 5 (`cf9258ab6`: at the launch pin a stop signal inside a compiled update saves nothing; it is no FATAL, VOID or replacement cause, and the run resumes on the same pin from `latest.txt`'s checkpoint). | MF-5 (§3): nothing by class. The survivor's comparison went to the owner's row with its interval (§6 item 8). No owner ruling came inside the window, so the default acted: C's three runs are the candidates and continue to their plateau (Segment B, next row); no width is adopted or retired. |
 | GPU queue, armed 11-19 to 11-22 | **Four window chains, in this order; each waited for the one before it to end CLEAN by its own status lines, then for the orchestrator's GO marker (a file).** (1) **X70** (the ent-0 control, §3): COMPLETE 11-22 14:31 PST, read `ANCHOR-ADDS` ("Landed", below). (2) **X71** (registered `335bfabca`, kit `62c4fe050`): COMPLETE 11-22 21:58 PST; its CPU read ended 11-23 03:23 PST, all three arms `NOT-MORE-BY-BAR` ("Landed", below). (3) **X35-A3** (kit `6864ebd88`): ENDED AT ITS GATE 11-23 01:21 PST. Phase 1's three exploiters trained 22:05 to 01:09 and the gate's cross read `gate not EXPLOITS` ("Landed", below), so by the PREREG phase 2 and the six readers did NOT launch and nothing of A3 is queued. Its first arming held at 21:59 PST on a window helper's disk floor, before any arm trained; the orchestrator's ruling amended the helper and the chain was re-armed (disclosed in the record). (4) **Segment B**, BOUNDARY-1's continuation of C's three runs to their plateau (Amendment 6, `3abdcf118`; resumes on the launch pin, ≈ 123 GPU-h priced, hard stop at 154): its chain accepted A3's window as clean at 01:22 PST and waits up to 72 h for its GO marker, **which is written only after the owner's 72 h veto window, counted from the 100M survivor verdict, has ended without a veto (2026-11-24 21:09 PST).** **Filling the card until then: Q6-N** (`1b0cea450`, §3): its card check PASS (`681bc74e8`); its window chain trained `rb_q6n_s5211`–`s5213` to 50M (11-23 02:34 to 11-24 08:47 PST) and played the 50M look, STOPPED-AT-50M ("Landed", below); the window ENDED 09:24 PST and the 100M leg is not run. Q5-N (`9ee285b92`) is registered; its card check PASSED 11-24 10:05 PST (PREREG §12, ρ_Q5 0.5914, the cell to 50M priced ≈ 17.8 GPU-h and accepted); its window (`rb_q5n_s5201`–`s5203` to 50M, then the 50M look) launches on the orchestrator's GO, after the slow test tier, and Segment B follows it. Hand-offs: `x71_window_2026-11-20.md`, `a3_window_2026-11-20.md`, `segb_window_2026-11-20.md`. | X35-A3 and Q6-N: read ("Landed", below). Segment B: C's plateau, the from-scratch comparator. Q5-N: five PPO epochs at matched dose, from scratch (§3). A HOLD in one chain stops every chain behind it. |
 | CPU lanes | X71's read ENDED 2026-11-23 03:23 PST and V-RANK on 2026-11-20 (both "Landed", below). | — |
 
@@ -263,9 +265,10 @@ its GO.
   are not read after a STOP-HARM, and no Kakuna read is registered for this case. The survivor's simple effect is
   REPORTED with a 4-df interval, W minus C on N: +1.71 pp [−1.48, +4.90] at 50M, +0.80 [−2.27, +3.86] at 75M and **+0.39 [−3.55, +4.32] at
   100M** (§2); nothing is claimed from three runs against three beyond that interval, and `NO-CLASS` is not a
-  null. The default (Amendment 6), acting after the owner's 72 h window (it ends 2026-11-24 21:09 PST): the control's three
+  null. The default (Amendment 6), which ACTED at the end of the owner's 72 h window (2026-11-24 21:13 PST, slot S9): the control's three
   runs are the candidates, no factor is adopted or carried forward, W is not retired and not continued past 100M
-  (§6 item 8). **Left:** C's continuation to its plateau (Segment B, §2), after that window.
+  (§6 item 8). **Left:** C's continuation to its plateau (Segment B, §2), after Q5-N's window; all three runs read Tier 1
+  `CLIMBING` at 100M (15 of 15 plateau checks `GAIN`, on CPU).
 - X60-T read NO-TRANSFER (11-11, §2), not ADOPT-CANDIDATE: BOUNDARY-1's §10 HOLD on human teams does not fire, and its team recipe stays the pool's.
 
 **Search engineering for goal (b): UN-PAUSED by S′-HONEST's GO-HONEST (2026-11-09), CPU-side and lower priority**
@@ -403,21 +406,16 @@ Every open owner question, in one place.
 7. **The quota hook** (2026-11-10). It blocked every session from 10:28 to 12:59 when the Fable weekly window hit
    100 %. A fix scoped to the model that is out of quota was proposed; the owner said yes on 2026-11-11 ("Yes to both. In
    general your call."). Nothing is asked here any more.
-8. **BOUNDARY-1 after its 50M look: an *owner* row, OPEN, with a default** (2026-11-18; §2, §3 MF-5; the PREREG's
-   §9, Amendment 6 item 1 and §18 slot S9). Breadth read STOP-HARM at 50M (HF −5.18 pp [−8.35, −2.01], 90 %) and
-   width CONTINUE, so no class exists at 100M for either factor; the survivor's W-against-C effect at 100M is
-   +0.39 [−3.55, +4.32] pp on N and −0.31 [−3.64, +3.02] on U (90 %, 4 df; `NO-CLASS`, played 2026-11-21, §2), an interval and no class.
-   **The default, unless the owner rules otherwise:** the control's three
-   runs (width 128, the pool) are the candidates; no factor is adopted or carried forward; the wide arm is not
-   retired and not continued past 100M. It acts 72 hours after the owner is notified, and by the orchestrator's
-   ruling that window started when the 100M survivor look's verdict came to exist, 2026-11-21 21:09 PST: **it ends
-   2026-11-24 21:09 PST.** **Beside it, a
-   notification that acts on nothing:** the team bootstrap reads `class_moves: true` for breadth (with the
-   variance between teams added, the interval's upper end is −1.99 against the −2.0 bar, which would read
-   CONTINUE; the registered class is the STOP-HARM and it stands). The owner was notified on 2026-11-18 (a
-   heads-up at about 15:24 PST with the outcome, the row and its default; `class_moves` at about 16:10 PST;
-   slot S9); no ruling has come. The notification for the 100M verdict is the orchestrator's (slot S9) and is
-   not on record yet.
+8. **BOUNDARY-1 after its 50M look: an *owner* row, CLOSED by its default** (2026-11-18 to 11-24; §2, §3 MF-5;
+   the PREREG's §9, Amendment 6 item 1 and §18 slot S9). Breadth read STOP-HARM at 50M (HF −5.18 pp [−8.35, −2.01],
+   90 %) and width CONTINUE, so no class exists at 100M for either factor; the survivor's W-against-C effect at 100M
+   is +0.39 [−3.55, +4.32] pp on N and −0.31 [−3.64, +3.02] on U (90 %, 4 df; `NO-CLASS`, played 2026-11-21, §2).
+   The owner was notified of the 50M outcome on 2026-11-18 and of the 100M verdict at 21:12:54 PST on 2026-11-21;
+   no ruling came, so **the default acted at 21:13 PST on 2026-11-24**: the control's three runs (width 128, the
+   pool) are the candidates; no factor is adopted or carried forward; the wide arm is not retired and not continued
+   past 100M. The team bootstrap's `class_moves: true` for breadth (upper end −1.99 against the −2.0 bar) was a
+   notification that acts on nothing; the registered STOP-HARM stands. A ruling the owner makes later governs only
+   what is not yet spent (Amendment 6 item 1).
 
 ## 7. The biggest risks and unknowns
 

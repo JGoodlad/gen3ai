@@ -2469,4 +2469,36 @@ pattern.
     that notification"; **the owner notification for this verdict is the orchestrator's and is not on record
     here yet**, so if it goes out later than the verdict the two wordings differ by that gap, and the later end
     is the safe one. No owner ruling and no default that acted is on record as of this record's writing.
-  - **Still OPEN in S9:** every other record its row in the table names.
+  - **The owner notification for the 100M verdict, an operational record:** a push notification on 2026-11-21
+    at 21:12:54 PST, text: "BOUNDARY-1 done: width vs control at 100M +0.39 pp [-3.55,+4.32], no class. Default:
+    control runs continue to plateau. Your 72h veto window ends 11-24 21:13." The two wordings of the window's
+    end therefore differ by about 3 min: 21:09:41 from the verdict (the ruling), 21:13 from the notification
+    (Amendment 6 item 1). **The later end governs: the window ended 2026-11-24 21:13 PST.**
+  - **The default that acted (Amendment 6 item 1), 2026-11-24 21:13 PST.** No owner ruling and no veto reached
+    the orchestrator between the 50M heads-up (2026-11-18) and the window's end. The default therefore acted as
+    worded: the control's three runs (`rb_b1c_s5101`, `rb_b1c_s5102`, `rb_b1c_s5110`; width 128, the pool) are the
+    candidates; no factor is adopted or carried forward; the wide arm is not retired and not continued past 100M.
+    This record is committed after the window's end, so it is the records commit that the continuation's GO names
+    (item 9).
+  - **The 100M plateau ticks (item 3), played inside the window, on CPU.** The orchestrator ruled them in on
+    2026-11-20 (they write `models/_ledger` only, and change no run). They were played from 2026-11-21 21:19 to
+    21:56 PST under rule 5b, with `python -m main.plateau` at its registered rule (the pentanomial GSPRT over
+    mirrored pairs, p0 0.50 against p1 0.52, α = β = 0.05, LLR bounds ±2.944, 40 to 6,000 pairs; a 50M look-back,
+    nodes every 10M). **`tick_device=cpu`.** Each run reads Tier 1 `CLIMBING` at 100M: 15 of 15 checks are `GAIN`,
+    decided at 120 to 280 pairs. LLR at 60M / 70M / 80M / 90M / 100M:
+    `s5101` +4.18 / +3.67 / +3.34 / +3.13 / +2.98; `s5102` +4.09 / +4.06 / +3.68 / +3.72 / +3.84; `s5110` +3.85 /
+    +3.08 / +3.63 / +3.05 / +3.15. Each run's 50M check reads `MISSING_NODE` (no node 50M back, at step 0). No run
+    stops at 100M, so all three take leg 1 (to 150M). The records are `~/.claude/jobs/x35/segB/ticks/`
+    (`status_rb_b1c_<run>_100M.json`).
+  - **Two operational rulings of the orchestrator (2026-11-20), carried in the continuation's GO; no rule
+    moves.** (a) `finals_copy=waived-stop-harm`: item 3 starts once `main.reads plan` has copied the 100M finals
+    (§6), but after a STOP-HARM the spec cannot plan, so nothing would copy them, and a resume rewrites
+    `final_model.zip` in place. The window chain therefore byte-copies each run's 100M final, with its sha256, to
+    `~/.claude/jobs/x35/segB/finals100/` before any leg, and launches no leg without that copy. (b)
+    `missing_node_50m=structural`: every run's 50M check has no node at 0 and reads `MISSING_NODE` for ever, so
+    item 3's "a `MISSING_NODE` check is a HOLD" is read as excluding the 50M check after a STOP-HARM. A
+    `MISSING_NODE` at 60M or above still holds the window.
+  - **Order on the card (the orchestrator's queue ruling):** Q5-N's window to its 50M look runs first. The
+    continuation's GO is written after that window, not at the veto window's end.
+  - **Still OPEN in S9:** each continuation leg's command, dry run, realised GPU-hours and plateau status; every
+    later tick's device and verdict; and every other record its row in the table names.

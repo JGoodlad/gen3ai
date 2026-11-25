@@ -935,8 +935,9 @@ harm view? It reads no gain.
   half-width of at least 3.06 pp, the 50M, 75M and 100M rows read the same six runs, and the factor is still
   width plus the lower learning rate (no learning-rate report exists for these two looks).
 - **What it moves.** Nothing by class. No factor is adopted or carried forward; the wide arm is not retired and
-  not continued past 100M. By the registered default the control's three runs are the candidates and continue
-  to their plateau after the owner's 72-hour veto window (it ends 2026-11-24 21:09 PST), unless the owner rules. No recipe,
+  not continued past 100M. The owner's 72-hour veto window ended 2026-11-24 21:13 PST with no ruling, so the
+  registered default acted: the control's three runs are the candidates and continue to their plateau (all three read
+  Tier 1 `CLIMBING` at 100M). No recipe,
   baseline or production config moves, and procedural teams as a training lever are not retired by it.
 - **The flat policy tower retired: STOPPED-AT-50M (Q6-N, 2026-11-24).** One fresh cell of three runs whose move
   chooser reads the trunk through one learned query (`--policy-readout trunk`, 40.7 % fewer parameters) played C's
