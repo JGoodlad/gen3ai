@@ -4,6 +4,9 @@
 TRAINED and no launch is authorised by this file.** The launch is the orchestrator's GO (§4.4), through a window
 chain the Training session builds (§16). Nothing below changes after the first fork launches except by a dated
 amendment that says why, written before the game it governs. One amendment is planned and bounded: §8.2's.
+**AMENDED 2026-11-25 (Amendment 1, §18: the tools §15 listed as not built that now exist, the probe's play commit,
+the entropy floor's round-end mark, the cross's guards), before any X72 run, look or game; it moves no bar, size,
+class, seed, panel or training pin.**
 
 **This is a NEW registration, resting on the orchestrator's ruling of 2026-11-25, and not on any banked class.**
 X70's read ([`../x70_ent0_control_2026-11-13/PREREG.md`](../x70_ent0_control_2026-11-13/PREREG.md) §15) was
@@ -630,3 +633,66 @@ second β or refresh cadence, no entropy bonus beside the magnet, no fresh-run a
 column for X67 or X70, no class on `dose_U`, on either end cross or on goal (b)'s level, and no rule for what lies
 below the entropy floor. It moves no recipe, baseline or default. It builds no driver, chain, reader or kit arm
 (§15). It does not thin, delete or move run data.
+
+## 18. Amendments
+
+### Amendment 1 (2026-11-25): the tools that now exist, the probe's play commit, the floor's round-end mark, the cross's guards
+
+Written before any X72 training step, run, look or game, on the orchestrator's rulings of 2026-11-25 (four,
+below). **Blind: no X72 run directory, checkpoint, game or Kakuna row exists.** **It moves no bar, size, class,
+seed, panel or training pin, and not the frozen `x72_rule.py`**: the stop rule and its 90 % level, the entropy
+floor's 0.2419 nats and its 20 points, the 4,000 pairs and the 1,000-pair crosses, the Kakuna panels, rule and
+classes, the probe's seeds, classes and 95 % interval, the training pin `9e97cad5`, the play pin `333a73dd` and
+the run names are as registered. §1 to §14, §16 and §17 are untouched; §15's table is superseded where item 1 says
+so. What was read to write it: the code and docstrings of `src/main/x72/` and `designs/tools/x72_tools.md`, X71's
+`record/read/play_commit`, and this file. No game, TensorBoard series or run of X72 (none exists).
+
+1. **The tools §15 listed as NOT built are built, on main.** The commands, exit codes and what was executed are
+   [`designs/tools/x72_tools.md`](../../../tools/x72_tools.md)'s (the module docstrings are the detail of record).
+   Each closes a §15 row, and is a build, not a rule:
+   - **The round cross's driver, plan and reader:** `main.x72.finals` (the archive copy and the sha256-and-record
+     check; commit `34925fb0c`) and `main.x72.cross` (plan, driver, reader; `34925fb0c`). Closes the row "the round
+     cross's driver, plan and reader". It plays §5's cross only: round-k finals × round-(k−1) finals (round 0 =
+     the banked swap finals), 9 cells × 4,000 pairs, X70's protocol at the play pin, one look a round, and writes
+     the `h.json` that `x72_rule.py decide-round` reads. §15's UNVERIFIED that `main.h2h play-many` at `333a73dd`
+     loads an archive copy was executed on CPU; **the cross on `cuda` stays UNVERIFIED** (no lease was held).
+   - **The floor's reader:** `main.x72.floor` (`57874eee0`). Closes the row "the floor's reader". It reproduced
+     CE-3d's recorded end entropies on the three banked swap runs exactly.
+   - **The probe's rule and reader for a fifth target:** `main.x72.probe` and its player `probe_play.py`
+     (`281c09208`): the responders' argv, X71's G6 record check, and the read that pools X71's twelve banked cells
+     with the three new ones. Closes the row "the probe's rule and reader for a fifth target" and §10's
+     "UNVERIFIED tool path". Its player replayed X71's banked `swap` / `r7111` cell game for game (80 of 80).
+
+   **Still NOT built, each unchanged by this amendment:**
+   - **The window chain** (the Training session's; §16 is its checklist).
+   - **§9's two reported end crosses' driver.** `main.x72.cross` does NOT cover them: it takes only round k against
+     round k−1. When the read round is 1, round 1's cross IS the first reported cross (§9 says so) and the tool
+     plays it. When the read round is ≥ 2, **both stay owed**: the read finals × the three banked swap finals (9
+     cells × 4,000 pairs) and the read finals × the eight C0 finals (24 cells × 1,000 pairs). They decide nothing
+     (§9); a build unit of their own, which may change no number here.
+   - **An import path in `b1_kakuna` for banked same-pin cells** (§8.5): not built, not registered.
+   - Still UNVERIFIED as the tools' map says: any record guard on a REAL X72 run (a false refusal is a HOLD, never a
+     wrong read), and a launcher dry run of the responder argv with an archive copy as `--model` (§16.7's).
+
+2. **The probe's play commit is X71's banked one, `62c4fe05`** (X71's `record/read/play_commit`, the full sha
+   `62c4fe050537ff33141e04c1d225c83aaf9b4731`). §10 registered none. All fifteen cells of D (five targets × the
+   three cells X71 defines for each) must be one game, so the three new cells (the target against itself, and each
+   responder's final against the target) are played at the commit the twelve banked cells were. `main.x72.probe
+   drive` HOLDs at any other commit. This is not the cross's play pin `333a73dd`; §5's cross stays at that pin.
+   Reader regime, seed 20261020, counts and classes are §10's.
+
+3. **The entropy floor's "round end" mark (§7).** The statistic at the END mark is read at the run's first entropy
+   point at or past the round's target step, after the launch has exited. At a launch's last step two update rows
+   share a step by design (`designs/training/telemetry_scalars.md`); **the LATER-written row is kept**, which is
+   the rule the registered `diag9_ce3d.py` used to compute the floor's reference numbers (the 0.4837687760591507
+   behind 0.2419). The statistic is the mean of the last 20 points at or before the mark, and the bar, 1e-9
+   tolerance and class are §7's. **Fewer than 20 points is NOT-READY: a HOLD at that mark, never a pass.** The +5M,
+   +10M and +15M marks are unchanged (a mark is READY once a point strictly past it exists).
+
+4. **Two kinds of guard, neither a rule.** (a) `main.x72.cross` enforces the §11 guards that each ARCHIVE COPY's
+   own record shows (the pin on every `pin_history` entry, the lever, the parent, the round: a step at or past the
+   round's target); the run-dir guards (exit code, newest checkpoint, K9(b), the launcher log's pin, the pool-seed
+   check, `main.dose`, `magnet/refreshes`) stay the window chain's (§16 step 5). (b) The tools' own sanity guards
+   are operational: a final's step must be below the round's target + 20M, and a cross's six files must have six
+   distinct sha256s. **A refusal by any of them is a HOLD, never a read** (§11's "a VOID is a HOLD").
+
