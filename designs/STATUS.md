@@ -189,9 +189,11 @@ its GO.
   candidate; the baseline and the production recipe change only by the orchestrator's proposal and the owner's
   decision. **Price:** ≤ 55.4 GPU-h (12.75 a round, measured on the swap forks; ≈ 17 if round 1 shows no gain);
   the Kakuna read is 350 lane-h at the registered rate, ≈ 50 h of wall at the 11-18 read's realised rate.
-  **Before it can launch:** the orchestrator's GO; the round cross's tools, the entropy-floor reader and the
-  window chain are not built; and on 44.0 GiB free, rounds 3 and 4 need ≈ 36.5 / 44.0 GiB at their start, so a
-  disk HOLD there is the owner's to resolve.
+  **Before it can launch:** the orchestrator's GO; the window chain is not built (the tools it calls are: the
+  archive copy, the round cross, the entropy-floor reader and the probe's reader, `main.x72`, mapped in
+  [`tools/x72_tools.md`](tools/x72_tools.md); the cross on `cuda` is unverified until a lease runs it); and on
+  44.0 GiB free, rounds 3 and 4 need ≈ 36.5 / 44.0 GiB at their start, so a disk HOLD there is the owner's to
+  resolve.
 - **X35-A3, the league's first arm with main exploiters folded back in: REGISTERED 2026-11-16; ENDED AT ITS GATE
   2026-11-23, `gate not EXPLOITS`: phase 2 did NOT launch**
   ([`research_state/measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md`](research_state/measurements/x35_a3_main_exploiters_2026-11-16/PREREG.md), full tier; the post-B1 queue's Q4; CE-3c / LG-1).
