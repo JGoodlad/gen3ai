@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-32,974-line file. **The ledger itself is append-only and is never edited by this**;
+33,064-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**1030 headings · 975 dated · 2026-08-01 → 2026-11-25 · ledger 32,974 lines.**
+**1031 headings · 976 dated · 2026-08-01 → 2026-11-25 · ledger 33,064 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1050,3 +1050,4 @@ rename.
   - `L32779` · `2026-11-23` · READ · **X71 the exploitability probe of the entropy arms: all three arms `NOT-MORE-BY-BAR` — the gap two fresh 5M best responders learned against an arm's final, minus the gap they learned against C0's: swap −0.59 pp [−4.12, +2.95], X67 −1.06 pp [−4.60, +2.47] (read 1, t df 3), X70 −0.67 pp [−3.76, +2.41] (read 2, t df 4); C0's responders learned +5.66 pp; the responder spread pooled to 0; 64,000 CPU games, one look each; no veto from this probe on carrying an entropy lever into the baseline, not a clean bill; nothing moves**
   - `L32844` · `2026-11-24` · READ · **Q6-N the flat policy tower retired, the 50M look: STOPPED-AT-50M — three fresh runs whose move chooser reads the trunk through one learned query (`--policy-readout trunk`) against BOUNDARY-1's banked cell C (the flat tower), fresh minus banked on N −0.68 pp, 90 % interval [−3.74, +2.39] (4 df, both sides at the floor); not HARM-AT-50M; not continued, no class, never "no effect"; the 100M leg is not run**
   - `L32901` · `2026-11-25` · READ · **Q5-N five PPO epochs at matched dose, the 50M look: STOPPED-AT-50M — three fresh runs with five passes at twice the starting LR (`--n-epochs 5 --lr 6e-4`, the live KL controller) against BOUNDARY-1's banked cell C (ten passes at 3e-4), fresh minus banked on N −1.54 pp, 90 % interval [−4.99, +1.91] (4 df, the banked side at the floor, the fresh side's own spread above it); not HARM-AT-50M; not continued, no class, never "no effect"; a tie keeps ten epochs; the 100M leg is not run**
+  - `L32975` · `2026-11-25` · REGISTRATION · **X72, the swap forks carried toward their plateau and then read on unfamiliar teams (full tier; blind: before any X72 training step or game): the three banked CE-3d swap finals continue in rounds of +20M at their own recipe and pin, at most four rounds, each round's finals crossed against the round before (GAIN continues; FLAT, LOSS, the cap or an entropy floor of 0.2419 nats stops); the finals the stop rule names are read against Kakuna on F, H and P beside the eight C0 finals, deciding contrast `plat_U`; an X71-style probe is a veto on the licence. NOT LAUNCHED; a new registration on the orchestrator's 2026-11-25 ruling, not licensed by X70's class**

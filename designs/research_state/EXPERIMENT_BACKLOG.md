@@ -42,6 +42,7 @@ agent only if need be — gated on the leaf (carried since by L1, S-U and S′, 
 | # | experiment | question | status | prerequisite |
 |---|---|---|---|---|
 | X26 | **The ride-along baseline: the RUN is DONE, its registered READS are NOT.** X26 (`rb_x26_s2601`: the production recipe + `--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all`, DETACHED heads, learning pinned bit-identical to the run without them) plateaued at 280M (P\*, frozen `d172c10ed`) and its continuation X26c read FLAT at 480M (`204204bbf`); it is the baseline every later arm compares against. Registration: [`measurements/ridealong_baseline/PREREGISTRATION.md`](measurements/ridealong_baseline/PREREGISTRATION.md) (Amendments 1 and 2; `../endstate/design_x26_readiness.md`) | R1 does ensemble disagreement predict \|V − z\|? (USABLE iff the AUROC lower bound > 0.55) · R2 RND the same, plus an unseen-team coverage AUROC (per RND variant, Amendment 1) · R3 does A rank like the ground truth, and beyond the policy? · R4 are starved near-best moves flagged? · R5 does B carry outcome information? | **registered, not scheduled.** No R1–R5 verdict is in the ledger (the only ride-along reads are the 2026-09-30 RND state read and the smokes under `measurements/ridealong_baseline/`; UNVERIFIED that none was read off-ledger). The heads' checkpoints exist | none; CPU. The agent cores are free since X60-T look 2 was read (2026-11-11) |
+| X72 | **The swap forks carried toward their plateau, then read on unfamiliar teams** (the post-Segment-B proposal's C1, "ENT-PLAT"; the card's next item after Segment B by the orchestrator's ruling of 2026-11-25). The three banked CE-3d swap finals (`rb_x35_ce3dswap_s7321`–`s7323`, `--ent-coef 0 --magnet-kl-coef 0.05`) continue as `rb_x72_swapplat_s7341`–`s7343` at pin `9e97cad5` in rounds of +20M, at most four. Registration: [`measurements/x72_swap_plateau_2026-11-25/PREREG.md`](measurements/x72_swap_plateau_2026-11-25/PREREG.md) (full tier). A new registration: X70's class does not license a longer-horizon magnet arm (its §15.4) | Do these networks keep gaining round against round (a 3 × 3 × 4,000-pair cross after each round: `GAIN` continues; `FLAT`, `LOSS`, the cap or an entropy floor of 0.2419 nats stops), and do the finals the stop rule names beat the eight C0 finals on U (F, H and P) against Kakuna (`plat_U`, 50,400 games, 90 %; power 0.90–0.97 at +3 pp, 0.62–0.71 at +2 pp)? An X71-style probe of one read final is a veto on the licence. No matched-dose control: the claim is about a network, not the recipe | **REGISTERED 2026-11-25, NOT LAUNCHED.** ≤ 55.4 GPU-h (12.75 a round measured; ≈ 17 if round 1 shows no gain); Kakuna read 350 lane-h at 144 games a lane-h, ≈ 50 h of wall at the 11-18 read's realised rate | The orchestrator's GO after Segment B's end line and an empty card; the round cross's driver, plan and reader, the entropy-floor reader and the window chain are NOT built (PREREG §15, §16); disk: rounds 3 and 4 need ≈ 36.5 / 44.0 GiB free at the start against 44.0 on the box, and a disk HOLD is the owner's to resolve |
 
 ## 2. PROPOSED — ranked
 
@@ -67,10 +68,23 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 | MF-6 | Breadth at the plateau: X62's recombined teams (below MF-7 since 2026-11-11, by X60-T's registered outcome branch; its effect and rate are the GUESS made before that read, not re-estimated) | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | **NOT MET:** it needed X60-T not NO-TRANSFER / LOSS, and X60-T read NO-TRANSFER (§3); PR-1′'s place is the orchestrator's |
 | R9 | **A converged human-replay clone as a from-scratch initialisation and as a frozen self-play opponent** (unranked: the 2026-11-09 independent review's R9; the rank is the orchestrator's) | clone 0 left (trained, 11-11 17:18–18:57 PST); arms ≈ 59 (two arms × two seeds to 100M at width 128), 29 at a 50M first look; ≈ 88 at BOUNDARY-1's amended three seeds an arm (width-256 prices × 0.718 = 527.67 / 734.59 s per 1M, STATUS §2) | 0 (clone); the arms' read rides BOUNDARY-1's frame | init 0 (−2, +2); opponent +0.3 (−1, +2) | ≈ 0.004 | the kit is BUILT (2026-11-10) and the clone is TRAINED and REGISTERED (2026-11-11, `d79f08ec2`; width 128); after the BOUNDARY-1 launch; the arms need a FULL registration; local GPU only |
 
-**The recommendation.** **MF-1** is READ (X66, NOT-DELIVERED, 2026-11-10) and **MF-3 step (b)** is screened out (X68 read DROP);
-neither asks for anything more. Between and after them the GPU's fill is the orchestrator's (MF-7's or MF-6's training, in that order since X60-T's read);
-**MF-5** launches the day its prerequisites hold, and the owner is asked about it NOW because a card has a lead
-time.
+**The card's order now (orchestrator, 2026-11-25).** After Segment B the next GPU item is **X72** (§1): the swap forks
+carried toward their plateau, then read against Kakuna on unfamiliar teams. The table above is the 2026-11-09 ranking,
+kept as the record of how each lever was priced; of its rows, MF-1 is READ (X66, NOT-DELIVERED), MF-3 step (b) is
+screened out (X68, DROP), MF-7 ended at its gate, and MF-5 still waits on its prerequisites and on the owner.
+
+**The screening rule (orchestrator, 2026-11-25).** Levers are screened on forks rather than on fresh three-seed
+cells at 50M; fresh cells are kept for levers that cannot be forked and carry a GUESS ≥ 4 pp. The numbers behind it,
+each from the ledger:
+
+- **A fork screen** (three P\* + 20M forks crossed against the banked C0 finals) costs ≈ 12.6 GPU-h at the rate above
+  (12.75 measured for the three swap forks) and its 90 % half-width has been under 1 pp every time: 0.62 pp (X67,
+  +1.97 [+1.35, +2.59]), 0.66 pp (CE-3d, +3.97 [+3.31, +4.63]), 0.51 pp (X70, +0.73 [+0.22, +1.23]).
+- **A fresh cell against BOUNDARY-1's banked cell C** has a half-width of at least 3.06 pp by its own registration
+  (Q6-N's PREREG) and read no class three times: Q6-N −0.68 pp [−3.74, +2.39] (≈ 30.8 GPU-h), Q5-N −1.54 pp
+  [−4.99, +1.91] (≈ 20.5 GPU-h), together ≈ 51 GPU-h, and BOUNDARY-1's own W − C at 100M +0.39 pp [−3.55, +4.32].
+- **What the rule costs:** a fork screen reads a lever at the plateau of ONE lineage over 20M; it says nothing about
+  a lever that acts on early training or on a from-scratch run, which is why the exception exists.
 
 - **Why MF-1 was first, and how it read.** X66 read NOT-DELIVERED on 2026-11-10 (the card below); the case as it stood:
   it was the only lever whose target carries a MEASURED game gain: P\* + S′h beats P\* alone against

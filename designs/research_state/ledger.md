@@ -32971,3 +32971,93 @@ ledger's 12 row and event files, by sha256, not copied). The runs stay at `model
 View: `STATUS.md` (§2, §3), `UNDERSTANDING.md` (§4.17, §6), `EXPERIMENT_BACKLOG.md` (row Q5-N, now in §3; row 18), `models_retention_policy.md` (the fresh-cell hold).
 
 Tag: **READ · Q5-N fresh cell (five epochs, LR 6e-4, width 128, pin 15136b61) × banked C · 50M look · 9 cells, 45,000 games, greedy, on the card · 90 %, 4 df · STOPPED-AT-50M, N −1.54 [−4.99, +1.91] · not HARM-AT-50M · 100M not run, the matched-GPU-time cross not played · ≈ 20.5 GPU-h against a price of ≈ 17.8, inside the registered range · no class, never "no effect"; a tie keeps ten epochs**
+
+### 2026-11-25 · REGISTRATION · **X72, the swap forks carried toward their plateau and then read on unfamiliar teams (full tier; blind: before any X72 training step or game): the three banked CE-3d swap finals continue in rounds of +20M at their own recipe and pin, at most four rounds, each round's finals crossed against the round before (GAIN continues; FLAT, LOSS, the cap or an entropy floor of 0.2419 nats stops); the finals the stop rule names are read against Kakuna on F, H and P beside the eight C0 finals, deciding contrast `plat_U`; an X71-style probe is a veto on the licence. NOT LAUNCHED; a new registration on the orchestrator's 2026-11-25 ruling, not licensed by X70's class**
+
+**Why.** The orchestrator's ruling of 2026-11-25 makes this the card's next item after Segment B (the post-Segment-B
+proposal's C1, "ENT-PLAT"). The swap (`--ent-coef 0 --magnet-kl-coef 0.05`) is the one training lever with a
+positive Kakuna read (+2.61 pp [+0.95, +4.28] on F and H, 2026-11-18), four of four entropy-family head-to-head
+reads are positive, and the swap forks' policy entropy was still falling when they stopped at +20M (0.484–0.496
+nats; 5M-window means ≈ 0.77, 0.60, 0.54, 0.50). **It is a new registration:** X70's read says "The
+longer-horizon or fresh-run magnet arm is NOT licensed by this read" (its §15.4), so nothing banked licenses this
+arm; the ruling does.
+
+**What is registered** (`measurements/x72_swap_plateau_2026-11-25/PREREG.md`).
+
+- **The arm, three lineages:** `rb_x72_swapplat_s7341` / `s7342` / `s7343`, continuing `rb_x35_ce3dswap_s7321` /
+  `s7322` / `s7323` at the swap's training pin `9e97cad5` with nothing typed but the target, the seed and the name
+  (the recipe is the parent's record). Round 1 is a FORK of each banked final to step 320,000,170; rounds 2 to 4
+  are restarts of the same run to 340,000,170 / 360,000,170 / 380,000,170. The banked swap run dirs are never
+  written; every round's finals are copied aside with their sha256 before the next launch.
+- **No matched continuation control is trained.** It would double the arm (+12.75 GPU-h a round) to license one
+  sentence, "the swap recipe beats production at matched dose", which no decision this feeds needs. The Kakuna
+  control is the eight C0 finals (P\* + 20M, production recipe): the read is about a network, not about the recipe
+  at equal dose. The stated assumption is that the production line gains nothing from more steps here (X26's
+  continuation, 480M against P\*: +0.08 pp [−3.90, +4.06], one run).
+- **The stop rule** (`x72_rule.py`): after round k the three round-k finals play the three round-(k−1) finals, 9
+  cells × 4,000 mirrored pairs, greedy, on the card at the play pin `333a73dd`, one look. D = mean(h) − 50 with the
+  fixed-finals 90 % interval D ± 0.3065 pp (game noise only: the claim is about these six files). `GAIN` (lower
+  end > 0) continues; `FLAT` stops, `PLATEAU-AT-REACH`, read round k; `LOSS` (upper end < 0) stops, `DOSE-HARM`,
+  read round k − 1; `GAIN` at round 4 stops, `NOT-AT-PLATEAU-AT-CAP`; `INCONCLUSIVE` HOLDs. An end within 1e-9 pp
+  of 0 fires nothing. X70's lineages-as-a-sample interval is REPORTED beside it and never decides.
+- **The entropy floor:** 0.2419 nats, half the lowest banked swap end entropy (X70's `ENT-COLLAPSED` bar; a
+  judgment, not a measured cliff), on the mean of a run's last 20 points of −`train/entropy_loss` at each 5M mark
+  and at a round's end. Any lineage below it by more than 1e-9 nats stops the arm (`ENT-FLOOR`, read the round
+  before).
+- **The decisive read** (`read_spec_kakuna.json`, `python -m main.reads`, rule `b1_kakuna`, opponent
+  `metamon:Kakuna`): arms `plat` (the three read finals), `c0` (eight), `s0` (the three banked swap finals), panels
+  `forum72`, `heldout72_hpfix`, `p72`, 1,200 games a final a panel, 50,400 games. **Deciding: `plat_U` = `plat` −
+  `c0` on U**, `POSITIVE` / `NEGATIVE` / `SPANS-ZERO` by the rule's 90 % two-way interval, an end within 0.005 pp
+  of 0 taking `SPANS-ZERO`. Reported: `plat_FH`, the per-panel contrasts, `dose_U` (`plat` − `s0`) and the `s0`
+  contrasts. The spec's three `plat` refs and its pin are `PENDING`; one bounded amendment fills them after the
+  stop and before any Kakuna game (pin `15136b61` unless it records why not). When the read round is 0 (a `LOSS` or
+  the floor in round 1) no Kakuna game is played.
+- **The probe:** X71's design on one new target, the read final of lineage 1: two 5M responders (seeds 7111, 7112,
+  the control recipe typed), D against X71's banked C0 cell with the responder variance pooled over five targets
+  (t 2.571). **A veto on the licence, never on the class:** `MORE-EXPLOITABLE` withholds the nomination.
+- **Licence:** `POSITIVE` with no veto licenses NOMINATING the read finals as the in-house baseline candidate and
+  registering the lineage-level replication. A baseline changes only by `python -m main.baselines set … --reason`
+  and the production recipe only in code: the orchestrator's proposal and the owner's decision.
+
+**Power** (computed before any game). The round cross (`power.log`, 50,000 reps): P(`GAIN`) at a true round gain
+of +0.5 / +0.75 / +1 pp is 0.74 / 0.93 / 0.99 when forks differ by 0.3 pp of luck, 0.67 / 0.84 / 0.94 at 0.5 pp;
+at zero gain a `GAIN` or a `LOSS` fires 16–25 % of the time each, a true statement about the files. Kakuna
+(`kakuna_power.log`, through the rule's own code, BOUNDARY-1's assumed team model): `plat_U` median half-width
+1.57–1.65 pp, P(`POSITIVE`) 0.62–0.71 at +2 pp and 0.90–0.97 at +3 pp for a seed SD up to 1 pp (0.46 / 0.74 at
+1.5 pp, where the interval under-covers); `dose_U` 0.35–0.39 at +2 pp. The probe (`probe_power.log`, X71's own
+`simulate` at five targets): half-width 2.86 pp and 0.95 / 0.95 for `NOT-MORE-BY-BAR` at 0 / `MORE-EXPLOITABLE` at
++5 pp when the responder spread pools to 0, as X71's did; 0.75 / 0.75 at a 1 pp spread.
+
+**What was executed.** `python -m main.checkargs` at the pin: exit 0 for the three round-1 argvs. The launcher's
+dry run (CPU, the card hidden, nice 19): exit 3 for all three, stopping only at the registering shell's two
+refusals; role FORK of the banked swap run, pin `9e97cad5`, `ent_coef 0.0` and `magnet_kl_coef 0.05` restored
+from the parent's record, +19,938,898 steps (lineage 1), 17.57 GiB REQUIRED. The restart form, dry-run against the
+banked `rb_x35_ce3dswap_s7321` (nothing created): role RESTART, the same pin and lever, 16.84 GiB REQUIRED.
+`x72_rule.py self-check` OK (X70's banked verdict reproduced). `python -m main.reads check-spec --pin-pending`:
+rc 0, exactly the six pending fields. **Not executed / UNVERIFIED:** any X72 step or game; the dry run with the
+card visible; a magnet start from a sidecar on the card (no swap fork ever restarted); which file a same-run
+restart loads (the dry run names both the final's step and the newest periodic checkpoint); the rate a fork starts
+at; that an archive copy of a final loads at the play pin and at the read pin; that Kakuna play reproduces the
+banked F and H counts; P's team SDs (assumed equal to F's and H's in the power). **Not built:** the round cross's
+driver, plan and reader, the floor's reader, the window chain, the probe's rule and reader for a fifth target.
+
+**Limits written into the registration.** Three lineages of one parent: nothing at the lineage level. No matched
+dose: not "the recipe beats production". The stop rule speaks about six files at a reach of ±0.31 pp on one look,
+not about the recipe and not a plateau in `main.plateau`'s sense. Round 1 re-seeds the opponent pool (a fork) and
+rounds 2 to 4 keep it. A `POSITIVE` does not show that the extra dose helped on Kakuna. The probe is one final,
+one responder recipe, 5M.
+
+**Cost.** 12.75 GPU-h a round measured (the three swap forks: 264.8 + 247.7 + 252.7 min), ≤ 51.0 for four;
+≤ 1.6 for the round crosses, ≤ 0.67 for two reported end crosses, 1.9–2.1 for the probe: **≤ 55.4 GPU-h**, ≈ 17
+if the first round shows no gain. CPU: the Kakuna read is 350 lane-h at the registered 144 games a lane-h, ≈ 50 h
+of wall at the 11-18 read's realised rate; the probe's read ≈ 1.6 lane-h. **Disk:** the launcher's guard needs
+17.57 / 16.84 GiB FREE a launch and a lineage leaves ≈ 2.4 GiB a round (GUESS from the banked dirs); on 44.0 GiB
+free, rounds 1 and 2 fit, round 3 needs ≈ 36.5 GiB at the start and round 4 ≈ 44.0. A disk HOLD is resolved by the
+owner (a deletion), never by the chain.
+
+**Record:** `measurements/x72_swap_plateau_2026-11-25/` (`PREREG.md`, `x72_rule.py`, `selfcheck.log`, `power.log`,
+`kakuna_power.py`, `kakuna_power.log`, `probe_power.py`, `probe_power.log`, `read_spec_kakuna.json`,
+`check_spec.txt`, the `argv_*` / `checkargs_*` / `dryrun_*` transcripts).
+View: `STATUS.md` (§2, §3), `EXPERIMENT_BACKLOG.md` (§1 row X72, §2.0).
+
+Tag: **REGISTRATION · X72 swap plateau · 3 lineages × ≤ 4 rounds of +20M at `ce3d-pin-9e97cad5` · stop rule GAIN / FLAT / LOSS on a 3 × 3 × 4,000-pair cross, fixed finals, 90 % ± 0.31 pp · entropy floor 0.2419 nats · Kakuna F + H + P, 50,400 games, `plat_U` POSITIVE / SPANS-ZERO / NEGATIVE, 0.90–0.97 at +3 pp · X71-style probe as a veto · ≤ 55.4 GPU-h, 350 lane-h · not launched · moves no recipe**

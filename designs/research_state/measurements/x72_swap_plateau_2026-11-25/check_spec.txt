@@ -1,0 +1,42 @@
+{
+ "allow_partial_at_stop": true,
+ "anchor": [
+  "kakuna"
+ ],
+ "choices_guard": "require",
+ "models": [
+  "c0_s3501",
+  "c0_s3502",
+  "c0_s3503",
+  "c0_s3504",
+  "c0_s3505",
+  "c0_s3506",
+  "c0_s3507",
+  "c0_s3508",
+  "plat_s7341",
+  "plat_s7342",
+  "plat_s7343",
+  "s0_s7321",
+  "s0_s7322",
+  "s0_s7323"
+ ],
+ "pending": [
+  "spec.models.plat_s7341.ref.path",
+  "spec.models.plat_s7341.ref.sha256",
+  "spec.models.plat_s7342.ref.path",
+  "spec.models.plat_s7342.ref.sha256",
+  "spec.models.plat_s7343.ref.path",
+  "spec.models.plat_s7343.ref.sha256"
+ ],
+ "pin": {
+  "candidate_head": "4fe7ef43602c696518f4ffef37275f34a6c24193",
+  "next": "land the code the read plays, then add \"pin\": \"<that commit>\" (an existing commit, never the one that adds the spec); the sha256 below changes when you do",
+  "state": "PENDING"
+ },
+ "read": "x72_kakuna_2026-11-25",
+ "rederived_guards": "count",
+ "rule": "b1_kakuna",
+ "s": [],
+ "sha256": "9b1cbbd0395cd5e24f8a7bdca5cd2e99052d033f3749f4950297f533413f8e2d",
+ "sha256_final": false
+}

@@ -1,0 +1,188 @@
+{
+ "self_check": "OK",
+ "problems": [],
+ "x70_banked": {
+  "delta_hat_pp": 0.7265625,
+  "interval90_pp": [
+   0.21847657748933635,
+   1.2346484225106638
+  ],
+  "df": 4.998050343206006,
+  "outcome_there": "ANCHOR-ADDS"
+ },
+ "deciding_half_width_pp": 0.306500376908381,
+ "reported_floored_half_width_pp": 0.5617909556085431,
+ "cases": {
+  "all 50: FLAT": "FLAT",
+  "all 51: GAIN": "GAIN",
+  "all 49: LOSS": "LOSS",
+  "all 50.3 (inside the half-width): FLAT": "FLAT",
+  "all 50.31: GAIN": "GAIN",
+  "one lineage carries it (rows 52 / 50.5 / 49.6): GAIN": "GAIN",
+  "rule 8, lower end exactly 0: FLAT": "FLAT",
+  "rule 8, upper end exactly 0: FLAT": "FLAT",
+  "a spread row: FLAT": "FLAT",
+  "2 x 3: INCONCLUSIVE": "INCONCLUSIVE",
+  "nan: INCONCLUSIVE": "INCONCLUSIVE"
+ },
+ "action_table": {
+  "round 1, floor": [
+   "STOP",
+   "ENT-FLOOR",
+   0
+  ],
+  "round 1, floor+GAIN": [
+   "STOP",
+   "ENT-FLOOR",
+   0
+  ],
+  "round 1, LOSS": [
+   "STOP",
+   "DOSE-HARM",
+   0
+  ],
+  "round 1, FLAT": [
+   "STOP",
+   "PLATEAU-AT-REACH",
+   1
+  ],
+  "round 1, GAIN": [
+   "CONTINUE",
+   null,
+   null
+  ],
+  "round 1, INCONCLUSIVE": [
+   "HOLD",
+   null,
+   null
+  ],
+  "round 2, floor": [
+   "STOP",
+   "ENT-FLOOR",
+   1
+  ],
+  "round 2, floor+GAIN": [
+   "STOP",
+   "ENT-FLOOR",
+   1
+  ],
+  "round 2, LOSS": [
+   "STOP",
+   "DOSE-HARM",
+   1
+  ],
+  "round 2, FLAT": [
+   "STOP",
+   "PLATEAU-AT-REACH",
+   2
+  ],
+  "round 2, GAIN": [
+   "CONTINUE",
+   null,
+   null
+  ],
+  "round 2, INCONCLUSIVE": [
+   "HOLD",
+   null,
+   null
+  ],
+  "round 3, floor": [
+   "STOP",
+   "ENT-FLOOR",
+   2
+  ],
+  "round 3, floor+GAIN": [
+   "STOP",
+   "ENT-FLOOR",
+   2
+  ],
+  "round 3, LOSS": [
+   "STOP",
+   "DOSE-HARM",
+   2
+  ],
+  "round 3, FLAT": [
+   "STOP",
+   "PLATEAU-AT-REACH",
+   3
+  ],
+  "round 3, GAIN": [
+   "CONTINUE",
+   null,
+   null
+  ],
+  "round 3, INCONCLUSIVE": [
+   "HOLD",
+   null,
+   null
+  ],
+  "round 4, floor": [
+   "STOP",
+   "ENT-FLOOR",
+   3
+  ],
+  "round 4, floor+GAIN": [
+   "STOP",
+   "ENT-FLOOR",
+   3
+  ],
+  "round 4, LOSS": [
+   "STOP",
+   "DOSE-HARM",
+   3
+  ],
+  "round 4, FLAT": [
+   "STOP",
+   "PLATEAU-AT-REACH",
+   4
+  ],
+  "round 4, GAIN": [
+   "STOP",
+   "NOT-AT-PLATEAU-AT-CAP",
+   4
+  ],
+  "round 4, INCONCLUSIVE": [
+   "HOLD",
+   null,
+   null
+  ]
+ },
+ "floor_cases": {
+  "the banked swap ends": [
+   false,
+   []
+  ],
+  "one lineage at 0.2": [
+   true,
+   [
+    2
+   ]
+  ],
+  "one run alone at 0.24": [
+   true,
+   [
+    1
+   ]
+  ],
+  "rule 8, exactly the floor": [
+   false,
+   []
+  ],
+  "rule 8, 5e-10 under": [
+   false,
+   []
+  ],
+  "2e-9 under": [
+   true,
+   [
+    1
+   ]
+  ]
+ },
+ "swap_end_entropy_banked": [
+  0.4837687760591507,
+  0.49621051996946336,
+  0.49211294054985044
+ ],
+ "floor_nats": 0.24188438802957535
+}

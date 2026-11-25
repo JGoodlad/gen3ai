@@ -1,0 +1,1 @@
+--model /home/goodlad/dev/gen3ai/models/rb_x35_ce3dswap_s7321/final_model.zip --steps 320000170 --device cuda --seed 7341 --run-name rb_x72_swapplat_s7341
