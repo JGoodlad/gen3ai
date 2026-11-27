@@ -1875,6 +1875,93 @@ with no game result, and not without the training curves.**
    2's sentence carries nine-run figures now rather than blanks filled after a look; and it says "equal to
    within a few percent" where the draft said "equal", because the 0-to-50M interval excludes 1.
 
+### Amendment 9 (2026-11-26): the plateau read's spec is written by a builder, from the chain's candidate markers; the choices item 4 left open
+
+Written while Segment B trains (the three C runs have each finished their leg to 150M; `rb_b1c_s5101` is training
+toward 200M; no `<run>.candidate` marker exists), before any candidate exists and before any game of Amendment 6
+item 4's read is planned or played, on the orchestrator's instruction. **It touches this section only, and
+Amendment 6's text is not edited** (the continuation chain checks its section's hash). **It moves no opponent,
+panel, unit seed, game count, model, arm, contrast, level, bootstrap, class, guard or priority of item 4**; it
+records how the three things item 4 left unfilled are filled, and each choice the filling forces. **What was read
+to write it:** the chain's script and its record directory (`legs.tsv`, the three `_to150M.arm_end_check.json`
+files), the three runs' `metadata.json` pin histories and file listings, their 150M checkpoints and P\*'s file
+(copied and loaded as stand-ins, item 4 below), and the baseline registry. No game outcome, `eval/*` series,
+ledger or ladder was read; that `rb_b1c_s5101` continues past 150M is the one plateau fact its writer knew.
+
+1. **The writer of the spec is a tool, `python -m main.b1.plateau_read build`** (`src/main/b1/plateau_read.py`,
+   pinned by `plateau_read_test.py`). Item 4 says a records commit writes `read_spec_plateau_pstar.json` "after
+   the last leg and before `plan`, filling ONLY the three run names, their stop steps and `pin`". The tool is that
+   writer, so the spec is not committed today (a `final` reference cannot carry a pending `min_step`). It holds
+   item 4's `anchor` and `decision` blocks, P\*'s path and sha256, the `final` reference's `quiet_s` and the
+   price as constants, and its test compares each with Amendment 6's text in THIS file, so a constant cannot
+   drift from the registration. It takes the candidates from the chain's markers
+   (`~/.claude/jobs/x35/segB/<run>.candidate`: `run`, `tag`, `stop_step`, `newest_checkpoint`, `final`,
+   `final_sha256`), never from a typed path: the run names are the cell's (`main.b1.arms`), `min_step` is the
+   marker's `stop_step`, and `--pin` is typed once. Without `--out` it writes nothing and prints the read's size.
+2. **Choices item 4 left open, each flagged for the orchestrator.** None enters the statistic.
+   - **Names.** The read is `boundary1_plateau_pstar_2026-11-16` (Amendment 6's date). A candidate's label is its
+     run name less `rb_` (`b1c_s5101`), its `seed` the run's; P\* is label `pstar`, arm `pstar`, seed 2601 (its
+     run's). `anchor.models` lists the candidates in launch order, then `pstar`.
+   - **The spec's `note`** carries each candidate's stop step and plateau tag, and any run left out with its
+     reason. That is more than "ONLY the three run names, their stop steps and `pin`"; a note is read by no rule.
+   - **P\* is named through the registry** (`pstar_plateau`), and the tool REFUSES if the registry no longer
+     resolves to item 4's file and sha256: a re-base before the read would change the comparator.
+   - **Where it plays.** State `~/gen3ai_archive/boundary1_plateau_pstar`; the playing checkout is a detached
+     worktree at the pin under `/home/goodlad/dev/gen3ai-reads/`; the spec is read by its path in main.
+   - **`--hours 24`.** `python -m main.reads run` refuses without a stop and item 4 names none. 24 h bounds one
+     supervisor's life (the read is priced at ≈ 20 h on three lanes); the spec carries no `allow_partial_at_stop`,
+     so a stop is never a read, and `run` is re-issued until no unit is unplayed, as §14 says of the Kakuna read.
+   - **The price printed.** `plan` and `status` print units, not games or lane-hours, so the tool prints them:
+     units × 20 games, at 144 games a lane-hour (§12's Kakuna row: 25,920 games, ≈ 180 lane-h) on three lanes.
+   - **The FILES-FIXED figure** is `python -m main.b1.plateau_read files-fixed --record <record>`: the square
+     root of the record's `v_t_pp2`, for both contrasts under BOTH clusterings, with the wider named. Item 4
+     names no clustering; the figure is REPORTED under each and classes nothing.
+3. **How item 4's two guards are read, and what is refused rather than decided.**
+   - **Pin history**: the run's `metadata.json` holds exactly ONE entry, at the run's pin, from step 0, whose
+     last step reaches the stop step. Otherwise the candidate is LEFT OUT (REPORTED and not read).
+   - **K9(b)**: read from the chain's recorded arm-end check at the stop step
+     (`<run>_to<N>M.arm_end_check.json`, the output of the kit's `python -m main.b1.look check-run --arm-end`),
+     which must name this run, pin and step. VOID leaves the candidate out. Item 4 says "not VOID" and the kit's
+     check passes only on PASS: any other reading (INCONCLUSIVE, HOLD, another problem the check names) is
+     decided by neither text, so the tool REFUSES, writes nothing, and the case goes to the orchestrator.
+     **Item 4's UNVERIFIED is resolved for 150M:** the kit's check read all three runs at 150,000,000 (the
+     chain's records, read 2026-11-26: `ok` true, K9(b) PASS). A candidate that stopped at 100M without a leg
+     has no check beside the markers (`--checks` names another directory); no run is in that case.
+   - **Refused, nothing written:** a run of the cell with no marker yet (the read is not ready until every run
+     has stopped); a marker that is not the chain's shape, or one for a run outside the cell; a
+     `final_model.zip` that no longer hashes to its marker; fewer than two entering candidates (item 4).
+   - With two candidates the spec carries three models: 6,480 games, ≈ 45 lane-h, 1 degree of freedom.
+   - `--run-pin` names the commit the candidates trained at when the read's pin is not the launch pin (item 4's
+     fallback); by default the two are the same.
+4. **Validated by execution on stand-ins, 2026-11-26; no game was played.** In a scratch directory: three markers
+   of the chain's shape naming each run's newest 150M checkpoint as a stand-in final (`stop_step` 150,000,000),
+   copies of the three arm-end checks, and a scratch models root (`GEN3AI_MODELS_DIR`) holding those files and
+   P\*. The tool wrote the spec and printed **4 models, 432 units, 8,640 games, 60.0 lane-hours, 20.0 h on three
+   lanes**. In a checkout at the launch pin `15136b61634b667bb9da5ccc6647ff9265238829`, `python -m main.reads
+   check-spec` passed (rule `b1_kakuna`, `is_head` true), `plan` settled and copied all four files (the stand-ins
+   at steps 150,000,011, 150,000,010 and 150,000,046; P\* at 280,000,170, sha256 `814823c514fb…`) and planned 108
+   units a model, and `status` read 432 planned, 0 counted.
+   - **Item 4's UNVERIFIED on the pin is resolved as far as a load:** at the launch pin, on the CPU, the anchor
+     lane's own loader (`main.anchors.core_side.load_policy`, `auto`) loaded P\*'s planned copy through the
+     `bare` path (5,624,179 parameters, step 280,000,170, eval mode) and a stand-in candidate the same way
+     (2,609,183 parameters). **The read's pin is therefore the launch pin.**
+   - **UNVERIFIED:** a game of P\* at the launch pin (none was played; the read's first units are the check,
+     and a failure there goes to the orchestrator before any re-pin); the real finals, which do not exist;
+     `files-fixed` on a played record (no `b1_kakuna` record exists yet; the test's record is synthetic).
+5. **The commands, once the last marker exists** (the first in a worktree of main, for the S9 records commit; the
+   rest in the checkout at the pin, CPU lanes under Amendment 6 item 6's priority):
+
+   ```bash
+   python -m main.b1.plateau_read build --cell C --pin 15136b61634b667bb9da5ccc6647ff9265238829 \
+       --out designs/research_state/measurements/boundary1_scratch_2026-11-09/read_spec_plateau_pstar.json
+   python -m main.reads check-spec --spec <spec>
+   python -m main.reads plan   --spec <spec> --state ~/gen3ai_archive/boundary1_plateau_pstar
+   setsid nohup python -m main.reads run --state ~/gen3ai_archive/boundary1_plateau_pstar --lane anchor \
+       --concurrency 3 --hours 24 > ~/gen3ai_archive/boundary1_plateau_pstar/anchor.log 2>&1 &
+   python -m main.reads record --state ~/gen3ai_archive/boundary1_plateau_pstar
+   python -m main.b1.plateau_read files-fixed --record ~/gen3ai_archive/boundary1_plateau_pstar/record.json
+   ```
+
 ### Pre-launch and launch records
 
 Written here, each before the launch or look it gates: the re-pin; §13's

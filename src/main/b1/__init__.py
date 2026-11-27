@@ -11,8 +11,11 @@ fresh cell's rungs, movement label and REPORTED training meters (clip fraction, 
 dose, step time) beside its banked cell. ``main.b1.kakuna_rule`` is the
 confirming Kakuna meter, the ``main.reads`` rule ``b1_kakuna`` (registered in ``main.reads.rules``); it lives HERE
 because ``main/reads/__init__.py`` is on the anchor lane's play path and its docstring must name every module of
-that package: a rule module added there changes the play-path digest of every read in flight. The pin is an argument of
-every command: the registration (the measurement folder's ``PREREG.md``) is the one place it is written.
+that package: a rule module added there changes the play-path digest of every read in flight.
+``main.b1.plateau_read`` writes the spec of the continued cell's read against P* (Amendments 6 item 4 and 9) from the
+continuation chain's candidate markers, prints its games and lane-hours, and REPORTS a played record's files-fixed
+figure. The pin is an argument of every command: the registration (the measurement folder's ``PREREG.md``) is the
+one place it is written.
 
 After BOUNDARY-1, ``main.b1.fresh`` plans, guards, plays and reads ONE fresh three-seed cell against ONE banked B1 cell
 (``measurements/fresh_cell_frame_2026-11-17/FRAME.md``), and a card's REPORTED matched-GPU-time cross
