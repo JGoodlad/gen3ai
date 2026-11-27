@@ -53,6 +53,21 @@ def world(tmp_path, monkeypatch):
     return models, root
 
 
+@pytest.fixture()
+def c0_world(world, monkeypatch):
+    """``world`` with eight stand-in C0 finals REGISTERED (``F.C0`` patched to their sha256)."""
+    models, root = world
+    c0 = {}
+    for seed in F.C0:
+        d = models / F.C0_RUN_FMT.format(seed=seed)
+        d.mkdir(parents=True)
+        (d / "final_model.zip").write_bytes(f"c0 final {seed}".encode())
+        (d / "metadata.json").write_text(json.dumps({"num_timesteps": F.ROUND0_TARGET + 61_770}))
+        c0[seed] = sha256_file(d / "final_model.zip")
+    monkeypatch.setattr(F, "C0", c0)
+    return models, root
+
+
 def train_round(models: Path, k: int, **edit) -> None:
     for s in F.SEEDS:
         make_run(models, s, k, parent_sha=F.SWAP[s][1], **edit)
@@ -230,6 +245,33 @@ def test_round_zero_is_the_banked_swap_final_at_its_registered_sha256(world):
     (models / "rb_x35_ce3dswap_s7322" / "final_model.zip").write_bytes(b"moved")
     with pytest.raises(F.FinalsError, match="rb_x35_ce3dswap_s7322: final_model.zip has sha256 .* not the registered"):
         F.load_round(0, root=root, models_dir=models)
+
+
+def test_the_c0_table_is_the_registrations_and_the_banked_crosses(c0_world):
+    """The eight C0 finals of §9's second end cross: the read spec's files, which CE-3d's and X70's crosses played."""
+    models, _root = c0_world
+    got = F.load_c0(models_dir=models)
+    assert [(f.seed, f.run, f.sha256, f.source) for f in got] == [
+        (s, f"rb_x35_c0_s{s}", F.C0[s], "banked") for s in range(3501, 3509)]
+    assert got[7].path == str(models / "rb_x35_c0_s3508" / "final_model.zip") and got[0].step == 300_061_940
+    (models / "rb_x35_c0_s3502" / "final_model.zip").write_bytes(b"moved")
+    (models / "rb_x35_c0_s3507" / "final_model.zip").unlink()
+    with pytest.raises(F.FinalsError) as exc:                       # every problem in ONE refusal
+        F.load_c0(models_dir=models)
+    assert "rb_x35_c0_s3502: final_model.zip has sha256" in str(exc.value)
+    assert "rb_x35_c0_s3507: no final_model.zip" in str(exc.value)
+
+
+def test_the_registered_c0_sha256_are_the_read_specs_ce3ds_and_x70s():
+    spec = json.loads((DIR / "read_spec_kakuna.json").read_text())
+    assert list(F.C0) == list(range(3501, 3509)) and len(set(F.C0.values())) == 8
+    for seed, sha in F.C0.items():
+        ref = spec["models"][f"c0_s{seed}"]["ref"]
+        assert ref["sha256"] == sha and ref["path"] == f"models/{F.C0_RUN_FMT.format(seed=seed)}/final_model.zip"
+    m = repo_path("designs/research_state/measurements")
+    for rec in ("ce3d_magnet_screen_2026-11-11/record/deciding", "x70_ent0_control_2026-11-13/record/c0"):
+        banked = json.loads((m / rec / "shas.json").read_text())
+        assert banked["cols"] == list(F.C0.values()) and banked["col_seeds"] == list(F.C0)
 
 
 def test_the_cli_exits_three_on_a_refusal_and_prints_the_finals_otherwise(world, capsys):

@@ -1,4 +1,4 @@
-"""X72's FINALS: the archive copies every cross and read plays (PREREG §3), and the banked round-0 finals.
+"""X72's FINALS: the archive copies every cross and read plays (PREREG §3), and the banked finals beside them.
 
 After every round the chain copies each lineage's ``final_model.zip``, ``final_model.magnet.pt``,
 ``model_config.json`` and ``metadata.json`` to ``<archive>/x72_swap_plateau/finals/r<k>/rb_x72_swapplat_s734N/``
@@ -9,6 +9,8 @@ next round overwrites the run dir's final, so nothing of X72 ever plays a run di
   file that moved under the copy is a refusal), never overwrites a different existing copy, and is a no-op on a
   round already archived with the same bytes. The PREREG names ``finals.json`` and not its fields; the schema
   (:data:`SCHEMA`) is this module's, and :func:`load_final` reads nothing else.
+* :func:`load_c0` is the eight banked C0 finals (the columns of §9's second end cross), each in the run archive at
+  its REGISTERED sha256 (:data:`C0`, pinned by test to ``read_spec_kakuna.json``).
 * :func:`load_final` is the ONLY way a tool takes a final. Round 0 is the banked swap final of the lineage, in the
   run archive, at its REGISTERED sha256 (:data:`SWAP`, pinned by test to ``read_spec_kakuna.json``). Round k >= 1 is
   the archive copy: every file re-hashed against ``finals.json``, then :func:`record_problems`.
@@ -50,6 +52,19 @@ SWAP: Dict[int, tuple] = {
     7341: ("rb_x35_ce3dswap_s7321", "c068bb1a0df29afe3ebdaba4e15452c42df76020f02e1d48871ba68216100cb7"),
     7342: ("rb_x35_ce3dswap_s7322", "f1306f8dc3c62a4660db1fccc1e2ab9c96a08bc7895304160cb989329fc8aaff"),
     7343: ("rb_x35_ce3dswap_s7323", "7eee05c7cc06502284f8373001d47975c0f2c2cd0430e224a2b590ecf7c647dd"),
+}
+#: the eight banked C0 finals (P* + 20M at the production recipe): seed -> the REGISTERED sha256 of
+#: ``rb_x35_c0_s<seed>/final_model.zip`` [read_spec_kakuna.json models.c0_s<seed>.ref]
+C0_RUN_FMT = "rb_x35_c0_s{seed}"
+C0: Dict[int, str] = {
+    3501: "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+    3502: "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+    3503: "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+    3504: "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+    3505: "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+    3506: "21409eee22839b3c6040c43b7b58d7886c49569d6dd288353beb36ec7976b560",
+    3507: "455f73c8d2bd570bf3eca176e3e3953a9b9ac5c059ec35a9a40169a4da1687af",
+    3508: "8db0a96e55b751fdfac18bc7fe2cbabf5dd5ce7eddd7560f04bea3fa41fb262e",
 }
 #: the training pin of every launch of every round [PREREG §3]
 TRAIN_PIN = "9e97cad5709da21a1f9d4d8846096c87eb17b1d0"
@@ -179,21 +194,25 @@ def _hashes(d: Path) -> Dict[str, Dict[str, Any]]:
     return {f: {"sha256": sha256_file(d / f), "bytes": (d / f).stat().st_size} for f in FILES}
 
 
+def _banked(seed: int, run: str, want: str, models_dir: Optional[Path]) -> Final:
+    """A banked final in the run archive, at its registered sha256 (its run dir is only read)."""
+    d = _models(models_dir) / run
+    z = d / "final_model.zip"
+    if not z.is_file():
+        raise FinalsError(f"{run}: no final_model.zip under {d.parent}")
+    got = sha256_file(z)
+    if got != want:
+        raise FinalsError(f"{run}: final_model.zip has sha256 {got[:12]}, not the registered {want[:12]} "
+                          f"(the banked file moved)")
+    return Final(0, seed, run, str(z), got, _step(_json(d / "metadata.json"), d), "banked")
+
+
 def load_final(k: int, seed: int, *, root: Optional[Path] = None, models_dir: Optional[Path] = None) -> Final:
     """The final of lineage ``seed`` after round ``k``, VERIFIED (module docstring), or :class:`FinalsError`."""
     check_round(k)
     run = run_name(seed)
     if k == 0:
-        swap_run, want = SWAP[seed]
-        d = _models(models_dir) / swap_run
-        z = d / "final_model.zip"
-        if not z.is_file():
-            raise FinalsError(f"{swap_run}: no final_model.zip under {d.parent}")
-        got = sha256_file(z)
-        if got != want:
-            raise FinalsError(f"{swap_run}: final_model.zip has sha256 {got[:12]}, not the registered {want[:12]} "
-                              f"(the banked file moved)")
-        return Final(0, seed, swap_run, str(z), got, _step(_json(d / "metadata.json"), d), "banked")
+        return _banked(seed, *SWAP[seed], models_dir)
     d = copy_dir(k, seed, root)
     if not (d / MANIFEST).is_file():
         raise FinalsError(f"{run} r{k}: no {MANIFEST} in {d} (the round is not archived: "
@@ -226,6 +245,19 @@ def load_round(k: int, *, root: Optional[Path] = None, models_dir: Optional[Path
     for seed in SEEDS:
         try:
             out.append(load_final(k, seed, root=root, models_dir=models_dir))
+        except FinalsError as exc:
+            probs.append(str(exc))
+    if probs:
+        raise FinalsError("; ".join(probs))
+    return out
+
+
+def load_c0(*, models_dir: Optional[Path] = None) -> List[Final]:
+    """The eight banked C0 finals in seed order, VERIFIED; every problem of every file in ONE refusal."""
+    out, probs = [], []
+    for seed, want in C0.items():
+        try:
+            out.append(_banked(seed, C0_RUN_FMT.format(seed=seed), want, models_dir))
         except FinalsError as exc:
             probs.append(str(exc))
     if probs:

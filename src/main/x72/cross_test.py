@@ -47,7 +47,7 @@ def planned(world, tmp_path):  # noqa: F811
 def register(ledger: Path, shas) -> L.LedgerWriter:
     w = L.LedgerWriter(ledger, producer="h2h")
     w.register_family(shas["family"], decision_kind="ab_verdict", protocol=X.PROTOCOL, commit=X.PLAY_PIN,
-                      rule=X.REHEARSAL_RULE if shas["rehearsal"] else X.FAMILY_RULE)
+                      rule=X.family_rule(shas))
     return w
 
 
@@ -60,7 +60,7 @@ def play(ledger: Path, shas, *, cells=None, skip=(), edit=None, voided=None) -> 
     n = 0
     for r in shas["rows"]:
         for c in shas["cols"]:
-            pc = (cells or {}).get(n, BANKED[n]["pairs"])
+            pc = (cells or {}).get(n) or BANKED[n]["pairs"]
             if n not in skip:
                 v = (voided or {}).get(n, 0)
                 row = K.make_row(w.next_row_id(), request=req, batch=0, pc=pc, p=r, o=c, purpose="ab", voided=v,
